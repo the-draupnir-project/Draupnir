@@ -1,0 +1,18 @@
+# the dockerignore seems to be interacting
+# with this version as a subdirectory
+FROM node:alpine
+COPY . /tmp/src
+RUN cd /tmp/src \
+    && yarn install \
+    && yarn build \
+    && mv lib/ /mjolnir/ \
+    && mv node_modules / \
+    && cd / \
+    && rm -rf /tmp/*
+
+ENV NODE_ENV=development
+ENV NODE_CONFIG_DIR=/data/config
+
+CMD ["node /mjolnir/index.js"]
+# TODO add lib as a volume somehow?
+VOLUME ["/data"]
