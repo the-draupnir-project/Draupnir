@@ -76,6 +76,9 @@ interface IConfig {
         abuseReporting: {
             enabled: boolean;
         }
+        ruleserver: {
+            enabled: boolean;
+        }
     }
 
     /**
@@ -137,7 +140,10 @@ const defaultConfig: IConfig = {
         address: "localhost",
         abuseReporting: {
             enabled: false,
-        }
+        },
+        ruleserver: {
+            enabled: false,
+        },
     },
 
     // Needed to make the interface happy.

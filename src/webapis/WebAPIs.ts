@@ -17,10 +17,12 @@ limitations under the License.
 import { Server } from "http";
 
 import * as express from "express";
-import { MatrixClient } from "matrix-bot-sdk";
+import { LogService, MatrixClient } from "matrix-bot-sdk";
 
 import config from "../config";
+import Ruleserver from "../models/Ruleserver";
 import { ReportManager } from "../report/ReportManager";
+
 
 /**
  * A common prefix for all web-exposed APIs.
@@ -33,7 +35,7 @@ export class WebAPIs {
     private webController: express.Express = express();
     private httpServer?: Server;
 
-    constructor(private reportManager: ReportManager) {
+    constructor(private reportManager: ReportManager, private readonly ruleserver: Ruleserver|null) {
         // Setup JSON parsing.
         this.webController.use(express.json());
     }
@@ -55,6 +57,21 @@ export class WebAPIs {
                 await this.handleReport({ request, response, roomId: request.params.room_id, eventId: request.params.event_id })
             });
             console.log(`Configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
+        }
+
+        // Configure ruleserver API.
+        // FIXME: Doesn't this need some kind of access control?
+        if (config.web.ruleserver.enabled) {
+            const updatesUrl = `${API_PREFIX}/ruleserver/updates`;
+            LogService.info("WebAPIs", `Configuring ${updatesUrl}...`);
+            if (!this.ruleserver) {
+                throw new Error("The ruleserver to use has not been configured for the WebAPIs.");
+            }
+            const ruleserver: Ruleserver = this.ruleserver;
+            this.webController.get(updatesUrl, async (request, response) => {
+                await this.handleRuleserverUpdate(ruleserver, { request, response, since: request.query.since as string});
+            });
+            LogService.info("WebAPIs", `Configuring ${updatesUrl}... DONE`);
         }
     }
 
@@ -161,6 +178,17 @@ export class WebAPIs {
         } catch (ex) {
             console.warn("Error responding to an abuse report", roomId, eventId, ex);
             response.status(503);
+        }
+    }
+
+    async handleRuleserverUpdate(ruleserver: Ruleserver, { since, request, response }: { since: string, request: express.Request, response: express.Response }) {
+        // TODO Have to do this because express sends keep alive by default and during tests
+        // The server will never be able to close because express never closes the sockets, only stops accepting new connections 
+        response.set("Connection", "close");
+        try {
+            response.json(ruleserver.getUpdates(since)).status(200);
+        } catch (ex) {
+            LogService.error("WebAPIs", `Error responding to a ruleserver updates request`, since, ex);
         }
     }
 }

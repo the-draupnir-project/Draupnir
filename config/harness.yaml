@@ -175,11 +175,13 @@ web:
   # The address to listen for requests on. Defaults to all addresses.
   # Be careful with this setting, as opening to the wide web will increase
   # your security perimeter.
-  address: localhost
+  address: 0.0.0.0
 
   # A web API designed to intercept Matrix API
   # POST /_matrix/client/r0/rooms/{roomId}/report/{eventId}
   # and display readable abuse reports in the moderation room.
   abuseReporting:
     # Whether to enable this feature.
+    enabled: true
+  ruleserver:
     enabled: true

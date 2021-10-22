@@ -42,6 +42,7 @@ import { EventRedactionQueue, RedactUserInRoom } from "./queues/EventRedactionQu
 import * as htmlEscape from "escape-html";
 import { ReportManager } from "./report/ReportManager";
 import { WebAPIs } from "./webapis/WebAPIs";
+import Ruleserver from "./models/Ruleserver";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -149,13 +150,15 @@ export class Mjolnir {
         }
         await logMessage(LogLevel.INFO, "index", "Mjolnir is starting up. Use !mjolnir to query status.");
 
-        return new Mjolnir(client, protectedRooms, banLists);
+        const ruleserver = config.web.ruleserver ? new Ruleserver() : null;
+        return new Mjolnir(client, protectedRooms, banLists, ruleserver);
     }
 
     constructor(
         public readonly client: MatrixClient,
         public readonly protectedRooms: { [roomId: string]: string },
         private banLists: BanList[],
+        public readonly ruleserver: Ruleserver|null,
     ) {
         this.explicitlyProtectedRoomIds = Object.keys(this.protectedRooms);
 
@@ -222,7 +225,7 @@ export class Mjolnir {
 
         // Setup Web APIs
         console.log("Creating Web APIs");
-        this.webapis = new WebAPIs(new ReportManager(this));
+        this.webapis = new WebAPIs(new ReportManager(this), this.ruleserver);
     }
 
     public get lists(): BanList[] {
@@ -433,6 +436,7 @@ export class Mjolnir {
         if (this.banLists.find(b => b.roomId === roomId)) return null;
 
         const list = new BanList(roomId, roomRef, this.client);
+        list.on('update', ((banList, changes) => this.ruleserver?.update(banList, changes)));
         await list.updateList();
         this.banLists.push(list);
 
@@ -510,6 +514,7 @@ export class Mjolnir {
             await this.warnAboutUnprotectedBanListRoom(roomId);
 
             const list = new BanList(roomId, roomRef, this.client);
+            list.on('update', ((banList, changes) => this.ruleserver?.update(banList, changes)));
             await list.updateList();
             banLists.push(list);
         }
