@@ -26,7 +26,7 @@ import {
     UserID
 } from "matrix-bot-sdk";
 
-import BanList, { ALL_RULE_TYPES } from "./models/BanList";
+import BanList, { ALL_RULE_TYPES, ListRuleChange, RULE_ROOM, RULE_SERVER, RULE_USER } from "./models/BanList";
 import { applyServerAcls } from "./actions/ApplyAcl";
 import { RoomUpdateError } from "./models/RoomUpdateError";
 import { COMMAND_PREFIX, handleCommand } from "./commands/CommandHandler";
@@ -614,7 +614,7 @@ export class Mjolnir {
      */
     public async syncLists(verbose = true) {
         for (const list of this.banLists) {
-            await list.updateList();
+            await this.printBanlistChanges(await list.updateList(), list);
         }
 
         let hadErrors = false;
@@ -642,8 +642,8 @@ export class Mjolnir {
         let updated = false;
         for (const list of this.banLists) {
             if (list.roomId !== roomId) continue;
-            await list.updateList();
-            updated = true;
+            updated = await this.printBanlistChanges(await list.updateList(), list);
+            break;
         }
         if (!updated) return;
 
@@ -730,6 +730,48 @@ export class Mjolnir {
                 await this.printActionResult(redactionErrors);
             }
         }
+    }
+
+    /**
+     * Print the changes to a banlist to the management room.
+     * @param changes A list of changes that have been made to a particular ban list.
+     * @param shortcode The shortcode representing the ban list.
+     * @returns True if the message was sent, false if it wasn't (because there there were no changes to report).
+     */
+    private async printBanlistChanges(changes: ListRuleChange[], list: BanList): Promise<boolean> {
+        if (changes.length <= 0) return false;
+
+        let html = "";
+        let text = "";
+
+        const changesInfo = `updated with ${changes.length} ` + (changes.length === 1 ? 'change:' : 'changes:');
+        const shortcodeInfo = list.listShortcode ? ` (shortcode: ${list.listShortcode})` : '';
+
+        html += `<a href="${list.roomRef}">${list.roomId}</a>${shortcodeInfo} ${changesInfo}<br/><ul>`;
+        text += `${list.roomRef}${shortcodeInfo} ${changesInfo}:\n`;
+
+        for (const change of changes) {
+            const rule = change.rule;
+            let ruleKind: string = rule.kind;
+            if (ruleKind === RULE_USER) {
+                ruleKind = 'user';
+            } else if (ruleKind === RULE_SERVER) {
+                ruleKind = 'server';
+            } else if (ruleKind === RULE_ROOM) {
+                ruleKind = 'room';
+            }
+            html += `<li>${change.changeType} ${ruleKind} (<code>${rule.recommendation}</code>): <code>${htmlEscape(rule.entity)}</code> (${htmlEscape(rule.reason)})</li>`;
+            text += `* ${change.changeType} ${ruleKind} (${rule.recommendation}): ${rule.entity} (${rule.reason})\n`;
+        }
+
+        const message = {
+            msgtype: "m.notice",
+            body: text,
+            format: "org.matrix.custom.html",
+            formatted_body: html,
+        };
+        await this.client.sendMessage(config.managementRoom, message);
+        return true;
     }
 
     private async printActionResult(errors: RoomUpdateError[], title: string | null = null, logAnyways = false) {

@@ -35,15 +35,57 @@ export function ruleTypeToStable(rule: string, unstable = true): string|null {
     return null;
 }
 
+enum ChangeType {
+    Added    = "ADDED",
+    Removed  = "REMOVED",
+    Modified = "MODIFIED"
+}
+
+export class ListRuleChange {
+    constructor(
+    public readonly rule: ListRule,
+    public readonly changeType: ChangeType,
+    public readonly previousStateEventId?: string,
+    ) {
+
+    }
+}
+
 export default class BanList {
     private rules: ListRule[] = [];
     private shortcode: string|null = null;
+    private state: Map<string, Map<string, any>> = new Map();
 
     constructor(public readonly roomId: string, public readonly roomRef, private client: MatrixClient) {
     }
 
     public get listShortcode(): string {
         return this.shortcode || '';
+    }
+
+    /**
+     * Lookup the current rules cached for the list.
+     * @param stateType The event type e.g. m.room.rule.user.
+     * @param stateKey The state key e.g. entity:@bad:matrix.org
+     * @returns A state event if present or null.
+     */
+    private getState(stateType: string, stateKey: string) {
+        return this.state.get(stateType)?.get(stateKey);
+    }
+
+    /**
+     * Store this state event as part of the active room state for this BanList (used to cache rules).
+     * @param stateType The event type e.g. m.room.rule.user.
+     * @param stateKey The state key e.g. entity:@bad:matrix.org
+     * @param event A state event to store.
+     */
+    private setState(stateType: string, stateKey: string, event: any): void {
+        let typeTable = this.state.get(stateType);
+        if (typeTable) {
+            typeTable.set(stateKey, event);
+        } else {
+            this.state.set(stateType, new Map().set(stateKey, event));
+        }
     }
 
     public set listShortcode(newShortcode: string) {
@@ -71,8 +113,9 @@ export default class BanList {
         return [...this.serverRules, ...this.userRules, ...this.roomRules];
     }
 
-    public async updateList() {
+    public async updateList(): Promise<ListRuleChange[]> {
         this.rules = [];
+        let changes: ListRuleChange[] = [];
 
         const state = await this.client.getRoomState(this.roomId);
         for (const event of state) {
@@ -96,6 +139,28 @@ export default class BanList {
                 continue; // invalid/unknown
             }
 
+            const previousState = this.getState(event['type'], event['state_key']);
+            this.setState(event['type'], event['state_key'], event);
+            const changeType: null|ChangeType = (() => {
+                if (!previousState) {
+                    return ChangeType.Added;
+                } else if (previousState['event_id'] === event['event_id']) {
+                    if (Object.keys(previousState['content']).length !== Object.keys(event['content']).length) {
+                        return ChangeType.Removed;
+                    } else {
+                        // Nothing has changed then, impossible for them to change with the same event id.
+                        return null;
+                    }
+                } else {
+                    // Then the policy has been modified in some other way. Possibly redacted...
+                    if (Object.keys(event['content']).length === 0) {
+                        return ChangeType.Removed;
+                    } else {
+                        return ChangeType.Modified;
+                    }
+                }
+            })();
+
             // It's a rule - parse it
             const content = event['content'];
             if (!content) continue;
@@ -107,8 +172,12 @@ export default class BanList {
             if (!entity || !recommendation) {
                 continue;
             }
-
-            this.rules.push(new ListRule(entity, recommendation, reason, kind));
+            const rule = new ListRule(entity, recommendation, reason, kind);
+            if (changeType) {
+                changes.push({rule, changeType, ... previousState ? {previousStateEventId: previousState['event_id']} : {} });
+            }
+            this.rules.push(rule);
         }
+        return changes;
     }
 }
