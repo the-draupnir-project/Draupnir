@@ -40,7 +40,7 @@ import {
 } from "./ProtectionsCommands";
 import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
 import { execResolveCommand } from "./ResolveAlias";
-import { execKickCommand } from "./KickCommand";
+import { execKickCommand, execServerAclCleanCommand } from "./KickCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
@@ -120,6 +120,8 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execSinceCommand(roomId, event, mjolnir, tokens);
         } else if (parts[1] === 'kick' && parts.length > 2) {
             return await execKickCommand(roomId, event, mjolnir, parts);
+        } else if (parts[1] === 'acl-clean') {
+            return await execServerAclCleanCommand(roomId, event, mjolnir, parts);
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
