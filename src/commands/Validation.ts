@@ -28,48 +28,30 @@ limitations under the License.
 type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Err) => any};
 
 /**
- * Why do we need a Result Monad for the parser signiture.
- * I (Gnuxie) don't like monadic error handling, simply because
- * I'm a strong believer in failing early, yes i may be misinformed.
- * The only reason we don't use an exception in this case is because
- * these are NOT to be used nilly willy and thrown out of context
- * from an unrelated place. The Monad ensures locality (in terms of call chain)
- * to the user interface by being infuriating to deal with.
- * It also does look different to an exception
- * to a naive programmer. Ideally though, if the world had adopted
- * condition based error handling i would simply create a condition
- * type for validation errors that can be translated/overidden by
- * the command handler, and it wouldn't have to look like this.
- * It's important to remember the errors we are reporting are to do with user input,
- * we're trying to tell the user they did something wrong and what that is.
+ * This is a utility specifically for validating user input, and reporting
+ * what was wrong back to the end user in a way that makes sense.
+ * We are trying to tell the user they did something wrong and what that is.
  * This is something completely different to a normal exception,
  * where we are saying to ourselves that our assumptions in our code about
  * the thing we're doing are completely wrong. The user never
- * should see these as there is nothing they can do about it.
- *
- * OK, it would be too annoying even for me to have a real Monad.
- * So this is dumb as hell, no worries though
- * 
- * OK I'm beginning to regret my decision.
- * 
- * TODO: Can we make ValidationResult include ValidationError
+ * should see exceptions as there is nothing they can do about it.
  */
- export class ValidationResult<Ok, Err> {
+ export class ValidationResult<Ok> {
     private constructor(
         private readonly okValue: Ok|null,
-        private readonly errValue: Err|null,
+        private readonly errValue: ValidationError|null,
     ) {
 
     }
-    public static Ok<Ok, Err>(value: Ok): ValidationResult<Ok, Err> {
-        return new ValidationResult<Ok, Err>(value, null);
+    public static Ok<Ok>(value: Ok): ValidationResult<Ok> {
+        return new ValidationResult<Ok>(value, null);
     }
 
-    public static Err<Ok, Err>(value: Err): ValidationResult<Ok, Err> {
-        return new ValidationResult<Ok, Err>(null, value);
+    public static Err<Ok>(value: ValidationError): ValidationResult<Ok> {
+        return new ValidationResult<Ok>(null, value);
     }
 
-    public async match(expression: ValidationMatchExpression<Ok, Err>) {
+    public async match(expression: ValidationMatchExpression<Ok, ValidationError>) {
         return this.okValue ? await expression.ok!(this.ok) : await expression.err!(this.err);
     }
 
@@ -89,7 +71,7 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
         }
     }
 
-    public get err(): Err {
+    public get err(): ValidationError {
         if (this.isErr()) {
             return this.errValue!;
         } else {
@@ -126,6 +108,10 @@ export class ValidationError {
         } else {
             throw new TypeError(`No code was registered ${code}`);
         }
+    }
+
+    public static Result<Ok>(code: string, message: string): ValidationResult<Ok> {
+        return ValidationResult.Err(this.makeValidationError(code, message));
     }
 
     public static makeValidationError(code: string, message: string) {

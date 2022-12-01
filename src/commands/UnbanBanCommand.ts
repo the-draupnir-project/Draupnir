@@ -37,7 +37,7 @@ import { ValidationError, ValidationResult } from "./Validation";
 type Arguments = Parameters<(mjolnir: Mjolnir, list: PolicyList, ruleType: string, entity: string, reason: string) => void>;
 
 // Exported for tests
-export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: any, parts: string[]): Promise<ValidationResult<Arguments, ValidationError>> {
+export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: any, parts: string[]): Promise<ValidationResult<Arguments>> {
     let defaultShortcode: string | null = null;
     try {
         const data: { shortcode: string } = await mjolnir.client.getAccountData(DEFAULT_LIST_EVENT_TYPE);
@@ -49,19 +49,19 @@ export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: an
         // Assume no default.
     }
 
-    const findList = (mjolnir: Mjolnir, shortcode: string): ValidationResult<PolicyList, ValidationError> => {
+    const findList = (mjolnir: Mjolnir, shortcode: string): ValidationResult<PolicyList> => {
         const foundList = mjolnir.lists.find(b => b.listShortcode.toLowerCase() === shortcode.toLowerCase());
         if (foundList !== undefined) {
             return ValidationResult.Ok(foundList);
         } else {
-            return ValidationResult.Err(ValidationError.makeValidationError('shortcode not found', `A list with the shourtcode ${shortcode} could not be found.`));
+            return ValidationError.Result('shortcode not found', `A list with the shourtcode ${shortcode} could not be found.`);
         }
     }
 
     let argumentIndex = 2;
     let ruleType: string | null = null;
     let entity: string | null = null;
-    let list: ValidationResult<PolicyList, ValidationError>|null = null;
+    let list: ValidationResult<PolicyList>|null = null;
     let force = false;
     while (argumentIndex < 7 && argumentIndex < parts.length) {
         const arg = parts[argumentIndex++];
@@ -104,34 +104,28 @@ export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: an
         if (defaultShortcode) {
             list = await findList(mjolnir, defaultShortcode);
             if (list.isErr()) {
-                return ValidationResult.Err(ValidationError.makeValidationError(
+                return ValidationError.Result(
                     "shortcode not found",
-                    `A shortcode was not provided for this command, and a list couldn't be found with the default shortcode ${defaultShortcode}`))
+                    `A shortcode was not provided for this command, and a list couldn't be found with the default shortcode ${defaultShortcode}`)
             }
         } else {
             // FIXME: should be turned into a utility function to find the default list.
             //        and in general, why is there a default shortcode instead of a default list?
-            return ValidationResult.Err(ValidationError.makeValidationError(
+            return ValidationError.Result(
                 "no default shortcode",
                 `A shortcode was not provided for this command, and a default shortcode was not set either.`
-            ))
+            )
         }
     }
 
     if (list.isErr()) {
         return ValidationResult.Err(list.err);
     } else if (!ruleType) {
-        return ValidationResult.Err(
-            ValidationError.makeValidationError('uknown rule type', "Please specify the type as either 'user', 'room', or 'server'")
-        );
+        return ValidationError.Result('uknown rule type', "Please specify the type as either 'user', 'room', or 'server'");
     } else if (!entity) {
-        return ValidationResult.Err(
-            ValidationError.makeValidationError('no entity', "No entity was able to be parsed from this command")
-        );
+        return ValidationError.Result('no entity', "No entity was able to be parsed from this command");
     } else if (mjolnir.config.commands.confirmWildcardBan && /[*?]/.test(entity) && !force) {
-        return ValidationResult.Err(
-            ValidationError.makeValidationError("wildcard required", "Wildcard bans require an additional `--force` argument to confirm")
-        );
+        return ValidationError.Result("wildcard required", "Wildcard bans require an additional `--force` argument to confirm");
     }
 
     return ValidationResult.Ok([

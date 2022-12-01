@@ -41,7 +41,7 @@ type ParserSignature<ExecutorType extends (...args: any) => Promise<any>> = (
     mjolnir: Mjolnir,
     roomId: string,
     event: any,
-    parts: string[]) => Promise<ValidationResult<Parameters<ExecutorType>, ValidationError>>;
+    parts: string[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
 
 type RendererSignature<ExecutorReturnType extends Promise<any>> = (
     mjolnir: Mjolnir,
