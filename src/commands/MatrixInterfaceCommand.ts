@@ -29,6 +29,7 @@ import { Mjolnir } from "../Mjolnir";
 import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./ApplicationCommand";
 import { ValidationError, ValidationResult } from "./Validation";
 import { RichReply, LogService } from "matrix-bot-sdk";
+import { ReadItem } from "./CommandReader";
 
 type CommandLookupEntry = Map<string|symbol, CommandLookupEntry|MatrixInterfaceCommand<BaseFunction>>;
 
@@ -41,7 +42,7 @@ type ParserSignature<ExecutorType extends (...args: any) => Promise<any>> = (
     mjolnir: Mjolnir,
     roomId: string,
     event: any,
-    parts: string[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
+    parts: ReadItem[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
 
 type RendererSignature<ExecutorReturnType extends Promise<any>> = (
     mjolnir: Mjolnir,

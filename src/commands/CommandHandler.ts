@@ -54,6 +54,7 @@ import { execMakeRoomAdminCommand } from "./MakeRoomAdminCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
 import { MatrixCommandTable } from "./MatrixInterfaceCommand";
+import { readCommand } from "./CommandReader";
 
 
 export const COMMAND_PREFIX = "!mjolnir";
@@ -134,9 +135,10 @@ export async function handleCommand(roomId: string, event: { content: { body: st
         } else if (parts[1] === 'make' && parts[2] === 'admin' && parts.length > 3) {
             return await execMakeRoomAdminCommand(roomId, event, mjolnir, parts);
         } else {
+            const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const command = commandTable.findAMatchingCommand(parts.slice(1));
             if (command) {
-                return await command.invoke(mjolnir, roomId, event, parts);
+                return await command.invoke(mjolnir, roomId, event, readItems);
             }
 
             // Help menu

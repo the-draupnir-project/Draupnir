@@ -33,11 +33,12 @@ import { DEFAULT_LIST_EVENT_TYPE } from "./SetDefaultBanListCommand";
 import { defineApplicationCommand } from "./ApplicationCommand";
 import { defineMatrixInterfaceCommand } from "./MatrixInterfaceCommand";
 import { ValidationError, ValidationResult } from "./Validation";
+import { ReadItem } from "./CommandReader";
 
 type Arguments = Parameters<(mjolnir: Mjolnir, list: PolicyList, ruleType: string, entity: string, reason: string) => void>;
 
 // Exported for tests
-export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: any, parts: string[]): Promise<ValidationResult<Arguments>> {
+export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: any, parts: ReadItem[]): Promise<ValidationResult<Arguments>> {
     let defaultShortcode: string | null = null;
     try {
         const data: { shortcode: string } = await mjolnir.client.getAccountData(DEFAULT_LIST_EVENT_TYPE);
