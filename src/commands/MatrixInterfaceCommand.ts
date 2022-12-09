@@ -25,11 +25,10 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./ApplicationCommand";
-import { ValidationError, ValidationResult } from "./Validation";
-import { RichReply, LogService } from "matrix-bot-sdk";
-import { ReadItem } from "./CommandReader";
+import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./interface-manager/ApplicationCommand";
+import { ValidationError, ValidationResult } from "./interface-manager/Validation";
+import { RichReply, LogService, MatrixClient } from "matrix-bot-sdk";
+import { ReadItem } from "./interface-manager/CommandReader";
 
 type CommandLookupEntry = Map<string|symbol, CommandLookupEntry|MatrixInterfaceCommand<BaseFunction>>;
 
@@ -39,13 +38,16 @@ const THIS_COMMAND_SYMBOL = Symbol("thisCommand");
 
 type ParserSignature<ExecutorType extends (...args: any) => Promise<any>> = (
     this: MatrixInterfaceCommand<ExecutorType>,
-    mjolnir: Mjolnir,
-    roomId: string,
-    event: any,
-    parts: ReadItem[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
+    // The idea then is that this can be extended to include a Mjolnir or whatever.
+    options: {
+        client: MatrixClient,
+        roomId: string,
+        event: any,
+    },
+    ...parts: ReadItem[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
 
 type RendererSignature<ExecutorReturnType extends Promise<any>> = (
-    mjolnir: Mjolnir,
+    client: MatrixClient,
     commandRoomId: string,
     event: any,
     result: Awaited<ExecutorReturnType>) => Promise<void>;
@@ -71,7 +73,7 @@ class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>
         private readonly parser: ParserSignature<ExecutorType>,
         public readonly applicationCommand: ApplicationCommand<ExecutorType>,
         private readonly renderer: RendererSignature<ReturnType<ExecutorType>>,
-        private readonly validationErrorHandler?: (mjolnir: Mjolnir, roomId: string, event: any, validationError: ValidationError) => Promise<void>
+        private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: ValidationError) => Promise<void>
     ) {
 
     }
@@ -94,7 +96,7 @@ class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>
         await this.renderer.apply(this, [...args.slice(0, -1), executorResult]);
     }
 
-    private async reportValidationError(mjolnir: Mjolnir, roomId: string, event: any, validationError: ValidationError): Promise<void> {
+    private async reportValidationError(client: MatrixClient, roomId: string, event: any, validationError: ValidationError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${this.commandParts}: ${validationError.message}`);
         if (this.validationErrorHandler) {
             await this.validationErrorHandler.apply(this, arguments);
@@ -103,7 +105,7 @@ class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>
         const replyMessage = validationError.message;
         const reply = RichReply.createFor(roomId, event, replyMessage, replyMessage);
         reply["msgtype"] = "m.notice";
-        await mjolnir.client.sendMessage(roomId, reply);
+        await client.sendMessage(roomId, reply);
     }
 }
 
