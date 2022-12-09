@@ -25,10 +25,15 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./interface-manager/ApplicationCommand";
-import { ValidationError, ValidationResult } from "./interface-manager/Validation";
+/**
+ * When we do move these components into their own library,
+ * I'd like to remove the dependency on matrix-bot-sdk. 
+ */
+
+import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./ApplicationCommand";
+import { ValidationError, ValidationResult } from "./Validation";
 import { RichReply, LogService, MatrixClient } from "matrix-bot-sdk";
-import { ReadItem } from "./interface-manager/CommandReader";
+import { ReadItem } from "./CommandReader";
 
 type CommandLookupEntry = Map<string|symbol, CommandLookupEntry|MatrixInterfaceCommand<BaseFunction>>;
 
