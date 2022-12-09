@@ -27,18 +27,19 @@ limitations under the License.
 
 import { Mjolnir } from "../Mjolnir";
 import PolicyList from "../models/PolicyList";
-import { extractRequestError, LogLevel, LogService, MatrixGlob } from "matrix-bot-sdk";
+import { extractRequestError, LogLevel, LogService, MatrixGlob, RichReply } from "matrix-bot-sdk";
 import { RULE_ROOM, RULE_SERVER, RULE_USER, USER_RULE_TYPES } from "../models/ListRule";
 import { DEFAULT_LIST_EVENT_TYPE } from "./SetDefaultBanListCommand";
-import { defineApplicationCommand } from "./ApplicationCommand";
-import { defineMatrixInterfaceCommand } from "./MatrixInterfaceCommand";
-import { ValidationError, ValidationResult } from "./Validation";
-import { ReadItem } from "./CommandReader";
 
-type Arguments = Parameters<(mjolnir: Mjolnir, list: PolicyList, ruleType: string, entity: string, reason: string) => void>;
+interface Arguments {
+    list: PolicyList | null;
+    entity: string;
+    ruleType: string | null;
+    reason: string;
+}
 
 // Exported for tests
-export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: any, parts: ReadItem[]): Promise<ValidationResult<Arguments>> {
+export async function parseArguments(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]): Promise<Arguments | null> {
     let defaultShortcode: string | null = null;
     try {
         const data: { shortcode: string } = await mjolnir.client.getAccountData(DEFAULT_LIST_EVENT_TYPE);
@@ -50,19 +51,10 @@ export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: an
         // Assume no default.
     }
 
-    const findList = (mjolnir: Mjolnir, shortcode: string): ValidationResult<PolicyList> => {
-        const foundList = mjolnir.lists.find(b => b.listShortcode.toLowerCase() === shortcode.toLowerCase());
-        if (foundList !== undefined) {
-            return ValidationResult.Ok(foundList);
-        } else {
-            return ValidationError.Result('shortcode not found', `A list with the shourtcode ${shortcode} could not be found.`);
-        }
-    }
-
     let argumentIndex = 2;
     let ruleType: string | null = null;
     let entity: string | null = null;
-    let list: ValidationResult<PolicyList>|null = null;
+    let list: PolicyList | null = null;
     let force = false;
     while (argumentIndex < 7 && argumentIndex < parts.length) {
         const arg = parts[argumentIndex++];
@@ -78,7 +70,10 @@ export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: an
             else if (arg.startsWith("!") && !ruleType) ruleType = RULE_ROOM;
             else if (!ruleType) ruleType = RULE_SERVER;
         } else if (!list) {
-            list = findList(mjolnir, arg.toLocaleLowerCase());
+            const foundList = mjolnir.lists.find(b => b.listShortcode.toLowerCase() === arg.toLowerCase());
+            if (foundList !== undefined) {
+                list = foundList;
+            }
         }
 
         if (entity) break;
@@ -102,61 +97,52 @@ export async function parseArguments(mjolnir: Mjolnir, roomId: string, event: an
     }
 
     if (!list) {
-        if (defaultShortcode) {
-            list = await findList(mjolnir, defaultShortcode);
-            if (list.isErr()) {
-                return ValidationError.Result(
-                    "shortcode not found",
-                    `A shortcode was not provided for this command, and a list couldn't be found with the default shortcode ${defaultShortcode}`)
-            }
-        } else {
-            // FIXME: should be turned into a utility function to find the default list.
-            //        and in general, why is there a default shortcode instead of a default list?
-            return ValidationError.Result(
-                "no default shortcode",
-                `A shortcode was not provided for this command, and a default shortcode was not set either.`
-            )
-        }
+        list = mjolnir.lists.find(b => b.listShortcode.toLowerCase() === defaultShortcode) || null;
     }
 
-    if (list.isErr()) {
-        return ValidationResult.Err(list.err);
-    } else if (!ruleType) {
-        return ValidationError.Result('uknown rule type', "Please specify the type as either 'user', 'room', or 'server'");
-    } else if (!entity) {
-        return ValidationError.Result('no entity', "No entity was able to be parsed from this command");
-    } else if (mjolnir.config.commands.confirmWildcardBan && /[*?]/.test(entity) && !force) {
-        return ValidationError.Result("wildcard required", "Wildcard bans require an additional `--force` argument to confirm");
+    let replyMessage: string | null = null;
+    if (!list) replyMessage = "No ban list matching that shortcode was found";
+    else if (!ruleType) replyMessage = "Please specify the type as either 'user', 'room', or 'server'";
+    else if (!entity) replyMessage = "No entity found";
+
+    if (mjolnir.config.commands.confirmWildcardBan && /[*?]/.test(entity) && !force) {
+        replyMessage = "Wildcard bans require an additional `--force` argument to confirm";
     }
 
-    return ValidationResult.Ok([
-        mjolnir,
-        list.ok,
-        ruleType,
+    if (replyMessage) {
+        const reply = RichReply.createFor(roomId, event, replyMessage, replyMessage);
+        reply["msgtype"] = "m.notice";
+        await mjolnir.client.sendMessage(roomId, reply);
+        return null;
+    }
+
+    return {
+        list,
         entity,
-        parts.splice(argumentIndex).join(" ").trim(),
-    ]);
+        ruleType,
+        reason: parts.splice(argumentIndex).join(" ").trim(),
+    };
 }
 
-const BAN_COMMAND = defineApplicationCommand([], async (mjonlir: Mjolnir, list: PolicyList, ruleType: string, entity: string, reason: string): Promise<void> => {
-    await list.banEntity(ruleType, entity, reason);
-});
-
 // !mjolnir ban <shortcode> <user|server|room> <glob> [reason] [--force]
-defineMatrixInterfaceCommand(["ban"],
-    parseArguments,
-    BAN_COMMAND,
-    async function (mjolnir: Mjolnir, commandRoomId: string, event: any, result: void) {
-        await mjolnir.client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], '✅');
-    }
-);
+export async function execBanCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
+    const bits = await parseArguments(roomId, event, mjolnir, parts);
+    if (!bits) return; // error already handled
 
-const UNBAN_COMMAND = defineApplicationCommand([], async (mjolnir: Mjolnir, list: PolicyList, ruleType: string, entity: string, reason: string): Promise<void> => {
-    await list.unbanEntity(ruleType, entity);
+    await bits.list!.banEntity(bits.ruleType!, bits.entity, bits.reason);
+    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
+}
+
+// !mjolnir unban <shortcode> <user|server|room> <glob> [apply:t/f]
+export async function execUnbanCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
+    const bits = await parseArguments(roomId, event, mjolnir, parts);
+    if (!bits) return; // error already handled
+
+    await bits.list!.unbanEntity(bits.ruleType!, bits.entity);
 
     const unbanUserFromRooms = async () => {
-        const rule = new MatrixGlob(entity);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "UnbanBanCommand", "Unbanning users that match glob: " + entity);
+        const rule = new MatrixGlob(bits.entity);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "UnbanBanCommand", "Unbanning users that match glob: " + bits.entity);
         let unbannedSomeone = false;
         for (const protectedRoomId of mjolnir.protectedRoomsTracker.getProtectedRooms()) {
             const members = await mjolnir.client.getRoomMembers(protectedRoomId, undefined, ['ban'], undefined);
@@ -184,21 +170,14 @@ const UNBAN_COMMAND = defineApplicationCommand([], async (mjolnir: Mjolnir, list
         }
     };
 
-    if (USER_RULE_TYPES.includes(ruleType)) {
-        mjolnir.unlistedUserRedactionHandler.removeUser(entity);
-        if (reason === 'true') {
+    if (USER_RULE_TYPES.includes(bits.ruleType!)) {
+        mjolnir.unlistedUserRedactionHandler.removeUser(bits.entity);
+        if (bits.reason === 'true') {
             await unbanUserFromRooms();
         } else {
             await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "UnbanBanCommand", "Running unban without `unban <list> <user> true` will not override existing room level bans");
         }
     }
-})
 
-// !mjolnir unban <shortcode> <user|server|room> <glob> [apply:t/f]
-defineMatrixInterfaceCommand(["unban"],
-    parseArguments,
-    UNBAN_COMMAND,
-    async function (mjolnir: Mjolnir, commandRoomId: string, event: any, result: void) {
-        await mjolnir.client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], '✅');
-    }
-);
+    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
+}
