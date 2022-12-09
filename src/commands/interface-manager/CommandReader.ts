@@ -4,7 +4,7 @@
  */
 
 import { UserID } from "matrix-bot-sdk";
-import { MatrixRoomReference } from "../models/MatrixRoomReference";
+import { MatrixRoomReference } from "./MatrixRoomReference";
 
 /**
  * Helper for peeking and reading character by character.

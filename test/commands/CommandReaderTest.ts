@@ -1,6 +1,6 @@
 import expect from "expect";
-import { Keyword, readCommand, ReadItem } from "../../src/commands/CommandReader";
-import { MatrixRoomReference } from "../../src/models/MatrixRoomReference";
+import { Keyword, readCommand, ReadItem } from "../../src/commands/interface-manager/CommandReader";
+import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
 
 describe("Can read", function() {
     it("Can read a simple command with only strings", function() {
