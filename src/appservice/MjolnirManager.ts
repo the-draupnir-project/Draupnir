@@ -3,7 +3,7 @@ import { Request, WeakEvent, BridgeContext, Bridge, Intent, Logger } from "matri
 import { getProvisionedMjolnirConfig } from "../config";
 import PolicyList from "../models/PolicyList";
 import { Permalinks, MatrixClient } from "matrix-bot-sdk";
-import { DataStore } from "./datastore";
+import { DataStore, MjolnirRecord } from "./datastore";
 import { AccessControl } from "./AccessControl";
 import { Access } from "../models/AccessControlUnit";
 import { randomUUID } from "crypto";
@@ -11,6 +11,9 @@ import EventEmitter from "events";
 import { MatrixEmitter } from "../MatrixEmitter";
 
 const log = new Logger('MjolnirManager');
+
+// FIXME: AAAAAAAAaaaaaaaaaaaaa there's some inconsistency between "mjolnir id" "mjolnirRecord.localpart" and "user if of the mjolnir"
+//        all over this file.
 
 /**
  * The MjolnirManager is responsible for:
@@ -20,6 +23,7 @@ const log = new Logger('MjolnirManager');
  */
 export class MjolnirManager {
     private readonly mjolnirs: Map</*the user id of the mjolnir*/string, ManagedMjolnir> = new Map();
+    private readonly unstartedMjolnirs: Map</** user id of the mjolnir */string, UnstartedMjolnir> = new Map();
 
     private constructor(
         private readonly dataStore: DataStore,
@@ -38,7 +42,7 @@ export class MjolnirManager {
      */
     public static async makeMjolnirManager(dataStore: DataStore, bridge: Bridge, accessControl: AccessControl): Promise<MjolnirManager> {
         const mjolnirManager = new MjolnirManager(dataStore, bridge, accessControl);
-        await mjolnirManager.createMjolnirsFromDataStore();
+        await mjolnirManager.startMjolnirs(await dataStore.list());
         return mjolnirManager;
     }
 
@@ -50,7 +54,8 @@ export class MjolnirManager {
      * @returns A new managed mjolnir.
      */
     public async makeInstance(requestingUserId: string, managementRoomId: string, client: MatrixClient): Promise<ManagedMjolnir> {
-        const intentListener = new MatrixIntentListener(await client.getUserId());
+        const mxid = await client.getUserId();
+        const intentListener = new MatrixIntentListener(mxid);
         const managedMjolnir = new ManagedMjolnir(
             requestingUserId,
             await Mjolnir.setupMjolnirFromConfig(
@@ -61,7 +66,8 @@ export class MjolnirManager {
             intentListener,
         );
         await managedMjolnir.start();
-        this.mjolnirs.set(await client.getUserId(), managedMjolnir);
+        this.mjolnirs.set(mxid, managedMjolnir);
+        this.unstartedMjolnirs.delete(mxid);
         return managedMjolnir;
     }
 
@@ -141,6 +147,14 @@ export class MjolnirManager {
         }
     }
 
+    public reportUnstartedMjolnir(code: UnstartedMjolnir.FailCode, cause: any, mjolnirRecord: MjolnirRecord): void {
+        this.unstartedMjolnirs.set(mjolnirRecord.local_part, new UnstartedMjolnir(mjolnirRecord, code, cause));
+    }
+
+    public getUnstartedMjolnirs(): UnstartedMjolnir[] {
+        return [...this.unstartedMjolnirs.values()];
+    }
+
     /**
      * Utility that creates a matrix client for a virtual user on our homeserver with the specified loclapart.
      * @param localPart The localpart of the virtual user we need a client for.
@@ -152,29 +166,44 @@ export class MjolnirManager {
         return mjIntent;
     }
 
+    /**
+     * Attempt to start a mjolnir, and notify its management room of any failure to start.
+     * Will be added to `this.unstartedMjolnirs` if we fail to start it AND it is not already running.
+     * @param mjolnirRecord The record for the mjolnir that we want to start.
+     */
+    public async startMjolnir(mjolnirRecord: MjolnirRecord): Promise<void> {
+        // if a mjolnir is in `this.mjonirs` it is started, as if it is present, it is going to be given Matrix events.
+        if (this.mjolnirs.has(mjolnirRecord.local_part)) {
+            throw new TypeError(`${mjolnirRecord.local_part} is already running, we cannot start it.`);
+        }
+        const mjIntent = await this.makeMatrixIntent(mjolnirRecord.local_part);
+        const access = this.accessControl.getUserAccess(mjolnirRecord.owner);
+        if (access.outcome !== Access.Allowed) {
+            // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
+            mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
+            this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord);
+        } else {
+            await this.makeInstance(
+                mjolnirRecord.owner,
+                mjolnirRecord.management_room,
+                mjIntent.matrixClient,
+            ).catch((e: any) => {
+                log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e);
+                // Don't await, we don't want to clobber initialization if this fails.
+                mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
+                this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord);
+            });
+        }
+    }
+
     // TODO: We need to check that an owner still has access to the appservice each time they send a command to the mjolnir or use the web api.
     // https://github.com/matrix-org/mjolnir/issues/410
     /**
      * Used at startup to create all the ManagedMjolnir instances and start them so that they will respond to users.
      */
-    private async createMjolnirsFromDataStore() {
-        for (const mjolnirRecord of await this.dataStore.list()) {
-            const mjIntent = await this.makeMatrixIntent(mjolnirRecord.local_part);
-            const access = this.accessControl.getUserAccess(mjolnirRecord.owner);
-            if (access.outcome !== Access.Allowed) {
-                // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
-                mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
-            } else {
-                await this.makeInstance(
-                    mjolnirRecord.owner,
-                    mjolnirRecord.management_room,
-                    mjIntent.matrixClient,
-                ).catch((e: any) => {
-                    log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e);
-                    // Don't await, we don't want to clobber initialization if this fails.
-                    mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
-                });
-            }
+    public async startMjolnirs(mjolnirRecords: MjolnirRecord[]): Promise<void> {
+        for (const mjolnirRecord of mjolnirRecords) {
+            await this.startMjolnir(mjolnirRecord);
         }
     }
 }
@@ -270,5 +299,22 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
      */
     public stop() {
         // Nothing to do.
+    }
+}
+
+export class UnstartedMjolnir {
+    constructor(
+        public readonly mjolnirRecord: MjolnirRecord,
+        public readonly failCode: UnstartedMjolnir.FailCode,
+        public readonly cause: any,
+    ) {
+
+    }
+}
+
+export namespace UnstartedMjolnir {
+    export enum FailCode {
+        Unauthorized = "Unauthorized",
+        StartError = "StartError",
     }
 }

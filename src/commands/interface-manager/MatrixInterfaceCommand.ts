@@ -27,28 +27,38 @@ limitations under the License.
 
 /**
  * When we do move these components into their own library,
- * I'd like to remove the dependency on matrix-bot-sdk. 
+ * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
 import { ApplicationCommand, ApplicationFeature, getApplicationFeature } from "./ApplicationCommand";
 import { ValidationError, ValidationResult } from "./Validation";
 import { RichReply, LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
+import { MatrixSendClient } from "../../MatrixEmitter";
 
-type CommandLookupEntry = Map<string|symbol, CommandLookupEntry|MatrixInterfaceCommand<BaseFunction>>;
+
+/**
+ * 💀 . o O ( at least I don't have to remember the types )
+ * https://matrix-client.matrix.org/_matrix/media/r0/download/matrix.org/nbisOFhCcTzNicZrfixWMHZn
+ * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
+ */
+
+type CommandLookupEntry = Map<string|symbol, CommandLookupEntry|MatrixInterfaceCommand<MatrixContext, BaseFunction>>;
 
 type BaseFunction = (...args: any) => Promise<any>;
-const FLATTENED_MATRIX_COMMANDS = new Set<MatrixInterfaceCommand<BaseFunction>>();
+const FLATTENED_MATRIX_COMMANDS = new Set<MatrixInterfaceCommand<MatrixContext, BaseFunction>>();
 const THIS_COMMAND_SYMBOL = Symbol("thisCommand");
 
-type ParserSignature<ExecutorType extends (...args: any) => Promise<any>> = (
-    this: MatrixInterfaceCommand<ExecutorType>,
+export interface MatrixContext {
+    client: MatrixSendClient,
+    roomId: string,
+    event: any,
+}
+
+type ParserSignature<C extends MatrixContext, ExecutorType extends (...args: any) => Promise<any>> = (
+    this: MatrixInterfaceCommand<C, ExecutorType>,
     // The idea then is that this can be extended to include a Mjolnir or whatever.
-    options: {
-        client: MatrixClient,
-        roomId: string,
-        event: any,
-    },
+    context: C,
     ...parts: ReadItem[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
 
 type RendererSignature<ExecutorReturnType extends Promise<any>> = (
@@ -72,10 +82,10 @@ type RendererSignature<ExecutorReturnType extends Promise<any>> = (
  * When confirmation is required in the middle of a traditional command ie preview kick
  * the preview command should be a distinct command.
  */
-class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>> {
+class MatrixInterfaceCommand<C extends MatrixContext, ExecutorType extends (...args: any) => Promise<any>> {
     constructor(
         public readonly commandParts: string[],
-        private readonly parser: ParserSignature<ExecutorType>,
+        private readonly parser: ParserSignature<C, ExecutorType>,
         public readonly applicationCommand: ApplicationCommand<ExecutorType>,
         private readonly renderer: RendererSignature<ReturnType<ExecutorType>>,
         private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: ValidationError) => Promise<void>
@@ -91,14 +101,17 @@ class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>
      * along with the result of the executor.
      * @param args These will be the arguments to the parser function.
      */
-    public async invoke(...args: Parameters<ParserSignature<ExecutorType>>): Promise<void> {
+    public async invoke(...args: Parameters<ParserSignature<C, ExecutorType>>): Promise<void> {
         const parseResults = await this.parser(...args);
+        const matrixContext: MatrixContext = args.at(0) as MatrixContext;
         if (parseResults.isErr()) {
-            this.reportValidationError.apply(this, [...args.slice(0, -1), parseResults.err]);
+            this.reportValidationError.apply(this, [matrixContext.client, matrixContext.roomId, matrixContext.event, parseResults.err]);
             return;
         }
         const executorResult: ReturnType<ExecutorType> = await this.applicationCommand.executor.apply(this, parseResults.ok);
-        await this.renderer.apply(this, [...args.slice(0, -1), executorResult]);
+        // just give the renderer the MatrixContext.
+
+        await this.renderer.apply(this, [matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult]);
     }
 
     private async reportValidationError(client: MatrixClient, roomId: string, event: any, validationError: ValidationError): Promise<void> {
@@ -121,9 +134,9 @@ class MatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>
  * @param applicationCommmand The ApplicationCommand this is an interface wrapper for.
  * @param renderer Render the result of the application command back to a room.
  */
-export function defineMatrixInterfaceCommand<ExecutorType extends (...args: any) => Promise<any>>(
+export function defineMatrixInterfaceCommand<C extends MatrixContext, ExecutorType extends (...args: any) => Promise<any>>(
         commandParts: string[],
-        parser: ParserSignature<ExecutorType>,
+        parser: ParserSignature<C, ExecutorType>,
         applicationCommmand: ApplicationCommand<ExecutorType>,
         renderer: RendererSignature<ReturnType<ExecutorType>>) {
     FLATTENED_MATRIX_COMMANDS.add(
@@ -140,9 +153,9 @@ export function defineMatrixInterfaceCommand<ExecutorType extends (...args: any)
 /**
  * This can be used by mjolnirs or an appservice bot.
  */
-export class MatrixCommandTable {
+export class MatrixCommandTable<C extends MatrixContext> {
     public readonly features: ApplicationFeature[];
-    private readonly flattenedCommands: Set<MatrixInterfaceCommand<BaseFunction>>;
+    private readonly flattenedCommands: Set<MatrixInterfaceCommand<C, BaseFunction>>;
     private readonly commands: CommandLookupEntry = new Map();
 
     constructor(featureNames: string[]) {
@@ -158,24 +171,25 @@ export class MatrixCommandTable {
         const commandHasFeatures = (command: ApplicationCommand<BaseFunction>) => {
             return command.requiredFeatures.every(feature => this.features.includes(feature))
         }
-        this.flattenedCommands = new Set([...FLATTENED_MATRIX_COMMANDS].filter(interfaceCommand => commandHasFeatures(interfaceCommand.applicationCommand)));
+        this.flattenedCommands = new Set([...FLATTENED_MATRIX_COMMANDS]
+            .filter(interfaceCommand => commandHasFeatures(interfaceCommand.applicationCommand)));
         [...this.flattenedCommands].forEach(this.internCommand, this);
     }
 
-    public findAMatchingCommand(parts: string[]) {
-        const getCommand = (table: CommandLookupEntry): undefined|MatrixInterfaceCommand<BaseFunction> => {
+    public findAMatchingCommand(readItems: ReadItem[]) {
+        const getCommand = (table: CommandLookupEntry): undefined|MatrixInterfaceCommand<C, BaseFunction> => {
             const command = table.get(THIS_COMMAND_SYMBOL);
             if (command instanceof Map) {
                 throw new TypeError("There is an implementation bug, only commands should be stored under the command symbol");
             }
             return command;
         };
-        const tableHelper = (table: CommandLookupEntry, nextParts: string[]): undefined|MatrixInterfaceCommand<BaseFunction> => {
-            if (nextParts.length === 0) {
+        const tableHelper = (table: CommandLookupEntry, nextParts: ReadItem[]): undefined|MatrixInterfaceCommand<C, BaseFunction> => {
+            if (nextParts.length === 0 || typeof nextParts.at(0) !== 'string') {
                 // Then they might be using something like "!mjolnir status"
                 return getCommand(table);
             }
-            const entry = table.get(nextParts.shift()!);
+            const entry = table.get(nextParts.shift()! as string);
             if (!entry) {
                 // The reason there's no match is because this is the command arguments, rather than subcommand notation.
                 return getCommand(table);
@@ -186,10 +200,18 @@ export class MatrixCommandTable {
                 return tableHelper(entry, nextParts);
             }
         };
-        return tableHelper(this.commands, [...parts]);
+        return tableHelper(this.commands, [...readItems]);
     }
 
-    private internCommand(command: MatrixInterfaceCommand<BaseFunction>) {
+    public async invokeAMatchingCommand(context: C, readItems: ReadItem[]): Promise<void> {
+        const command = this.findAMatchingCommand(readItems);
+        if (command) {
+            const itmesWithoutCommandDesignators = readItems.slice(command.commandParts.length)
+            await command.invoke(context, ...itmesWithoutCommandDesignators);
+        }
+    }
+
+    private internCommand(command: MatrixInterfaceCommand<C, BaseFunction>) {
         const internCommandHelper = (table: CommandLookupEntry, commandParts: string[]): void => {
             if (commandParts.length === 0) {
                 if (table.has(THIS_COMMAND_SYMBOL)) {

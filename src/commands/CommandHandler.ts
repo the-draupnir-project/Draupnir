@@ -53,13 +53,16 @@ import { execKickCommand } from "./KickCommand";
 import { execMakeRoomAdminCommand } from "./MakeRoomAdminCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
-import { MatrixCommandTable } from "./MatrixInterfaceCommand";
-import { readCommand } from "./CommandReader";
+import { MatrixCommandTable, MatrixContext } from "./interface-manager/MatrixInterfaceCommand";
+import { readCommand } from "./interface-manager/CommandReader";
 
+export interface MjolnirContext extends MatrixContext {
+    mjolnir: Mjolnir,
+}
 
 export const COMMAND_PREFIX = "!mjolnir";
 
-export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir, commandTable: MatrixCommandTable) {
+export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir, commandTable: MatrixCommandTable<MjolnirContext>) {
     const cmd = event['content']['body'];
     const parts = cmd.trim().split(' ').filter(p => p.trim().length > 0);
 
@@ -136,9 +139,11 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execMakeRoomAdminCommand(roomId, event, mjolnir, parts);
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
-            const command = commandTable.findAMatchingCommand(parts.slice(1));
+            const command = commandTable.findAMatchingCommand(readItems);
             if (command) {
-                return await command.invoke(mjolnir, roomId, event, readItems);
+                return await command.invoke({
+                    mjolnir, roomId, event, client: mjolnir.client
+                }, ...readItems);
             }
 
             // Help menu

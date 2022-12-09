@@ -6,26 +6,37 @@
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
 
-/**
- * Helper for peeking and reading character by character.
- */
-class StringStream {
+
+export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> {
     private position: number
     /**
      * Makes the super cool string stream.
      * @param source A string to act as the source of the stream.
      * @param start Where in the string we should start reading.
      */
-    constructor(private readonly source: string, start = 0) {
+    constructor(private readonly source: T, start = 0) {
         this.position = start;
     }
 
-    public peekChar(eof = undefined) {
+    public peekItem(eof = undefined) {
         return this.source.at(this.position) ?? eof;
     }
 
-    public readChar(eof = undefined) {
+    public readItem(eof = undefined) {
         return this.source.at(this.position++) ?? eof;
+    }
+}
+
+/**
+ * Helper for peeking and reading character by character.
+ */
+class StringStream extends SuperCoolStream<string> {
+    public peekChar(...args: any[]) {
+        return this.peekItem(...args);
+    }
+
+    public readChar(...args: any[]) {
+        return this.readItem(...args);
     }
 }
 
@@ -40,7 +51,7 @@ const WHITESPACE = [' ', '\r', '\f', '\v', '\n', '\t'];
  * just a list.
  * This allows commands to be dispatched based on `ReadItem`s and allows
  * for more efficient (in terms of code) parsing of arguments,
- * as I will demonstrate <link here when i've done it>. 
+ * as I will demonstrate <link here when i've done it>.
  *
  * The technique used is somewhat inefficient in terms of resources,
  * but that is a compromise we are willing to make in order
@@ -122,7 +133,7 @@ function defineReadItem(dispatchCharacter: string, macro: ReadMacro) {
 }
 
 /**
- * Helper that consumes from `stream` and appends to `output` until a character is peeked matching `regex`. 
+ * Helper that consumes from `stream` and appends to `output` until a character is peeked matching `regex`.
  * @param regex A regex for a character to stop at.
  * @param stream A stream to consume from.
  * @param output An array of characters.
