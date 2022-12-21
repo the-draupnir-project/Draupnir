@@ -43,7 +43,7 @@ import { htmlEscape } from "../utils";
 export async function execRulesMatchingCommand(roomId: string, event: any, mjolnir: Mjolnir, entity: string) {
     let html = "";
     let text = "";
-    for (const list of mjolnir.lists) {
+    for (const list of mjolnir.policyListManager.lists) {
         const matches = list.rulesMatchingEntity(entity)
 
         if (matches.length === 0) {
@@ -92,7 +92,7 @@ export async function execDumpRulesCommand(roomId: string, event: any, mjolnir: 
     let text = "Rules currently in use:\n";
 
     let hasLists = false;
-    for (const list of mjolnir.lists) {
+    for (const list of mjolnir.policyListManager.lists) {
         hasLists = true;
         let hasRules = false;
 
