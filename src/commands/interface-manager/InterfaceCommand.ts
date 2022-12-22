@@ -1,8 +1,43 @@
 /**
  * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
+ * All rights reserved.
+ *
+ * This file incorperates work from mjolnir
+ * https://github.com/matrix-org/mjolnir
+ * Which includes the following license notice:
+ *
+Copyright 2022 The Matrix.org Foundation C.I.C.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ *
+ * However, this file is modified and the modifications in this file
+ * are NOT distributed, contributed, or committed under the Apache License.
  */
 
+/**
+ * When we do move these components into their own library,
+ * I'd like to remove the dependency on matrix-bot-sdk.
+ */
+
+import { ReadItem } from "./CommandReader";
 import { ParamaterParser, ArgumentStream } from "./ParamaterParsing";
+import { ValidationResult } from "./Validation";
+
+/**
+ * 💀 . o O ( at least I don't have to remember the types )
+ * https://matrix-client.matrix.org/_matrix/media/r0/download/matrix.org/nbisOFhCcTzNicZrfixWMHZn
+ * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
+ */
 
 export type BaseFunction = (...args: any) => Promise<any>;
 
@@ -75,12 +110,31 @@ export function findCommandTable<ExecutorType extends BaseFunction>(name: string
     return entry as CommandTable<ExecutorType>;
 } 
 
-class InterfaceCommand<ExecutorType extends BaseFunction> {
+export class InterfaceCommand<ExecutorType extends BaseFunction> {
     constructor(
         private readonly paramaterParser: ParamaterParser,
         private readonly command: ExecutorType,
         public readonly designator: string[],
     ) {
+    }
+
+    // Really, surely this should be part of invoke?
+    // probably... it's just that means that invoke has to return the validation result lol.
+    // Though this makes no sense if parsing is part of finding a matching command.
+    public parseArguments(...args: ReadItem[]): ReturnType<ParamaterParser> {
+        return this.paramaterParser(...args);
+    }
+
+    public invoke(context: ThisParameterType<ExecutorType>, ...args: Parameters<ExecutorType>): ReturnType<ExecutorType> {
+        return this.command.apply(context, args);
+    }
+
+    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<ValidationResult<Awaited<ReturnType<ExecutorType>>>> {
+        const paramaterDescription = this.paramaterParser(...items);
+        if (paramaterDescription.isErr()) {
+            return ValidationResult.Err(paramaterDescription.err);
+        }
+        return await this.command.apply(context, [...paramaterDescription.ok.immediateArguments, paramaterDescription.ok.rest]);
     }
 }
 
