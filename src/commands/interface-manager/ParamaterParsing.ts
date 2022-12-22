@@ -27,11 +27,62 @@ limitations under the License.
 import { Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
 import { ValidationError, ValidationResult } from "./Validation";
 
-class ArgumentStream extends SuperCoolStream<ReadItem[]> {
-    
+export class ArgumentStream extends SuperCoolStream<ReadItem[]> {
+    public rest() {
+        return this.source.slice(this.position);
+    }
 }
 
-type PredicateIsParamater = (readItem: ReadItem) => ValidationResult<true>;
+export type PredicateIsParamater = (readItem: ReadItem) => ValidationResult<true>;
+
+export interface PresentationType {
+    validator: PredicateIsParamater,
+    name: string,
+}
+
+const PRESENTATION_TYPES = new Map</* the name of the presentation type. */string, PresentationType>();
+
+export function findPresentationType(name: string): PresentationType {
+    const entry = PRESENTATION_TYPES.get(name);
+    if (entry) {
+        return entry;
+    } else {
+        throw new TypeError(`presentation type with the name: ${name} was not registered`);
+    }
+}
+
+export function registerPresentationType(name: string, presentationType: PresentationType): void {
+    if(PRESENTATION_TYPES.has(name)) {
+        throw new TypeError(`presentation type with the name: ${name} has already been registered`);
+    }
+    PRESENTATION_TYPES.set(name, presentationType);
+}
+
+export function makePresentationType(description: PresentationType) {
+    registerPresentationType(description.name, description);
+    return description;
+}
+
+export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem) => boolean): PredicateIsParamater {
+    return (readItem: ReadItem) => {
+        const result = predicate(readItem);
+        if (result) {
+            return ValidationResult.Ok(result);
+        } else {
+            return ValidationError.Result('invalid type', `Was expecting a match for the presentation type: ${name} but got ${readItem}`);
+        }
+    }
+}
+
+makePresentationType({
+    name: "Keyword",
+    validator: simpleTypeValidator("Keyword", (item: ReadItem) => item instanceof Keyword),
+});
+
+makePresentationType({
+    name: 'string',
+    validator: simpleTypeValidator('string', (item: ReadItem) => typeof item === 'string'),
+})
 
 interface DestructableRest {
     rest: ReadItem[],
@@ -113,17 +164,26 @@ export interface ParsedArguments {
     readonly rest?: DestructableRest,
 }
 
-export function paramaters(paramaters: PredicateIsParamater[], restParser: undefined|RestParser = undefined): (...readItems: ReadItem[]) => ValidationResult<ParsedArguments> {
+export interface ParamaterDescription {
+    name: string,
+    description?: string,
+    acceptor: PresentationType,
+}
+
+export type ParamaterParser = (...readItems: ReadItem[]) => ValidationResult<ParsedArguments>;
+
+export function paramaters(paramaters: ParamaterDescription[], restParser: undefined|RestParser = undefined): ParamaterParser {
     return (...readItems: ReadItem[]) => {
         const itemStream = new ArgumentStream(readItems);
         for (const paramater of paramaters) {
             if (itemStream.peekItem() === undefined) {
                 // FIXME asap: we need a proper paramater description?
-                return ValidationError.Result('expected an argument', `An argument for the paramater ${paramater} was expected but was not provided.`);
+                return ValidationError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
             }
             const item = itemStream.readItem()!;
-            const result = paramater(item);
+            const result = paramater.acceptor.validator(item);
             if (result.err) {
+                // should really allow the help to be printed later on and keep the whole context?
                 return ValidationResult.Err(result.err);
             }
         }
@@ -139,6 +199,11 @@ export function paramaters(paramaters: PredicateIsParamater[], restParser: undef
     }
 }
 
+/**
+ * I don't think we should use `union` and it should be replaced by a presentationTypeTranslator
+ * these are specific to applications e.g. imagine you want to resolve an alias or something.
+ * It oculd also work by making an anonymous presentation type, but dunno about that.
+ */
 export function union(...predicates: PredicateIsParamater[]): PredicateIsParamater {
     return (item: ReadItem) => {
         const matches = predicates.map(predicate => predicate(item));

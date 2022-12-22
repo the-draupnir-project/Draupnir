@@ -8,13 +8,13 @@ import { MatrixRoomReference } from "./MatrixRoomReference";
 
 
 export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> {
-    private position: number
+    protected position: number
     /**
      * Makes the super cool string stream.
      * @param source A string to act as the source of the stream.
      * @param start Where in the string we should start reading.
      */
-    constructor(private readonly source: T, start = 0) {
+    constructor(protected readonly source: T, start = 0) {
         this.position = start;
     }
 
