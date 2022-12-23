@@ -25,7 +25,7 @@ limitations under the License.
  */
 
 import { Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
-import { ValidationError, ValidationResult } from "./Validation";
+import { CommandError, CommandResult } from "./Validation";
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> {
     public rest() {
@@ -33,7 +33,7 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> {
     }
 }
 
-export type PredicateIsParamater = (readItem: ReadItem) => ValidationResult<true>;
+export type PredicateIsParamater = (readItem: ReadItem) => CommandResult<true>;
 
 export interface PresentationType {
     validator: PredicateIsParamater,
@@ -67,9 +67,9 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
     return (readItem: ReadItem) => {
         const result = predicate(readItem);
         if (result) {
-            return ValidationResult.Ok(result);
+            return CommandResult.Ok(result);
         } else {
-            return ValidationError.Result('invalid type', `Was expecting a match for the presentation type: ${name} but got ${readItem}`);
+            return CommandError.Result('invalid type', `Was expecting a match for the presentation type: ${name} but got ${readItem}`);
         }
     }
 }
@@ -91,12 +91,12 @@ interface DestructableRest {
 }
 
 export class RestParser {
-    public parseRest(stream: ArgumentStream): ValidationResult<DestructableRest> {
+    public parseRest(stream: ArgumentStream): CommandResult<DestructableRest> {
         const items: ReadItem[] = [];
         while (stream.peekItem()) {
             items.push(stream.readItem());
         }
-        return ValidationResult.Ok({ rest: items });
+        return CommandResult.Ok({ rest: items });
     }
 }
 
@@ -125,7 +125,7 @@ export class KeywordParser extends RestParser {
      * TODO: Prototype pollution must be part of integration tests for this
      * @param items 
      */
-    public parseRest(itemStream: ArgumentStream): ValidationResult<DestructableRest> {
+    public parseRest(itemStream: ArgumentStream): CommandResult<DestructableRest> {
         const destructable: DestructableRest = { rest: [] };
         // Wrong, we can't use position, we need a stream.
         while(itemStream.peekItem() !== undefined) {
@@ -135,19 +135,19 @@ export class KeywordParser extends RestParser {
                 if (typeof description === 'boolean') {
                     throw new TypeError("Shouldn't be a boolean mate");
                 }
-                const associatedProperty: ValidationResult<any> = (() => {
+                const associatedProperty: CommandResult<any> = (() => {
                     if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
                         const associatedProperty = itemStream.readItem();
-                        return ValidationResult.Ok(associatedProperty);
+                        return CommandResult.Ok(associatedProperty);
                     } else {
                         if (!description.isFlag) {
-                            return ValidationError.Result('keyword verification failed', `An associated argument was not provided for the keyword ${description.name}.`)
+                            return CommandError.Result('keyword verification failed', `An associated argument was not provided for the keyword ${description.name}.`)
                         }
-                        return ValidationResult.Ok(true);
+                        return CommandResult.Ok(true);
                     }
                 })();
                 if (associatedProperty.isErr()) {
-                    return ValidationResult.Err(associatedProperty.err);
+                    return CommandResult.Err(associatedProperty.err);
                 }
                 destructable[description.name] = associatedProperty.ok;
 
@@ -155,7 +155,7 @@ export class KeywordParser extends RestParser {
                 destructable.rest.push(item);
             }
         }
-        return ValidationResult.Ok(destructable);
+        return CommandResult.Ok(destructable);
     }
 }
 
@@ -170,7 +170,7 @@ export interface ParamaterDescription {
     acceptor: PresentationType,
 }
 
-export type ParamaterParser = (...readItems: ReadItem[]) => ValidationResult<ParsedArguments>;
+export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<ParsedArguments>;
 
 export function paramaters(paramaters: ParamaterDescription[], restParser: undefined|RestParser = undefined): ParamaterParser {
     return (...readItems: ReadItem[]) => {
@@ -178,23 +178,23 @@ export function paramaters(paramaters: ParamaterDescription[], restParser: undef
         for (const paramater of paramaters) {
             if (itemStream.peekItem() === undefined) {
                 // FIXME asap: we need a proper paramater description?
-                return ValidationError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
+                return CommandError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
             }
             const item = itemStream.readItem()!;
             const result = paramater.acceptor.validator(item);
             if (result.err) {
                 // should really allow the help to be printed later on and keep the whole context?
-                return ValidationResult.Err(result.err);
+                return CommandResult.Err(result.err);
             }
         }
         if (restParser) {
             const result = restParser.parseRest(itemStream);
             if (result.isErr()) {
-                return ValidationResult.Err(result.err);
+                return CommandResult.Err(result.err);
             }
-            return ValidationResult.Ok({ immediateArguments: readItems, rest: result.ok });
+            return CommandResult.Ok({ immediateArguments: readItems, rest: result.ok });
         } else {
-            return ValidationResult.Ok({ immediateArguments: readItems });
+            return CommandResult.Ok({ immediateArguments: readItems });
         }
     }
 }
@@ -209,10 +209,10 @@ export function union(...predicates: PredicateIsParamater[]): PredicateIsParamat
         const matches = predicates.map(predicate => predicate(item));
         const oks = matches.filter(result => result.isOk());
         if (oks.length > 0) {
-            return ValidationResult.Ok(true);
+            return CommandResult.Ok(true);
         } else {
             // FIXME asap: again, we need some context as to what the argument is?
-            return ValidationError.Result('invalid paramater', `The argument must match the paramater description ${matches}`);
+            return CommandError.Result('invalid paramater', `The argument must match the paramater description ${matches}`);
         }
     }
 }

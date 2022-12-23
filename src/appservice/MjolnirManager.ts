@@ -155,6 +155,10 @@ export class MjolnirManager {
         return [...this.unstartedMjolnirs.values()];
     }
 
+    public findUnstartedMjolnir(localPart: string): UnstartedMjolnir|undefined {
+        return [...this.unstartedMjolnirs.values()].find(unstarted => unstarted.mjolnirRecord.local_part === localPart);
+    }
+
     /**
      * Utility that creates a matrix client for a virtual user on our homeserver with the specified loclapart.
      * @param localPart The localpart of the virtual user we need a client for.

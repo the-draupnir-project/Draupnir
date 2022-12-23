@@ -31,7 +31,7 @@ limitations under the License.
 
 import { ReadItem } from "./CommandReader";
 import { ParamaterParser, ArgumentStream } from "./ParamaterParsing";
-import { ValidationResult } from "./Validation";
+import { CommandResult } from "./Validation";
 
 /**
  * 💀 . o O ( at least I don't have to remember the types )
@@ -129,10 +129,10 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
         return this.command.apply(context, args);
     }
 
-    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<ValidationResult<Awaited<ReturnType<ExecutorType>>>> {
+    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<CommandResult<Awaited<ReturnType<ExecutorType>>>> {
         const paramaterDescription = this.paramaterParser(...items);
         if (paramaterDescription.isErr()) {
-            return ValidationResult.Err(paramaterDescription.err);
+            return CommandResult.Err(paramaterDescription.err);
         }
         return await this.command.apply(context, [...paramaterDescription.ok.immediateArguments, paramaterDescription.ok.rest]);
     }

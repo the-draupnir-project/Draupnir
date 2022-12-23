@@ -29,7 +29,7 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { ValidationError } from "./Validation";
+import { CommandError } from "./Validation";
 import { RichReply, LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
 import { MatrixSendClient } from "../../MatrixEmitter";
@@ -51,7 +51,7 @@ class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseF
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
         private readonly renderer: RendererSignature<ReturnType<ExecutorType>>,
-        private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: ValidationError) => Promise<void>
+        private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: CommandError) => Promise<void>
     ) {
 
     }
@@ -74,7 +74,7 @@ class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseF
         await this.renderer.apply(this, [matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult]);
     }
 
-    private async reportValidationError(client: MatrixSendClient, roomId: string, event: any, validationError: ValidationError): Promise<void> {
+    private async reportValidationError(client: MatrixSendClient, roomId: string, event: any, validationError: CommandError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
             await this.validationErrorHandler.apply(this, arguments);

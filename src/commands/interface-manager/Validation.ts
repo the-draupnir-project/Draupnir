@@ -36,22 +36,22 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
  * the thing we're doing are completely wrong. The user never
  * should see exceptions as there is nothing they can do about it.
  */
- export class ValidationResult<Ok> {
+ export class CommandResult<Ok> {
     private constructor(
         private readonly okValue: Ok|null,
-        private readonly errValue: ValidationError|null,
+        private readonly errValue: CommandError|null,
     ) {
 
     }
-    public static Ok<Ok>(value: Ok): ValidationResult<Ok> {
-        return new ValidationResult<Ok>(value, null);
+    public static Ok<Ok>(value: Ok): CommandResult<Ok> {
+        return new CommandResult<Ok>(value, null);
     }
 
-    public static Err<Ok>(value: ValidationError): ValidationResult<Ok> {
-        return new ValidationResult<Ok>(null, value);
+    public static Err<Ok>(value: CommandError): CommandResult<Ok> {
+        return new CommandResult<Ok>(null, value);
     }
 
-    public async match(expression: ValidationMatchExpression<Ok, ValidationError>) {
+    public async match(expression: ValidationMatchExpression<Ok, CommandError>) {
         return this.okValue ? await expression.ok!(this.ok) : await expression.err!(this.err);
     }
 
@@ -71,7 +71,7 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
         }
     }
 
-    public get err(): ValidationError {
+    public get err(): CommandError {
         if (this.isErr()) {
             return this.errValue!;
         } else {
@@ -80,7 +80,7 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
     }
 }
 
-export class ValidationError {
+export class CommandError {
     private static readonly ERROR_CODES = new Map<string, symbol>();
 
     private constructor(
@@ -91,18 +91,18 @@ export class ValidationError {
     }
 
     private static ensureErrorCode(code: string): symbol {
-        const existingCode = ValidationError.ERROR_CODES.get(code);
+        const existingCode = CommandError.ERROR_CODES.get(code);
         if (existingCode) {
             return existingCode;
         } else {
             const newCode = Symbol(code);
-            ValidationError.ERROR_CODES.set(code, newCode);
+            CommandError.ERROR_CODES.set(code, newCode);
             return newCode;
         }
     }
 
     private static findErrorCode(code: string) {
-        const existingCode = ValidationError.ERROR_CODES.get(code);
+        const existingCode = CommandError.ERROR_CODES.get(code);
         if (existingCode) {
             return existingCode;
         } else {
@@ -110,17 +110,17 @@ export class ValidationError {
         }
     }
 
-    public static Result<Ok>(code: string, message: string): ValidationResult<Ok> {
-        return ValidationResult.Err(this.makeValidationError(code, message));
+    public static Result<Ok>(code: string, message: string): CommandResult<Ok> {
+        return CommandResult.Err(this.make(code, message));
     }
 
-    public static makeValidationError(code: string, message: string) {
-        return new ValidationError(ValidationError.ensureErrorCode(code), message);
+    public static make(code: string, message: string) {
+        return new CommandError(CommandError.ensureErrorCode(code), message);
     }
 
-    public async match<T>(cases: {[keys: string]: (error: ValidationError) => Promise<T>}): Promise<void> {
+    public async match<T>(cases: {[keys: string]: (error: CommandError) => Promise<T>}): Promise<void> {
         for (const [key, handler] of Object.entries(cases)) {
-            const keySymbol = ValidationError.findErrorCode(key);
+            const keySymbol = CommandError.findErrorCode(key);
             if (this.code === keySymbol) {
                 await handler.call(this);
                 break;
