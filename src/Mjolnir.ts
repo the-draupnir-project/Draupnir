@@ -34,7 +34,7 @@ import {
 } from "matrix-bot-sdk";
 
 import { ALL_RULE_TYPES as ALL_BAN_LIST_RULE_TYPES } from "./models/ListRule";
-import { COMMAND_PREFIX, handleCommand, MjolnirContext } from "./commands/CommandHandler";
+import { COMMAND_PREFIX, handleCommand } from "./commands/CommandHandler";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { htmlEscape } from "./utils";
 import { ReportManager } from "./report/ReportManager";
@@ -50,7 +50,7 @@ import { ProtectionManager } from "./protections/ProtectionManager";
 import { RoomMemberManager } from "./RoomMembers";
 import ProtectedRoomsConfig from "./ProtectedRoomsConfig";
 import { MatrixEmitter, MatrixSendClient } from "./MatrixEmitter";
-import { MatrixCommandTable } from "./commands/interface-manager/MatrixInterfaceCommand";
+import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -98,8 +98,7 @@ export class Mjolnir {
      */
     public readonly reportManager: ReportManager;
 
-    private readonly matrixCommandTable: MatrixCommandTable<MjolnirContext>;
-
+    private readonly commandTable = findCommandTable("mjolnir");
     /**
      * Adds a listener to the client that will automatically accept invitations.
      * @param {MatrixSendClient} client
@@ -185,7 +184,6 @@ export class Mjolnir {
         public readonly ruleServer: RuleServer | null,
     ) {
         this.protectedRoomsConfig = new ProtectedRoomsConfig(client);
-        this.matrixCommandTable = new MatrixCommandTable(config.commands.features);
 
         // Setup bot.
 
@@ -223,7 +221,7 @@ export class Mjolnir {
 
                 await client.sendReadReceipt(roomId, event['event_id']);
 
-                return handleCommand(roomId, event, this, this.matrixCommandTable);
+                return handleCommand(roomId, event, this, this.commandTable);
             }
         });
 

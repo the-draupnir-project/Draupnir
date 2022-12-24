@@ -35,6 +35,9 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
  * where we are saying to ourselves that our assumptions in our code about
  * the thing we're doing are completely wrong. The user never
  * should see exceptions as there is nothing they can do about it.
+ * 
+ * TO be clear this is only used when the user has done something wrong
+ * and we need to communicate that. It is not for any other situation.
  */
  export class CommandResult<Ok> {
     private constructor(

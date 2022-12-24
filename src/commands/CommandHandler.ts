@@ -53,16 +53,20 @@ import { execKickCommand } from "./KickCommand";
 import { execMakeRoomAdminCommand } from "./MakeRoomAdminCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
-import { MatrixCommandTable, MatrixContext } from "./interface-manager/MatrixInterfaceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
+import { BaseFunction, CommandTable, defineCommandTable } from "./interface-manager/InterfaceCommand";
+import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
+import { ArgumentStream } from "./interface-manager/ParamaterParsing";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
 }
 
+defineCommandTable("mjolnir");
+
 export const COMMAND_PREFIX = "!mjolnir";
 
-export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir, commandTable: MatrixCommandTable<MjolnirContext>) {
+export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir, commandTable: CommandTable<BaseFunction>) {
     const cmd = event['content']['body'];
     const parts = cmd.trim().split(' ').filter(p => p.trim().length > 0);
 
@@ -139,11 +143,14 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execMakeRoomAdminCommand(roomId, event, mjolnir, parts);
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
-            const command = commandTable.findAMatchingCommand(readItems);
+            const stream = new ArgumentStream(readItems);
+            const command = commandTable.findAMatchingCommand(stream);
             if (command) {
-                return await command.invoke({
+                const adaptor = findMatrixInterfaceAdaptor(command);
+                const mjolnirContext: MjolnirContext = {
                     mjolnir, roomId, event, client: mjolnir.client
-                }, ...readItems);
+                };
+                return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
             }
 
             // Help menu

@@ -39,7 +39,7 @@ import { CommandResult } from "./Validation";
  * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
  */
 
-export type BaseFunction = (...args: any) => Promise<any>;
+export type BaseFunction = (...args: any) => Promise<CommandResult<any>>;
 
 type CommandLookupEntry<ExecutorType extends BaseFunction> = {
     next?: Map<string, CommandLookupEntry<ExecutorType>>,
@@ -129,10 +129,11 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
         return this.command.apply(context, args);
     }
 
-    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<CommandResult<Awaited<ReturnType<ExecutorType>>>> {
+    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<ReturnType<ExecutorType>> {
         const paramaterDescription = this.paramaterParser(...items);
         if (paramaterDescription.isErr()) {
-            return CommandResult.Err(paramaterDescription.err);
+            // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
+            return paramaterDescription as ReturnType<Awaited<ExecutorType>>;
         }
         return await this.command.apply(context, [...paramaterDescription.ok.immediateArguments, paramaterDescription.ok.rest]);
     }

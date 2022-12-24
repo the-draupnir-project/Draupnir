@@ -2,7 +2,7 @@ import { Mjolnir } from "../Mjolnir";
 import { Request, WeakEvent, BridgeContext, Bridge, Intent, Logger } from "matrix-appservice-bridge";
 import { getProvisionedMjolnirConfig } from "../config";
 import PolicyList from "../models/PolicyList";
-import { Permalinks, MatrixClient } from "matrix-bot-sdk";
+import { Permalinks, MatrixClient, UserID } from "matrix-bot-sdk";
 import { DataStore, MjolnirRecord } from "./datastore";
 import { AccessControl } from "./AccessControl";
 import { Access } from "../models/AccessControlUnit";
@@ -147,8 +147,8 @@ export class MjolnirManager {
         }
     }
 
-    public reportUnstartedMjolnir(code: UnstartedMjolnir.FailCode, cause: any, mjolnirRecord: MjolnirRecord): void {
-        this.unstartedMjolnirs.set(mjolnirRecord.local_part, new UnstartedMjolnir(mjolnirRecord, code, cause));
+    public reportUnstartedMjolnir(code: UnstartedMjolnir.FailCode, cause: any, mjolnirRecord: MjolnirRecord, mxid: string): void {
+        this.unstartedMjolnirs.set(mjolnirRecord.local_part, new UnstartedMjolnir(mjolnirRecord, new UserID(mxid), code, cause));
     }
 
     public getUnstartedMjolnirs(): UnstartedMjolnir[] {
@@ -185,7 +185,7 @@ export class MjolnirManager {
         if (access.outcome !== Access.Allowed) {
             // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
             mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
-            this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord);
+            this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord, mjIntent.userId);
         } else {
             await this.makeInstance(
                 mjolnirRecord.owner,
@@ -195,7 +195,7 @@ export class MjolnirManager {
                 log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e);
                 // Don't await, we don't want to clobber initialization if this fails.
                 mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
-                this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord);
+                this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord, mjIntent.userId);
             });
         }
     }
@@ -309,6 +309,7 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
 export class UnstartedMjolnir {
     constructor(
         public readonly mjolnirRecord: MjolnirRecord,
+        public readonly mxid: UserID,
         public readonly failCode: UnstartedMjolnir.FailCode,
         public readonly cause: any,
     ) {
