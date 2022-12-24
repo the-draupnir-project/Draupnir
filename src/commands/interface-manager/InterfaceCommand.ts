@@ -108,7 +108,7 @@ export function findCommandTable<ExecutorType extends BaseFunction>(name: string
         throw new TypeError(`Couldn't find a table called ${name}`);
     }
     return entry as CommandTable<ExecutorType>;
-} 
+}
 
 export class InterfaceCommand<ExecutorType extends BaseFunction> {
     constructor(

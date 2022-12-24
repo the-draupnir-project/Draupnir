@@ -52,7 +52,7 @@ export function findPresentationType(name: string): PresentationType {
 }
 
 export function registerPresentationType(name: string, presentationType: PresentationType): void {
-    if(PRESENTATION_TYPES.has(name)) {
+    if (PRESENTATION_TYPES.has(name)) {
         throw new TypeError(`presentation type with the name: ${name} has already been registered`);
     }
     PRESENTATION_TYPES.set(name, presentationType);
@@ -123,12 +123,12 @@ export class KeywordParser extends RestParser {
 
     /**
      * TODO: Prototype pollution must be part of integration tests for this
-     * @param items 
+     * @param itemStream stream of arguments.
      */
     public parseRest(itemStream: ArgumentStream): CommandResult<DestructableRest> {
         const destructable: DestructableRest = { rest: [] };
         // Wrong, we can't use position, we need a stream.
-        while(itemStream.peekItem() !== undefined) {
+        while (itemStream.peekItem() !== undefined) {
             const item = itemStream.readItem();
             if (item instanceof Keyword) {
                 const description = this.description[item.designator];
@@ -137,8 +137,8 @@ export class KeywordParser extends RestParser {
                 }
                 const associatedProperty: CommandResult<any> = (() => {
                     if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
-                        const associatedProperty = itemStream.readItem();
-                        return CommandResult.Ok(associatedProperty);
+                        const property = itemStream.readItem();
+                        return CommandResult.Ok(property);
                     } else {
                         if (!description.isFlag) {
                             return CommandError.Result('keyword verification failed', `An associated argument was not provided for the keyword ${description.name}.`)
@@ -172,10 +172,10 @@ export interface ParamaterDescription {
 
 export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<ParsedArguments>;
 
-export function paramaters(paramaters: ParamaterDescription[], restParser: undefined|RestParser = undefined): ParamaterParser {
+export function paramaters(descriptions: ParamaterDescription[], restParser: undefined|RestParser = undefined): ParamaterParser {
     return (...readItems: ReadItem[]) => {
         const itemStream = new ArgumentStream(readItems);
-        for (const paramater of paramaters) {
+        for (const paramater of descriptions) {
             if (itemStream.peekItem() === undefined) {
                 // FIXME asap: we need a proper paramater description?
                 return CommandError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
