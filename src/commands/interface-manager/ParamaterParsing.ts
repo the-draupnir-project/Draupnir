@@ -69,7 +69,7 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
         if (result) {
             return CommandResult.Ok(result);
         } else {
-            return CommandError.Result('invalid type', `Was expecting a match for the presentation type: ${name} but got ${readItem}`);
+            return CommandError.Result(`Was expecting a match for the presentation type: ${name} but got ${readItem}.`);
         }
     }
 }
@@ -141,7 +141,7 @@ export class KeywordParser extends RestParser {
                         return CommandResult.Ok(property);
                     } else {
                         if (!description.isFlag) {
-                            return CommandError.Result('keyword verification failed', `An associated argument was not provided for the keyword ${description.name}.`)
+                            return CommandError.Result(`An associated argument was not provided for the keyword ${description.name}.`)
                         }
                         return CommandResult.Ok(true);
                     }
@@ -206,7 +206,7 @@ class ArgumentListParser implements IArgumentListParser {
             for (const paramater of descriptions) {
                 if (itemStream.peekItem() === undefined) {
                     // FIXME asap: we need a proper paramater description?
-                    return CommandError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
+                    return CommandError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`);
                 }
                 const item = itemStream.readItem()!;
                 const result = paramater.acceptor.validator(item);
@@ -241,7 +241,7 @@ export function union(...predicates: PredicateIsParamater[]): PredicateIsParamat
             return CommandResult.Ok(true);
         } else {
             // FIXME asap: again, we need some context as to what the argument is?
-            return CommandError.Result('invalid paramater', `The argument must match the paramater description ${matches}`);
+            return CommandError.Result(`The argument must match the paramater description ${matches}`);
         }
     }
 }

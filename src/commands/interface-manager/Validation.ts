@@ -39,22 +39,22 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
  * TO be clear this is only used when the user has done something wrong
  * and we need to communicate that. It is not for any other situation.
  */
- export class CommandResult<Ok> {
+ export class CommandResult<Ok, Err extends CommandError = CommandError> {
     private constructor(
         private readonly okValue: Ok|null,
-        private readonly errValue: CommandError|null,
+        private readonly errValue: Err|null,
     ) {
 
     }
-    public static Ok<Ok>(value: Ok): CommandResult<Ok> {
-        return new CommandResult<Ok>(value, null);
+    public static Ok<Ok, Err extends CommandError = CommandError>(value: Ok): CommandResult<Ok, Err> {
+        return new CommandResult<Ok, Err>(value, null);
     }
 
-    public static Err<Ok>(value: CommandError): CommandResult<Ok> {
-        return new CommandResult<Ok>(null, value);
+    public static Err<Ok, Err extends CommandError = CommandError>(value: Err): CommandResult<Ok, Err> {
+        return new CommandResult<Ok, Err>(null, value);
     }
 
-    public async match(expression: ValidationMatchExpression<Ok, CommandError>) {
+    public async match(expression: ValidationMatchExpression<Ok, Err>) {
         return this.okValue ? await expression.ok!(this.ok) : await expression.err!(this.err);
     }
 
@@ -74,7 +74,7 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
         }
     }
 
-    public get err(): CommandError {
+    public get err(): Err {
         if (this.isErr()) {
             return this.errValue!;
         } else {
@@ -84,54 +84,13 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
 }
 
 export class CommandError {
-    private static readonly ERROR_CODES = new Map<string, symbol>();
-
-    private constructor(
-        public readonly code: symbol,
+    public constructor(
         public readonly message: string,
     ) {
 
     }
 
-    private static ensureErrorCode(code: string): symbol {
-        const existingCode = CommandError.ERROR_CODES.get(code);
-        if (existingCode) {
-            return existingCode;
-        } else {
-            const newCode = Symbol(code);
-            CommandError.ERROR_CODES.set(code, newCode);
-            return newCode;
-        }
-    }
-
-    private static findErrorCode(code: string) {
-        const existingCode = CommandError.ERROR_CODES.get(code);
-        if (existingCode) {
-            return existingCode;
-        } else {
-            throw new TypeError(`No code was registered ${code}`);
-        }
-    }
-
-    public static Result<Ok>(code: string, message: string): CommandResult<Ok> {
-        return CommandResult.Err(this.make(code, message));
-    }
-
-    public static make(code: string, message: string) {
-        return new CommandError(CommandError.ensureErrorCode(code), message);
-    }
-
-    public async match<T>(cases: {[keys: string]: (error: CommandError) => Promise<T>}): Promise<void> {
-        for (const [key, handler] of Object.entries(cases)) {
-            const keySymbol = CommandError.findErrorCode(key);
-            if (this.code === keySymbol) {
-                await handler.call(this);
-                break;
-            }
-        }
-        const defaultHandler = cases.default;
-        if (defaultHandler) {
-            await defaultHandler.call(this);
-        }
+    public static Result<Ok>(message: string): CommandResult<Ok> {
+        return CommandResult.Err(new CommandError(message));
     }
 }
