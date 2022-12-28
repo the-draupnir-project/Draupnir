@@ -30,7 +30,7 @@ limitations under the License.
  */
 
 import { ReadItem } from "./CommandReader";
-import { ParamaterParser, ArgumentStream } from "./ParamaterParsing";
+import { ParamaterParser, ArgumentStream, IArgumentListParser } from "./ParamaterParsing";
 import { CommandResult } from "./Validation";
 
 /**
@@ -112,7 +112,7 @@ export function findCommandTable<ExecutorType extends BaseFunction>(name: string
 
 export class InterfaceCommand<ExecutorType extends BaseFunction> {
     constructor(
-        private readonly paramaterParser: ParamaterParser,
+        private readonly argumentListParser: IArgumentListParser,
         private readonly command: ExecutorType,
         public readonly designator: string[],
     ) {
@@ -122,7 +122,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     // probably... it's just that means that invoke has to return the validation result lol.
     // Though this makes no sense if parsing is part of finding a matching command.
     public parseArguments(...args: ReadItem[]): ReturnType<ParamaterParser> {
-        return this.paramaterParser(...args);
+        return this.argumentListParser.parseFunction(...args);
     }
 
     public invoke(context: ThisParameterType<ExecutorType>, ...args: Parameters<ExecutorType>): ReturnType<ExecutorType> {
@@ -130,7 +130,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     }
 
     public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<ReturnType<ExecutorType>> {
-        const paramaterDescription = this.paramaterParser(...items);
+        const paramaterDescription = this.argumentListParser.parseFunction(...items);
         if (paramaterDescription.isErr()) {
             // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
             return paramaterDescription as ReturnType<Awaited<ExecutorType>>;
@@ -140,7 +140,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
 }
 
 export function defineInterfaceCommand<ExecutorType extends BaseFunction>(description: {
-    paramaters: ParamaterParser,
+    paramaters: IArgumentListParser,
     table: string,
     command: ExecutorType,
     designator: string[],

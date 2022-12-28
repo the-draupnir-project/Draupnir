@@ -172,29 +172,58 @@ export interface ParamaterDescription {
 
 export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<ParsedArguments>;
 
-export function paramaters(descriptions: ParamaterDescription[], restParser: undefined|RestParser = undefined): ParamaterParser {
-    return (...readItems: ReadItem[]) => {
-        const itemStream = new ArgumentStream(readItems);
-        for (const paramater of descriptions) {
-            if (itemStream.peekItem() === undefined) {
-                // FIXME asap: we need a proper paramater description?
-                return CommandError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
+// So this should really just be something used by defineInterfaceCommand which turns paramaters into a validator that can be used.
+// It can't be, because then otherwise how does the semantics for union work?
+// We should have a new type of CommandResult that accepts a ParamterDescription, and can render what's wrong (e.g. missing paramater).
+// Showing where in the item stream it is missing and the command syntax and everything lovely like that.
+// How does that work with Union?
+export function paramaters(descriptions: ParamaterDescription[], restParser: undefined|RestParser = undefined): IArgumentListParser {
+    return new ArgumentListParser(descriptions, restParser);
+}
+
+export interface IArgumentListParser {
+    readonly parseFunction: ParamaterParser,
+    readonly descriptions: ParamaterDescription[],
+    readonly restParser?: RestParser,
+}
+
+/**
+ * Zis is le argument list parser
+ * It is used directly by InterfaceCommand to consume, parse, validate le arguments.
+ */
+class ArgumentListParser implements IArgumentListParser {
+    public readonly parseFunction: ParamaterParser
+    constructor(
+        public readonly descriptions: ParamaterDescription[],
+        public readonly restParser: undefined|RestParser = undefined,
+        ) {
+            this.parseFunction = this.makeParseFunction(descriptions, restParser);
+    }
+
+    private makeParseFunction(descriptions: ParamaterDescription[], restParser: undefined|RestParser): ParamaterParser {
+        return (...readItems: ReadItem[]) => {
+            const itemStream = new ArgumentStream(readItems);
+            for (const paramater of descriptions) {
+                if (itemStream.peekItem() === undefined) {
+                    // FIXME asap: we need a proper paramater description?
+                    return CommandError.Result('expected an argument', `An argument for the paramater ${paramater.name} was expected but was not provided.`);
+                }
+                const item = itemStream.readItem()!;
+                const result = paramater.acceptor.validator(item);
+                if (result.err) {
+                    // should really allow the help to be printed later on and keep the whole context?
+                    return CommandResult.Err(result.err);
+                }
             }
-            const item = itemStream.readItem()!;
-            const result = paramater.acceptor.validator(item);
-            if (result.err) {
-                // should really allow the help to be printed later on and keep the whole context?
-                return CommandResult.Err(result.err);
+            if (restParser) {
+                const result = restParser.parseRest(itemStream);
+                if (result.isErr()) {
+                    return CommandResult.Err(result.err);
+                }
+                return CommandResult.Ok({ immediateArguments: readItems, rest: result.ok });
+            } else {
+                return CommandResult.Ok({ immediateArguments: readItems });
             }
-        }
-        if (restParser) {
-            const result = restParser.parseRest(itemStream);
-            if (result.isErr()) {
-                return CommandResult.Err(result.err);
-            }
-            return CommandResult.Ok({ immediateArguments: readItems, rest: result.ok });
-        } else {
-            return CommandResult.Ok({ immediateArguments: readItems });
         }
     }
 }
