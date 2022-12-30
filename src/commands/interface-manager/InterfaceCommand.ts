@@ -54,6 +54,14 @@ export class CommandTable<ExecutorType extends BaseFunction> {
 
     }
 
+    /**
+     * Used to render the help command.
+     * @returns All of the commands in this table.
+     */
+    public getCommands(): InterfaceCommand<BaseFunction>[] {
+        return [...this.flattenedCommands.values()];
+    }
+
     // We use the argument stream so that they can use stream.rest() to get the unconsumed arguments.
     public findAMatchingCommand(stream: ArgumentStream) {
         const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: ArgumentStream): undefined|InterfaceCommand<ExecutorType> => {
@@ -112,9 +120,13 @@ export function findCommandTable<ExecutorType extends BaseFunction>(name: string
 
 export class InterfaceCommand<ExecutorType extends BaseFunction> {
     constructor(
-        private readonly argumentListParser: IArgumentListParser,
+        public readonly argumentListParser: IArgumentListParser,
         private readonly command: ExecutorType,
         public readonly designator: string[],
+        /** A short one line summary of what the command does to display alongside it's help */
+        public readonly summary: string,
+        /** A longer description that goes into detail. */
+        public readonly description?: string,
     ) {
     }
 
@@ -144,11 +156,15 @@ export function defineInterfaceCommand<ExecutorType extends BaseFunction>(descri
     table: string,
     command: ExecutorType,
     designator: string[],
+    summary: string,
+    description?: string,
 }) {
     const command = new InterfaceCommand<ExecutorType>(
         description.paramaters,
         description.command,
         description.designator,
+        description.summary,
+        description.description,
     );
     const table = findCommandTable(description.table);
     table.internCommand(command);

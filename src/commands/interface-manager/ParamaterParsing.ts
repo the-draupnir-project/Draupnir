@@ -106,18 +106,15 @@ interface KeywordsDescription {
     readonly allowOtherKeys: boolean
 }
 
-interface KeywordPropertyDescription {
+interface KeywordPropertyDescription extends ParamaterDescription {
     readonly isFlag: boolean;
-    readonly propertyPredicate?: PredicateIsParamater;
-    readonly name: string,
-
 }
 
 // Things that are also needed that are not done yet:
 // 1) We need to figure out what happens to aliases for keywords..
 // 2) We need to sort out the predicates thing.
 export class KeywordParser extends RestParser {
-    constructor(private readonly description: KeywordsDescription) {
+    constructor(public readonly description: KeywordsDescription) {
         super();
     }
 
@@ -127,7 +124,6 @@ export class KeywordParser extends RestParser {
      */
     public parseRest(itemStream: ArgumentStream): CommandResult<DestructableRest> {
         const destructable: DestructableRest = { rest: [] };
-        // Wrong, we can't use position, we need a stream.
         while (itemStream.peekItem() !== undefined) {
             const item = itemStream.readItem();
             if (item instanceof Keyword) {
@@ -141,7 +137,7 @@ export class KeywordParser extends RestParser {
                         return CommandResult.Ok(property);
                     } else {
                         if (!description.isFlag) {
-                            return CommandError.Result(`An associated argument was not provided for the keyword ${description.name}.`)
+                            return ArgumentParseError.Result(`An associated argument was not provided for the keyword ${description.name}.`, { paramater: description, stream: itemStream })
                         }
                         return CommandResult.Ok(true);
                     }
@@ -206,7 +202,7 @@ class ArgumentListParser implements IArgumentListParser {
             for (const paramater of descriptions) {
                 if (itemStream.peekItem() === undefined) {
                     // FIXME asap: we need a proper paramater description?
-                    return CommandError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`);
+                    return ArgumentParseError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`, { paramater, stream: itemStream });
                 }
                 const item = itemStream.readItem()!;
                 const result = paramater.acceptor.validator(item);
@@ -225,6 +221,19 @@ class ArgumentListParser implements IArgumentListParser {
                 return CommandResult.Ok({ immediateArguments: readItems });
             }
         }
+    }
+}
+
+export class ArgumentParseError extends CommandError {
+    constructor(
+        public readonly paramater: ParamaterDescription,
+        public readonly stream: ArgumentStream,
+        message: string) {
+        super(message)
+    }
+
+    public static Result<Ok>(message: string, options: { paramater: ParamaterDescription, stream: ArgumentStream }): CommandResult<Ok, ArgumentParseError> {
+        return CommandResult.Err(new ArgumentParseError(options.paramater, options.stream, message));
     }
 }
 
