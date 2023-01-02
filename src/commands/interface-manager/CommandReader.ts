@@ -14,7 +14,7 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> {
      * @param source A string to act as the source of the stream.
      * @param start Where in the string we should start reading.
      */
-    constructor(protected readonly source: T, start = 0) {
+    constructor(public readonly source: T, start = 0) {
         this.position = start;
     }
 
@@ -24,6 +24,10 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> {
 
     public readItem(eof = undefined) {
         return this.source.at(this.position++) ?? eof;
+    }
+
+    public getPosition(): number {
+        return this.position;
     }
 }
 

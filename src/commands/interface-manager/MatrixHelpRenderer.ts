@@ -3,8 +3,10 @@
  */
 
 import { MatrixSendClient } from "../../MatrixEmitter";
+import { htmlEscape } from "../../utils";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
-import { KeywordParser } from "./ParamaterParsing";
+import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
+import { ArgumentParseError, KeywordParser } from "./ParamaterParsing";
 import { CommandError, CommandResult } from "./Validation";
 
 function requiredArgument(argumentName: string): string {
@@ -58,4 +60,43 @@ export async function renderHelp(client: MatrixSendClient, commandRoomId: string
         text += `${renderCommandHelp(command)}\n`;
     }
     await client.replyNotice(commandRoomId, event, text);
+}
+
+export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<unknown, CommandError>): Promise<void> {
+    const react = async (emote: string) => {
+        await client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], emote);
+    }
+    if (result.isOk()) {
+        await react('✅')
+    } else {
+        await react('❌');
+        if (result.err instanceof ArgumentParseError) {
+            await client.replyNotice(commandRoomId, event, result.err.message, renderArgumentParseError(this.interfaceCommand, result.err));
+        } else {
+            await client.replyNotice(commandRoomId, event, result.err.message);
+        }
+    }
+}
+
+// Maybe we need something like the MatrixInterfaceAdaptor but for Error types?
+function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): string {
+    let html = '';
+    html += `There was a problem when parsing the "${error.paramater.name}" paramater for this command.<br>`
+    html += htmlEscape(renderCommandHelp(command));
+    html += '<br>';
+    html += error.message + '<br>';
+    html += '<code>';
+    // everything in the command excluding the current argument.
+    const argumentsUpToError = error.stream.source.slice(0, error.stream.getPosition());
+    let commandContext = 'Command context:';
+    for (const designator of command.designator) {
+        commandContext += ` ${designator}`;
+    }
+    for (const argument of argumentsUpToError) {
+        commandContext += ` ${JSON.stringify(argument)}`;
+    }
+    html += commandContext;
+    html += ` ${error.stream.peekItem()}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.paramater.acceptor.name} here`;
+    html += '</code>';
+    return html;
 }

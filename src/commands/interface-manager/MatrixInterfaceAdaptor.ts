@@ -29,11 +29,12 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { CommandError } from "./Validation";
-import { RichReply, LogService, MatrixClient } from "matrix-bot-sdk";
+import { CommandError, CommandResult } from "./Validation";
+import { LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
 import { MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
+import { tickCrossRenderer } from "./MatrixHelpRenderer";
 
 export interface MatrixContext {
     client: MatrixSendClient,
@@ -41,16 +42,17 @@ export interface MatrixContext {
     event: any,
 }
 
-type RendererSignature<ExecutorReturnType extends Promise<any>> = (
+type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
+    this: MatrixInterfaceAdaptor<C, ExecutorType>,
     client: MatrixClient,
     commandRoomId: string,
     event: any,
-    result: Awaited<ExecutorReturnType>) => Promise<void>;
+    result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
-class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> {
+export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> {
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
-        private readonly renderer: RendererSignature<ReturnType<ExecutorType>>,
+        private readonly renderer: RendererSignature<C, ExecutorType>,
         private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: CommandError) => Promise<void>
     ) {
 
@@ -71,19 +73,22 @@ class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseF
             return;
         }
         // just give the renderer the MatrixContext.
+        // we need to give the renderer the command itself!
         await this.renderer.apply(this, [matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult]);
     }
 
+    // is this still necessary, surely this should be handled entirely by the renderer?
+    // well an argument against it being handled entirely by the renderer is that this provides a clear distinction between an error during parsing
+    // and an error discovered because their is a fault or an error running the command. Though i don't think this is correct
+    // since any CommandError recieved is an expected error. It means there is no fault. An exception on the other hand does
+    // so this suggests we should just remove this.
     private async reportValidationError(client: MatrixSendClient, roomId: string, event: any, validationError: CommandError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
             await this.validationErrorHandler.apply(this, arguments);
             return;
         }
-        const replyMessage = validationError.message;
-        const reply = RichReply.createFor(roomId, event, replyMessage, replyMessage);
-        reply["msgtype"] = "m.notice";
-        await client.sendMessage(roomId, reply);
+        await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
 }
 
@@ -113,7 +118,7 @@ export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<Ba
  */
 export function defineMatrixInterfaceAdaptor<ExecutorType extends (...args: any) => Promise<any>>(details: {
         interfaceCommand: InterfaceCommand<ExecutorType>,
-        renderer: RendererSignature<ReturnType<ExecutorType>>
+        renderer: RendererSignature<MatrixContext, ExecutorType>
     }) {
     internMatrixInterfaceAdaptor(
         details.interfaceCommand,

@@ -93,8 +93,8 @@ export class CommandError {
     /**
      * Utility to wrap the error into a Result.
      * @param message The message for the CommandError.
-     * @param _options This exists so that the method is extensible by subclasses. Otherwise they wouldn't be able to pass other constructor arguments through this method. 
-     * @returns 
+     * @param _options This exists so that the method is extensible by subclasses. Otherwise they wouldn't be able to pass other constructor arguments through this method.
+     * @returns A CommandResult with a CommandError nested within.
      */
     public static Result<Ok>(message: string, _options = {}): CommandResult<Ok> {
         return CommandResult.Err(new CommandError(message));

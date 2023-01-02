@@ -61,11 +61,12 @@ type ParserSignature<C extends MatrixContext, ExecutorType extends (...args: any
     context: C,
     ...parts: ReadItem[]) => Promise<ValidationResult<Parameters<ExecutorType>>>;
 
-type RendererSignature<ExecutorReturnType extends Promise<any>> = (
+type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
+    this: MatrixInterfaceCommand<C, ExecutorType>,
     client: MatrixClient,
     commandRoomId: string,
     event: any,
-    result: Awaited<ExecutorReturnType>) => Promise<void>;
+    result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
 /**
  * A command that interfaces with a user via Matrix.
@@ -87,7 +88,7 @@ class MatrixInterfaceCommand<C extends MatrixContext, ExecutorType extends (...a
         public readonly commandParts: string[],
         private readonly parser: ParserSignature<C, ExecutorType>,
         public readonly applicationCommand: ApplicationCommand<ExecutorType>,
-        private readonly renderer: RendererSignature<ReturnType<ExecutorType>>,
+        private readonly renderer: RendererSignature<C, ExecutorType>,
         private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: ValidationError) => Promise<void>
     ) {
 
@@ -138,7 +139,7 @@ export function defineMatrixInterfaceCommand<C extends MatrixContext, ExecutorTy
         commandParts: string[],
         parser: ParserSignature<C, ExecutorType>,
         applicationCommmand: ApplicationCommand<ExecutorType>,
-        renderer: RendererSignature<ReturnType<ExecutorType>>) {
+        renderer: RendererSignature<C, ExecutorType>) {
     FLATTENED_MATRIX_COMMANDS.add(
         new MatrixInterfaceCommand(
             commandParts,

@@ -11,7 +11,7 @@ import { MatrixRoomReference } from "./MatrixRoomReference";
 
 makePresentationType({
     name: 'UserID',
-    validator: simpleTypeValidator('matrix-bot-sdk UserID', (item: ReadItem) => item instanceof UserID),
+    validator: simpleTypeValidator('UserID', (item: ReadItem) => item instanceof UserID),
 })
 
 makePresentationType({

@@ -69,6 +69,7 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
         if (result) {
             return CommandResult.Ok(result);
         } else {
+            // How do we accurately denote the type when it includes spaces in its name, same for the read item?
             return CommandError.Result(`Was expecting a match for the presentation type: ${name} but got ${readItem}.`);
         }
     }
@@ -201,15 +202,14 @@ class ArgumentListParser implements IArgumentListParser {
             const itemStream = new ArgumentStream(readItems);
             for (const paramater of descriptions) {
                 if (itemStream.peekItem() === undefined) {
-                    // FIXME asap: we need a proper paramater description?
                     return ArgumentParseError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`, { paramater, stream: itemStream });
                 }
-                const item = itemStream.readItem()!;
-                const result = paramater.acceptor.validator(item);
+                const result = paramater.acceptor.validator(itemStream.peekItem());
                 if (result.err) {
                     // should really allow the help to be printed later on and keep the whole context?
-                    return CommandResult.Err(result.err);
+                    return ArgumentParseError.Result(result.err.message, { paramater, stream: itemStream });
                 }
+                itemStream.readItem();
             }
             if (restParser) {
                 const result = restParser.parseRest(itemStream);
