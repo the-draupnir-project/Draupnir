@@ -41,6 +41,7 @@ import { Consequence } from "./consequence";
 import { htmlEscape } from "../utils";
 import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
+import { LocalAbuseReports } from "./LocalAbuseReports";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
@@ -51,6 +52,7 @@ const PROTECTIONS: Protection[] = [
     new TrustedReporters(),
     new DetectFederationLag(),
     new JoinWaveShortCircuit(),
+    new LocalAbuseReports(),
 ];
 
 const ENABLED_PROTECTIONS_EVENT_TYPE = "org.matrix.mjolnir.enabled_protections";
@@ -108,6 +110,11 @@ export class ProtectionManager {
             // this.getProtectionSettings() validates this data for us, so we don't need to
             protection.settings[key].setValue(value);
         }
+        if (protection.enabled) {
+            for (let roomId of this.mjolnir.protectedRoomsTracker.getProtectedRooms()) {
+                await protection.startProtectingRoom(this.mjolnir, roomId);
+            }
+        }
     }
 
     /*
@@ -115,11 +122,17 @@ export class ProtectionManager {
      *
      * @param protection The protection object we want to unregister
      */
-    public unregisterProtection(protectionName: string) {
-        if (!(this._protections.has(protectionName))) {
+    public async unregisterProtection(protectionName: string) {
+        let protection = this._protections.get(protectionName);
+        if (!protection) {
             throw new Error("Failed to find protection by name: " + protectionName);
         }
         this._protections.delete(protectionName);
+        if (protection.enabled) {
+            for (let roomId of this.mjolnir.protectedRoomsTracker.getProtectedRooms()) {
+                await protection.stopProtectingRoom(this.mjolnir, roomId);
+            }
+        }
     }
 
     /*
@@ -170,9 +183,13 @@ export class ProtectionManager {
      */
     public async enableProtection(name: string) {
         const protection = this._protections.get(name);
-        if (protection !== undefined) {
-            protection.enabled = true;
-            await this.saveEnabledProtections();
+        if (protection === undefined) {
+            return;
+        }
+        protection.enabled = true;
+        await this.saveEnabledProtections();
+        for (let roomId of this.mjolnir.protectedRoomsTracker.getProtectedRooms()) {
+            await protection.startProtectingRoom(this.mjolnir, roomId);
         }
     }
 
@@ -198,9 +215,13 @@ export class ProtectionManager {
      */
     public async disableProtection(name: string) {
         const protection = this._protections.get(name);
-        if (protection !== undefined) {
-            protection.enabled = false;
-            await this.saveEnabledProtections();
+        if (protection === undefined) {
+            return;
+        }
+        protection.enabled = false;
+        await this.saveEnabledProtections();
+        for (let roomId of this.mjolnir.protectedRoomsTracker.getProtectedRooms()) {
+            await protection.stopProtectingRoom(this.mjolnir, roomId);
         }
     }
 
@@ -403,6 +424,26 @@ export class ProtectionManager {
     private async handleReport({ roomId, reporterId, event, reason }: { roomId: string, reporterId: string, event: any, reason?: string }) {
         for (const protection of this.enabledProtections) {
             await protection.handleReport(this.mjolnir, roomId, reporterId, event, reason);
+        }
+    }
+
+    public async addProtectedRoom(roomId: string) {
+        for (const protection of this.enabledProtections) {
+            try {
+                await protection.startProtectingRoom(this.mjolnir, roomId);
+            } catch (ex) {
+                this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, protection.name, ex);
+            }
+        }
+    }
+
+    public async removeProtectedRoom(roomId: string) {
+        for (const protection of this.enabledProtections) {
+            try {
+                await protection.stopProtectingRoom(this.mjolnir, roomId);
+            } catch (ex) {
+                this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, protection.name, ex);
+            }
         }
     }
 }
