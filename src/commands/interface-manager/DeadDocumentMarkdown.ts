@@ -11,17 +11,26 @@ import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, Frin
 // that renders the node twice.
 // The first thing to get full we stop.
 // this is possible if we make an iterator that just renders 1 node at a time
-export class TransactionalOutputStream {
+export class PagedOutputStream {
     private buffer: string = '';
-    public output: string = '';
+    private pages: string[] = ['']
+
     private lastCommittedNode?: DocumentNode;
     constructor(
         public readonly sizeLimit = 20_000,
     ) {
-
     }
 
-    public writeString(string: string): TransactionalOutputStream {
+    private get currentPage(): string {
+        return this.pages.at(this.pages.length - 1)!;
+    }
+
+    private appendToCurrentPage(string: string) {
+        const currentIndex = this.pages.length - 1;
+        this.pages[currentIndex] = this.pages[currentIndex] + string;
+    }
+
+    public writeString(string: string): PagedOutputStream {
         this.buffer += string;
         return this;
     }
@@ -30,34 +39,41 @@ export class TransactionalOutputStream {
         return this.buffer.length;
     }
 
-    private adjust(source: string, target: string): void {
-        if (source.at(-2) === '\n' && source.at(-1) === '\n') return;
-        if (source.at(-1) === '\n') {
-            target += '\n';
-            return;
+    public getPages(): string[] {
+        if (this.buffer.length !== 0) {
+            throw new TypeError('Stream has uncommitted buffered output');
         }
-        target += '\n\n';
+        return [...this.pages]
     }
 
-    public adjustForNextElement(): void {
-        this.adjust(this.buffer, this.buffer)
+    public isPageAndBufferOverSize(): boolean {
+        return (this.currentPage.length + this.buffer.length) > this.sizeLimit;
+    }
+
+    public forceNewPage(node: DocumentNode): void {
+        if (this.currentPage.length === 0 && (this.buffer.length > this.sizeLimit)) {
+            throw new TypeError('Commit is too large, could not write a page for this commit');
+        }
+        this.pages.push(this.buffer);
+        this.buffer = '';
+        this.lastCommittedNode = node;
     }
 
     /**
      * Attempt to commit the buffer to the output stream.
-     * @param node The node to associate with the commit.
-     * @returns True if commited, false if uncomitted. Buffer remains unchanged
-     * if commit was unsuccessful.
+     * OR create a new page
+     * Returns true if a new page was created.
      */
-    public attemptCommit(node: DocumentNode): boolean {
-        if ((this.output.length + this.buffer.length) > this.sizeLimit) {
+    public commit(node: DocumentNode): boolean {
+        if (this.isPageAndBufferOverSize()) {
+            this.forceNewPage(node);
+            return true;
+        } else {
+            this.appendToCurrentPage(this.buffer);
+            this.buffer = '';
+            this.lastCommittedNode = node;
             return false;
         }
-        this.output += this.buffer;
-        this.buffer = '';
-        this.adjust(this.output, this.buffer);
-        this.lastCommittedNode = node;
-        return true;
     }
 
     public getLastCommittedNode(): DocumentNode|undefined {
@@ -66,7 +82,7 @@ export class TransactionalOutputStream {
 }
 
 export interface TransactionalOutputContext {
-    output: TransactionalOutputStream
+    output: PagedOutputStream
 }
 
 export function staticString(string: string): FringeInnerRenderFunction<TransactionalOutputContext> {
