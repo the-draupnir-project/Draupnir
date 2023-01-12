@@ -34,6 +34,8 @@ export enum NodeTag {
     Emphasis = 'em',
     Paragraph = 'p',
     HeadingOne = 'h1',
+    UnorderedList = 'ul',
+    ListItem = 'li'
 }
 
 /**
@@ -150,7 +152,7 @@ function fringe(node: DocumentNode|LeafNode, flat: Flat = []): Flat {
     }
 }
 export type FringeLeafRenderFunction<Context> = (tag: NodeTag, node: LeafNode, context: Context) => void
-export type FringeInnerRenderFunction<Context> = (type: FringeType, node: DocumentNode, context: Context) => void; 
+export type FringeInnerRenderFunction<Context> = (type: FringeType, node: DocumentNode, context: Context, environment: TagDynamicEnvironment) => void; 
 
 export interface FringeRenderer<Context> {
     getLeafRenderer(tag: NodeTag): FringeLeafRenderFunction<Context>
@@ -216,6 +218,14 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
     }
 }
 
+const COMMITTABLE_NODES = new Set([
+    NodeTag.HeadingOne,
+    NodeTag.ListItem,
+    NodeTag.Paragraph,
+    NodeTag.PreformattedText,
+    NodeTag.UnorderedList
+]);
+
 class FringeStream extends SuperCoolStream<Flat> {
 
 }
@@ -229,6 +239,7 @@ class FringeStream extends SuperCoolStream<Flat> {
  */
 export class FringeWalker<Context> {
     private readonly stream: FringeStream;
+    private readonly dynamicEnvironment = new TagDynamicEnvironment();
     constructor(
         public readonly root: DocumentNode,
         private readonly context: Context,
@@ -237,7 +248,7 @@ export class FringeWalker<Context> {
         this.stream = new FringeStream(fringe(root));
     }
 
-    public increment(): DocumentNode|LeafNode|undefined {
+    public increment(): DocumentNode|undefined {
         const renderInnerNode = (node: AnnotatedFringeNode) => {
             if (node.node.leafNode) {
                 throw new TypeError("Leaf nodes should not be in the Pre/Post position");
@@ -245,24 +256,61 @@ export class FringeWalker<Context> {
             const renderer = node.type === FringeType.Pre
                 ? this.renderer.getPreRenderer(node.node.tag)
                 : this.renderer.getPostRenderer(node.node.tag);
-            renderer(node.type, node.node, this.context);
+            renderer(node.type, node.node, this.context, this.dynamicEnvironment);
             return node.node;
         }
-        while(this.stream.peekItem()?.type === FringeType.Pre) {
-            renderInnerNode(this.stream.readItem());
+        const postNode = (node: AnnotatedFringeNode): DocumentNode => {
+            if (node.node.leafNode) {
+                throw new TypeError("Leaf nodes should not be in the Pre/Post position");
+            }
+            renderInnerNode(node);
+            this.dynamicEnvironment.pop(node.node);
+            return node.node;
+        }
+        while(!COMMITTABLE_NODES.has(this.stream.peekItem()?.node.tag)) {
+            const node = this.stream.readItem();
+            if (node.type === FringeType.Pre) {
+                renderInnerNode(this.stream.readItem());
+            } else if (node.type === FringeType.Post) {
+                postNode(node);
+            } else {
+                // leaf node
+                if (node.node.leafNode !== true) {
+                    throw new TypeError("Leaf nodes should not be marked as an inner node");
+                }
+                this.renderer.getLeafRenderer(node.node.tag)(node.node.tag, node.node as unknown as LeafNode, this.context);
+            }
         }
         if (this.stream.peekItem() === undefined) {
             return undefined;
         }
         const node = this.stream.readItem();
-        if (node.type === FringeType.Leaf) {
-            if (node.node.leafNode !== true) {
-                throw new TypeError("Leaf nodes should not be marked as an inner node");
-            }
-            this.renderer.getLeafRenderer(node.node.tag)(node.node.tag, node.node as unknown as LeafNode, this.context);
-            return node.node;
-        } else {
-            return renderInnerNode(node);
+        return postNode(node);
+    }
+}
+
+export interface TagDynamicEnvironmentEntry {
+    node: DocumentNode,
+    value: any,
+}
+
+export class TagDynamicEnvironment {
+    private readonly environments = new Map<NodeTag, TagDynamicEnvironmentEntry[]>();
+
+    public getEnvironment(tag: NodeTag): TagDynamicEnvironmentEntry[] {
+        return this.environments.get(tag)
+            ?? ((bootstrap: TagDynamicEnvironmentEntry[]) => (this.environments.set(tag, bootstrap), bootstrap))([]);
+    }
+
+    public bind(node: DocumentNode, value: any) {
+        const entry = this.getEnvironment(node.tag);
+        entry.push({ node, value });
+    }
+
+    public pop(node: DocumentNode) {
+        const entry = this.getEnvironment(node.tag);
+        if (Object.is(entry.at(0), node)) {
+            entry.pop();
         }
     }
 }

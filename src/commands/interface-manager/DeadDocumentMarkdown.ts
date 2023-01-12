@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer } from "./DeadDocument";
+import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer, TagDynamicEnvironment, TagDynamicEnvironmentEntry } from "./DeadDocument";
 
 // This just doesn't work.
 // the transactions have to be managed by the Matrix renderer
@@ -43,14 +43,21 @@ export class TransactionalOutputStream {
         this.adjust(this.buffer, this.buffer)
     }
 
-    public commit(node: DocumentNode): void {
+    /**
+     * Attempt to commit the buffer to the output stream.
+     * @param node The node to associate with the commit.
+     * @returns True if commited, false if uncomitted. Buffer remains unchanged
+     * if commit was unsuccessful.
+     */
+    public attemptCommit(node: DocumentNode): boolean {
         if ((this.output.length + this.buffer.length) > this.sizeLimit) {
-            throw new Error("Unable to commit blah blah FIXME")
+            return false;
         }
         this.output += this.buffer;
         this.buffer = '';
         this.adjust(this.output, this.buffer);
         this.lastCommittedNode = node;
+        return true;
     }
 
     public getLastCommittedNode(): DocumentNode|undefined {
@@ -68,7 +75,15 @@ export function staticString(string: string): FringeInnerRenderFunction<Transact
     }
 }
 export function blank() { }
-
+export function incrementDynamicEnvironment(_fringe: FringeType, node: DocumentNode, _context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+    const entry = environment.getEnvironment(node.tag).at(0);
+    if (entry) {
+        if (!Number.isInteger(entry.value)) {
+            throw new TypeError(`${node.tag} should not have a dynamic environment entry that isn't an integer`);
+        }
+        environment.bind(node, entry.value + 1);
+    }
+}
 
 
 export const MARKDOWN_RENDERER = new SimpleFringeRenderer<TransactionalOutputContext>();
@@ -98,4 +113,20 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.Strong,
     staticString('**'),
     staticString('**')
+).registerInnerNode(NodeTag.UnorderedList,
+    incrementDynamicEnvironment,
+    blank
+).registerInnerNode(NodeTag.ListItem,
+    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        const entry = environment.getEnvironment(node.tag).at(0);
+        if (!Number.isInteger(entry?.value)) {
+            throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers`)
+        }
+        context.output.writeString('\n');
+        for (let i = 0; i < entry?.value; i++) {
+            context.output.writeString('    ');
+        }
+        context.output.writeString(' * ');
+    },
+    staticString('\n')
 );
