@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { DocumentNode, NodeTag } from "./DeadDocument";
+import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer } from "./DeadDocument";
 
 // This just doesn't work.
 // the transactions have to be managed by the Matrix renderer
@@ -11,7 +11,7 @@ import { DocumentNode, NodeTag } from "./DeadDocument";
 // that renders the node twice.
 // The first thing to get full we stop.
 // this is possible if we make an iterator that just renders 1 node at a time
-class TransactionalOutputStream {
+export class TransactionalOutputStream {
     private buffer: string = '';
     public output: string = '';
     private lastCommittedNode?: DocumentNode;
@@ -58,41 +58,44 @@ class TransactionalOutputStream {
     }
 }
 
-type NodeRenderer = (node: DocumentNode, stream: TransactionalOutputStream) => void;
-
-const NODE_RENDERERS = new Map<NodeTag, NodeRenderer>();
-
-function defineNodeRenderer(tag: NodeTag, renderer: NodeRenderer): NodeRenderer {
-    if (NODE_RENDERERS.has(tag)) {
-        throw new TypeError(`There was already a renderer registered for ${tag}`);
-    }
-    NODE_RENDERERS.set(tag, render);
-    return render
+export interface TransactionalOutputContext {
+    output: TransactionalOutputStream
 }
 
-function findNodeRenderer(tag: NodeTag): NodeRenderer {
-    const entry = NODE_RENDERERS.get(tag)
-    if (entry) {
-        return entry;
-    }
-    throw new TypeError(`Couldn't find a renderer for the tag ${tag}`);
-}
-
-function callNodeRendererForChildren(tag: NodeTag, node: DocumentNode): void {
-    // The problem is that we want to control message length and split semantically
-    // so this renderer will not work.
-}
-
-function render(document: DocumentNode): string {
-    const stream = new TransactionalOutputStream();
-    renderDocumentNote(document, stream);
-    return stream.output;
-}
-
-function renderDocumentNote(node: DocumentNode, stream: TransactionalOutputStream): void {
-    const previousPosition = stream.getPosition();
-
-    if (stream.getPosition() !== previousPosition) {
-        stream.adjustForNextElement();
+export function staticString(string: string): FringeInnerRenderFunction<TransactionalOutputContext> {
+    return function(_fringe: FringeType, _node: DocumentNode, context: TransactionalOutputContext) {
+        context.output.writeString(string)
     }
 }
+export function blank() { }
+
+
+
+export const MARKDOWN_RENDERER = new SimpleFringeRenderer<TransactionalOutputContext>();
+
+
+MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputContext>>(
+    FringeType.Leaf,
+    NodeTag.TextNode,
+    function (tag: NodeTag, node: LeafNode, context: TransactionalOutputContext) {
+        context.output.writeString(node.data);
+    }
+).registerInnerNode(NodeTag.HeadingOne,
+    function (_fringeType, _node, context: TransactionalOutputContext) { context.output.writeString('# ') },
+    staticString('\n\n'),
+).registerInnerNode(NodeTag.Emphasis,
+    staticString('*'),
+    staticString('*')
+).registerInnerNode(NodeTag.InlineCode,
+    staticString('`'),
+    staticString('`')
+).registerInnerNode(NodeTag.Paragraph,
+    blank,
+    staticString('\n\n')
+).registerInnerNode(NodeTag.PreformattedText,
+    staticString('```\n'),
+    staticString('```\n')
+).registerInnerNode(NodeTag.Strong,
+    staticString('**'),
+    staticString('**')
+);

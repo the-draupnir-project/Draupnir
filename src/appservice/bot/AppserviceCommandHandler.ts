@@ -55,7 +55,6 @@ export class AppserviceCommandHandler {
             const readItems = readCommand(body).slice(1); // remove "!mjolnir"
             const argumentStream = new ArgumentStream(readItems);
             const command = this.commandTable.findAMatchingCommand(argumentStream);
-            // FIXME: what if there's no command, print help?
             if (command) {
                 const adaptor = findMatrixInterfaceAdaptor(command);
                 const context: AppserviceContext = {
