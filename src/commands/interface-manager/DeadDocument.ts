@@ -35,7 +35,8 @@ export enum NodeTag {
     Paragraph = 'p',
     HeadingOne = 'h1',
     UnorderedList = 'ul',
-    ListItem = 'li'
+    ListItem = 'li',
+    LineBreak = 'br',
 }
 
 /**

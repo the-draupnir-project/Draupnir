@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+import { MatrixSendClient } from "../../MatrixEmitter";
 import { AbstractNode, DocumentNode, FringeWalker } from "./DeadDocument";
 import { HTML_RENDERER } from "./DeadDocumentHtml";
 import { MARKDOWN_RENDERER, PagedDuplexStream } from "./DeadDocumentMarkdown";
@@ -39,14 +40,12 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
     let currentHtmlNode = htmlWalker.increment();
     checkEqual(currentHtmlNode, currentMarkdownNode);
     while (currentHtmlNode !== undefined) {
-        const outputsWithNewPage = outputs.filter(o => o.peekPage());
-        if (outputsWithNewPage.length !== 0) {
+        if (outputs.some(o => o.peekPage())) {
             // Ensure each stream has the same nodes in the new page.
-            for (const output of outputs) {
-                if (!outputsWithNewPage.includes(output)) {
-                    output.forceNewPage();
-                }
-            }
+            // I'm really worried that somehow a stream can have a page waiting
+            // while also having buffered output? so when it is ensured, that output is appended?
+            // that means there's an implementation issue in the walker's though.
+            outputs.forEach(o => o.ensureNewPage());
             // Send the new pages as an event.
             await cb(markdownOutput.readPage()!, htmlOutput.readPage()!);
         }
@@ -55,4 +54,16 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
         currentHtmlNode = htmlWalker.increment();
         checkEqual(currentHtmlNode, currentMarkdownNode);
     }
+}
+
+export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<void> {
+    // We desperatley need support for threads to make this work in a non-shit way.
+    await renderMatrix(node, async (text: string, html: string) => {
+        await client.sendMessage(roomId, {
+            msgtype: "m.notice",
+            body: text,
+            format: "org.matrix.custom.html",
+            formatted_body: html,
+        });
+    });
 }

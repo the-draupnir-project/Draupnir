@@ -5,7 +5,13 @@
 
 import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNode } from "./DeadDocument";
 
-
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            [elemName: string]: any;
+        }
+    }
+}
 
 export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
     const node = makeDocumentNode(tag);
@@ -20,3 +26,11 @@ export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (Docum
     rawChildren.forEach(ensureChild);
     return node;
 }
+
+
+namespace JSXFactory {
+    export interface IntrinsicElements {
+        [elemName: string]: any;
+    } 
+}
+

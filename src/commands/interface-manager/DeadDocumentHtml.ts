@@ -4,7 +4,7 @@
  */
 
 import { FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer } from "./DeadDocument";
-import { staticString, TransactionalOutputContext } from "./DeadDocumentMarkdown";
+import { blank, staticString, TransactionalOutputContext } from "./DeadDocumentMarkdown";
 
 export const HTML_RENDERER = new SimpleFringeRenderer<TransactionalOutputContext>();
 
@@ -38,4 +38,7 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.ListItem,
     staticString('<li>'),
     staticString('</li>')
+).registerInnerNode(NodeTag.LineBreak,
+    blank,
+    staticString('<br/>'),
 );

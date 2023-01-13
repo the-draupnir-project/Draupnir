@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer, TagDynamicEnvironment, TagDynamicEnvironmentEntry } from "./DeadDocument";
+import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer, TagDynamicEnvironment } from "./DeadDocument";
 
 /**
  * Ideally this would call a callback when a page is ready
@@ -47,8 +47,10 @@ export class PagedDuplexStream {
      * Creates a new page from the previously committed text
      * @returns A page with all committed text.
      */
-    public forceNewPage(): void {
-        this.pages.push('');
+    public ensureNewPage(): void {
+        if (this.currentPage.length !== 0) {
+            this.pages.push('');
+        }
     }
 
     /**
@@ -65,7 +67,7 @@ export class PagedDuplexStream {
             if (this.currentPage.length === 0 && (this.buffer.length > this.sizeLimit)) {
                 throw new TypeError('Commit is too large, could not write a page for this commit');
             }
-            this.forceNewPage();
+            this.ensureNewPage();
             this.appendToCurrentPage(this.buffer);
             this.lastCommittedNode = node;
         } else {
@@ -157,5 +159,8 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
         }
         context.output.writeString(' * ');
     },
+    staticString('\n')
+).registerInnerNode(NodeTag.LineBreak,
+    blank,
     staticString('\n')
 );
