@@ -37,6 +37,8 @@ export enum NodeTag {
     UnorderedList = 'ul',
     ListItem = 'li',
     LineBreak = 'br',
+    BoldFace = 'b',
+    ItalicFace = 'i',
 }
 
 /**
@@ -57,7 +59,7 @@ export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentN
 }
 
 export function getChildren(this: DeadDocumentNode): (DocumentNode|LeafNode)[] {
-    return this.children;
+    return [...this.children];
 }
 
 export function getFirstChild(this: DeadDocumentNode): DocumentNode|LeafNode|undefined {
@@ -271,7 +273,7 @@ export class FringeWalker<Context> {
             this.dynamicEnvironment.pop(node.node);
             return node.node;
         }
-        while(!COMMITTABLE_NODES.has(this.stream.peekItem()?.node.tag)) {
+        while(this.stream.peekItem() && !COMMITTABLE_NODES.has(this.stream.peekItem().node.tag)) {
             const node = this.stream.readItem();
             switch(node.type) {
                 case FringeType.Pre:
@@ -293,35 +295,51 @@ export class FringeWalker<Context> {
         if (this.stream.peekItem() === undefined) {
             return undefined;
         }
-        const node = this.stream.readItem();
-        postNode(node);
+        const node = postNode(this.stream.readItem());
         this.commitHook(node, this.context);
         return node;
     }
 }
 
-export interface TagDynamicEnvironmentEntry {
-    node: DocumentNode,
-    value: any,
+export class TagDynamicEnvironmentEntry {
+    constructor(
+        public readonly node: DocumentNode,
+        public readonly value: any,
+        public readonly previous: undefined|TagDynamicEnvironmentEntry,
+    ) {
+
+    }
 }
 
+// OK we wrote this wrong
+// TagDynamicEnvironmentEntries need to be associated with a node
+// but not the variables themselves...
+// otherwise how can a list item access the indentation width managed by a list or 
+// ordered list, all three of which have different tags
 export class TagDynamicEnvironment {
-    private readonly environments = new Map<NodeTag, TagDynamicEnvironmentEntry[]>();
+    private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
 
-    public getEnvironment(tag: NodeTag): TagDynamicEnvironmentEntry[] {
-        return this.environments.get(tag)
-            ?? ((bootstrap: TagDynamicEnvironmentEntry[]) => (this.environments.set(tag, bootstrap), bootstrap))([]);
+    public getVariable(variableName: string): any|undefined {
+        const variableEntry = this.environments.get(variableName);
+        if (variableEntry) {
+            return variableEntry.value;
+        } else {
+            return undefined;
+        }
     }
 
-    public bind(node: DocumentNode, value: any) {
-        const entry = this.getEnvironment(node.tag);
-        entry.push({ node, value });
+    public bind(variableName: string, node: DocumentNode, value: any): any {
+        const entry = this.environments.get(variableName);
+        const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
+        this.environments.set(node.tag, newEntry);
+        return value
     }
 
-    public pop(node: DocumentNode) {
-        const entry = this.getEnvironment(node.tag);
-        if (Object.is(entry.at(0), node)) {
-            entry.pop();
+    public pop(node: DocumentNode): void {
+        for (const [variableName, environment] of this.environments.entries()) {
+            if (Object.is(environment?.node, node)) {
+                this.environments.set(variableName, environment?.previous);
+            }
         }
     }
 }

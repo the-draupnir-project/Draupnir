@@ -41,4 +41,10 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.LineBreak,
     blank,
     staticString('<br/>'),
+).registerInnerNode(NodeTag.BoldFace,
+    staticString('<b>'),
+    staticString('</b>')
+).registerInnerNode(NodeTag.ItalicFace,
+    staticString('<i>'),
+    staticString('</i>')
 );

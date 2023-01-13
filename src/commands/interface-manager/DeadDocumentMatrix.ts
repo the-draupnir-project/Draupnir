@@ -54,6 +54,10 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
         currentHtmlNode = htmlWalker.increment();
         checkEqual(currentHtmlNode, currentMarkdownNode);
     }
+    outputs.forEach(o => o.ensureNewPage());
+    if (outputs.some(o => o.peekPage())) {
+        await cb(markdownOutput.readPage()!, htmlOutput.readPage()!);
+    }
 }
 
 export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<void> {

@@ -82,12 +82,24 @@ export class PagedDuplexStream {
     }
 
     public peekPage(): string|undefined {
+        // We consider a page "ready" when it is no longer the current page.
+        if (this.pages.length < 2) {
+            return undefined;
+        }
         return this.pages.at(0);
     }
 
     public readPage(): string|undefined {
+        // We consider a page "ready" when it is no longer the current page.
+        if (this.pages.length < 2) {
+            return undefined;
+        }
         return this.pages.shift();
     }
+}
+
+enum MarkdownVariables {
+    IndentationLevel = "indentation level"
 }
 
 /**
@@ -107,12 +119,14 @@ export function staticString(string: string): FringeInnerRenderFunction<Transact
 }
 export function blank() { }
 export function incrementDynamicEnvironment(_fringe: FringeType, node: DocumentNode, _context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
-    const entry = environment.getEnvironment(node.tag).at(0);
-    if (entry) {
-        if (!Number.isInteger(entry.value)) {
-            throw new TypeError(`${node.tag} should not have a dynamic environment entry that isn't an integer`);
+    const value = environment.getVariable(MarkdownVariables.IndentationLevel);
+    if (value) {
+        if (!Number.isInteger(value)) {
+            throw new TypeError(`${MarkdownVariables.IndentationLevel} should not have a dynamic environment entry that isn't an integer`);
         }
-        environment.bind(node, entry.value + 1);
+        environment.bind(MarkdownVariables.IndentationLevel, node, value + 1);
+    } else {
+        environment.bind(MarkdownVariables.IndentationLevel, node, 1);
     }
 }
 
@@ -149,12 +163,17 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     blank
 ).registerInnerNode(NodeTag.ListItem,
     function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
-        const entry = environment.getEnvironment(node.tag).at(0);
-        if (!Number.isInteger(entry?.value)) {
-            throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers`)
-        }
+        const indentationLevel: number = (() => {
+            const value = environment.getVariable(MarkdownVariables.IndentationLevel);
+             if (!Number.isInteger(value)) {
+                throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers. Did you forget to enclose in <ul> or <ol>?`)
+            } else {
+                return value;
+            }
+        })();
+
         context.output.writeString('\n');
-        for (let i = 0; i < entry?.value; i++) {
+        for (let i = 0; i < indentationLevel; i++) {
             context.output.writeString('    ');
         }
         context.output.writeString(' * ');
@@ -163,4 +182,10 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.LineBreak,
     blank,
     staticString('\n')
+).registerInnerNode(NodeTag.BoldFace,
+    staticString('**'),
+    staticString('**')
+).registerInnerNode(NodeTag.ItalicFace,
+    staticString('*'),
+    staticString('*')
 );
