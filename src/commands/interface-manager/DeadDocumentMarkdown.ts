@@ -5,15 +5,15 @@
 
 import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer, TagDynamicEnvironment, TagDynamicEnvironmentEntry } from "./DeadDocument";
 
-// This just doesn't work.
-// the transactions have to be managed by the Matrix renderer
-// which is basically a different walker
-// that renders the node twice.
-// The first thing to get full we stop.
-// this is possible if we make an iterator that just renders 1 node at a time
-export class PagedOutputStream {
+/**
+ * Ideally this would call a callback when a page is ready
+ * Unfortunatley there's no way to do that (and await) without making the stream
+ * all async. Which is annoying af.
+ * Therefore it's necessary for the stream to queue pages
+ */
+export class PagedDuplexStream {
     private buffer: string = '';
-    private pages: string[] = ['']
+    private pages: string[] = [''];
 
     private lastCommittedNode?: DocumentNode;
     constructor(
@@ -30,7 +30,7 @@ export class PagedOutputStream {
         this.pages[currentIndex] = this.pages[currentIndex] + string;
     }
 
-    public writeString(string: string): PagedOutputStream {
+    public writeString(string: string): PagedDuplexStream {
         this.buffer += string;
         return this;
     }
@@ -39,50 +39,63 @@ export class PagedOutputStream {
         return this.buffer.length;
     }
 
-    public getPages(): string[] {
-        if (this.buffer.length !== 0) {
-            throw new TypeError('Stream has uncommitted buffered output');
-        }
-        return [...this.pages]
-    }
-
     public isPageAndBufferOverSize(): boolean {
         return (this.currentPage.length + this.buffer.length) > this.sizeLimit;
     }
 
-    public forceNewPage(node: DocumentNode): void {
-        if (this.currentPage.length === 0 && (this.buffer.length > this.sizeLimit)) {
-            throw new TypeError('Commit is too large, could not write a page for this commit');
-        }
-        this.pages.push(this.buffer);
-        this.buffer = '';
-        this.lastCommittedNode = node;
+    /**
+     * Creates a new page from the previously committed text
+     * @returns A page with all committed text.
+     */
+    public forceNewPage(): void {
+        this.pages.push('');
     }
 
     /**
-     * Attempt to commit the buffer to the output stream.
-     * OR create a new page
-     * Returns true if a new page was created.
+     * Commit the buffered text to the current page.
+     * If the buffered text is over the `sizeLimit`, then the current
+     * page will be returned first, and then replaced with a new one in order
+     * to commit the buffer.
+     * @param node A DocumentNode to associate with the commit.
+     * @throws TypeError if the buffer is larger than the `sizeLimit`.
+     * @returns A page if the buffered text will force the current page to go over the size limit.
      */
-    public commit(node: DocumentNode): boolean {
+    public commit(node: DocumentNode): void {
         if (this.isPageAndBufferOverSize()) {
-            this.forceNewPage(node);
-            return true;
+            if (this.currentPage.length === 0 && (this.buffer.length > this.sizeLimit)) {
+                throw new TypeError('Commit is too large, could not write a page for this commit');
+            }
+            this.forceNewPage();
+            this.appendToCurrentPage(this.buffer);
+            this.lastCommittedNode = node;
         } else {
             this.appendToCurrentPage(this.buffer);
             this.buffer = '';
             this.lastCommittedNode = node;
-            return false;
         }
     }
 
     public getLastCommittedNode(): DocumentNode|undefined {
         return this.lastCommittedNode;
     }
+
+    public peekPage(): string|undefined {
+        return this.pages.at(0);
+    }
+
+    public readPage(): string|undefined {
+        return this.pages.shift();
+    }
 }
 
+/**
+ * Hoping to replace this soon? or subclass
+ * FringeWalker so this is just a stream?
+ * THen Markdown and HTML renderers are simplified and
+ * other people can still use the fringe walker.
+ */
 export interface TransactionalOutputContext {
-    output: PagedOutputStream
+    output: PagedDuplexStream
 }
 
 export function staticString(string: string): FringeInnerRenderFunction<TransactionalOutputContext> {

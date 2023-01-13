@@ -5,7 +5,7 @@
 
 import { AbstractNode, DocumentNode, FringeWalker } from "./DeadDocument";
 import { HTML_RENDERER } from "./DeadDocumentHtml";
-import { MARKDOWN_RENDERER, PagedOutputStream } from "./DeadDocumentMarkdown";
+import { MARKDOWN_RENDERER, PagedDuplexStream } from "./DeadDocumentMarkdown";
 
 function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined): true {
     if (!Object.is(node1, node2)) {
@@ -14,38 +14,45 @@ function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined
     return true;
 }
 
-export function renderMatrix(node: DocumentNode) {
-    const markdownOutput = new PagedOutputStream();
+export type SendMatrixEventCB = (text: string, html: string) => Promise<void>;
+
+export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
+    const commitHook = (node: DocumentNode, context: { output: PagedDuplexStream }) => {
+        context.output.commit(node);
+    };
+    const markdownOutput = new PagedDuplexStream();
     const markdownWalker = new FringeWalker(
         node,
         { output: markdownOutput },
-        MARKDOWN_RENDERER
+        MARKDOWN_RENDERER,
+        commitHook,
     );
-    const htmlOutput = new PagedOutputStream();
+    const htmlOutput = new PagedDuplexStream();
     const htmlWalker = new FringeWalker(
         node,
         { output: htmlOutput },
-        HTML_RENDERER
+        HTML_RENDERER,
+        commitHook,
     );
     const outputs = [htmlOutput, markdownOutput];
-    // surely this shit should be internal to the transactional output stream
-    // and it should be the paged output stream?
-    // well we can't make it internal if both of the things are writing to it.
-    // what we can do is make 
-    // Why the hell are we making the pages AOT??
-    // There should only be one page inside the stream
-    // and it should have to be consumed before continuing
-    // otherwise we just stack up tonnes of garbage.
-    // What if we make a class that eats walkers.
-    // it creats streams and writes the pa--
-    // wait a minute that's what this is ? 
     let currentMarkdownNode = markdownWalker.increment();
     let currentHtmlNode = htmlWalker.increment();
     checkEqual(currentHtmlNode, currentMarkdownNode);
     while (currentHtmlNode !== undefined) {
-        if (outputs.some(o => o.isPageAndBufferOverSize())) {
-            outputs.forEach(o => o.forceNewPage(currentHtmlNode!));
+        const outputsWithNewPage = outputs.filter(o => o.peekPage());
+        if (outputsWithNewPage.length !== 0) {
+            // Ensure each stream has the same nodes in the new page.
+            for (const output of outputs) {
+                if (!outputsWithNewPage.includes(output)) {
+                    output.forceNewPage();
+                }
+            }
+            // Send the new pages as an event.
+            await cb(markdownOutput.readPage()!, htmlOutput.readPage()!);
         }
+        // prepare next iteration
+        currentMarkdownNode = markdownWalker.increment();
+        currentHtmlNode = htmlWalker.increment();
+        checkEqual(currentHtmlNode, currentMarkdownNode);
     }
-    
 }

@@ -230,6 +230,8 @@ class FringeStream extends SuperCoolStream<Flat> {
 
 }
 
+export type CommitHook<Context> = (node: DocumentNode, context: Context) => void;
+
 /**
  * The FringeWalker allows for the implementation of an incremental
  * renderer.
@@ -244,6 +246,7 @@ export class FringeWalker<Context> {
         public readonly root: DocumentNode,
         private readonly context: Context,
         private readonly renderer: FringeRenderer<Context>,
+        private readonly commitHook: CommitHook<Context>
     ) {
         this.stream = new FringeStream(fringe(root));
     }
@@ -269,23 +272,30 @@ export class FringeWalker<Context> {
         }
         while(!COMMITTABLE_NODES.has(this.stream.peekItem()?.node.tag)) {
             const node = this.stream.readItem();
-            if (node.type === FringeType.Pre) {
-                renderInnerNode(this.stream.readItem());
-            } else if (node.type === FringeType.Post) {
-                postNode(node);
-            } else {
-                // leaf node
-                if (node.node.leafNode !== true) {
-                    throw new TypeError("Leaf nodes should not be marked as an inner node");
-                }
-                this.renderer.getLeafRenderer(node.node.tag)(node.node.tag, node.node as unknown as LeafNode, this.context);
+            switch(node.type) {
+                case FringeType.Pre:
+                    renderInnerNode(node);
+                    break;
+                case FringeType.Post:
+                    postNode(node);
+                    break;
+                case FringeType.Leaf:
+                    if (node.node.leafNode !== true) {
+                        throw new TypeError("Leaf nodes should not be marked as an inner node");
+                    }
+                    this.renderer.getLeafRenderer(node.node.tag)(node.node.tag, node.node as unknown as LeafNode, this.context);
+                    break;
+                default:
+                    throw new TypeError(`Uknown fringe type ${node.type}`);
             }
         }
         if (this.stream.peekItem() === undefined) {
             return undefined;
         }
         const node = this.stream.readItem();
-        return postNode(node);
+        postNode(node);
+        this.commitHook(node, this.context);
+        return node;
     }
 }
 
