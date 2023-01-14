@@ -8,6 +8,13 @@ for more information.
 This is a hard fork of [Mjolnir](https://github.com/mjolnir),
 maintained by its former lead developer
 
+## Status
+
+The command handler is currently being refactored and the syntax will become
+incompatible with legacy Mjolnir commands. The UX will be overhauled
+as such and we will consider the launch of Draupnir a 2.0.0 release.
+
+You probably shouldn't run Draupnir yet.
 
 ## Features
 
