@@ -1,12 +1,18 @@
-# mjolnir
+# Draupnir
 
-A moderation tool for Matrix. Visit [#mjolnir:matrix.org](https://matrix.to/#/#mjolnir:matrix.org)
+A moderation tool for Matrix. Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)
 for more information.
+
+> I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
+
+This is a hard fork of [Mjolnir](https://github.com/mjolnir),
+maintained by its former lead developer
+
 
 ## Features
 
 As an all-in-one moderation tool, it can protect your server from malicious invites, spam
-messages, and whatever else you don't want. In addition to server-level protection, Mjolnir
+messages, and whatever else you don't want. In addition to server-level protection, Draupnir
 is great for communities wanting to protect their rooms without having to use their personal
 accounts for moderation.
 
@@ -20,9 +26,9 @@ homeserver.
 
 See the [setup documentation](docs/setup.md) for first-time setup documentation.
 
-See the [configuration sample with documentation](config/default.yaml) for detailed information about Mjolnir's configuration.
+See the [configuration sample with documentation](config/default.yaml) for detailed information about Draupnir's configuration.
 
-See the [synapse module documentation](docs/synapse_module.md) for information on how to setup Mjolnir's accompanying Synapse Module.
+See the [synapse module documentation](docs/synapse_module.md) for information on how to setup Draupnir's accompanying Synapse Module.
 
 ## Quickstart guide
 
@@ -87,7 +93,7 @@ Once rust is installed you can install mx-tester like so.
 $ cargo install mx-tester
 ```
 
-Once you have mx-tester installed you we will want to build a synapse image with synapse_antispam from the Mjolnir project root.
+Once you have mx-tester installed you we will want to build a synapse image with synapse_antispam from the Draupnir project root.
 
 ```
 $ mx-tester build
