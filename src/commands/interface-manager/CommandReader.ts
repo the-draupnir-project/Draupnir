@@ -54,7 +54,7 @@ const WHITESPACE = [' ', '\r', '\f', '\v', '\n', '\t'];
  * It doesn't produce an AST because there isn't any syntax that can make a tree
  * just a list.
  * This allows commands to be dispatched based on `ReadItem`s and allows
- * for more efficient (in terms of code) parsing of arguments,
+ * for more efficient (in terms of loc) parsing of arguments,
  * as I will demonstrate <link here when i've done it>.
  *
  * The technique used is somewhat inefficient in terms of resources,

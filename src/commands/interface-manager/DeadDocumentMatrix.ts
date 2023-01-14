@@ -6,7 +6,8 @@
 import { MatrixSendClient } from "../../MatrixEmitter";
 import { AbstractNode, DocumentNode, FringeWalker } from "./DeadDocument";
 import { HTML_RENDERER } from "./DeadDocumentHtml";
-import { MARKDOWN_RENDERER, PagedDuplexStream } from "./DeadDocumentMarkdown";
+import { MARKDOWN_RENDERER } from "./DeadDocumentMarkdown";
+import { PagedDuplexStream } from "./PagedDuplexStream";
 
 function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined): true {
     if (!Object.is(node1, node2)) {
@@ -17,9 +18,17 @@ function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined
 
 export type SendMatrixEventCB = (text: string, html: string) => Promise<void>;
 
+/**
+ * Render the `DocumentNode` to Matrix (in both HTML + Markdown) using the
+ * callback provided to send each event. Should serialized content span
+ * more than one event, then the callback will be called for each event.
+ * @param node A document node to render to Matrix.
+ * @param cb A callback that will send the text+html for a single event
+ * to a Matrix room.
+ */
 export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
-    const commitHook = (node: DocumentNode, context: { output: PagedDuplexStream }) => {
-        context.output.commit(node);
+    const commitHook = (commitNode: DocumentNode, context: { output: PagedDuplexStream }) => {
+        context.output.commit(commitNode);
     };
     const markdownOutput = new PagedDuplexStream();
     const markdownWalker = new FringeWalker(
@@ -60,6 +69,13 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
     }
 }
 
+/**
+ * Render the document node to html+text `m.notice` events.
+ * @param node The document node to render.
+ * @param roomId The room to send the events to.
+ * @param event An event to reply to.
+ * @param client A MatrixClient to send the events with.
+ */
 export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<void> {
     // We desperatley need support for threads to make this work in a non-shit way.
     await renderMatrix(node, async (text: string, html: string) => {

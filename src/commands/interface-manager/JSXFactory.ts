@@ -16,7 +16,7 @@ export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (Docum
             makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
         } else if (Array.isArray(rawChild)) {
             rawChild.forEach(ensureChild);
-        } else if (typeof rawChild.leafNode === 'boolean'){
+        } else if (typeof rawChild.leafNode === 'boolean') {
             node.addChild(rawChild);
         } else {
             throw new TypeError(`Unexpected raw child ${JSON.stringify(rawChild)}`)
@@ -30,7 +30,7 @@ export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (Docum
 namespace JSXFactory {
     export interface IntrinsicElements {
         [elemName: string]: any;
-    } 
+    }
 }
 
 /**
@@ -42,7 +42,7 @@ declare global {
     export namespace JSX {
         export interface IntrinsicElements {
             [elemName: string]: any;
-        } 
+        }
     }
 }
 

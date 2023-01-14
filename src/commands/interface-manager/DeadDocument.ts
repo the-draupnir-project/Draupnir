@@ -5,6 +5,27 @@
 
 import { SuperCoolStream } from "./CommandReader";
 
+/**
+ * The DeadDocument started as a universal document object model like Pandoc is.
+ * That kind of task is just too big for me though and someone else should have
+ * done it already. Irregardless, the way this is used is a simple DOM that can
+ * be used to incrementally render both HTML and Markdown.
+ * The reason we need to incrementally render both HTML and Markdown
+ * (which really means serialize, hence `DeadDocument`) is so that
+ * we can ensure in Matrix that both renditions of a node (html + markdown)
+ * are always in the same event and not split across multiple events.
+ * This ensures consistency when someone replies to an event that whichever
+ * format the client uses, the reply will be about the same "thing".
+ * So we have the power to split messages across multiple Matrix events
+ * automatically, without the need for micromanagement.
+ *
+ * While originally we were going to generate this DOM using a custom
+ * internal DSL, we discovered it was possible to use JSX templates with a
+ * custom DOM. You can find our own JSXFactory in `./JSXFactory.ts`.
+ *
+ * This means that end users shouldn't have to touch this DOM directly.
+ */
+
 export interface AbstractNode {
     readonly parent: DocumentNode|null;
     readonly leafNode: boolean;
@@ -102,7 +123,7 @@ export interface InlineCodeNode extends LeafNode {
 
 export function addInlineCode(this: DocumentNode, data: string): InlineCodeNode {
     return this.addChild(makeLeafNode<InlineCodeNode>(NodeTag.InlineCode, this, data));
-} 
+}
 
 export interface PreformattedTextNode extends LeafNode {
     readonly tag: NodeTag.PreformattedText;
@@ -155,7 +176,7 @@ function fringe(node: DocumentNode|LeafNode, flat: Flat = []): Flat {
     }
 }
 export type FringeLeafRenderFunction<Context> = (tag: NodeTag, node: LeafNode, context: Context) => void
-export type FringeInnerRenderFunction<Context> = (type: FringeType, node: DocumentNode, context: Context, environment: TagDynamicEnvironment) => void; 
+export type FringeInnerRenderFunction<Context> = (type: FringeType, node: DocumentNode, context: Context, environment: TagDynamicEnvironment) => void;
 
 export interface FringeRenderer<Context> {
     getLeafRenderer(tag: NodeTag): FringeLeafRenderFunction<Context>
@@ -200,7 +221,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
 
     public registerRenderer<T extends FringeInnerRenderFunction<Context>|FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): SimpleFringeRenderer<Context> {
         // The casting in here is evil. Not sure how to fix it.
-        switch(type) {
+        switch (type) {
             case FringeType.Pre:
                 this.internRenderer<T>(type, tag, this.preRenderers as Map<NodeTag, T>, renderer);
                 break;
@@ -273,31 +294,32 @@ export class FringeWalker<Context> {
             this.dynamicEnvironment.pop(node.node);
             return node.node;
         }
-        while(this.stream.peekItem() && !COMMITTABLE_NODES.has(this.stream.peekItem().node.tag)) {
-            const node = this.stream.readItem();
-            switch(node.type) {
+        while (this.stream.peekItem() && !COMMITTABLE_NODES.has(this.stream.peekItem().node.tag)) {
+            const annotatedNode = this.stream.readItem();
+            switch (annotatedNode.type) {
                 case FringeType.Pre:
-                    renderInnerNode(node);
+                    renderInnerNode(annotatedNode);
                     break;
                 case FringeType.Post:
-                    postNode(node);
+                    postNode(annotatedNode);
                     break;
                 case FringeType.Leaf:
-                    if (node.node.leafNode !== true) {
+                    if (annotatedNode.node.leafNode !== true) {
                         throw new TypeError("Leaf nodes should not be marked as an inner node");
                     }
-                    this.renderer.getLeafRenderer(node.node.tag)(node.node.tag, node.node as unknown as LeafNode, this.context);
+                    this.renderer.getLeafRenderer(annotatedNode.node.tag)
+                        (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
                     break;
                 default:
-                    throw new TypeError(`Uknown fringe type ${node.type}`);
+                    throw new TypeError(`Uknown fringe type ${annotatedNode.type}`);
             }
         }
         if (this.stream.peekItem() === undefined) {
             return undefined;
         }
-        const node = postNode(this.stream.readItem());
-        this.commitHook(node, this.context);
-        return node;
+        const documentNode = postNode(this.stream.readItem());
+        this.commitHook(documentNode, this.context);
+        return documentNode;
     }
 }
 
@@ -311,11 +333,24 @@ export class TagDynamicEnvironmentEntry {
     }
 }
 
-// OK we wrote this wrong
-// TagDynamicEnvironmentEntries need to be associated with a node
-// but not the variables themselves...
-// otherwise how can a list item access the indentation width managed by a list or 
-// ordered list, all three of which have different tags
+/**
+ * A dynamic environment is just an environment of bindings that is made
+ * by shadowing previous bindings and pushing and popping bindings "dynamically"
+ * for a given variable with some thing.
+ *
+ * In this example, we push and pop bindings with `DocumentNode`s.
+ * For example, if you make a binding to a variable called `indentationLevel`
+ * to set it to `1` from a `<ul>` node, then this binding should be popped
+ * when the `FringeWalker` reaches the post node (`</ul>`).
+ * Howerver, if we encounter another `<ul>`, we can read the existing value
+ * for `indentationLevel`, increment it and create a new binding
+ * that shadows the existing one. This too will get popped once we encounter
+ * the post node for this `<ul>` node (`</ul>`).
+ *
+ * This makes it very easy to express a situation where you modify and
+ * restore variables that depend on node depth when walking the fringe,
+ * as the restoration of previous values can be handled automatically for us.
+ */
 export class TagDynamicEnvironment {
     private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
 
