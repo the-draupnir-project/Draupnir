@@ -8,6 +8,7 @@ db:
   connectionString: "postgres://mjolnir-tester:mjolnir-test@localhost:8083/mjolnir-test-db"
 
 accessControlList: "#access-control-list:localhost:9999"
+adminRoom: "#access-control-list:localhost:9999"
 
 webAPI:
   port: 9001

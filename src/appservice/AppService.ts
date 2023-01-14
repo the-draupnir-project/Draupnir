@@ -1,4 +1,12 @@
-/*
+/**
+ * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
+ * All rights reserved.
+ *
+ * This file is modified and is NOT licensed under the Apache License.
+ * This modified file incorperates work from mjolnir
+ * https://github.com/matrix-org/mjolnir
+ * which included the following license notice:
+
 Copyright 2022 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +20,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
+ *
+ * However, this file is modified and the modifications in this file
+ * are NOT distributed, contributed, committed, or licensed under the Apache License.
+ */
 
 import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger } from "matrix-appservice-bridge";
 import { MjolnirManager } from ".//MjolnirManager";
@@ -20,6 +31,7 @@ import { DataStore, PgDataStore } from ".//datastore";
 import { Api } from "./Api";
 import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
+import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 
 const log = new Logger("AppService");
 /**
@@ -29,6 +41,7 @@ const log = new Logger("AppService");
 export class MjolnirAppService {
 
     private readonly api: Api;
+    private readonly commands: AppserviceCommandHandler;
 
     /**
      * The constructor is private because we want to ensure intialization steps are followed,
@@ -37,11 +50,12 @@ export class MjolnirAppService {
     private constructor(
         public readonly config: IConfig,
         public readonly bridge: Bridge,
-        private readonly mjolnirManager: MjolnirManager,
+        public readonly mjolnirManager: MjolnirManager,
         private readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
     ) {
         this.api = new Api(config.homeserver.url, mjolnirManager);
+        this.commands = new AppserviceCommandHandler(this);
     }
 
     /**
@@ -133,6 +147,7 @@ export class MjolnirAppService {
         }
         this.accessControl.handleEvent(mxEvent['room_id'], mxEvent);
         this.mjolnirManager.onEvent(request, context);
+        this.commands.handleEvent(mxEvent);
     }
 
     /**
@@ -140,6 +155,7 @@ export class MjolnirAppService {
      * @param port The port that the appservice should listen on to receive transactions from the homeserver.
      */
     private async start(port: number) {
+        await this.bridge.getBot().getClient().joinRoom(this.config.adminRoom);
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
         await this.bridge.listen(port);

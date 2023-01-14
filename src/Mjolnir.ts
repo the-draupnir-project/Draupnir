@@ -1,4 +1,12 @@
-/*
+/**
+ * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
+ * All rights reserved.
+ *
+ * This file is modified and is NOT licensed under the Apache License.
+ * This modified file incorperates work from mjolnir
+ * https://github.com/matrix-org/mjolnir
+ * which included the following license notice:
+
 Copyright 2019-2021 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +20,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
+ *
+ * However, this file is modified and the modifications in this file
+ * are NOT distributed, contributed, committed, or licensed under the Apache License.
+ */
 
 import {
     extractRequestError,
@@ -39,6 +50,7 @@ import { ProtectionManager } from "./protections/ProtectionManager";
 import { RoomMemberManager } from "./RoomMembers";
 import ProtectedRoomsConfig from "./ProtectedRoomsConfig";
 import { MatrixEmitter, MatrixSendClient } from "./MatrixEmitter";
+import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -86,6 +98,7 @@ export class Mjolnir {
      */
     public readonly reportManager: ReportManager;
 
+    private readonly commandTable = findCommandTable("mjolnir");
     /**
      * Adds a listener to the client that will automatically accept invitations.
      * @param {MatrixSendClient} client
@@ -207,7 +220,8 @@ export class Mjolnir {
                 LogService.info("Mjolnir", `Command being run by ${event['sender']}: ${event['content']['body']}`);
 
                 await client.sendReadReceipt(roomId, event['event_id']);
-                return handleCommand(roomId, event, this);
+
+                return handleCommand(roomId, event, this, this.commandTable);
             }
         });
 

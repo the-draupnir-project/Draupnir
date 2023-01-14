@@ -1,4 +1,12 @@
-/*
+/**
+ * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
+ * All rights reserved.
+ *
+ * This file is modified and is NOT licensed under the Apache License.
+ * This modified file incorperates work from mjolnir
+ * https://github.com/matrix-org/mjolnir
+ * which included the following license notice:
+
 Copyright 2019-2022 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +20,14 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
+ *
+ * However, this file is modified and the modifications in this file
+ * are NOT distributed, contributed, committed, or licensed under the Apache License.
+ */
 
 import { Mjolnir } from "../Mjolnir";
 import { execStatusCommand } from "./StatusCommand";
-import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
+import "./UnbanBanCommand";
 import { execDumpRulesCommand, execRulesMatchingCommand } from "./DumpRulesCommand";
 import { extractRequestError, LogService, RichReply } from "matrix-bot-sdk";
 import { htmlEscape } from "../utils";
@@ -42,11 +53,21 @@ import { execKickCommand } from "./KickCommand";
 import { execMakeRoomAdminCommand } from "./MakeRoomAdminCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
+import { readCommand } from "./interface-manager/CommandReader";
+import { BaseFunction, CommandTable, defineCommandTable } from "./interface-manager/InterfaceCommand";
+import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
+import { ArgumentStream } from "./interface-manager/ParamaterParsing";
+import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
 
+export interface MjolnirContext extends MatrixContext {
+    mjolnir: Mjolnir,
+}
+
+defineCommandTable("mjolnir");
 
 export const COMMAND_PREFIX = "!mjolnir";
 
-export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir) {
+export async function handleCommand(roomId: string, event: { content: { body: string } }, mjolnir: Mjolnir, commandTable: CommandTable<BaseFunction>) {
     const cmd = event['content']['body'];
     const parts = cmd.trim().split(' ').filter(p => p.trim().length > 0);
 
@@ -126,6 +147,17 @@ export async function handleCommand(roomId: string, event: { content: { body: st
         } else if (parts[1] === 'make' && parts[2] === 'admin' && parts.length > 3) {
             return await execMakeRoomAdminCommand(roomId, event, mjolnir, parts);
         } else {
+            const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
+            const stream = new ArgumentStream(readItems);
+            const command = commandTable.findAMatchingCommand(stream);
+            if (command) {
+                const adaptor = findMatrixInterfaceAdaptor(command);
+                const mjolnirContext: MjolnirContext = {
+                    mjolnir, roomId, event, client: mjolnir.client
+                };
+                return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+            }
+
             // Help menu
             const menu = "" +
                 "!mjolnir                                                            - Print status information\n" +
