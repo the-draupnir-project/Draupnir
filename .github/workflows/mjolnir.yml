@@ -1,4 +1,4 @@
-name: Mjolnir
+name: Tests
 
 on:
   push:

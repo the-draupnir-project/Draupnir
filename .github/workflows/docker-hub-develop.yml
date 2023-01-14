@@ -1,12 +1,14 @@
 # Copied from https://github.com/matrix-org/matrix-bifrost/blob/develop/.github/workflows/docker-hub-latest.yml
 
-name: "Docker Hub - Latest"
+name: "Docker Hub - Develop"
 
 on:
   push:
+    branches:
+      - main
 
 env:
-  DOCKER_NAMESPACE: matrixdotorg
+  DOCKER_NAMESPACE: gnuxie
   PLATFORMS: linux/amd64
   # Only push if this is main, otherwise we just want to build
   PUSH: ${{ github.ref == 'refs/heads/main' }}
@@ -20,8 +22,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build image
         uses: docker/build-push-action@v2
@@ -31,4 +33,4 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUSH }}
           tags: |
-            ${{ env.DOCKER_NAMESPACE }}/mjolnir:latest
+            ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
