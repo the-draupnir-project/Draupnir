@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+import { htmlEscape } from "../../utils";
 import { FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer } from "./DeadDocument";
 import { blank, staticString, TransactionalOutputContext } from "./DeadDocumentMarkdown";
 
@@ -12,7 +13,7 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
     FringeType.Leaf,
     NodeTag.TextNode,
     function (_tag: NodeTag, node: LeafNode, context: TransactionalOutputContext) {
-        context.output.writeString(node.data);
+        context.output.writeString(htmlEscape(node.data));
     }
 ).registerInnerNode(NodeTag.Emphasis,
     staticString('<em>'),
