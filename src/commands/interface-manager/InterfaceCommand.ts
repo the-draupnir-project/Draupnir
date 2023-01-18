@@ -102,18 +102,18 @@ export class CommandTable<ExecutorType extends BaseFunction> {
     }
 }
 
-const COMMAND_TABLE_TABLE = new Map<string, CommandTable<BaseFunction>>();
-export function defineCommandTable(name: string) {
+const COMMAND_TABLE_TABLE = new Map<string|symbol, CommandTable<BaseFunction>>();
+export function defineCommandTable(name: string|symbol) {
     if (COMMAND_TABLE_TABLE.has(name)) {
-        throw new TypeError(`A table called ${name} already exists`);
+        throw new TypeError(`A table called ${name.toString()} already exists`);
     }
     COMMAND_TABLE_TABLE.set(name, new CommandTable());
 }
 
-export function findCommandTable<ExecutorType extends BaseFunction>(name: string): CommandTable<ExecutorType> {
+export function findCommandTable<ExecutorType extends BaseFunction>(name: string|symbol): CommandTable<ExecutorType> {
     const entry = COMMAND_TABLE_TABLE.get(name);
     if (!entry) {
-        throw new TypeError(`Couldn't find a table called ${name}`);
+        throw new TypeError(`Couldn't find a table called ${name.toString()}`);
     }
     return entry as CommandTable<ExecutorType>;
 }
@@ -151,9 +151,15 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     }
 }
 
+// Shouldn't there be a callback interface.
+// imagine the old ban or sync command, each time you check a room
+// you add a callback to say when a user has been banned or a room
+// has been cleared or there was an error applying a ban to that room.
+// There could be a description in defineInterfaceComomand
+// for what each callback is and does for the adaptors to hook into.
 export function defineInterfaceCommand<ExecutorType extends BaseFunction>(description: {
     paramaters: IArgumentListParser,
-    table: string,
+    table: string|symbol,
     command: ExecutorType,
     designator: string[],
     summary: string,
