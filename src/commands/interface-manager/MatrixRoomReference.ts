@@ -3,7 +3,10 @@
  * All rights reserved.
  */
 
-import { Permalinks, MatrixClient, RoomAlias } from "matrix-bot-sdk";
+import { Permalinks, RoomAlias } from "matrix-bot-sdk";
+
+type JoinRoom = (roomIdOrAlias: string, viaServers?: string[]) => Promise</*room id*/string>;
+type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
 
 /**
  * This is a universal reference for a matrix room.
@@ -23,7 +26,7 @@ import { Permalinks, MatrixClient, RoomAlias } from "matrix-bot-sdk";
      * @param client A matrix client that should join the room.
      * @returns The room id that was joined.
      */
-    public async joinClient(client: MatrixClient): Promise<string> {
+    public async joinClient(client: { joinRoom: JoinRoom }): Promise<string> {
         return await client.joinRoom(this.reference, this.viaServers);
     }
 
@@ -56,7 +59,7 @@ import { Permalinks, MatrixClient, RoomAlias } from "matrix-bot-sdk";
      * @param client A client that we can use to resolve the room alias.
      * @returns A new MatrixRoomReference that contains the room id.
      */
-    public async resolve(client: MatrixClient): Promise<MatrixRoomReference> {
+    public async resolve(client: { resolveRoom: ResolveRoom }): Promise<MatrixRoomReference> {
         if (this.reference.startsWith('!')) {
             return this;
         } else {
