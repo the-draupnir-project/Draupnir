@@ -30,7 +30,7 @@ limitations under the License.
  */
 
 import { ReadItem } from "./CommandReader";
-import { ParamaterParser, ArgumentStream, IArgumentListParser } from "./ParamaterParsing";
+import { ParamaterParser, ArgumentStream, IArgumentListParser, ParsedKeywords } from "./ParamaterParsing";
 import { CommandResult } from "./Validation";
 
 /**
@@ -39,7 +39,7 @@ import { CommandResult } from "./Validation";
  * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
  */
 
-export type BaseFunction = (...args: any) => Promise<CommandResult<any>>;
+export type BaseFunction = (keywords: ParsedKeywords, ...args: any) => Promise<CommandResult<any>>;
 
 type CommandLookupEntry<ExecutorType extends BaseFunction> = {
     next?: Map<string, CommandLookupEntry<ExecutorType>>,
@@ -118,6 +118,18 @@ export function findCommandTable<ExecutorType extends BaseFunction>(name: string
     return entry as CommandTable<ExecutorType>;
 }
 
+/**
+ * Used to find a table command at the internal DSL level, not as a client for commands.
+ */
+export function findTableCommand<ExecutorType extends BaseFunction>(tableName: string|symbol, ...designator: string[]): InterfaceCommand<ExecutorType> {
+    const table = findCommandTable(tableName);
+    const command = table.findAMatchingCommand(new ArgumentStream(designator));
+    if (command === undefined || !designator.every(part => command.designator.includes(part))) {
+        throw new TypeError(`Could not find a table command in the table ${tableName.toString()} with the designator ${JSON.stringify(designator)}`)
+    }
+    return command as InterfaceCommand<ExecutorType>;
+}
+
 export class InterfaceCommand<ExecutorType extends BaseFunction> {
     constructor(
         public readonly argumentListParser: IArgumentListParser,
@@ -147,7 +159,11 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
             // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
             return paramaterDescription as ReturnType<Awaited<ExecutorType>>;
         }
-        return await this.command.apply(context, [...paramaterDescription.ok.immediateArguments, paramaterDescription.ok.rest]);
+        return await this.command.apply(context, [
+            paramaterDescription.ok.keywords,
+            ...paramaterDescription.ok.immediateArguments,
+            ...paramaterDescription.ok.rest ?? []
+        ]);
     }
 }
 

@@ -79,7 +79,7 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
             acceptor: findPresentationType("UserID"),
         }
     ]),
-    command: async(context, mjolnirId: UserID): Promise<CommandResult<true>> => {
+    command: async(context, _keywords, mjolnirId: UserID): Promise<CommandResult<true>> => {
         const mjolnirManager = context.appservice.mjolnirManager;
         const mjolnir = mjolnirManager.findUnstartedMjolnir(mjolnirId.localpart);
         if (mjolnir?.mjolnirRecord === undefined) {

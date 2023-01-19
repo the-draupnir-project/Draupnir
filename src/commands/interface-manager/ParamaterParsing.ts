@@ -85,80 +85,197 @@ makePresentationType({
     validator: simpleTypeValidator('string', (item: ReadItem) => typeof item === 'string'),
 })
 
-interface DestructableRest {
-    rest: ReadItem[],
-    // Pisses me off to no end that this is how it has to work.
-    [prop: string]: ReadItem|ReadItem[],
-}
+/**
+ * Describes a rest paramater for a command.
+ * This consumes any arguments left over in the call to a command
+ * into an array and ensures that each can be accepted by the `acceptor`.
+ *
+ * Any keywords in the rest of the command will be given to the `keywordParser`.
+ */
+export class RestDescription implements ParamaterDescription {
+    constructor(
+        public readonly name: string,
+        /** The presentation type of each item. */
+        public readonly acceptor: PresentationType,
+        public readonly description?: string,
+    ) {
 
-export class RestParser {
-    public parseRest(stream: ArgumentStream): CommandResult<DestructableRest> {
+    }
+
+    /**
+     * Parse the rest of a command.
+     * @param stream An argument stream that starts at the rest of a command.
+     * @param keywordParser Used to store any keywords found in the rest of the command.
+     * @returns A CommandResult of ReadItems associated with the rest of the command.
+     * If a ReadItem or Keyword is invalid for the command, then an error will be returned.
+     */
+    public parseRest(stream: ArgumentStream, keywordParser: KeywordParser): CommandResult<ReadItem[]> {
         const items: ReadItem[] = [];
-        while (stream.peekItem()) {
-            items.push(stream.readItem());
+        while (stream.peekItem() !== undefined) {
+            const keywordResult = keywordParser.parseKeywords(stream);
+            if (keywordResult.isErr()) {
+                return CommandResult.Err(keywordResult.err);
+            }
+            if (stream.peekItem() !== undefined) {
+                const validationResult = this.acceptor.validator(stream.peekItem());
+                if (validationResult.isErr()) {
+                    return ArgumentParseError.Result(
+                        validationResult.err.message,
+                        { paramater: this, stream }
+                    );
+                }
+                items.push(stream.readItem());
+            }
         }
-        return CommandResult.Ok({ rest: items });
+        return CommandResult.Ok(items);
     }
 }
 
-// Maybe we can get around the index type restriction by making "rest" a protected keyword?
-interface KeywordsDescription {
-    readonly [prop: string]: KeywordPropertyDescription|boolean;
-    readonly allowOtherKeys: boolean
+/**
+ * This is an interface for an object which describes which keyword
+ * argument that can be accepted by a command.
+ */
+interface KeywordArgumentsDescription {
+    readonly [prop: string]: KeywordPropertyDescription|undefined;
 }
 
+/**
+ * An extension of ParamaterDescription, some keyword arguments
+ * may just be flags that have no associated property in syntax,
+ * and their presence is to associate the value `true`.
+ */
 interface KeywordPropertyDescription extends ParamaterDescription {
     readonly isFlag: boolean;
 }
 
-// Things that are also needed that are not done yet:
-// 1) We need to figure out what happens to aliases for keywords..
-// 2) We need to sort out the predicates thing.
-export class KeywordParser extends RestParser {
-    constructor(public readonly description: KeywordsDescription) {
-        super();
+/**
+ * Describes all of the keyword arguments for a command.
+ */
+export class KeywordsDescription {
+    constructor(
+        public readonly description: KeywordArgumentsDescription,
+        public readonly allowOtherKeys?: boolean,
+    ) {
+
     }
 
     /**
-     * TODO: Prototype pollution must be part of integration tests for this
-     * @param itemStream stream of arguments.
+     * @returns A parser that will create a map of all keywords and their associated properties.
      */
-    public parseRest(itemStream: ArgumentStream): CommandResult<DestructableRest> {
-        const destructable: DestructableRest = { rest: [] };
-        while (itemStream.peekItem() !== undefined) {
-            const item = itemStream.readItem();
-            if (item instanceof Keyword) {
-                const description = this.description[item.designator];
-                if (typeof description === 'boolean') {
-                    throw new TypeError("Shouldn't be a boolean mate");
-                }
-                const associatedProperty: CommandResult<any> = (() => {
-                    if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
-                        const property = itemStream.readItem();
-                        return CommandResult.Ok(property);
-                    } else {
-                        if (!description.isFlag) {
-                            return ArgumentParseError.Result(`An associated argument was not provided for the keyword ${description.name}.`, { paramater: description, stream: itemStream })
-                        }
-                        return CommandResult.Ok(true);
-                    }
-                })();
-                if (associatedProperty.isErr()) {
-                    return CommandResult.Err(associatedProperty.err);
-                }
-                destructable[description.name] = associatedProperty.ok;
+    public getParser(): KeywordParser {
+        return new KeywordParser(this);
+    }
+}
 
+/**
+ * A read only map of keywords to their associated properties.
+ */
+export class ParsedKeywords {
+    constructor (
+        private readonly descriptions: KeywordArgumentsDescription,
+        private readonly keywords: ReadonlyMap<string, ReadItem>
+    ) {
+
+    }
+
+    public getKeyword<T extends ReadItem|boolean>(keyword: string, defaultValue: T|undefined = undefined): T|undefined {
+        const keywordDescription = this.descriptions[keyword];
+        if (keywordDescription === undefined) {
+            throw new TypeError(`${keyword} is not a keyword that has been expected for this command.`);
+        }
+        const value = this.keywords.get(keyword);
+        if (value !== undefined) {
+            return value as T;
+        } else {
+            return defaultValue;
+        }
+    }
+}
+
+/**
+ * A helper that gets instantiated for each command invoccation to parse and build
+ * the map representing the association between keywords and their properties.
+ */
+class KeywordParser {
+    private readonly arguments = new Map<string, ReadItem>();
+
+    constructor(
+        public readonly description: KeywordsDescription
+    ) {
+    }
+
+    public getKeywords(): ParsedKeywords {
+        return new ParsedKeywords(this.description.description, this.arguments);
+    }
+
+
+    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: ArgumentStream): CommandResult<any, ArgumentParseError> {
+        if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
+            const validationResult = keyword.acceptor.validator(itemStream.peekItem());
+            if (validationResult.isOk()) {
+                return CommandResult.Ok(itemStream.readItem());
             } else {
-                destructable.rest.push(item);
+                return ArgumentParseError.Result(validationResult.err.message, { paramater: keyword, stream: itemStream });
+            }
+        } else {
+            if (!keyword.isFlag) {
+                return ArgumentParseError.Result(`An associated argument was not provided for the keyword ${keyword.name}.`, { paramater: keyword, stream: itemStream });
+            } else {
+                return CommandResult.Ok(true);
             }
         }
-        return CommandResult.Ok(destructable);
+    }
+
+    public parseKeywords(itemStream: ArgumentStream): CommandResult<this> {
+        while (itemStream.peekItem() !== undefined && itemStream.peekItem() instanceof Keyword) {
+            const item = itemStream.readItem() as Keyword;
+            const description = this.description.description[item.designator];
+            if (description === undefined) {
+                if (this.description.allowOtherKeys) {
+                    throw new TypeError("Allow other keys is umimplemented");
+                    // i don't think this can be implemented,
+                    // how do you tell an extra key is a flag or has an associated
+                    // property?
+                } else {
+                    return UnexpectedArgumentError.Result(
+                        `Encountered unexpected keyword argument: ${item.designator}`,
+                        { stream: itemStream }
+                    );
+                }
+            } else {
+                const associatedPropertyResult = this.readKeywordAssociatedProperty(description, itemStream);
+                if (associatedPropertyResult.isErr()) {
+                    return associatedPropertyResult;
+                } else {
+                    this.arguments.set(description.name, associatedPropertyResult.ok);
+                }
+            }
+
+        }
+        return CommandResult.Ok(this);
+    }
+
+    public parseRest(itemStream: ArgumentStream, restDescription?: RestDescription): CommandResult<ReadItem[]|undefined> {
+        if (restDescription !== undefined) {
+            return restDescription.parseRest(itemStream, this)
+        } else {
+            const result = this.parseKeywords(itemStream);
+            if (result.isErr()) {
+                return CommandResult.Err(result.err);
+            }
+            if (itemStream.peekItem() !== undefined) {
+                return CommandError.Result(`There is an unexpected non-keyword argument ${JSON.stringify(itemStream.peekItem())}`);
+            } else {
+                return CommandResult.Ok(undefined);
+            }
+        }
     }
 }
 
 export interface ParsedArguments {
     readonly immediateArguments: ReadItem[],
-    readonly rest?: DestructableRest,
+    readonly rest?: ReadItem[],
+    readonly keywords: ParsedKeywords,
 }
 
 export interface ParamaterDescription {
@@ -174,14 +291,15 @@ export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<Parsed
 // We should have a new type of CommandResult that accepts a ParamterDescription, and can render what's wrong (e.g. missing paramater).
 // Showing where in the item stream it is missing and the command syntax and everything lovely like that.
 // How does that work with Union?
-export function paramaters(descriptions: ParamaterDescription[], restParser: undefined|RestParser = undefined): IArgumentListParser {
-    return new ArgumentListParser(descriptions, restParser);
+export function paramaters(descriptions: ParamaterDescription[], rest: undefined|RestDescription = undefined, keywords: KeywordsDescription = new KeywordsDescription({}, false)): IArgumentListParser {
+    return new ArgumentListParser(descriptions, keywords, rest);
 }
 
 export interface IArgumentListParser {
     readonly parseFunction: ParamaterParser,
     readonly descriptions: ParamaterDescription[],
-    readonly restParser?: RestParser,
+    readonly rest?: RestDescription,
+    readonly keywords: KeywordsDescription,
 }
 
 /**
@@ -189,51 +307,82 @@ export interface IArgumentListParser {
  * It is used directly by InterfaceCommand to consume, parse, validate le arguments.
  */
 class ArgumentListParser implements IArgumentListParser {
-    public readonly parseFunction: ParamaterParser
+    public readonly parseFunction: ParamaterParser;
+
     constructor(
         public readonly descriptions: ParamaterDescription[],
-        public readonly restParser: undefined|RestParser = undefined,
-        ) {
-            this.parseFunction = this.makeParseFunction(descriptions, restParser);
+        public readonly keywords: KeywordsDescription,
+        public readonly rest?: RestDescription,
+    ) {
+        this.parseFunction = this.makeParseFunction(descriptions, this.rest, this.keywords);
     }
 
-    private makeParseFunction(descriptions: ParamaterDescription[], restParser: undefined|RestParser): ParamaterParser {
+    private makeParseFunction(descriptions: ParamaterDescription[], rest: undefined|RestDescription, keywords: KeywordsDescription): ParamaterParser {
         return (...readItems: ReadItem[]) => {
+            const keywordsParser = keywords.getParser();
             const itemStream = new ArgumentStream(readItems);
             for (const paramater of descriptions) {
+                // it eats any keywords at any point in the stream
+                // as they can appear at any point technically.
+                const keywordResult = keywordsParser.parseKeywords(itemStream);
+                if (keywordResult.isErr()) {
+                    return CommandResult.Err(keywordResult.err);
+                }
                 if (itemStream.peekItem() === undefined) {
                     return ArgumentParseError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`, { paramater, stream: itemStream });
                 }
                 const result = paramater.acceptor.validator(itemStream.peekItem());
-                if (result.err) {
+                if (result.isErr()) {
                     // should really allow the help to be printed later on and keep the whole context?
                     return ArgumentParseError.Result(result.err.message, { paramater, stream: itemStream });
                 }
                 itemStream.readItem();
             }
-            if (restParser) {
-                const result = restParser.parseRest(itemStream);
-                if (result.isErr()) {
-                    return CommandResult.Err(result.err);
-                }
-                return CommandResult.Ok({ immediateArguments: readItems, rest: result.ok });
-            } else {
-                return CommandResult.Ok({ immediateArguments: readItems });
+            const restResult = keywordsParser.parseRest(itemStream, rest);
+            if (restResult.isErr()) {
+                return CommandResult.Err(restResult.err);
             }
+            const immediateArguments = restResult.ok === undefined
+                || restResult.ok.length === 0
+                ? readItems
+                : readItems.slice(0, readItems.indexOf(restResult.ok[0]) + 1)
+            return CommandResult.Ok({
+                immediateArguments: immediateArguments,
+                keywords: keywordsParser.getKeywords(),
+                rest: restResult.ok
+            });
         }
     }
 }
 
-export class ArgumentParseError extends CommandError {
+export class AbstractArgumentParseError extends CommandError {
     constructor(
-        public readonly paramater: ParamaterDescription,
         public readonly stream: ArgumentStream,
         message: string) {
         super(message)
     }
 
+    public static Result<Ok>(message: string, options: { stream: ArgumentStream }): CommandResult<Ok, AbstractArgumentParseError> {
+        return CommandResult.Err(new AbstractArgumentParseError(options.stream, message));
+    }
+}
+
+export class ArgumentParseError extends AbstractArgumentParseError {
+    constructor(
+        public readonly paramater: ParamaterDescription,
+        stream: ArgumentStream,
+        message: string) {
+        super(stream, message)
+    }
+
     public static Result<Ok>(message: string, options: { paramater: ParamaterDescription, stream: ArgumentStream }): CommandResult<Ok, ArgumentParseError> {
         return CommandResult.Err(new ArgumentParseError(options.paramater, options.stream, message));
+    }
+}
+
+export class UnexpectedArgumentError extends AbstractArgumentParseError {
+    public static Result<Ok>(message: string, options: { stream: ArgumentStream }): CommandResult<Ok, UnexpectedArgumentError> {
+        return CommandResult.Err(new UnexpectedArgumentError(options.stream, message));
     }
 }
 
@@ -242,15 +391,16 @@ export class ArgumentParseError extends CommandError {
  * these are specific to applications e.g. imagine you want to resolve an alias or something.
  * It oculd also work by making an anonymous presentation type, but dunno about that.
  */
-export function union(...predicates: PredicateIsParamater[]): PredicateIsParamater {
-    return (item: ReadItem) => {
-        const matches = predicates.map(predicate => predicate(item));
-        const oks = matches.filter(result => result.isOk());
-        if (oks.length > 0) {
-            return CommandResult.Ok(true);
-        } else {
-            // FIXME asap: again, we need some context as to what the argument is?
-            return CommandError.Result(`The argument must match the paramater description ${matches}`);
+export function union(...presentationTypes: PresentationType[]): PresentationType {
+    const name = presentationTypes.map(type => type.name).join(" | ");
+    return {
+        name,
+        validator: (readItem: ReadItem) => {
+            if (presentationTypes.some(p => p.validator(readItem).isOk())) {
+                return CommandResult.Ok(true);
+            } else {
+                return CommandError.Result(`Read item didn't match any of the presentaiton types ${name}`);
+            }
         }
     }
 }
