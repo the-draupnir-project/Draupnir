@@ -236,7 +236,7 @@ function patchMatrixClientForConciseExceptions() {
         // We'll only throw the error if there is one.
         let error = new Error("STACK CAPTURE");
         originalRequestFn(params, function conciseExceptionRequestFn(
-            err: { [key: string]: any }, response: { [key: string]: any }, resBody: string
+            err: { [key: string]: unknown }, response: { [key: string]: any }, resBody: unknown
         ) {
             if (!err && (response?.statusCode < 200 || response?.statusCode >= 300)) {
                 // Normally, converting HTTP Errors into rejections is done by the caller
@@ -272,34 +272,36 @@ function patchMatrixClientForConciseExceptions() {
             // useless.
             let method: string | null = null;
             let path = '';
-            let body: string | null = null;
+            let body: unknown = null;
             if (err.method) {
                 method = err.method;
             }
             if (err.url) {
                 path = err.url;
             }
-            if ("req" in err && (err as any).req instanceof ClientRequest) {
+            if ("req" in err && err.req instanceof ClientRequest) {
                 if (!method) {
-                    method = (err as any).req.method;
+                    method = err.req.method;
                 }
                 if (!path) {
-                    path = (err as any).req.path;
+                    path = err.req.path;
                 }
             }
             if ("body" in err) {
-                body = (err as any).body;
+                body = err.body;
             }
-            let message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${body}`;
-            error.message = message;
-            if (body) {
-                // Calling code may use `body` to check for errors, so let's
-                // make sure that we're providing it.
+            // Calling code may use `body` to check for errors, so let's
+            // make sure that we're providing it.
+            if (typeof body === 'string') {
                 try {
-                    body = JSON.parse(body);
+                    body = JSON.parse(body, jsonReviver);
                 } catch (ex) {
                     // Not JSON.
                 }
+            }
+            let message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${JSON.stringify(body)}`;
+            error.message = message;
+            if (body) {
                 // Define the property but don't make it visible during logging.
                 Object.defineProperty(error, "body", {
                     value: body,
@@ -355,7 +357,7 @@ function patchMatrixClientForRetry() {
                 try {
                     let result: any[] = await new Promise((resolve, reject) => {
                         originalRequestFn(params, function requestFnWithRetry(
-                            err: { [key: string]: any }, response: { [key: string]: any }, resBody: string
+                            err: { [key: string]: any }, response: { [key: string]: unknown }, resBody: unknown
                         ) {
                             // Note: There is no data race on `attempt` as we `await` before continuing
                             // to the next iteration of the loop.
@@ -398,19 +400,71 @@ function patchMatrixClientForRetry() {
     isMatrixClientPatchedForRetryWhenThrottled = true;
 }
 
+let isMatrixClientPatchedForPrototypePollution = false;
+
+function jsonReviver(key: string, value: any): any {
+    if (key === '__proto__' || key === 'constructor') {
+        return undefined;
+    } else {
+        return value;
+    }
+}
+
+/**
+ * https://github.com/turt2live/matrix-bot-sdk/blob/c7d16776502c26bbb547a3d667ec92eb50e7026c/src/http.ts#L77-L101 💀 fucking hell!!!!
+ *
+ * The following is an inefficient workaround, but you gotta do what you can.
+ */
+function patchMatrixClientForPrototypePollution() {
+    if (isMatrixClientPatchedForPrototypePollution) {
+        return;
+    }
+    const originalRequestFn = getRequestFn();
+    setRequestFn((params: { [k: string]: any }, cb: any) => {
+        originalRequestFn(params, function conciseExceptionRequestFn(
+            error: { [key: string]: any }, response: { [key: string]: any }, resBody: unknown
+        ) {
+            // https://github.com/turt2live/matrix-bot-sdk/blob/c7d16776502c26bbb547a3d667ec92eb50e7026c/src/http.ts#L77-L101
+            // bring forwards this step and do it safely.
+            if (typeof resBody === 'string') {
+                try {
+                    resBody = JSON.parse(resBody, jsonReviver);
+                } catch (e) {
+                    // we don't care if we fail to parse the JSON as it probably isn't JSON.
+                }
+            }
+
+            if (typeof response.body === 'string') {
+                try {
+                    response.body = JSON.parse(response.body, jsonReviver);
+                } catch (e) {
+                    // we don't care if we fail to parse the JSON as it probably isn't JSON.
+                }
+            }
+            return cb(error, response, resBody);
+        })
+    });
+    isMatrixClientPatchedForPrototypePollution = true;
+}
+
 /**
  * Perform any patching deemed necessary to MatrixClient.
  */
 export function patchMatrixClient() {
     // Note that the order of patches is meaningful.
     //
+    // - `patchMatrixClientForPrototypePollution` converts all JSON bodies to safe JSON before client code can
+    //    parse and use the JSON inappropriately.
     // - `patchMatrixClientForConciseExceptions` converts all `IncomingMessage`
     //   errors into instances of `Error` handled as errors;
     // - `patchMatrixClientForRetry` expects that all errors are returned as
     //   errors.
+    patchMatrixClientForPrototypePollution();
     patchMatrixClientForConciseExceptions();
     patchMatrixClientForRetry();
 }
+
+patchMatrixClient();
 
 /**
  * Initialize Sentry for error monitoring and reporting.
