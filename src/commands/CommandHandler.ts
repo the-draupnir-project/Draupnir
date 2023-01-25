@@ -58,6 +58,7 @@ import { BaseFunction, CommandTable, defineCommandTable } from "./interface-mana
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParamaterParsing";
 import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
+import { execSetupProtectedRoom } from "./SetupDecentralizedReportingCommand";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
@@ -122,6 +123,8 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execAddProtectedRoom(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'rooms' && parts.length > 3 && parts[2] === 'remove') {
             return await execRemoveProtectedRoom(roomId, event, mjolnir, parts);
+        } else if (parts[1] === 'rooms' && parts.length > 3 && parts[2] === 'setup') {
+            return await execSetupProtectedRoom(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'rooms' && parts.length === 2) {
             return await execListProtectedRooms(roomId, event, mjolnir);
         } else if (parts[1] === 'move' && parts.length > 3) {
@@ -188,6 +191,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 "!mjolnir rooms                                                      - Lists all the protected rooms\n" +
                 "!mjolnir rooms add <room alias/ID>                                  - Adds a protected room (may cause high server load)\n" +
                 "!mjolnir rooms remove <room alias/ID>                               - Removes a protected room\n" +
+                "!mjolnir rooms setup <room alias/ID> reporting                      - Setup decentralized reporting in a room\n" +
                 "!mjolnir move <room alias> <room alias/ID>                          - Moves a <room alias> to a new <room ID>\n" +
                 "!mjolnir directory add <room alias/ID>                              - Publishes a room in the server's room directory\n" +
                 "!mjolnir directory remove <room alias/ID>                           - Removes a room from the server's room directory\n" +

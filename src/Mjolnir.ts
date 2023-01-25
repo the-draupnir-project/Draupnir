@@ -129,7 +129,7 @@ export class Mjolnir {
             if (options.autojoinOnlyIfManager) {
                 const managers = await client.getJoinedRoomMembers(mjolnir.managementRoomId);
                 if (!managers.includes(membershipEvent.sender)) return reportInvite(); // ignore invite
-            } else {
+            } else if (options.acceptInvitesFromSpace) {
                 const spaceId = await client.resolveRoom(options.acceptInvitesFromSpace);
                 const spaceUserIds = await client.getJoinedRoomMembers(spaceId)
                     .catch(async e => {
@@ -154,7 +154,7 @@ export class Mjolnir {
      */
     static async setupMjolnirFromConfig(client: MatrixSendClient, matrixEmitter: MatrixEmitter, config: IConfig): Promise<Mjolnir> {
         if (!config.autojoinOnlyIfManager && config.acceptInvitesFromSpace === getDefaultConfig().acceptInvitesFromSpace) {
-            throw new TypeError("`autojoinOnlyIfManager` has been disabled, yet no space has been provided for `acceptInvitesFromSpace`.");
+            throw new TypeError("`autojoinOnlyIfManager` has been disabled but you have not set `acceptInvitesFromSpace`. Please make it empty to accept invites from everywhere or give it a namespace alias or room id.");
         }
         const policyLists: PolicyList[] = [];
         const joinedRooms = await client.getJoinedRooms();
@@ -257,8 +257,13 @@ export class Mjolnir {
         this.protectionManager = new ProtectionManager(this);
 
         this.managementRoomOutput = new ManagementRoomOutput(managementRoomId, client, config);
-        const protections = new ProtectionManager(this);
-        this.protectedRoomsTracker = new ProtectedRoomsSet(client, clientUserId, managementRoomId, this.managementRoomOutput, protections, config);
+        this.protectedRoomsTracker = new ProtectedRoomsSet(
+            client,
+            clientUserId,
+            managementRoomId,
+            this.managementRoomOutput,
+            this.protectionManager,
+            config);
     }
 
     public get lists(): PolicyList[] {
