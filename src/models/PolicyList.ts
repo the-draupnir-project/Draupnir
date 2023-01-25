@@ -32,6 +32,8 @@ import { MatrixSendClient } from "../MatrixEmitter";
 import AwaitLock from "await-lock";
 import { monotonicFactory } from "ulidx";
 import { Mjolnir } from "../Mjolnir";
+import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "./MatrixDataManager";
+import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 
 /**
  * Account data event type used to store the permalinks to each of the policylists.
@@ -616,26 +618,23 @@ export class Revision {
     }
 }
 
+type WatchedListsEvent = RawSchemedData & { references?: string[] };
+
 /**
- * A manager for all the policy lists for this Mjölnir
+ * Manages the policy lists that a Mjolnir watches
  */
-export class PolicyListManager {
+export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
     private policyLists: PolicyList[];
 
-    /**
-     * A list of references (matrix.to URLs) to policy lists that
-     * we could not resolve during startup. We store them to make
-     * sure that they're written back whenever we rewrite the references
-     * to account data.
-     */
-    private readonly failedStartupWatchListRefs: Set<string> = new Set();
+    protected schema = [];
+    protected isAllowedToInferNoVersionAsZero = true;
 
     constructor(private readonly mjolnir: Mjolnir) {
-        // Nothing to do.
+        super();
     }
 
     public get lists(): PolicyList[] {
-        return this.policyLists;
+        return [...this.policyLists];
     }
 
     /**
@@ -650,8 +649,6 @@ export class PolicyListManager {
         this.policyLists.push(list);
         this.mjolnir.protectedRoomsTracker.watchList(list);
 
-        // If we have succeeded, let's remove this from the list of failed policy rooms.
-        this.failedStartupWatchListRefs.delete(roomRef);
         return list;
     }
 
@@ -676,8 +673,7 @@ export class PolicyListManager {
 
         const list = await this.addPolicyList(roomId, roomRef);
 
-        await this.storeWatchedPolicyLists();
-
+        await this.storeMatixData();
         await this.warnAboutUnprotectedPolicyListRoom(roomId);
 
         return list;
@@ -688,7 +684,6 @@ export class PolicyListManager {
         if (!permalink.roomIdOrAlias) return null;
 
         const roomId = await this.mjolnir.client.resolveRoom(permalink.roomIdOrAlias);
-        this.failedStartupWatchListRefs.delete(roomRef);
         const list = this.policyLists.find(b => b.roomId === roomId) || null;
         if (list) {
             this.policyLists.splice(this.policyLists.indexOf(list), 1);
@@ -696,63 +691,55 @@ export class PolicyListManager {
             this.mjolnir.protectedRoomsTracker.unwatchList(list);
         }
 
-        await this.storeWatchedPolicyLists();
+        await this.storeMatixData();
         return list;
+    }
+
+    protected async createFirstData(): Promise<RawSchemedData> {
+        return { [SCHEMA_VERSION_KEY]: 0 };
+    }
+
+    protected async requestMatrixData(): Promise<unknown> {
+        try {
+            return await this.mjolnir.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
+        } catch (e) {
+            if (e.statusCode === 404) {
+                LogService.warn('Mjolnir', "Couldn't find account data for Mjolnir's watched lists, assuming first start.", e);
+                return this.createFirstData();
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**
      * Load the watched policy lists from account data, only used when Mjolnir is initialized.
      */
-    public async init() {
+    public async start() {
         this.policyLists = [];
-        const joinedRooms = await this.mjolnir.client.getJoinedRooms();
+        const watchedListsEvent = await super.loadData();
 
-        let watchedListsEvent: { references?: string[] } | null = null;
-        try {
-            watchedListsEvent = await this.mjolnir.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
-        } catch (e) {
-            if (e.statusCode === 404) {
-                LogService.warn('Mjolnir', "Couldn't find account data for Mjolnir's watched lists, assuming first start.", e);
-            } else {
-                throw e;
-            }
-        }
-
-        for (const roomRef of (watchedListsEvent?.references || [])) {
-            const permalink = Permalinks.parseUrl(roomRef);
-            if (!permalink.roomIdOrAlias) continue;
-
-            let roomId;
-            try {
-                roomId = await this.mjolnir.client.resolveRoom(permalink.roomIdOrAlias);
-            } catch (ex) {
-                // Let's not fail startup because of a problem resolving a room id or an alias.
-                LogService.warn('Mjolnir', 'Could not resolve policy list room, skipping for this run', permalink.roomIdOrAlias)
-                await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Mjolnir", `Room ${permalink.roomIdOrAlias} could **not** be resolved, perhaps a server is down? Skipping this room. If this is a recurring problem, please consider removing this room.`);
-                this.failedStartupWatchListRefs.add(roomRef);
-                continue;
-            }
-            if (!joinedRooms.includes(roomId)) {
-                await this.mjolnir.client.joinRoom(permalink.roomIdOrAlias, permalink.viaServers);
-            }
-
-            await this.warnAboutUnprotectedPolicyListRoom(roomId);
-            await this.addPolicyList(roomId, roomRef);
-        }
+        await Promise.all(
+            (watchedListsEvent?.references || []).map(async (roomRef: string) => {
+                const roomReference = await MatrixRoomReference.fromPermalink(roomRef).resolve(this.mjolnir.client)
+                .catch(ex => {
+                    LogService.error("PolicyListManager", "Failed to load watched lists for this mjolnir", ex);
+                    return Promise.reject(ex);
+                }
+            );
+            await  roomReference.joinClient(this.mjolnir.client);
+            await this.warnAboutUnprotectedPolicyListRoom(roomReference.toRoomIdOrAlias());
+            // TODO, FIXME: fix this so that it stores room references and not this utter junk.
+            await this.addPolicyList(roomReference.toRoomIdOrAlias(), roomReference.toPermalink());
+            })
+        );
     }
 
     /**
      * Store to account the list of policy rooms.
-     *
-     * We store both rooms that we are currently monitoring and rooms for which
-     * we could not setup monitoring, assuming that the setup is a transient issue
-     * that the user (or someone else) will eventually resolve.
      */
-    private async storeWatchedPolicyLists() {
+    protected async storeMatixData() {
         let list = this.policyLists.map(b => b.roomRef);
-        for (let entry of this.failedStartupWatchListRefs) {
-            list.push(entry);
-        }
         await this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, {
             references: list,
         });
