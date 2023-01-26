@@ -41,7 +41,7 @@ import { WebAPIs } from "./webapis/WebAPIs";
 import RuleServer from "./models/RuleServer";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import { getDefaultConfig, IConfig } from "./config";
-import { PolicyListManager } from "./models/PolicyList";
+import { PolicyListManager } from "./models/PolicyListManager";
 import { ProtectedRoomsSet } from "./ProtectedRoomsSet";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ProtectionManager } from "./protections/ProtectionManager";
