@@ -136,13 +136,12 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
 
         await Promise.all(
             (watchedListsEvent?.references || []).map(async (roomRef: string) => {
-                const roomReference = await MatrixRoomReference.fromPermalink(roomRef).resolve(this.mjolnir.client)
+                const roomReference = await MatrixRoomReference.fromPermalink(roomRef).joinClient(this.mjolnir.client)
                     .catch(ex => {
                         LogService.error("PolicyListManager", "Failed to load watched lists for this mjolnir", ex);
                         return Promise.reject(ex);
                     }
                     );
-                await roomReference.joinClient(this.mjolnir.client);
                 await this.warnAboutUnprotectedPolicyListRoom(roomReference.toRoomIdOrAlias());
                 // TODO, FIXME: fix this so that it stores room references and not this utter junk.
                 await this.addPolicyList(roomReference.toRoomIdOrAlias(), roomReference.toPermalink());

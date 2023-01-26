@@ -21,15 +21,6 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
 
     }
 
-    /**
-     * Join the room using the client provided.
-     * @param client A matrix client that should join the room.
-     * @returns The room id that was joined.
-     */
-    public async joinClient(client: { joinRoom: JoinRoom }): Promise<string> {
-        return await client.joinRoom(this.reference, this.viaServers);
-    }
-
     public toPermalink(): string {
         return Permalinks.forRoom(this.reference, this.viaServers);
     }
@@ -65,6 +56,23 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
         } else {
             const alias = new RoomAlias(this.reference);
             const roomId = await client.resolveRoom(this.reference);
+            return new MatrixRoomReference(roomId, [alias.domain]);
+        }
+    }
+
+    /**
+     * Join the room using the client provided.
+     * @param client A matrix client that should join the room.
+     * @returns A MatrixRoomReference with the room id of the room which was joined.
+     */
+    public async joinClient(client: { joinRoom: JoinRoom }): Promise<MatrixRoomReference> {
+        if (this.reference.startsWith('!')) {
+            await client.joinRoom(this.reference, this.viaServers);
+            return this;
+        } else {
+            const roomId = await client.joinRoom(this.reference);
+            const alias = new RoomAlias(this.reference);
+            // best we can do with the information we have.
             return new MatrixRoomReference(roomId, [alias.domain]);
         }
     }
