@@ -28,6 +28,10 @@ import { IConfig } from "../../src/config";
 
 patchMatrixClient();
 
+export interface MjolnirTestContext extends Mocha.Context {
+    mjolnir?: Mjolnir
+}
+
 /**
  * Ensures that a room exists with the alias, if it does not exist we create it.
  * @param client The MatrixClient to use to resolve or create the aliased room.

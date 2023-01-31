@@ -580,8 +580,7 @@ export class Mjolnir {
             const response = await this.client.doRequest("GET", endpoint);
             return response['admin'];
         } catch (e) {
-            LogService.error("Mjolnir", "Error determining if Mjolnir is a server admin:");
-            LogService.error("Mjolnir", extractRequestError(e));
+            LogService.error("Mjolnir", "Error determining if Mjolnir is a server admin:", e);
             return false; // assume not
         }
     }
@@ -603,18 +602,13 @@ export class Mjolnir {
     /**
      * Make a user administrator via the Synapse Admin API
      * @param roomId the room where the user (or the bot) shall be made administrator.
-     * @param userId optionally specify the user mxID to be made administrator, if not specified the bot mxID will be used.
-     * @returns The list of errors encountered, for reporting to the management room.
+     * @param userId optionally specify the user mxID to be made administrator.
      */
-    public async makeUserRoomAdmin(roomId: string, userId?: string): Promise<any> {
-        try {
-            const endpoint = `/_synapse/admin/v1/rooms/${roomId}/make_room_admin`;
-            return await this.client.doRequest("POST", endpoint, null, {
-                user_id: userId || await this.client.getUserId(), /* if not specified make the bot administrator */
-            });
-        } catch (e) {
-            return extractRequestError(e);
-        }
+    public async makeUserRoomAdmin(roomId: string, userId: string): Promise<void> {
+        const endpoint = `/_synapse/admin/v1/rooms/${roomId}/make_room_admin`;
+        return await this.client.doRequest("POST", endpoint, null, {
+            user_id: userId
+        });
     }
 }
 

@@ -25,29 +25,44 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { findPresentationType, paramaters } from "./interface-manager/ParamaterParsing";
+import { MjolnirBaseExecutor, MjolnirContext } from "./CommandHandler";
+import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { UserID } from "matrix-bot-sdk";
+import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 
-// !mjolnir make admin <room> [<user ID>]
-export async function execMakeRoomAdminCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const isAdmin = await mjolnir.isSynapseAdmin();
-    if (!mjolnir.config.admin?.enableMakeRoomAdminCommand || !isAdmin) {
-        const message = "Either the command is disabled or I am not running as homeserver administrator.";
-        const reply = RichReply.createFor(roomId, event, message, message);
-        reply['msgtype'] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
+async function hijackRoomCommand(
+    this: MjolnirContext, _keywords: void, room: MatrixRoomReference, user: UserID
+): Promise<CommandResult<void, CommandError>> {
+    const isAdmin = await this.mjolnir.isSynapseAdmin();
+    if (!this.mjolnir.config.admin?.enableMakeRoomAdminCommand || !isAdmin) {
+        return CommandError.Result("Either the command is disabled or Mjolnir is not running as homeserver administrator.")
     }
-
-    let err = await mjolnir.makeUserRoomAdmin(await mjolnir.client.resolveRoom(parts[3]), parts[4]);
-    if (err instanceof Error || typeof (err) === "string") {
-        const errMsg = "Failed to process command:";
-        const message = typeof (err) === "string" ? `${errMsg}: ${err}` : `${errMsg}: ${err.message}`;
-        const reply = RichReply.createFor(roomId, event, message, message);
-        reply['msgtype'] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
-    } else {
-        await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-    }
+    await this.mjolnir.makeUserRoomAdmin(room.toRoomIdOrAlias(), user.toString());
+    return CommandResult.Ok(undefined);
 }
+
+defineInterfaceCommand<MjolnirBaseExecutor>({
+    designator: ["hijack", "room"],
+    table: "mjolnir",
+    paramaters: paramaters([
+        {
+            name: "room",
+            acceptor: findPresentationType("MatrixRoomReference")
+        },
+        {
+            name: "user",
+            acceptor: findPresentationType("UserID")
+        }
+    ]),
+    command: hijackRoomCommand,
+    summary: "Make the specified user the admin of a room via the synapse admin API"
+})
+
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("mjolnir", "hijack", "room"),
+    renderer: tickCrossRenderer
+})
