@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import AwaitLock from 'await-lock';
-import { extractRequestError, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogService, Permalinks } from "matrix-bot-sdk";
 import { IConfig } from "./config";
 import { MatrixSendClient } from './MatrixEmitter';
 const PROTECTED_ROOMS_EVENT_TYPE = "org.matrix.mjolnir.protected_rooms";
@@ -84,7 +84,7 @@ export default class ProtectedRoomsConfig {
             }
         } catch (e) {
             if (e.statusCode === 404) {
-                LogService.warn("ProtectedRoomsConfig", "Couldn't find any explicitly protected rooms from Mjolnir's account data, assuming first start.", extractRequestError(e));
+                LogService.warn("ProtectedRoomsConfig", "Couldn't find any explicitly protected rooms from Mjolnir's account data, assuming first start.", e);
             } else {
                 throw e;
             }
@@ -129,7 +129,7 @@ export default class ProtectedRoomsConfig {
         try {
             const additionalProtectedRooms: string[] = await this.client.getAccountData(PROTECTED_ROOMS_EVENT_TYPE)
                 .then((rooms: {rooms?: string[]}) => Array.isArray(rooms?.rooms) ? rooms.rooms : [])
-                .catch(e => (LogService.warn("ProtectedRoomsConfig", "Could not load protected rooms from account data", extractRequestError(e)), []));
+                .catch(e => (LogService.warn("ProtectedRoomsConfig", "Could not load protected rooms from account data", e), []));
 
             const roomsToSave = new Set([...this.explicitlyProtectedRooms.keys(), ...additionalProtectedRooms]);
             excludeRooms.forEach(roomsToSave.delete, roomsToSave);

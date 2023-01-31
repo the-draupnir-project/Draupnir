@@ -27,7 +27,7 @@ limitations under the License.
 
 import { Mjolnir } from "../Mjolnir";
 import PolicyList from "../models/PolicyList";
-import { extractRequestError, LogLevel, LogService, MatrixGlob, RichReply } from "matrix-bot-sdk";
+import { LogLevel, LogService, MatrixGlob, RichReply } from "matrix-bot-sdk";
 import { RULE_ROOM, RULE_SERVER, RULE_USER, USER_RULE_TYPES } from "../models/ListRule";
 import { DEFAULT_LIST_EVENT_TYPE } from "./SetDefaultBanListCommand";
 
@@ -45,9 +45,7 @@ export async function parseArguments(roomId: string, event: any, mjolnir: Mjolni
         const data: { shortcode: string } = await mjolnir.client.getAccountData(DEFAULT_LIST_EVENT_TYPE);
         defaultShortcode = data['shortcode'];
     } catch (e) {
-        LogService.warn("UnbanBanCommand", "Non-fatal error getting default ban list");
-        LogService.warn("UnbanBanCommand", extractRequestError(e));
-
+        LogService.warn("UnbanBanCommand", "Non-fatal error getting default ban list:", e);
         // Assume no default.
     }
 

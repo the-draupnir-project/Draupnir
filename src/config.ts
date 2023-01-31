@@ -59,6 +59,7 @@ export interface IConfig {
     managementRoom: string;
     verboseLogging: boolean;
     logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
+    logMutedModules: string[],
     syncOnStartup: boolean;
     verifyPermissionsOnStartup: boolean;
     noop: boolean;
@@ -149,6 +150,7 @@ const defaultConfig: IConfig = {
     managementRoom: "!noop:example.org",
     verboseLogging: false,
     logLevel: "INFO",
+    logMutedModules: ['MatrixHttpClient', 'MatrixClientLite'],
     syncOnStartup: true,
     verifyPermissionsOnStartup: true,
     noop: false,

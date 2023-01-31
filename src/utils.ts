@@ -31,6 +31,7 @@ import {
     MatrixGlob,
     getRequestFn,
     setRequestFn,
+    MatrixError,
 } from "matrix-bot-sdk";
 import { ClientRequest, IncomingMessage } from "http";
 import { default as parseDuration } from "parse-duration";
@@ -213,6 +214,15 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
 
 let isMatrixClientPatchedForConciseExceptions = false;
 
+// The fact that MatrixHttpClient logs every http error as error
+// is unacceptable really.
+// We will provide our own utility for logging outgoing requests as debug.
+LogService.muteModule("MatrixHttpClient");
+
+function isMatrixError(path: string): boolean {
+    return /^\/_matrix/.test(path)
+}
+
 /**
  * Patch `MatrixClient` into something that throws concise exceptions.
  *
@@ -270,23 +280,17 @@ function patchMatrixClientForConciseExceptions() {
             // of `Error`. The former take ~800 lines of log and
             // provide no stack trace, which makes them typically
             // useless.
-            let method: string | null = null;
-            let path = '';
+            const method: string | undefined = err.method
+                ? err.method
+                : "req" in err && err.req instanceof ClientRequest
+                ? err.req.method
+                : params.method;
+            const path: string = err.url
+                ? err.url
+                : "req" in err && err.req instanceof ClientRequest
+                ? err.req.path
+                : params.uri ?? '';
             let body: unknown = null;
-            if (err.method) {
-                method = err.method;
-            }
-            if (err.url) {
-                path = err.url;
-            }
-            if ("req" in err && err.req instanceof ClientRequest) {
-                if (!method) {
-                    method = err.req.method;
-                }
-                if (!path) {
-                    path = err.req.path;
-                }
-            }
             if ("body" in err) {
                 body = err.body;
             }
@@ -317,11 +321,17 @@ function patchMatrixClientForConciseExceptions() {
                     enumerable: false,
                 });
             }
-            if (!LogService.level.includes(LogLevel.TRACE)) {
-                // Remove stack trace to reduce impact on logs.
-                error.stack = "";
+            // matrix-appservice-bridge depends on errors being matrix-bot-sdk's MatrixError.
+            // Since https://github.com/turt2live/matrix-bot-sdk/blob/836c2da7145668b20af7e0d75094b6162164f3dc/src/http.ts#L109
+            // we wrote this, matrix-bot-sdk has updated so that there is now a MatrixError that is thrown
+            // when there are errors in the response.
+            if (isMatrixError(path)) {
+                const matrixError = new MatrixError(body as any, err.statusCode as any);
+                matrixError.stack = error.stack;
+                return cb(matrixError, response, resBody)
+            } else {
+                return cb(error, response, resBody);
             }
-            return cb(error, response, resBody);
         })
     });
     isMatrixClientPatchedForConciseExceptions = true;
@@ -434,7 +444,7 @@ function patchMatrixClientForPrototypePollution() {
                 }
             }
 
-            if (typeof response.body === 'string') {
+            if (typeof response?.body === 'string') {
                 try {
                     response.body = JSON.parse(response.body, jsonReviver);
                 } catch (e) {

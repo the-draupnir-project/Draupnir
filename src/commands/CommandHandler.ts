@@ -29,7 +29,7 @@ import { Mjolnir } from "../Mjolnir";
 import { execStatusCommand } from "./StatusCommand";
 import "./UnbanBanCommand";
 import { execDumpRulesCommand, execRulesMatchingCommand } from "./DumpRulesCommand";
-import { extractRequestError, LogService, RichReply } from "matrix-bot-sdk";
+import { LogService, RichReply } from "matrix-bot-sdk";
 import { htmlEscape } from "../utils";
 import { execSyncCommand } from "./SyncCommand";
 import { execPermissionCheckCommand } from "./PermissionCheckCommand";
@@ -58,6 +58,8 @@ import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/M
 import { ArgumentStream } from "./interface-manager/ParamaterParsing";
 import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
 import { CommandResult } from "./interface-manager/Validation";
+import { CommandException } from "./interface-manager/CommandException";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
@@ -66,9 +68,8 @@ export interface MjolnirContext extends MatrixContext {
 export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Promise<CommandResult<any>>;
 
 defineCommandTable("mjolnir");
+import "./interface-manager/MatrixPresentations";
 import "./MakeRoomAdminCommand";
-import { CommandException } from "./interface-manager/CommandException";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -214,7 +215,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await mjolnir.client.sendMessage(roomId, reply);
         }
     } catch (e) {
-        LogService.error("CommandHandler", extractRequestError(e));
+        LogService.error("CommandHandler", e);
         const text = "There was an error processing your command - see console/log for details";
         const reply = RichReply.createFor(roomId, event, text, text);
         reply["msgtype"] = "m.notice";

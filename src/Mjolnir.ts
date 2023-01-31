@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import {
-    extractRequestError,
     LogLevel,
     LogService,
     MembershipEvent,
@@ -185,6 +184,15 @@ export class Mjolnir {
     ) {
         this.protectedRoomsConfig = new ProtectedRoomsConfig(client);
 
+        const mutedModules = (LogService as any).mutedModules;
+        if (!Array.isArray(mutedModules)) {
+            throw new TypeError("MatrixBotSdk has changed their hacky handling of muted modules, praise be");
+        }
+        for (const module of config.logMutedModules) {
+            if (!mutedModules.includes(module)) {
+                LogService.muteModule(module);
+            }
+        }
         // Setup bot.
 
         matrixEmitter.on("room.event", this.handleEvent.bind(this));
@@ -332,12 +340,11 @@ export class Mjolnir {
             await this.managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "Startup complete. Now monitoring rooms.");
         } catch (err) {
             try {
-                LogService.error("Mjolnir", "Error during startup:");
-                LogService.error("Mjolnir", extractRequestError(err));
+                LogService.error("Mjolnir", "Error during startup:", err);
                 this.stop();
                 await this.managementRoomOutput.logMessage(LogLevel.ERROR, "Mjolnir@startup", "Startup failed due to error - see console");
             } catch (e) {
-                LogService.error("Mjolnir", `Failed to report startup error to the management room: ${e}`);
+                LogService.error("Mjolnir", `Failed to report startup error to the management room:`, e);
             }
             throw err;
         }
@@ -527,7 +534,7 @@ export class Mjolnir {
             watchedListsEvent = await this.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
         } catch (e) {
             if (e.statusCode === 404) {
-                LogService.warn('Mjolnir', "Couldn't find account data for Mjolnir's watched lists, assuming first start.", extractRequestError(e));
+                LogService.warn('Mjolnir', "Couldn't find account data for Mjolnir's watched lists, assuming first start.", e);
             } else {
                 throw e;
             }

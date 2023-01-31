@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { extractRequestError, LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "matrix-bot-sdk";
 import { Mjolnir } from "../Mjolnir";
 
 export type Task<T> = (queue: ThrottlingQueue) => Promise<T>;
@@ -192,7 +192,7 @@ export class ThrottlingQueue {
             await this.mjolnir.managementRoomOutput.logMessage(
                 LogLevel.WARN,
                 'Error while executing task',
-                extractRequestError(ex)
+                ex
             );
         } finally {
             this.stop();

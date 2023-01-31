@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import * as Sentry from "@sentry/node";
-import { extractRequestError, LogLevel, LogService, MessageType, Permalinks, TextualMessageEventContent, UserID } from "matrix-bot-sdk";
+import { LogLevel, LogService, MessageType, Permalinks, TextualMessageEventContent, UserID } from "matrix-bot-sdk";
 import { IConfig } from "./config";
 import { MatrixSendClient } from "./MatrixEmitter";
 import { htmlEscape } from "./utils";
@@ -84,7 +84,7 @@ export default class ManagementRoomOutput {
             } catch (e) {
                 // This is a recursive call, so tell the function not to try and call us
                 await this.logMessage(LogLevel.WARN, "utils", `Failed to resolve room alias for ${roomId} - see console for details`, null, true);
-                LogService.warn("utils", extractRequestError(e));
+                LogService.warn("ManagementRoomOutput", "Failed resolving room alias when formatting a message", e);
             }
             const regexRoomId = new RegExp(escapeRegex(roomId), "g");
             content.body = content.body.replace(regexRoomId, alias);
