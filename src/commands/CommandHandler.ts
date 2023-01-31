@@ -69,7 +69,7 @@ export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Prom
 
 defineCommandTable("mjolnir");
 import "./interface-manager/MatrixPresentations";
-import "./MakeRoomAdminCommand";
+import "./HijackRoomCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
