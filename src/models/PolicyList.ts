@@ -32,6 +32,22 @@ import { MatrixSendClient } from "../MatrixEmitter";
 import AwaitLock from "await-lock";
 import { monotonicFactory } from "ulidx";
 
+/**
+ * Account data event type used to store the permalinks to each of the policylists.
+ *
+ * Content:
+ * ```jsonc
+ * {
+ *   references: string[], // Each entry is a `matrix.to` permalink.
+ * }
+ * ```
+ */
+export const WATCHED_LISTS_EVENT_TYPE = "org.matrix.mjolnir.watched_lists";
+
+/**
+ * A prefix used to record that we have already warned at least once that a PolicyList room is unprotected.
+ */
+export const WARN_UNPROTECTED_ROOM_EVENT_PREFIX = "org.matrix.mjolnir.unprotected_room_warning.for.";
 export const SHORTCODE_EVENT_TYPE = "org.matrix.mjolnir.shortcode";
 
 export enum ChangeType {
@@ -65,7 +81,7 @@ export interface ListRuleChange {
     readonly previousState?: any,
 }
 
-declare interface PolicyList {
+export declare interface PolicyList {
     // PolicyList.update is emitted when the PolicyList has pulled new rules from Matrix and informs listeners of any changes.
     on(event: 'PolicyList.update', listener: (list: PolicyList, changes: ListRuleChange[], revision: Revision) => void): this
     emit(event: 'PolicyList.update', list: PolicyList, changes: ListRuleChange[], revision: Revision): boolean
@@ -84,7 +100,7 @@ declare interface PolicyList {
  * you cannot rely on the timeline portion of `/sync` to provide a consistent view of the room state as you
  * receive events in stream order.
  */
-class PolicyList extends EventEmitter {
+export class PolicyList extends EventEmitter {
     private shortcode: string | null = null;
     // A map of state events indexed first by state type and then state keys.
     private state: Map<string, Map<string, any>> = new Map();
