@@ -1,5 +1,8 @@
 import { read as configRead } from "../../src/config";
+import { patchMatrixClient } from "../../src/utils";
 import { makeMjolnir, teardownManagementRoom } from "./mjolnirSetupUtils";
+
+patchMatrixClient();
 
 // When Mjolnir starts (src/index.ts) it clobbers the config by resolving the management room
 // alias specified in the config (config.managementRoom) and overwriting that with the room ID.

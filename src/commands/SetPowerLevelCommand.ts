@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { Mjolnir } from "../Mjolnir";
-import { extractRequestError, LogLevel, LogService } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "matrix-bot-sdk";
 
 // !mjolnir powerlevel <user ID> <level> [room]
 export async function execSetPowerLevelCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
@@ -41,8 +41,8 @@ export async function execSetPowerLevelCommand(roomId: string, event: any, mjoln
             await mjolnir.client.setUserPowerLevel(victim, targetRoomId, level);
         } catch (e) {
             const message = e.message || (e.body ? e.body.error : '<no message>');
+            LogService.error("SetPowerLevelCommand", e);
             await mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "SetPowerLevelCommand", `Failed to set power level of ${victim} to ${level} in ${targetRoomId}: ${message}`, targetRoomId);
-            LogService.error("SetPowerLevelCommand", extractRequestError(e));
         }
     }
 

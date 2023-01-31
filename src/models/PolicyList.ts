@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { extractRequestError, LogService, RoomCreateOptions, UserID } from "matrix-bot-sdk";
+import { LogService, RoomCreateOptions, UserID } from "matrix-bot-sdk";
 import { EventEmitter } from "events";
 import { ALL_RULE_TYPES, EntityType, ListRule, Recommendation, ROOM_RULE_TYPES, RULE_ROOM, RULE_SERVER, RULE_USER, SERVER_RULE_TYPES, USER_RULE_TYPES } from "./ListRule";
 import { MatrixSendClient } from "../MatrixEmitter";
@@ -248,15 +248,6 @@ class PolicyList extends EventEmitter {
             }
         }
         return rules;
-    }
-
-    public set listShortcode(newShortcode: string) {
-        const currentShortcode = this.shortcode;
-        this.shortcode = newShortcode;
-        this.client.sendStateEvent(this.roomId, SHORTCODE_EVENT_TYPE, '', { shortcode: this.shortcode }).catch(err => {
-            LogService.error("PolicyList", extractRequestError(err));
-            if (this.shortcode === newShortcode) this.shortcode = currentShortcode;
-        });
     }
 
     public get serverRules(): ListRule[] {

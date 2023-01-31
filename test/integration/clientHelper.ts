@@ -1,5 +1,6 @@
 import { HmacSHA1 } from "crypto-js";
 import { getRequestFn, LogService, MatrixClient, MemoryStorageProvider, PantalaimonClient } from "matrix-bot-sdk";
+import "../../src/utils"; // we need this for the patches to matrix-bot-sdk's `getRequestFn`.
 
 const REGISTRATION_ATTEMPTS = 10;
 const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
@@ -17,12 +18,17 @@ const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
  */
 export async function registerUser(homeserver: string, username: string, displayname: string, password: string, admin: boolean): Promise<void> {
     let registerUrl = `${homeserver}/_synapse/admin/v1/register`
-    const data: {nonce: string} = await new Promise((resolve, reject) => {
-        getRequestFn()({uri: registerUrl, method: "GET", timeout: 60000}, (error: any, response: any, resBody: any) => {
-            error ? reject(error) : resolve(JSON.parse(resBody))
+    const nonce: string = await new Promise((resolve, reject) => {
+        getRequestFn()({uri: registerUrl, method: "GET", timeout: 60000}, (error: any, _response: any, resBody: unknown) => {
+            if (error) {
+                reject(error);
+            } else if (typeof resBody === 'object' && resBody !== null && 'nonce' in resBody && typeof resBody.nonce === 'string') {
+                resolve(resBody.nonce)
+            } else {
+                reject(new TypeError(`Don't know what to do with response body ${JSON.stringify(resBody)}`));
+            }
         });
     });
-    const nonce = data.nonce!;
     let mac = HmacSHA1(`${nonce}\0${username}\0${password}\0${admin ? 'admin' : 'notadmin'}`, 'REGISTRATION_SHARED_SECRET');
     for (let i = 1; i <= REGISTRATION_ATTEMPTS; ++i) {
         try {
@@ -136,7 +142,7 @@ async function getGlobalAdminUser(homeserver: string): Promise<MatrixClient> {
         try {
             await registerUser(homeserver, USERNAME, USERNAME, USERNAME, true);
         } catch (e) {
-            if (e.isAxiosError && e?.response?.data?.errcode === 'M_USER_IN_USE') {
+            if (e?.body?.errcode === 'M_USER_IN_USE') {
                 // Then we've already registered the user in a previous run and that is ok.
             } else {
                 throw e;

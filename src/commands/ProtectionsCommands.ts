@@ -27,7 +27,7 @@ limitations under the License.
 
 import { htmlEscape } from "../utils";
 import { Mjolnir } from "../Mjolnir";
-import { extractRequestError, LogService, RichReply } from "matrix-bot-sdk";
+import { LogService, RichReply } from "matrix-bot-sdk";
 import { isListSetting } from "../protections/ProtectionSettings";
 
 // !mjolnir enable <protection>
@@ -36,7 +36,7 @@ export async function execEnableProtection(roomId: string, event: any, mjolnir: 
         await mjolnir.protectionManager.enableProtection(parts[2]);
         await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
     } catch (e) {
-        LogService.error("ProtectionsCommands", extractRequestError(e));
+        LogService.error("ProtectionsCommands", e);
 
         const message = `Error enabling protection '${parts[0]}' - check the name and try again.`;
         const reply = RichReply.createFor(roomId, event, message, message);

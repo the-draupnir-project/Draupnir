@@ -29,7 +29,7 @@ import { Mjolnir } from "../Mjolnir";
 import { execStatusCommand } from "./StatusCommand";
 import "./UnbanBanCommand";
 import { execDumpRulesCommand, execRulesMatchingCommand } from "./DumpRulesCommand";
-import { extractRequestError, LogService, RichReply } from "matrix-bot-sdk";
+import { LogService, RichReply } from "matrix-bot-sdk";
 import { htmlEscape } from "../utils";
 import { execSyncCommand } from "./SyncCommand";
 import { execPermissionCheckCommand } from "./PermissionCheckCommand";
@@ -50,7 +50,6 @@ import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
 import { execShutdownRoomCommand } from "./ShutdownRoomCommand";
 import { execAddAliasCommand, execMoveAliasCommand, execRemoveAliasCommand, execResolveCommand } from "./AliasCommands";
 import { execKickCommand } from "./KickCommand";
-import { execMakeRoomAdminCommand } from "./MakeRoomAdminCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
@@ -58,12 +57,19 @@ import { BaseFunction, CommandTable, defineCommandTable } from "./interface-mana
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParamaterParsing";
 import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
+import { CommandResult } from "./interface-manager/Validation";
+import { CommandException } from "./interface-manager/CommandException";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
 }
 
+export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Promise<CommandResult<any>>;
+
 defineCommandTable("mjolnir");
+import "./interface-manager/MatrixPresentations";
+import "./HijackRoomCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -144,8 +150,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execSinceCommand(roomId, event, mjolnir, tokens);
         } else if (parts[1] === 'kick' && parts.length > 2) {
             return await execKickCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'make' && parts[2] === 'admin' && parts.length > 3) {
-            return await execMakeRoomAdminCommand(roomId, event, mjolnir, parts);
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
@@ -155,7 +159,13 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 const mjolnirContext: MjolnirContext = {
                     mjolnir, roomId, event, client: mjolnir.client
                 };
-                return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+                try {
+                    return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+                } catch (e) {
+                    const commandError = new CommandException(e, 'Unknown Unexpected Error');
+                    LogService.error("CommandHandler", commandError.uuid, commandError.message, e);
+                    await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
+                }
             }
 
             // Help menu
@@ -197,7 +207,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 "!mjolnir since <date>/<duration> <action> <limit> [rooms...] [reason] - Apply an action ('kick', 'ban', 'mute', 'unmute' or 'show') to all users who joined a room since <date>/<duration> (up to <limit> users)\n" +
                 "!mjolnir shutdown room <room alias/ID> [message]                    - Uses the bot's account to shut down a room, preventing access to the room on this server\n" +
                 "!mjolnir powerlevel <user ID> <power level> [room alias/ID]         - Sets the power level of the user in the specified room (or all protected rooms)\n" +
-                "!mjolnir make admin <room alias> [user alias/ID]                    - Make the specified user or the bot itself admin of the room\n" +
                 "!mjolnir help                                                       - This menu\n";
             const html = `<b>Mjolnir help:</b><br><pre><code>${htmlEscape(menu)}</code></pre>`;
             const text = `Mjolnir help:\n${menu}`;
@@ -206,7 +215,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await mjolnir.client.sendMessage(roomId, reply);
         }
     } catch (e) {
-        LogService.error("CommandHandler", extractRequestError(e));
+        LogService.error("CommandHandler", e);
         const text = "There was an error processing your command - see console/log for details";
         const reply = RichReply.createFor(roomId, event, text, text);
         reply["msgtype"] = "m.notice";

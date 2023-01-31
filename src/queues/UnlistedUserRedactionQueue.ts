@@ -24,7 +24,7 @@ limitations under the License.
  * However, this file is modified and the modifications in this file
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
-import { extractRequestError, LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
 import { Mjolnir } from "../Mjolnir";
 
 /**
@@ -64,7 +64,7 @@ export class UnlistedUserRedactionQueue {
                 }
             } catch (e) {
                 mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Unable to redact message: ${permalink}`);
-                LogService.warn("AutomaticRedactionQueue", extractRequestError(e));
+                LogService.warn("AutomaticRedactionQueue", e);
             }
         }
     }

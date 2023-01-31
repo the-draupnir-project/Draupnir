@@ -13,11 +13,11 @@ async function currentRules(mjolnir: Mjolnir): Promise<{ start: object, stop: ob
     return await new Promise((resolve, reject) => getRequestFn()({
             uri: `http://${mjolnir.config.web.address}:${mjolnir.config.web.port}/api/1/ruleserver/updates/`,
             method: "GET"
-    }, (error: object, _response: any, body: string) => {
+    }, (error: object, _response: any, body: any) => {
         if (error) {
             reject(error)
         } else {
-            resolve(JSON.parse(body))
+            resolve(body)
         }
     }));
 }

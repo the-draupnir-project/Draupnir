@@ -10,6 +10,7 @@ import { CommandError, CommandResult } from "./Validation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
+import { CommandException } from "./CommandException";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -61,6 +62,12 @@ export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixConte
                 commandRoomId,
                 event,
                 client);
+        } else if (result.err instanceof CommandException) {
+            await renderMatrixAndSend(
+                renderCommandException(this.interfaceCommand, result.err),
+                commandRoomId,
+                event,
+                client);
         } else {
             await client.replyNotice(commandRoomId, event, result.err.message);
         }
@@ -88,5 +95,14 @@ function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error
         {renderCommandHelp(command)}<br/>
         {error.message}<br/>
         <pre>{formattedArgumentHint(command, error)}</pre>
+    </p>
+}
+
+function renderCommandException(command: InterfaceCommand<BaseFunction>, error: CommandException): DocumentNode {
+    return <p>
+        There was an unexpected error when processing this command:<br/>
+        {error.message}<br/>
+        Details can be found by providing the reference <code>{error.uuid}</code>
+        to an administrator.
     </p>
 }

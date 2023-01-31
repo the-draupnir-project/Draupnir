@@ -35,7 +35,7 @@ import { MessageIsMedia } from "./MessageIsMedia";
 import { TrustedReporters } from "./TrustedReporters";
 import { JoinWaveShortCircuit } from "./JoinWaveShortCircuit";
 import { Mjolnir } from "../Mjolnir";
-import { extractRequestError, LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
 import { ProtectionSettingValidationError } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
 import { htmlEscape } from "../utils";
@@ -80,7 +80,11 @@ export class ProtectionManager {
             try {
                 await this.registerProtection(protection);
             } catch (e) {
-                this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "ProtectionManager", extractRequestError(e));
+                LogService.error("ProtectionManager", `Unable to start protection ${protection.name}`, e);
+                this.mjolnir.managementRoomOutput.logMessage(
+                    LogLevel.WARN, "ProtectionManager", `Unable to start protection ${protection.name}`
+                );
+
             }
         }
     }
@@ -292,7 +296,7 @@ export class ProtectionManager {
                     const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
                     LogService.error("ProtectionManager", "Error handling protection: " + protection.name);
                     LogService.error("ProtectionManager", "Failed event: " + eventPermalink);
-                    LogService.error("ProtectionManager", extractRequestError(e));
+                    LogService.error("ProtectionManager", e);
                     await this.mjolnir.client.sendNotice(this.mjolnir.managementRoomId, "There was an error processing an event through a protection - see log for details. Event: " + eventPermalink);
                     continue;
                 }
@@ -389,7 +393,7 @@ export class ProtectionManager {
 
             // Otherwise OK
         } catch (e) {
-            LogService.error("Mjolnir", extractRequestError(e));
+            LogService.error("Mjolnir", e);
             errors.push({
                 roomId,
                 errorMessage: e.message || (e.body ? e.body.error : '<no message>'),

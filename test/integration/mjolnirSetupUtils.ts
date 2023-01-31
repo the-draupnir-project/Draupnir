@@ -26,6 +26,12 @@ import { overrideRatelimitForUser, registerUser } from "./clientHelper";
 import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
 
+patchMatrixClient();
+
+export interface MjolnirTestContext extends Mocha.Context {
+    mjolnir?: Mjolnir
+}
+
 /**
  * Ensures that a room exists with the alias, if it does not exist we create it.
  * @param client The MatrixClient to use to resolve or create the aliased room.
@@ -82,7 +88,6 @@ export async function makeMjolnir(config: IConfig): Promise<Mjolnir> {
     const pantalaimon = new PantalaimonClient(config.homeserverUrl, new MemoryStorageProvider());
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
     await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
-    patchMatrixClient();
     await ensureAliasedRoomExists(client, config.managementRoom);
     let mj = await Mjolnir.setupMjolnirFromConfig(client, client, config);
     globalClient = client;
