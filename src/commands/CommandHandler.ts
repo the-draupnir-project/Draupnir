@@ -56,7 +56,6 @@ import { readCommand } from "./interface-manager/CommandReader";
 import { BaseFunction, CommandTable, defineCommandTable } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParamaterParsing";
-import { execBanCommand, execUnbanCommand } from "./UnbanBanCommand";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException } from "./interface-manager/CommandException";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
@@ -70,6 +69,7 @@ export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Prom
 defineCommandTable("mjolnir");
 import "./interface-manager/MatrixPresentations";
 import "./HijackRoomCommand";
+import "./Ban";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -84,10 +84,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
     try {
         if (parts.length === 1 || parts[1] === 'status') {
             return await execStatusCommand(roomId, event, mjolnir, parts.slice(2));
-        } else if (parts[1] === 'ban' && parts.length > 2) {
-            return await execBanCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'unban' && parts.length > 2) {
-            return await execUnbanCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'rules' && parts.length === 4 && parts[2] === 'matching') {
             return await execRulesMatchingCommand(roomId, event, mjolnir, parts[3])
         } else if (parts[1] === 'rules') {

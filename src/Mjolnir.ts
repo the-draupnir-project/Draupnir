@@ -49,6 +49,7 @@ import { RoomMemberManager } from "./RoomMembers";
 import ProtectedRoomsConfig from "./ProtectedRoomsConfig";
 import { MatrixEmitter, MatrixSendClient } from "./MatrixEmitter";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
+import { DEFAULT_LIST_EVENT_TYPE } from "./commands/SetDefaultBanListCommand";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -468,6 +469,46 @@ export class Mjolnir {
 
         if (event.sender !== this.clientUserId) {
             this.protectedRoomsTracker.handleEvent(roomId, event);
+        }
+    }
+
+    public resolveListShortcode(listShortcode: string): PolicyList | undefined {
+        return this.lists.find(list => list.listShortcode.toLocaleLowerCase() === listShortcode);
+    }
+
+    /**
+     * FIXME: there should be a dedicated list manager
+     * mjolnir has one already contributed by Yoric
+     * we should incorperate it and adapt it
+     * @returns 
+     */
+    private async defaultShortcode(): Promise<string | undefined> {
+        const data = await this.client.getAccountData(DEFAULT_LIST_EVENT_TYPE)
+                .catch(e => {
+                    LogService.warn("Mjolnir",
+                        "Non-fatal error getting default policy list shortcode",
+                        extractRequestError(e)
+                    );
+                    return undefined;
+                });
+        if (typeof data === 'object' && data !== null && 'shortcode' in data
+            && typeof data['shortcode'] === 'string') {
+            return data.shortcode;
+        } else {
+            LogService.warn("Mjolnir",
+                `The account data for ${DEFAULT_LIST_EVENT_TYPE} is invalid, expected a string for the shortcode`);
+            return undefined;
+        }
+    }
+
+    public async defaultPolicylist(): Promise<PolicyList|undefined> {
+        // Increadibly annoying that there is a default shortcode
+        // rather than a default list.
+        const defaultShortcode = await this.defaultShortcode();
+        if (defaultShortcode) {
+            return this.resolveListShortcode(defaultShortcode);
+        } else {
+            return undefined;
         }
     }
 
