@@ -32,12 +32,15 @@ limitations under the License.
 import { CommandError, CommandResult } from "./Validation";
 import { LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
-import { MatrixSendClient } from "../../MatrixEmitter";
+import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
+import { CommandInvocationRecord, InterfaceAcceptor } from "./PromptForAccept";
+import { ParamaterDescription } from "./ParamaterParsing";
 
 export interface MatrixContext {
     client: MatrixSendClient,
+    emitter: MatrixEmitter,
     roomId: string,
     event: any,
 }
@@ -49,7 +52,8 @@ type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunctio
     event: any,
     result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
-export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> {
+export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> implements InterfaceAcceptor {
+    public readonly isPromptable = true;
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
         private readonly renderer: RendererSignature<C, ExecutorType>,
@@ -90,7 +94,27 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         }
         await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
+
+    public async promptForAccept(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<any> {
+        if (!(invocationRecord instanceof MatrixInvocationRecord)) {
+            throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
+        }
+        if (paramater.prompt === undefined) {
+            throw new TypeError(`paramater ${paramater.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
+        }
+
+    }
 }
+
+export class MatrixInvocationRecord implements CommandInvocationRecord {
+    constructor(
+        public readonly command: InterfaceCommand<BaseFunction>,
+        public readonly context: MatrixContext,
+    ) {
+
+    }
+}
+
 
 const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand<BaseFunction>, MatrixInterfaceAdaptor<MatrixContext, BaseFunction>>();
 

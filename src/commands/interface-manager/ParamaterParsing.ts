@@ -25,6 +25,7 @@ limitations under the License.
  */
 
 import { Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
+import { InterfaceAcceptor, Prompt } from "./PromptForAccept";
 import { CommandError, CommandResult } from "./Validation";
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> {
@@ -282,6 +283,13 @@ export interface ParamaterDescription {
     name: string,
     description?: string,
     acceptor: PresentationType,
+    /**
+     * 
+     * @param this Expected to be the same context that is recieved when executing the command.
+     * @param description The paramater description being accepted.
+     * @returns PromptOptions, to be handled by the interface adaptor.
+     */
+    prompt?: Prompt
 }
 
 export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<ParsedArguments>;
@@ -300,6 +308,58 @@ export interface IArgumentListParser {
     readonly descriptions: ParamaterDescription[],
     readonly rest?: RestDescription,
     readonly keywords: KeywordsDescription,
+}
+
+/**
+ * The entire implementation could be simplified if the paramater was given
+ * to the argument stream. Then if the stream was EOF, the prmompt could be started
+ * automatically. Which is pretty much how CLIM works, except for the paramater injection part,
+ * we need that because we want the acceptor to be aware of the context.
+ * 
+ * It's a little more complicated than that though, since we give the stream in errors so that
+ * we can accurately show where we "got to", we couldn't do that with a stream that behaved as such.
+ * 
+ * We also need the interface adaptor to really have the context of the command invocation/continuation
+ * so the interface adaptor itself won't be good enough as an argument.
+ */
+enum ArgumentConsumerResult {
+    Done = "Done", // No more paramaters to consume arguments for
+    TryPrompt = "TryPrompt", // Try prompting the interface for more arguments.
+}
+
+/**
+ * The idea is that arguments can be built incrementally
+ * so that there may be pauses between parsing to prompt for arguments.
+ */
+class ArgumentConsumer {
+    private readonly immediateArguments: ReadItem[] = [];
+    private readonly keywordArguments: KeywordParser;
+
+    constructor(
+        private readonly argumentListParser: ArgumentListParser,
+        private readonly interface: InterfaceAcceptor
+    ) {
+        this.keywordArguments = this.argumentListParser.keywords.getParser();
+    }
+
+    private parseRequired(requiredParamaters: ParamaterDescription[], stream: ArgumentStream): CommandResult<ArgumentConsumerResult, CommandError> {
+        for (const paramater of requiredParamaters) {
+            // it eats any keywords at any point in the stream
+            // as they can appear at any point technically.
+            const keywordResult = this.keywordArguments.parseKeywords(stream);
+            if (keywordResult.isErr()) {
+                return CommandResult.Err(keywordResult.err);
+            }
+            if (stream.peekItem() === undefined) {
+                return ArgumentParseError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`, { paramater, stream });
+            }
+            const result = paramater.acceptor.validator(stream.peekItem());
+            if (result.isErr()) {
+                return ArgumentParseError.Result(result.err.message, { paramater, stream });
+            }
+            this.immediateArguments.push(stream.readItem());
+        }
+    }
 }
 
 /**
@@ -333,7 +393,6 @@ class ArgumentListParser implements IArgumentListParser {
                 }
                 const result = paramater.acceptor.validator(itemStream.peekItem());
                 if (result.isErr()) {
-                    // should really allow the help to be printed later on and keep the whole context?
                     return ArgumentParseError.Result(result.err.message, { paramater, stream: itemStream });
                 }
                 itemStream.readItem();
