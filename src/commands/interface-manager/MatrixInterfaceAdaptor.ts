@@ -35,7 +35,7 @@ import { ReadItem } from "./CommandReader";
 import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
-import { CommandInvocationRecord, InterfaceAcceptor } from "./PromptForAccept";
+import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream } from "./PromptForAccept";
 import { ParamaterDescription } from "./ParamaterParsing";
 
 export interface MatrixContext {
@@ -71,7 +71,9 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      * @param args These will be the arguments to the parser function.
      */
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
-        const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, ...args);
+        const invocationRecord = new MatrixInvocationRecord(this.interfaceCommand, matrixContext);
+        const stream = new PromptableArgumentStream(args, this, invocationRecord);
+        const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
         if (executorResult.isErr()) {
             this.reportValidationError(matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult.err);
             return;

@@ -12,7 +12,7 @@ import { CommandError, CommandResult } from "./Validation";
 type PresentationByReactionKey = Map<string/*reaction key*/, any/*presentation*/>;
 
 // Returns true if the listener should be kept.
-type ReactionPromptListener = (presentation: any) => boolean|void; 
+type ReactionPromptListener = (presentation: any) => boolean|void;
 
 // Instead of providing a map of reaciton keys to presentations, should instead
 // there be provided an object that can quickly be interned and uninterened from the table
@@ -119,7 +119,7 @@ class ReactionHandler {
 //    to come from the event send promise. Or just wait for the event send promise?
 //    I think if the event isn't in the store, then we just have to use the get event endpoint
 //    or try again after 10 seconds or something.
-// 
+//
 // * resolve the presentation by looking at the presentationsByKey for that token.
 // This is ovbiously complicated as hell, so i think we will just do without for now.
 
@@ -129,7 +129,7 @@ class ReactionHandler {
 
 // For ban command can we suggest reasons? I think that'd be a good idea.
 
-// Prompt takes priority over presentations e.g. imagine the prompt 
+// Prompt takes priority over presentations e.g. imagine the prompt
 // requiring a string, but we give one as a presentation in a reply
 // reactions should be checked first before being given to the command.
 export class PromptResponseListener {

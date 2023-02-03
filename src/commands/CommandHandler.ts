@@ -153,7 +153,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             if (command) {
                 const adaptor = findMatrixInterfaceAdaptor(command);
                 const mjolnirContext: MjolnirContext = {
-                    mjolnir, roomId, event, client: mjolnir.client
+                    mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
                 };
                 try {
                     return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());

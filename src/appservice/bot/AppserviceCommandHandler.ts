@@ -61,7 +61,9 @@ export class AppserviceCommandHandler {
                     appservice: this.appservice,
                     roomId: mxEvent.room_id,
                     event: mxEvent,
-                    client: this.appservice.bridge.getBot().getClient()
+                    client: this.appservice.bridge.getBot().getClient(),
+                    // FIXME: This is WRONG and CANNOT be LEFT.
+                    emitter: this.appservice.bridge.getBot().getClient(),
                 };
                 adaptor.invoke(context, context, ...argumentStream.rest());
                 return;

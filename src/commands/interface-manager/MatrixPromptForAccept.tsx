@@ -17,14 +17,15 @@ import { CommandResult } from "./Validation";
 async function promptDefault<PresentationType>(this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
     await renderMatrixAndSend(
         <p>
-
+            No argument was provided for the paramater {paramater.name}, would you like to accept the default?<br/>
+            {defaultPrompt}
         </p>,
         this.roomId, this.event, this.client
     )
 }
 
 // FIXME: <ol> raw tags will not work if the message is sent across events.
-//        If there isn't a start attribute for `ol` then we'll need to take this into our own hands.  
+//        If there isn't a start attribute for `ol` then we'll need to take this into our own hands.
 
 async function promptSuggestions<PresentationType>(
     this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
@@ -46,7 +47,12 @@ export async function matrixPromptForAccept<PresentationType = any> (
     this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
 ): Promise<CommandResult<PresentationType>> {
     const promptHelper = new PromptResponseListener(this.emitter);
-    return await promptHelper.waitForPresentationList<PresentationType>(promptOptions.suggestions, 
+    if (promptOptions.default) {
+        await promptDefault.call(this, paramater, command, promptOptions.default);
+        throw new TypeError("default prompts are not implemented yet.");
+    }
+    return await promptHelper.waitForPresentationList<PresentationType>(
+        promptOptions.suggestions,
         promptSuggestions.call(this, paramater, command, promptOptions.suggestions)
     );
 }

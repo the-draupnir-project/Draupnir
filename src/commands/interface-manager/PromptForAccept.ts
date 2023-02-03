@@ -3,8 +3,9 @@
  * All rights reserved.
  */
 
+import { ReadItem } from "./CommandReader";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
-import { ParamaterDescription } from "./ParamaterParsing";
+import { ArgumentStream, ParamaterDescription } from "./ParamaterParsing";
 
 export interface PromptOptions<PresentationType = any> {
     readonly suggestions: PresentationType[]
@@ -24,4 +25,31 @@ export interface InterfaceAcceptor<PresentationType = any> {
 
 export interface CommandInvocationRecord {
     readonly command: InterfaceCommand<BaseFunction>,
+}
+
+export class PromptableArgumentStream extends ArgumentStream {
+    constructor(
+        source: ReadItem[],
+        private readonly interfaceAcceptor: InterfaceAcceptor,
+        private readonly invocationRecord: CommandInvocationRecord,
+        start = 0,
+    ) {
+        super([...source], start);
+    }
+    public rest() {
+        return this.source.slice(this.position);
+    }
+
+    public isPromptable(): boolean {
+        return this.interfaceAcceptor.isPromptable
+    }
+
+    public async prompt<T = ReadItem>(paramaterDescription: ParamaterDescription): Promise<void> {
+        // FIXME I thought prompt for accept could return multiple items if there were
+        // othere paramaters after this one, but never mind..
+        this.source.push(await this.interfaceAcceptor.promptForAccept(
+            paramaterDescription,
+            this.invocationRecord
+        ));
+    }
 }
