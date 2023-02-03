@@ -98,7 +98,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
 
-    public async promptForAccept(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<any> {
+    public async promptForAccept<PresentationType = unknown>(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
         if (!(invocationRecord instanceof MatrixInvocationRecord)) {
             throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
         }
@@ -109,12 +109,8 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         // First extract the prompt results in the command executor context
         const promptOptions: PromptOptions = await paramater.prompt.call(invocationRecord.executorContext, paramater);
         // Then present the prompt.
-        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, paramater, invocationRecord.command, promptOptions);
-        if (promptResult.isOk()) {
-            return promptResult;
-        } else {
-            throw new TypeError("What the fuck do we do here then?")
-        }
+        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept<PresentationType>>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, paramater, invocationRecord.command, promptOptions);
+        return promptResult;
     }
 }
 

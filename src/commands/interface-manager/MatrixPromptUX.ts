@@ -5,6 +5,7 @@
 
 import { MatrixEmitter } from "../../MatrixEmitter";
 import { CommandError, CommandResult } from "./Validation";
+import { LogService } from "matrix-bot-sdk";
 
 // Internal to PromptResponseListener and needs to be manually managed
 // ie calls to .on and .off, so this is why it's internal
@@ -75,13 +76,19 @@ class ReactionHandler {
         if (!(typeof relatedEventId === 'string' && typeof reactionKey === 'string')) {
             return;
         }
-        const entry = this.promptRecordByEvent.get(event.event_id);
+        const entry = this.promptRecordByEvent.get(relatedEventId);
         if (entry !== undefined) {
             for (const record of entry) {
                 const presentation = record.presentationByReaction.get(reactionKey);
-                const keepListener = record.listener(presentation);
-                if (!Boolean(keepListener)) {
-                    this.removePromptRecordForEvent(event.event_id, record);
+                if (presentation === undefined) {
+                    // FIXME: Should this be WARN? Technically the prompt should fail as saying
+                    // that the reaction wasn't understood.
+                    LogService.warn("MatrixPromptUX", `Got an unknown reaction key for the event ${relatedEventId}: ${reactionKey}`)
+                } else {
+                    const keepListener = record.listener(presentation);
+                    if (!Boolean(keepListener)) {
+                        this.removePromptRecordForEvent(event.event_id, record);
+                    }
                 }
             }
         }
@@ -143,7 +150,7 @@ export class PromptResponseListener {
 
     private indexToReactionKey(index: number): string {
         if (index < 10) {
-            return "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟".charAt(index);
+            return ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"][index];
         } else {
             return index.toString();
         }

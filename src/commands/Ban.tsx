@@ -42,6 +42,18 @@ import { definePresentationRenderer } from "./interface-manager/DeadDocumentPres
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 
+makePresentationType({
+    name: "PolicyList",
+    validator: simpleTypeValidator("PolicyList", (readItem: unknown) => readItem instanceof PolicyList)
+})
+
+definePresentationRenderer(findPresentationType("PolicyList"), function(list: PolicyList): DocumentNode {
+    return <p>
+        {list.listShortcode} <a href={list.roomRef}>{list.roomId}</a>
+    </p>
+})
+
+
 export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyListReference: MatrixRoomReference): Promise<CommandResult<PolicyList, CommandError>> {
     // do we need to catch 404 here so we can tell the user the alias was wrong?
     // Can we shortcut this by making a specific presentaion type for
@@ -74,12 +86,14 @@ async function ban(
     this: MjolnirContext,
     _keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
-    policyListReference: MatrixRoomReference|string,
+    policyListReference: MatrixRoomReference|string|PolicyList,
     ...reasonParts: string[]
     ): Promise<CommandResult<any, CommandError>> {
         // first step is to resolve the policy list
         const policyListResult = typeof policyListReference === 'string'
             ? await findPolicyListFromShortcode(this.mjolnir, policyListReference)
+            : policyListReference instanceof PolicyList
+            ? CommandResult.Ok(policyListReference)
             : await findPolicyListFromRoomReference(this.mjolnir, policyListReference);
         if (policyListResult.isErr()) {
             return policyListResult;
@@ -114,7 +128,8 @@ defineInterfaceCommand({
             name: "list",
             acceptor: union(
                 findPresentationType("MatrixRoomReference"),
-                findPresentationType("string")
+                findPresentationType("string"),
+                findPresentationType("PolicyList"),
             ),
             prompt: async function (this: MjolnirContext, paramater: ParamaterDescription): Promise<PromptOptions> {
                 return {
@@ -123,7 +138,17 @@ defineInterfaceCommand({
             }
         },
     ],
-    new RestDescription("reason", findPresentationType("string")),
+    new RestDescription<MjolnirContext>(
+        "reason",
+        findPresentationType("string"),
+        async function(_paramater) {
+            return {
+                suggestions: [
+                    "spam",
+                    "brigading",
+                ]
+            }
+        }),
     ),
     command: ban,
     summary: "Bans an entity from the policy list."
@@ -134,13 +159,3 @@ defineMatrixInterfaceAdaptor({
     renderer: tickCrossRenderer
 })
 
-makePresentationType({
-    name: "PolicyList",
-    validator: simpleTypeValidator("PolicyList", (readItem: unknown) => readItem instanceof PolicyList)
-})
-
-definePresentationRenderer(findPresentationType("PolicyList"), function(list: PolicyList): DocumentNode {
-    return <p>
-        {list.listShortcode} <a href={list.roomRef}>{list.roomId}</a>
-    </p>
-})

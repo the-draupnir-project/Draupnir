@@ -31,13 +31,15 @@ async function promptSuggestions<PresentationType>(
     this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
 ): Promise</*event id*/string> {
     return (await renderMatrixAndSend(
-        <ol>
-            {suggestions.map((suggestion: PresentationType) => {
-                return <li>
-                    {suggestion}
-                </li>
-            })}
-        </ol>,
+        <p>Please select one of the following options to provide as an argument for the paramater <code>{paramater.name}</code>: 
+            <ol>
+                {suggestions.map((suggestion: PresentationType) => {
+                    return <li>
+                        {suggestion}
+                    </li>
+                })}
+            </ol>
+        </p>,
         this.roomId, this.event, this.client
     )).at(0) as string;
 

@@ -31,7 +31,8 @@ import { CommandError, CommandResult } from "./Validation";
 export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
     rest(): ReadItem[],
     isPromptable(): boolean,
-    prompt(paramaterDescription: ParamaterDescription): Promise<void>,
+    // should prompt really return a new stream?
+    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>>,
 }
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
@@ -43,7 +44,7 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
         return false;
     }
 
-    prompt(paramaterDescription: ParamaterDescription): Promise<void> {
+    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>> {
         throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
     }
 }
@@ -115,11 +116,12 @@ makePresentationType({
  *
  * Any keywords in the rest of the command will be given to the `keywordParser`.
  */
-export class RestDescription implements ParamaterDescription {
+export class RestDescription<ExecutorContext = unknown> implements ParamaterDescription {
     constructor(
         public readonly name: string,
         /** The presentation type of each item. */
         public readonly acceptor: PresentationType,
+        public readonly prompt?: Prompt<ExecutorContext>,
         public readonly description?: string,
     ) {
 
@@ -134,8 +136,11 @@ export class RestDescription implements ParamaterDescription {
      */
     public async parseRest(stream: IArgumentStream, promptForRest: boolean, keywordParser: KeywordParser): Promise<CommandResult<ReadItem[]>> {
         const items: ReadItem[] = [];
-        if (promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
-            await stream.prompt(this);
+        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
+            const result = await stream.prompt(this);
+            if (result.isErr()) {
+                return result as any;
+            }
         }
         while (stream.peekItem() !== undefined) {
             const keywordResult = keywordParser.parseKeywords(stream);
@@ -304,6 +309,8 @@ export interface ParsedArguments {
     readonly keywords: ParsedKeywords,
 }
 
+export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: ParamaterDescription<ExecutorContext>) => Promise<PromptOptions>;
+
 export interface ParamaterDescription<ExecutorContext = unknown> {
     name: string,
     description?: string,
@@ -314,7 +321,7 @@ export interface ParamaterDescription<ExecutorContext = unknown> {
      * @param description The paramater description being accepted.
      * @returns PromptOptions, to be handled by the interface adaptor.
      */
-    prompt?: (this: ExecutorContext, description: ParamaterDescription<ExecutorContext>) => Promise<PromptOptions>
+    prompt?: Prompt<ExecutorContext>,
 }
 
 export type ParamaterParser = (stream: IArgumentStream) => Promise<CommandResult<ParsedArguments>>;
@@ -359,7 +366,10 @@ class ArgumentListParser implements IArgumentListParser {
             }
             if (stream.peekItem() === undefined) {
                 if (stream.isPromptable()) {
-                    await stream.prompt(paramater);
+                    const result = await stream.prompt(paramater);
+                    if (result.isErr()) {
+                        return result as any;
+                    }
                     hasPrompted = true;
                 } else {
                     return ArgumentParseError.Result(

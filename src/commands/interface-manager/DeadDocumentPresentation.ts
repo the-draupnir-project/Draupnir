@@ -10,6 +10,7 @@ type PresentationRenderer = (presentation: unknown) => DocumentNode;
 
 const PRESENTATION_RENDERERS = new Map<PresentationType, PresentationRenderer>();
 
+// don't forget that this is the equivalent of present and define-presentation-method.
 export function definePresentationRenderer(presentationType: PresentationType, renderer: PresentationRenderer): void {
     if (PRESENTATION_RENDERERS.has(presentationType)) {
         throw new TypeError(`A DeadDocument renderer is already defined for the presentation type ${presentationType.name}`);
