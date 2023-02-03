@@ -36,6 +36,9 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.UnorderedList,
     staticString('<ul>'),
     staticString('</ul>')
+).registerInnerNode(NodeTag.OrderedList,
+    staticString('<ol>'),
+    staticString('</ol>')
 ).registerInnerNode(NodeTag.ListItem,
     staticString('<li>'),
     staticString('</li>')

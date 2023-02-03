@@ -56,6 +56,7 @@ export enum NodeTag {
     Paragraph = 'p',
     HeadingOne = 'h1',
     UnorderedList = 'ul',
+    OrderedList = 'ol',
     ListItem = 'li',
     LineBreak = 'br',
     BoldFace = 'b',
@@ -326,7 +327,7 @@ export class FringeWalker<Context> {
 export class TagDynamicEnvironmentEntry {
     constructor(
         public readonly node: DocumentNode,
-        public readonly value: any,
+        public value: any,
         public readonly previous: undefined|TagDynamicEnvironmentEntry,
     ) {
 
@@ -354,19 +355,28 @@ export class TagDynamicEnvironmentEntry {
 export class TagDynamicEnvironment {
     private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
 
-    public getVariable(variableName: string): any|undefined {
+    public read(variableName: string): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
             return variableEntry.value;
         } else {
-            return undefined;
+            throw new TypeError(`The variable ${variableName} is unbound.`);
+        }
+    }
+
+    public write(variableName: string, value: any): any {
+        const variableEntry = this.environments.get(variableName);
+        if (variableEntry) {
+            return variableEntry.value = value;
+        } else {
+            throw new TypeError(`The variable ${variableName} is unbound.`)
         }
     }
 
     public bind(variableName: string, node: DocumentNode, value: any): any {
         const entry = this.environments.get(variableName);
         const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
-        this.environments.set(node.tag, newEntry);
+        this.environments.set(variableName, newEntry);
         return value
     }
 
