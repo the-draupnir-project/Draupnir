@@ -35,8 +35,9 @@ import { ReadItem } from "./CommandReader";
 import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
-import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream } from "./PromptForAccept";
+import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
 import { ParamaterDescription } from "./ParamaterParsing";
+import { matrixPromptForAccept } from "./MatrixPromptForAccept";
 
 export interface MatrixContext {
     client: MatrixSendClient,
@@ -71,7 +72,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      * @param args These will be the arguments to the parser function.
      */
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
-        const invocationRecord = new MatrixInvocationRecord(this.interfaceCommand, matrixContext);
+        const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
         const stream = new PromptableArgumentStream(args, this, invocationRecord);
         const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
         if (executorResult.isErr()) {
@@ -104,14 +105,24 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         if (paramater.prompt === undefined) {
             throw new TypeError(`paramater ${paramater.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
         }
-
+        // Slowly starting to think that we're making a mistake by using `this` so much....
+        // First extract the prompt results in the command executor context
+        const promptOptions: PromptOptions = await paramater.prompt.call(invocationRecord.executorContext, paramater);
+        // Then present the prompt.
+        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, paramater, invocationRecord.command, promptOptions);
+        if (promptResult.isOk()) {
+            return promptResult;
+        } else {
+            throw new TypeError("What the fuck do we do here then?")
+        }
     }
 }
 
-export class MatrixInvocationRecord implements CommandInvocationRecord {
+export class MatrixInvocationRecord<ExecutorContext> implements CommandInvocationRecord {
     constructor(
         public readonly command: InterfaceCommand<BaseFunction>,
-        public readonly context: MatrixContext,
+        public readonly executorContext: ExecutorContext,
+        public readonly matrixContext: MatrixContext,
     ) {
 
     }

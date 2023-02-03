@@ -12,8 +12,6 @@ export interface PromptOptions<PresentationType = any> {
     readonly default?: PresentationType
 }
 
-export type Prompt<Context = any> = (this: Context, description: ParamaterDescription) => Promise<PromptOptions>
-
 /**
  * The idea is that the InterfaceAcceptor can use the presentation type
  * to derive the prompt, or use the prompt given by the ParamaterDescription.

@@ -4,11 +4,19 @@
  */
 
 import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNode } from "./DeadDocument";
+import { findPresentationRenderer } from "./DeadDocumentPresentation";
+import { presentationTypeOf } from "./ParamaterParsing";
 
 type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
 
 export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
     const node = makeDocumentNode(tag);
+    // why not just give nodes the properties object??
+    if (properties) {
+        for (const [key, value] of Object.entries(properties)) {
+            node.attributeMap.set(key, value);
+        }
+    }
     const ensureChild = (rawChild: rawJSX) => {
         if (typeof rawChild === 'string') {
             makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
@@ -19,7 +27,13 @@ export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (Docum
         } else if (typeof rawChild.leafNode === 'boolean') {
             node.addChild(rawChild);
         } else {
-            throw new TypeError(`Unexpected raw child ${JSON.stringify(rawChild)}`)
+            const presentationType = presentationTypeOf(rawChild);
+            if (presentationType !== undefined) {
+                const renderer = findPresentationRenderer(presentationType);
+                node.addChild(renderer(rawChild));
+            } else {
+                throw new TypeError(`Unexpected raw child ${JSON.stringify(rawChild)}`);
+            }
         }
     }
     rawChildren.forEach(ensureChild);

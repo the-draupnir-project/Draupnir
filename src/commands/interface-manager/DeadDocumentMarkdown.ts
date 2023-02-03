@@ -123,4 +123,13 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.ItalicFace,
     staticString('*'),
     staticString('*')
+).registerInnerNode(NodeTag.Anchor,
+    staticString('['),
+    function(_fringe, node, context, _environment) {
+        const href = node.attributeMap.get("href");
+        if (href === undefined) {
+            throw new TypeError('Anchor without a href is probably a mistake? well we do not support other uses yet.')
+        }
+        context.output.writeString(`](${href})`);
+    }
 );

@@ -25,7 +25,7 @@ limitations under the License.
  */
 
 import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
-import { Prompt } from "./PromptForAccept";
+import { PromptOptions } from "./PromptForAccept";
 import { CommandError, CommandResult } from "./Validation";
 
 export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
@@ -47,6 +47,9 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
         throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
     }
 }
+
+// TODO: Presentation types should be extracted to their own file.
+// FIXME: PresentationTypes should not be limited to ReadItems.
 
 export type PredicateIsParamater = (readItem: ReadItem) => CommandResult<true>;
 
@@ -88,6 +91,11 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
             return CommandError.Result(`Was expecting a match for the presentation type: ${name} but got ${readItem}.`);
         }
     }
+}
+
+export function presentationTypeOf(presentation: unknown): PresentationType|undefined {
+    return [...PRESENTATION_TYPES.values()]
+        .find(possibleType => possibleType.validator(presentation as ReadItem).isOk());
 }
 
 makePresentationType({
@@ -296,17 +304,17 @@ export interface ParsedArguments {
     readonly keywords: ParsedKeywords,
 }
 
-export interface ParamaterDescription {
+export interface ParamaterDescription<ExecutorContext = unknown> {
     name: string,
     description?: string,
     acceptor: PresentationType,
     /**
      * Prompt the interface for an argument that was not provided.
-     * @param this Expected to be the same interface adaptor context that is used to provide the arguments to the command.
+     * @param this Expected to be the executor context that is used to provided to the command executor.
      * @param description The paramater description being accepted.
      * @returns PromptOptions, to be handled by the interface adaptor.
      */
-    prompt?: Prompt
+    prompt?: (this: ExecutorContext, description: ParamaterDescription<ExecutorContext>) => Promise<PromptOptions>
 }
 
 export type ParamaterParser = (stream: IArgumentStream) => Promise<CommandResult<ParsedArguments>>;

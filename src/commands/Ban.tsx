@@ -33,17 +33,21 @@ import { Mjolnir } from "../Mjolnir";
 import { RULE_ROOM, RULE_SERVER, RULE_USER } from "../models/ListRule";
 import PolicyList from "../models/PolicyList";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, paramaters, ParsedKeywords, RestDescription, union } from "./interface-manager/ParamaterParsing";
+import { findPresentationType, makePresentationType, ParamaterDescription, paramaters, ParsedKeywords, RestDescription, simpleTypeValidator, union } from "./interface-manager/ParamaterParsing";
 import "./interface-manager/MatrixPresentations";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { PromptOptions } from "./interface-manager/PromptForAccept";
+import { definePresentationRenderer } from "./interface-manager/DeadDocumentPresentation";
+import { DocumentNode } from "./interface-manager/DeadDocument";
+import { JSXFactory } from "./interface-manager/JSXFactory";
 
 export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyListReference: MatrixRoomReference): Promise<CommandResult<PolicyList, CommandError>> {
     // do we need to catch 404 here so we can tell the user the alias was wrong?
     // Can we shortcut this by making a specific presentaion type for
     // resolved room id? (that aliases can translate to)
     const policyListRoomId = (await policyListReference.resolve(this.client)).toRoomIdOrAlias();
-    const policyList = mjolnir.lists.find(list => list.roomId === policyListRoomId);
+    const policyList = mjolnir.policyListManager.lists.find(list => list.roomId === policyListRoomId);
     if (policyList !== undefined) {
         return CommandResult.Ok(policyList);
     } else {
@@ -58,8 +62,7 @@ export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyLi
 }
 
 export async function findPolicyListFromShortcode(mjolnir: Mjolnir, designator: string): Promise<CommandResult<PolicyList, CommandError>> {
-    const list = mjolnir.resolveListShortcode(designator)
-        ?? await mjolnir.defaultPolicylist();
+    const list = mjolnir.policyListManager.resolveListShortcode(designator);
     if (list !== undefined) {
         return CommandResult.Ok(list);
     } else {
@@ -70,8 +73,8 @@ export async function findPolicyListFromShortcode(mjolnir: Mjolnir, designator: 
 async function ban(
     this: MjolnirContext,
     _keywords: ParsedKeywords,
-    policyListReference: MatrixRoomReference|string,
     entity: UserID|MatrixRoomReference|string,
+    policyListReference: MatrixRoomReference|string,
     ...reasonParts: string[]
     ): Promise<CommandResult<any, CommandError>> {
         // first step is to resolve the policy list
@@ -100,20 +103,25 @@ defineInterfaceCommand({
     table: "mjolnir",
     paramaters: paramaters([
         {
-            name: "list",
-            acceptor: union(
-                findPresentationType("MatrixRoomReference"),
-                findPresentationType("string")
-            )
-        },
-        {
             name: "entity",
             acceptor: union(
                 findPresentationType("UserID"),
                 findPresentationType("MatrixRoomReference"),
                 findPresentationType("string")
             )
-        }
+        },
+        {
+            name: "list",
+            acceptor: union(
+                findPresentationType("MatrixRoomReference"),
+                findPresentationType("string")
+            ),
+            prompt: async function (this: MjolnirContext, paramater: ParamaterDescription): Promise<PromptOptions> {
+                return {
+                    suggestions: this.mjolnir.policyListManager.lists
+                };
+            }
+        },
     ],
     new RestDescription("reason", findPresentationType("string")),
     ),
@@ -124,4 +132,15 @@ defineInterfaceCommand({
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "ban"),
     renderer: tickCrossRenderer
+})
+
+makePresentationType({
+    name: "PolicyList",
+    validator: simpleTypeValidator("PolicyList", (readItem: unknown) => readItem instanceof PolicyList)
+})
+
+definePresentationRenderer(findPresentationType("PolicyList"), function(list: PolicyList): DocumentNode {
+    return <p>
+        {list.listShortcode} <a href={list.roomRef}>{list.roomId}</a>
+    </p>
 })

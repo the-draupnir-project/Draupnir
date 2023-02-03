@@ -34,6 +34,7 @@ export interface AbstractNode {
 
 export interface DocumentNode extends AbstractNode {
     readonly leafNode: false;
+    attributeMap: Map<string, any>,
     addChild<Node extends DocumentNode|LeafNode>(node: Node): Node
     getChildren(): (DocumentNode|LeafNode)[]
     getFirstChild(): DocumentNode|LeafNode|undefined;
@@ -61,8 +62,11 @@ export enum NodeTag {
     LineBreak = 'br',
     BoldFace = 'b',
     ItalicFace = 'i',
+    Anchor = 'a',
 }
 
+// FIXME to implement anchor we need to have a NamedNodeMap
+//       for attributes so we can implement href.
 /**
  * This is an internal interface so we can provide
  * an implementation of `DocumentNode` in a way
@@ -70,6 +74,7 @@ export enum NodeTag {
  */
 interface DeadDocumentNode extends DocumentNode {
     children: (DocumentNode|LeafNode)[];
+    attributeMap: Map<string, any>,
 }
 
 export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentNode, node: Node): Node {
@@ -94,6 +99,7 @@ export function makeDocumentNode(tag: NodeTag, parent = null): DocumentNode {
         leafNode: false,
         parent,
         children: [],
+        attributeMap: new Map(),
         addChild,
         getChildren,
         getFirstChild,

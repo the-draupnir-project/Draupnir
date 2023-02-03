@@ -51,4 +51,15 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.ItalicFace,
     staticString('<i>'),
     staticString('</i>')
+).registerInnerNode(NodeTag.Anchor,
+    function(_fringe, node, context, _environment) {
+        context.output.writeString('<a');
+        if (node.attributeMap.size > 0) {
+            for (const [key, value] of node.attributeMap.entries()) {
+                context.output.writeString(` ${htmlEscape(key)}="${htmlEscape(value)}"`);
+            }
+        }
+        context.output.writeString('>')
+    },
+    staticString('</a>')
 );
