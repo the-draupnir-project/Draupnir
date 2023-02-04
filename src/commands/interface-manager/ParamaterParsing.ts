@@ -366,9 +366,9 @@ class ArgumentListParser implements IArgumentListParser {
             }
             if (stream.peekItem() === undefined) {
                 if (stream.isPromptable()) {
-                    const result = await stream.prompt(paramater);
-                    if (result.isErr()) {
-                        return result as any;
+                    const promptResult = await stream.prompt(paramater);
+                    if (promptResult.isErr()) {
+                        return promptResult as any;
                     }
                     hasPrompted = true;
                 } else {
