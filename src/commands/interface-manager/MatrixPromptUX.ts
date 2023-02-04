@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { MatrixEmitter } from "../../MatrixEmitter";
+import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { CommandError, CommandResult } from "./Validation";
 import { LogService } from "matrix-bot-sdk";
 
@@ -32,7 +32,9 @@ class ReactionHandler {
     private readonly promptRecordByEvent: Map<string/*event id*/, Set<ReactionPromptRecord>> = new Map();
 
     constructor(
-        matrixEmitter: MatrixEmitter
+        matrixEmitter: MatrixEmitter,
+        private readonly userId: string,
+        private readonly client: MatrixSendClient,
     ) {
         matrixEmitter.on('room.event', this.handleEvent.bind(this))
     }
@@ -59,7 +61,12 @@ class ReactionHandler {
         }
     }
 
-    private handleEvent(roomId: string, event: { event_id: string, type: string, content: any }): void {
+    private async addBaseReactionsToEvent(roomId: string, eventId: string, presentationsByKey: PresentationByReactionKey) {
+        return await Promise.all([...presentationsByKey.keys()].slice(0, 5)
+            .map(key => this.client.unstableApis.addReactionToEvent(roomId, eventId, key)));
+    }
+
+    private handleEvent(roomId: string, event: { event_id: string, type: string, content: any, sender: string }): void {
         // Horrid, would be nice to have some pattern matchy thingo
         if (event.type !== 'm.reaction') {
             return;
@@ -74,6 +81,9 @@ class ReactionHandler {
         const relatedEventId = relatesTo['event_id'];
         const reactionKey = relatesTo['key'];
         if (!(typeof relatedEventId === 'string' && typeof reactionKey === 'string')) {
+            return;
+        }
+        if (event['sender'] === this.userId) {
             return;
         }
         const entry = this.promptRecordByEvent.get(relatedEventId);
@@ -95,13 +105,14 @@ class ReactionHandler {
     }
 
     public async waitForReactionToPrompt<T>(
-        eventId: string, presentationByReaction: PresentationByReactionKey, timeout = 600_000 // ten minutes
+        roomId: string, eventId: string, presentationByReaction: PresentationByReactionKey, timeout = 600_000 // ten minutes
     ): Promise<CommandResult<T, CommandError>> {
         let record;
         const presentationOrTimeout = await Promise.race([
             new Promise(resolve => {
                 record = new ReactionPromptRecord(presentationByReaction, resolve);
                 this.addPresentationsForEvent(eventId, record);
+                this.addBaseReactionsToEvent(roomId, eventId, presentationByReaction);
             }),
             new Promise(resolve => setTimeout(resolve, timeout)),
         ]);
@@ -143,29 +154,27 @@ export class PromptResponseListener {
     private readonly reactionHandler: ReactionHandler;
 
     constructor(
-        matrixEmitter: MatrixEmitter
+        matrixEmitter: MatrixEmitter,
+        userId: string,
+        client: MatrixSendClient,
     ) {
-        this.reactionHandler = new ReactionHandler(matrixEmitter);
+        this.reactionHandler = new ReactionHandler(matrixEmitter, userId, client);
     }
 
     private indexToReactionKey(index: number): string {
-        if (index < 10) {
-            return ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"][index];
-        } else {
-            return index.toString();
-        }
+        return `${(index + 1).toString()}.`;
     }
 
     // This won't work, we have to have a special key in the original event
     // that means we should be waiting for it, that can't be abused/forged.
     // As we can't have the event id AOT.
-    public async waitForPresentationList<T>(presentations: T[], eventPromise: Promise<string>): Promise<CommandResult<T>> {
+    public async waitForPresentationList<T>(presentations: T[], roomId: string, eventPromise: Promise<string>): Promise<CommandResult<T>> {
         const presentationByReactionKey = presentations.reduce(
             (map: PresentationByReactionKey, presentation: T, index: number) => {
                 return map.set(this.indexToReactionKey(index), presentation);
             },
             new Map()
         );
-        return await this.reactionHandler.waitForReactionToPrompt<T>(await eventPromise, presentationByReactionKey);
+        return await this.reactionHandler.waitForReactionToPrompt<T>(roomId, await eventPromise, presentationByReactionKey);
     }
 }

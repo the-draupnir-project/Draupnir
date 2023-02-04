@@ -31,7 +31,7 @@ async function promptSuggestions<PresentationType>(
     this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
 ): Promise</*event id*/string> {
     return (await renderMatrixAndSend(
-        <p>Please select one of the following options to provide as an argument for the paramater <code>{paramater.name}</code>: 
+        <p>Please select one of the following options to provide as an argument for the paramater <code>{paramater.name}</code>:
             <ol>
                 {suggestions.map((suggestion: PresentationType) => {
                     return <li>
@@ -48,13 +48,14 @@ async function promptSuggestions<PresentationType>(
 export async function matrixPromptForAccept<PresentationType = any> (
     this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
 ): Promise<CommandResult<PresentationType>> {
-    const promptHelper = new PromptResponseListener(this.emitter);
+    const promptHelper = new PromptResponseListener(this.emitter, await this.client.getUserId(), this.client);
     if (promptOptions.default) {
         await promptDefault.call(this, paramater, command, promptOptions.default);
         throw new TypeError("default prompts are not implemented yet.");
     }
     return await promptHelper.waitForPresentationList<PresentationType>(
         promptOptions.suggestions,
+        this.roomId,
         promptSuggestions.call(this, paramater, command, promptOptions.suggestions)
     );
 }
