@@ -65,8 +65,6 @@ export enum NodeTag {
     Anchor = 'a',
 }
 
-// FIXME to implement anchor we need to have a NamedNodeMap
-//       for attributes so we can implement href.
 /**
  * This is an internal interface so we can provide
  * an implementation of `DocumentNode` in a way
