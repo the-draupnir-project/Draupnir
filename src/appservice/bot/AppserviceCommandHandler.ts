@@ -22,6 +22,7 @@ export type AppserviceBaseExecutor = (this: AppserviceContext, ...args: any[]) =
 
 import '../../commands/interface-manager/MatrixPresentations';
 import './ListCommand';
+import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 
 
 const helpCommand = defineInterfaceCommand({
@@ -62,8 +63,7 @@ export class AppserviceCommandHandler {
                     roomId: mxEvent.room_id,
                     event: mxEvent,
                     client: this.appservice.bridge.getBot().getClient(),
-                    // FIXME: This is WRONG and CANNOT be LEFT.
-                    emitter: this.appservice.bridge.getBot().getClient(),
+                    emitter: new AppserviceBotEmitter(),
                 };
                 adaptor.invoke(context, context, ...argumentStream.rest());
                 return;
