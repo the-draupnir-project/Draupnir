@@ -1,12 +1,16 @@
-# Contributing code to Matrix
+# Contributing code to Draupnir
 
-Everyone is welcome to contribute code to Matrix
-(https://github.com/matrix-org), provided that they are willing to license
-their contributions under the same license as the project itself. We follow a
-simple 'inbound=outbound' model for contributions: the act of submitting an
-'inbound' contribution means that the contributor agrees to license the code
-under the same terms as the project's overall 'outbound' license - in our
-case, this is almost always Apache Software License v2 (see [LICENSE](LICENSE)).
+Draupnir is licensed under the Cooperative Software License.
+The reason for the license is simply because this project
+was something that I was previously employed to work on.
+
+I have not decided whether I will accept contributions under the same license
+or another license or a CLA yet.
+I will welcome advice, but I will not welcome attempts to parsuade me to re-adopt
+and relicense under Apache-2.0 unless being offered compensation.
+
+The easiest way forwards would be for me to accept individual contributions under
+Apache-2.0.
 
 ## How to contribute
 
