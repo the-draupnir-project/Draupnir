@@ -396,7 +396,7 @@ class ArgumentListParser implements IArgumentListParser {
         const immediateArguments = restResult.ok === undefined
             || restResult.ok.length === 0
             ? stream.source
-            : stream.source.slice(0, stream.source.indexOf(restResult.ok[0]) + 1)
+            : stream.source.slice(0, stream.source.indexOf(restResult.ok[0]))
         return CommandResult.Ok({
             immediateArguments: immediateArguments,
             keywords: keywordsParser.getKeywords(),
