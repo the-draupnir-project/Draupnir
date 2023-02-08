@@ -370,7 +370,7 @@ class ArgumentListParser implements IArgumentListParser {
                 return CommandResult.Err(keywordResult.err);
             }
             if (stream.peekItem() === undefined) {
-                if (stream.isPromptable()) {
+                if (paramater.prompt && stream.isPromptable()) {
                     const promptResult = await stream.prompt(paramater);
                     if (promptResult.isErr()) {
                         return promptResult as any;
