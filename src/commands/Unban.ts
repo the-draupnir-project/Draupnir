@@ -97,7 +97,7 @@ async function unban(
         const isGlob = (string: string) => string.includes('*') ? true : string.includes('?');
         const rule = new MatrixGlob(entity.toString())
         this.mjolnir.unlistedUserRedactionHandler.removeUser(entity.toString());
-        if (!isGlob(rawEnttiy) || keywords.getKeyword<boolean>("true", false)) {
+        if (!isGlob(rawEnttiy) || keywords.getKeyword<string>("true", "false") === "true") {
             await unbanUserFromRooms(this.mjolnir, rule);
         } else {
             await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", "Running unban without `unban <list> <user> true` will not override existing room level bans");
