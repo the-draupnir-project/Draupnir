@@ -166,7 +166,7 @@ const defaultConfig: IConfig = {
     displayReports: true,
     commands: {
         allowNoPrefix: false,
-        additionalPrefixes: [],
+        additionalPrefixes: ["draupnir"],
         confirmWildcardBan: true,
         features: [
             "synapse admin",
@@ -223,11 +223,11 @@ export function getDefaultConfig(): IConfig {
  * @returns The path if one was provided or undefined.
  */
 function configPathFromArguments(argv: string[]): undefined|string {
-    const configOptionIndex = argv.findIndex(arg => arg === "--mjolnir-config");
+    const configOptionIndex = argv.findIndex(arg => arg === "--draupnir-config");
     if (configOptionIndex > 0) {
         const configOptionPath = argv.at(configOptionIndex + 1);
         if (!configOptionPath) {
-            throw new Error("No path provided with option --mjolnir-config");
+            throw new Error("No path provided with option --draupnir-config");
         }
         return configOptionPath;
     } else {
