@@ -69,6 +69,7 @@ defineCommandTable("mjolnir");
 import "./interface-manager/MatrixPresentations";
 import "./HijackRoomCommand";
 import "./Ban";
+import "./Unban";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
