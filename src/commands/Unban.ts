@@ -70,8 +70,8 @@ async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
 async function unban(
     this: MjolnirContext,
     keywords: ParsedKeywords,
+    entity: UserID|MatrixRoomReference|string,
     policyListReference: MatrixRoomReference|string,
-    entity: UserID|MatrixRoomReference|string
 ): Promise<CommandResult<any, CommandError>> {
     // first step is to resolve the policy list
     const policyListResult = typeof policyListReference === 'string'
