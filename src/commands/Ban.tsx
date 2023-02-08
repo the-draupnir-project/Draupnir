@@ -140,10 +140,7 @@ defineInterfaceCommand({
         findPresentationType("string"),
         async function(_paramater) {
             return {
-                suggestions: [
-                    "spam",
-                    "brigading",
-                ]
+                suggestions: this.mjolnir.config.commands.ban.defaultReasons
             }
         }),
     ),
