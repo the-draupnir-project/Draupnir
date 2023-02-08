@@ -42,26 +42,26 @@ See the [synapse module documentation](docs/synapse_module.md) for information o
 After your bot is up and running, you'll want to run a couple commands to get everything
 set up:
 
-1. `!mjolnir list create COC code-of-conduct-ban-list` - This will create a new ban list
+1. `!draupnir list create COC code-of-conduct-ban-list` - This will create a new ban list
    with the shortcode `COC` and an alias of `#code-of-conduct-ban-list:example.org`. You
    will be invited to the room it creates automatically where you can change settings such
    as the visibility of the room.
-2. `!mjolnir default COC` - This sets the default ban list to the list we just created to
+2. `!draupnir default COC` - This sets the default ban list to the list we just created to
    help with the ban commands later on.
 3. Review the [Moderator's Guide](https://github.com/matrix-org/mjolnir/blob/main/docs/moderators.md).
 4. Review `!mjolnir help` to see what else the bot can do.
 
 ## Enabling readable abuse reports
 
-Since version 1.2, Mjölnir offers the ability to replace the Matrix endpoint used
+Since version 1.2, Draupnir offers the ability to replace the Matrix endpoint used
 to report abuse and display it into a room, instead of requiring you to request
 this data from an admin API.
 
 This requires two configuration steps:
 
-1. In your Mjölnir configuration file, typically `/etc/mjolnir/config/production.yaml`, copy and paste the `web` section from `default.yaml`, if you don't have it yet (it appears with version 1.20) and set `enabled: true` for both `web` and
+1. In your Draupnir configuration file, typically `/etc/draupnir/config/production.yaml`, copy and paste the `web` section from `default.yaml`, if you don't have it yet (it appears with version 1.20) and set `enabled: true` for both `web` and
 `abuseReporting`.
-2. Setup a reverse proxy that will redirect requests from `^/_matrix/client/(r0|v3)/rooms/([^/]*)/report/(.*)$` to `http://host:port/api/1/report/$2/$3`, where `host` is the host where you run Mjölnir, and `port` is the port you configured in `production.yaml`. For an example nginx configuration, see `test/nginx.conf`. It's the confirmation we use during runtime testing.
+2. Setup a reverse proxy that will redirect requests from `^/_matrix/client/(r0|v3)/rooms/([^/]*)/report/(.*)$` to `http://host:port/api/1/report/$2/$3`, where `host` is the host where you run Draupnir, and `port` is the port you configured in `production.yaml`. For an example nginx configuration, see `test/nginx.conf`. It's the confirmation we use during runtime testing.
 
 ### Security note
 

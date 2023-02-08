@@ -145,7 +145,7 @@ commands:
 
   # Any additional bot prefixes that Mjolnir will listen to. i.e. adding `mod` will allow `!mod help`.
   additionalPrefixes:
-    - "mjolnir_bot"
+    - "draupnir"
 
   # Whether or not commands with a wildcard (*) will require an additional `--force` argument
   # in the command to be able to be submitted.
