@@ -29,8 +29,7 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { ReadItem } from "./CommandReader";
-import { ParamaterParser, ArgumentStream, IArgumentListParser, ParsedKeywords } from "./ParamaterParsing";
+import { ParamaterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, ArgumentStream } from "./ParamaterParsing";
 import { CommandResult } from "./Validation";
 
 /**
@@ -63,8 +62,8 @@ export class CommandTable<ExecutorType extends BaseFunction> {
     }
 
     // We use the argument stream so that they can use stream.rest() to get the unconsumed arguments.
-    public findAMatchingCommand(stream: ArgumentStream) {
-        const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: ArgumentStream): undefined|InterfaceCommand<ExecutorType> => {
+    public findAMatchingCommand(stream: IArgumentStream) {
+        const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: IArgumentStream): undefined|InterfaceCommand<ExecutorType> => {
             if (argumentStream.peekItem() === undefined || typeof argumentStream.peekItem() !== 'string') {
                 // Then they might be using something like "!mjolnir status"
                 return table.current;
@@ -145,16 +144,16 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     // Really, surely this should be part of invoke?
     // probably... it's just that means that invoke has to return the validation result lol.
     // Though this makes no sense if parsing is part of finding a matching command.
-    public parseArguments(...args: ReadItem[]): ReturnType<ParamaterParser> {
-        return this.argumentListParser.parseFunction(...args);
+    public async parseArguments(stream: IArgumentStream): ReturnType<ParamaterParser> {
+        return await this.argumentListParser.parse(stream);
     }
 
     public invoke(context: ThisParameterType<ExecutorType>, ...args: Parameters<ExecutorType>): ReturnType<ExecutorType> {
         return this.command.apply(context, args);
     }
 
-    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, ...items: ReadItem[]): Promise<ReturnType<ExecutorType>> {
-        const paramaterDescription = this.argumentListParser.parseFunction(...items);
+    public async parseThenInvoke(context: ThisParameterType<ExecutorType>, stream: IArgumentStream): Promise<ReturnType<ExecutorType>> {
+        const paramaterDescription = await this.parseArguments(stream);
         if (paramaterDescription.isErr()) {
             // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
             return paramaterDescription as ReturnType<Awaited<ExecutorType>>;

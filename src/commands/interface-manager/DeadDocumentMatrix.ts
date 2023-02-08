@@ -16,7 +16,7 @@ function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined
     return true;
 }
 
-export type SendMatrixEventCB = (text: string, html: string) => Promise<void>;
+export type SendMatrixEventCB = (text: string, html: string) => Promise<string/*event id*/>;
 
 /**
  * Render the `DocumentNode` to Matrix (in both HTML + Markdown) using the
@@ -26,7 +26,7 @@ export type SendMatrixEventCB = (text: string, html: string) => Promise<void>;
  * @param cb A callback that will send the text+html for a single event
  * to a Matrix room.
  */
-export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
+export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): Promise<string[]> {
     const commitHook = (commitNode: DocumentNode, context: { output: PagedDuplexStream }) => {
         context.output.commit(commitNode);
     };
@@ -44,6 +44,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
         HTML_RENDERER,
         commitHook,
     );
+    const eventIds: string[] = [];
     const outputs = [htmlOutput, markdownOutput];
     let currentMarkdownNode = markdownWalker.increment();
     let currentHtmlNode = htmlWalker.increment();
@@ -56,7 +57,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
             // that means there's an implementation issue in the walker's though.
             outputs.forEach(o => o.ensureNewPage());
             // Send the new pages as an event.
-            await cb(markdownOutput.readPage()!, htmlOutput.readPage()!);
+            eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
         }
         // prepare next iteration
         currentMarkdownNode = markdownWalker.increment();
@@ -65,8 +66,9 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
     }
     outputs.forEach(o => o.ensureNewPage());
     if (outputs.some(o => o.peekPage())) {
-        await cb(markdownOutput.readPage()!, htmlOutput.readPage()!);
+        eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
     }
+    return eventIds;
 }
 
 /**
@@ -76,10 +78,10 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB) {
  * @param event An event to reply to.
  * @param client A MatrixClient to send the events with.
  */
-export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<void> {
+export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<string[]> {
     // We desperatley need support for threads to make this work in a non-shit way.
-    await renderMatrix(node, async (text: string, html: string) => {
-        await client.sendMessage(roomId, {
+    return await renderMatrix(node, async (text: string, html: string) => {
+        return await client.sendMessage(roomId, {
             msgtype: "m.notice",
             body: text,
             format: "org.matrix.custom.html",

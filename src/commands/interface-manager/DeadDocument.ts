@@ -34,6 +34,7 @@ export interface AbstractNode {
 
 export interface DocumentNode extends AbstractNode {
     readonly leafNode: false;
+    attributeMap: Map<string, any>,
     addChild<Node extends DocumentNode|LeafNode>(node: Node): Node
     getChildren(): (DocumentNode|LeafNode)[]
     getFirstChild(): DocumentNode|LeafNode|undefined;
@@ -56,10 +57,12 @@ export enum NodeTag {
     Paragraph = 'p',
     HeadingOne = 'h1',
     UnorderedList = 'ul',
+    OrderedList = 'ol',
     ListItem = 'li',
     LineBreak = 'br',
     BoldFace = 'b',
     ItalicFace = 'i',
+    Anchor = 'a',
 }
 
 /**
@@ -69,6 +72,7 @@ export enum NodeTag {
  */
 interface DeadDocumentNode extends DocumentNode {
     children: (DocumentNode|LeafNode)[];
+    attributeMap: Map<string, any>,
 }
 
 export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentNode, node: Node): Node {
@@ -93,6 +97,7 @@ export function makeDocumentNode(tag: NodeTag, parent = null): DocumentNode {
         leafNode: false,
         parent,
         children: [],
+        attributeMap: new Map(),
         addChild,
         getChildren,
         getFirstChild,
@@ -326,7 +331,7 @@ export class FringeWalker<Context> {
 export class TagDynamicEnvironmentEntry {
     constructor(
         public readonly node: DocumentNode,
-        public readonly value: any,
+        public value: any,
         public readonly previous: undefined|TagDynamicEnvironmentEntry,
     ) {
 
@@ -354,19 +359,28 @@ export class TagDynamicEnvironmentEntry {
 export class TagDynamicEnvironment {
     private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
 
-    public getVariable(variableName: string): any|undefined {
+    public read(variableName: string): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
             return variableEntry.value;
         } else {
-            return undefined;
+            throw new TypeError(`The variable ${variableName} is unbound.`);
+        }
+    }
+
+    public write(variableName: string, value: any): any {
+        const variableEntry = this.environments.get(variableName);
+        if (variableEntry) {
+            return variableEntry.value = value;
+        } else {
+            throw new TypeError(`The variable ${variableName} is unbound.`)
         }
     }
 
     public bind(variableName: string, node: DocumentNode, value: any): any {
         const entry = this.environments.get(variableName);
         const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
-        this.environments.set(node.tag, newEntry);
+        this.environments.set(variableName, newEntry);
         return value
     }
 

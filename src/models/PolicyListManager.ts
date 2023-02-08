@@ -50,6 +50,10 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
         return [...this.policyLists];
     }
 
+    public resolveListShortcode(listShortcode: string): PolicyList | undefined {
+        return this.lists.find(list => list.listShortcode.toLocaleLowerCase() === listShortcode);
+    }
+
     /**
      * Helper for constructing `PolicyList`s and making sure they have the right listeners set up.
      * @param roomId The room id for the `PolicyList`.

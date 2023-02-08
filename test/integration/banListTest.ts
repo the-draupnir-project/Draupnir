@@ -356,7 +356,7 @@ describe('Test: unbaning entities via the PolicyList.', function() {
             await moderator.start();
             for (const server of [olderBadServer, newerBadServer]) {
                 await getFirstReaction(moderator, mjolnir.managementRoomId, '✅', async () => {
-                    return await moderator.sendMessage(mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban unban-test server ${server}` });
+                    return await moderator.sendMessage(mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban ${server} unban-test` });
                 });
             }
         } finally {

@@ -36,6 +36,9 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.UnorderedList,
     staticString('<ul>'),
     staticString('</ul>')
+).registerInnerNode(NodeTag.OrderedList,
+    staticString('<ol>'),
+    staticString('</ol>')
 ).registerInnerNode(NodeTag.ListItem,
     staticString('<li>'),
     staticString('</li>')
@@ -48,4 +51,15 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.ItalicFace,
     staticString('<i>'),
     staticString('</i>')
+).registerInnerNode(NodeTag.Anchor,
+    function(_fringe, node, context, _environment) {
+        context.output.writeString('<a');
+        if (node.attributeMap.size > 0) {
+            for (const [key, value] of node.attributeMap.entries()) {
+                context.output.writeString(` ${htmlEscape(key)}="${htmlEscape(value)}"`);
+            }
+        }
+        context.output.writeString('>')
+    },
+    staticString('</a>')
 );

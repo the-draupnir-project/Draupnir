@@ -7,7 +7,9 @@ import { DocumentNode, FringeInnerRenderFunction, FringeLeafRenderFunction, Frin
 import { PagedDuplexStream } from "./PagedDuplexStream";
 
 export enum MarkdownVariables {
-    IndentationLevel = "indentation level"
+    IndentationLevel = "indentation level",
+    ListType = "List Type",
+    ListItemCount = "List Item Count",
 }
 
 /**
@@ -27,14 +29,18 @@ export function staticString(string: string): FringeInnerRenderFunction<Transact
 }
 export function blank() { }
 export function incrementDynamicEnvironment(_fringe: FringeType, node: DocumentNode, _context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
-    const value = environment.getVariable(MarkdownVariables.IndentationLevel);
+    const value = (() => {
+        try {
+            return environment.read(MarkdownVariables.IndentationLevel);
+        } catch (_e: any) {
+            return environment.bind(MarkdownVariables.IndentationLevel, node, 0);
+        }
+    })();
     if (value) {
         if (!Number.isInteger(value)) {
             throw new TypeError(`${MarkdownVariables.IndentationLevel} should not have a dynamic environment entry that isn't an integer`);
         }
         environment.bind(MarkdownVariables.IndentationLevel, node, value + 1);
-    } else {
-        environment.bind(MarkdownVariables.IndentationLevel, node, 1);
     }
 }
 
@@ -67,26 +73,47 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     staticString('**'),
     staticString('**')
 ).registerInnerNode(NodeTag.UnorderedList,
-    incrementDynamicEnvironment,
+    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        incrementDynamicEnvironment.apply(undefined, arguments);
+        environment.bind(MarkdownVariables.ListType, node, NodeTag.UnorderedList);
+    },
     blank
 ).registerInnerNode(NodeTag.ListItem,
-    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+    function(_fringe, node, context, environment) {
         const indentationLevel: number = (() => {
-            const value = environment.getVariable(MarkdownVariables.IndentationLevel);
+            const value = environment.read(MarkdownVariables.IndentationLevel);
              if (!Number.isInteger(value)) {
                 throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers. Did you forget to enclose in <ul> or <ol>?`)
             } else {
                 return value;
             }
         })();
-
+        const listItemCount = (() => {
+            const currentCount = environment.read(MarkdownVariables.ListItemCount);
+            if (!Number.isInteger(currentCount)) {
+                throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment.`);
+            }
+            environment.write(MarkdownVariables.ListItemCount, currentCount + 1);
+            return currentCount + 1;
+        })();
         context.output.writeString('\n');
         for (let i = 0; i < indentationLevel; i++) {
             context.output.writeString('    ');
         }
-        context.output.writeString(' * ');
+        if (environment.read(MarkdownVariables.ListType) === NodeTag.OrderedList) {
+            context.output.writeString(` ${listItemCount}. `);
+        } else {
+            context.output.writeString(' * ');
+        }
     },
     staticString('\n')
+).registerInnerNode(NodeTag.OrderedList,
+    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        incrementDynamicEnvironment.apply(undefined, arguments);
+        environment.bind(MarkdownVariables.ListType, node, NodeTag.OrderedList);
+        environment.bind(MarkdownVariables.ListItemCount, node, 0);
+    },
+    blank
 ).registerInnerNode(NodeTag.LineBreak,
     blank,
     staticString('\n')
@@ -96,4 +123,13 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.ItalicFace,
     staticString('*'),
     staticString('*')
+).registerInnerNode(NodeTag.Anchor,
+    staticString('['),
+    function(_fringe, node, context, _environment) {
+        const href = node.attributeMap.get("href");
+        if (href === undefined) {
+            throw new TypeError('Anchor without a href is probably a mistake? well we do not support other uses yet.')
+        }
+        context.output.writeString(`](${href})`);
+    }
 );

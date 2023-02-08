@@ -86,6 +86,9 @@ export interface IConfig {
         additionalPrefixes: string[];
         confirmWildcardBan: boolean;
         features: string[];
+        ban: {
+            defaultReasons: string[]
+        }
     };
     protections: {
         wordlist: {
@@ -167,7 +170,15 @@ const defaultConfig: IConfig = {
         confirmWildcardBan: true,
         features: [
             "synapse admin",
-        ]
+        ],
+        ban: {
+            defaultReasons: [
+                "spam",
+                "brigading",
+                "harassment",
+                "disagreement",
+            ]
+        }
     },
     protections: {
         wordlist: {

@@ -24,14 +24,33 @@ limitations under the License.
  * are NOT distributed, contributed, or committed under the Apache License.
  */
 
-import { Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
+import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
+import { PromptOptions } from "./PromptForAccept";
 import { CommandError, CommandResult } from "./Validation";
 
-export class ArgumentStream extends SuperCoolStream<ReadItem[]> {
+export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
+    rest(): ReadItem[],
+    isPromptable(): boolean,
+    // should prompt really return a new stream?
+    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>>,
+}
+
+export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
     public rest() {
         return this.source.slice(this.position);
     }
+
+    public isPromptable(): boolean {
+        return false;
+    }
+
+    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>> {
+        throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
+    }
 }
+
+// TODO: Presentation types should be extracted to their own file.
+// FIXME: PresentationTypes should not be limited to ReadItems.
 
 export type PredicateIsParamater = (readItem: ReadItem) => CommandResult<true>;
 
@@ -75,6 +94,11 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
     }
 }
 
+export function presentationTypeOf(presentation: unknown): PresentationType|undefined {
+    return [...PRESENTATION_TYPES.values()]
+        .find(possibleType => possibleType.validator(presentation as ReadItem).isOk());
+}
+
 makePresentationType({
     name: "Keyword",
     validator: simpleTypeValidator("Keyword", (item: ReadItem) => item instanceof Keyword),
@@ -85,6 +109,11 @@ makePresentationType({
     validator: simpleTypeValidator('string', (item: ReadItem) => typeof item === 'string'),
 })
 
+makePresentationType({
+    name: 'boolean',
+    validator: simpleTypeValidator('boolean', (item: ReadItem) => item === 'true' ? true : item === 'false')
+})
+
 /**
  * Describes a rest paramater for a command.
  * This consumes any arguments left over in the call to a command
@@ -92,11 +121,12 @@ makePresentationType({
  *
  * Any keywords in the rest of the command will be given to the `keywordParser`.
  */
-export class RestDescription implements ParamaterDescription {
+export class RestDescription<ExecutorContext = unknown> implements ParamaterDescription {
     constructor(
         public readonly name: string,
         /** The presentation type of each item. */
         public readonly acceptor: PresentationType,
+        public readonly prompt?: Prompt<ExecutorContext>,
         public readonly description?: string,
     ) {
 
@@ -109,8 +139,14 @@ export class RestDescription implements ParamaterDescription {
      * @returns A CommandResult of ReadItems associated with the rest of the command.
      * If a ReadItem or Keyword is invalid for the command, then an error will be returned.
      */
-    public parseRest(stream: ArgumentStream, keywordParser: KeywordParser): CommandResult<ReadItem[]> {
+    public async parseRest(stream: IArgumentStream, promptForRest: boolean, keywordParser: KeywordParser): Promise<CommandResult<ReadItem[]>> {
         const items: ReadItem[] = [];
+        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
+            const result = await stream.prompt(this);
+            if (result.isErr()) {
+                return result as any;
+            }
+        }
         while (stream.peekItem() !== undefined) {
             const keywordResult = keywordParser.parseKeywords(stream);
             if (keywordResult.isErr()) {
@@ -209,7 +245,7 @@ class KeywordParser {
     }
 
 
-    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: ArgumentStream): CommandResult<any, ArgumentParseError> {
+    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): CommandResult<any, ArgumentParseError> {
         if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
             const validationResult = keyword.acceptor.validator(itemStream.peekItem());
             if (validationResult.isOk()) {
@@ -226,7 +262,7 @@ class KeywordParser {
         }
     }
 
-    public parseKeywords(itemStream: ArgumentStream): CommandResult<this> {
+    public parseKeywords(itemStream: IArgumentStream): CommandResult<this> {
         while (itemStream.peekItem() !== undefined && itemStream.peekItem() instanceof Keyword) {
             const item = itemStream.readItem() as Keyword;
             const description = this.description.description[item.designator];
@@ -255,16 +291,16 @@ class KeywordParser {
         return CommandResult.Ok(this);
     }
 
-    public parseRest(itemStream: ArgumentStream, restDescription?: RestDescription): CommandResult<ReadItem[]|undefined> {
+    public async parseRest(stream: IArgumentStream, shouldPromptForRest = false, restDescription?: RestDescription): Promise<CommandResult<ReadItem[]|undefined>> {
         if (restDescription !== undefined) {
-            return restDescription.parseRest(itemStream, this)
+            return await restDescription.parseRest(stream, shouldPromptForRest, this)
         } else {
-            const result = this.parseKeywords(itemStream);
+            const result = this.parseKeywords(stream);
             if (result.isErr()) {
                 return CommandResult.Err(result.err);
             }
-            if (itemStream.peekItem() !== undefined) {
-                return CommandError.Result(`There is an unexpected non-keyword argument ${JSON.stringify(itemStream.peekItem())}`);
+            if (stream.peekItem() !== undefined) {
+                return CommandError.Result(`There is an unexpected non-keyword argument ${JSON.stringify(stream.peekItem())}`);
             } else {
                 return CommandResult.Ok(undefined);
             }
@@ -278,13 +314,22 @@ export interface ParsedArguments {
     readonly keywords: ParsedKeywords,
 }
 
-export interface ParamaterDescription {
+export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: ParamaterDescription<ExecutorContext>) => Promise<PromptOptions>;
+
+export interface ParamaterDescription<ExecutorContext = unknown> {
     name: string,
     description?: string,
     acceptor: PresentationType,
+    /**
+     * Prompt the interface for an argument that was not provided.
+     * @param this Expected to be the executor context that is used to provided to the command executor.
+     * @param description The paramater description being accepted.
+     * @returns PromptOptions, to be handled by the interface adaptor.
+     */
+    prompt?: Prompt<ExecutorContext>,
 }
 
-export type ParamaterParser = (...readItems: ReadItem[]) => CommandResult<ParsedArguments>;
+export type ParamaterParser = (stream: IArgumentStream) => Promise<CommandResult<ParsedArguments>>;
 
 // So this should really just be something used by defineInterfaceCommand which turns paramaters into a validator that can be used.
 // It can't be, because then otherwise how does the semantics for union work?
@@ -296,73 +341,78 @@ export function paramaters(descriptions: ParamaterDescription[], rest: undefined
 }
 
 export interface IArgumentListParser {
-    readonly parseFunction: ParamaterParser,
+    readonly parse: ParamaterParser,
     readonly descriptions: ParamaterDescription[],
     readonly rest?: RestDescription,
     readonly keywords: KeywordsDescription,
 }
 
 /**
- * Zis is le argument list parser
- * It is used directly by InterfaceCommand to consume, parse, validate le arguments.
+ * Allows an interface adaptor to parse arguments to a command using the command description
+ * before being able to invoke a command.
  */
 class ArgumentListParser implements IArgumentListParser {
-    public readonly parseFunction: ParamaterParser;
-
     constructor(
         public readonly descriptions: ParamaterDescription[],
         public readonly keywords: KeywordsDescription,
         public readonly rest?: RestDescription,
     ) {
-        this.parseFunction = this.makeParseFunction(descriptions, this.rest, this.keywords);
     }
 
-    private makeParseFunction(descriptions: ParamaterDescription[], rest: undefined|RestDescription, keywords: KeywordsDescription): ParamaterParser {
-        return (...readItems: ReadItem[]) => {
-            const keywordsParser = keywords.getParser();
-            const itemStream = new ArgumentStream(readItems);
-            for (const paramater of descriptions) {
-                // it eats any keywords at any point in the stream
-                // as they can appear at any point technically.
-                const keywordResult = keywordsParser.parseKeywords(itemStream);
-                if (keywordResult.isErr()) {
-                    return CommandResult.Err(keywordResult.err);
-                }
-                if (itemStream.peekItem() === undefined) {
-                    return ArgumentParseError.Result(`An argument for the paramater ${paramater.name} was expected but was not provided.`, { paramater, stream: itemStream });
-                }
-                const result = paramater.acceptor.validator(itemStream.peekItem());
-                if (result.isErr()) {
-                    // should really allow the help to be printed later on and keep the whole context?
-                    return ArgumentParseError.Result(result.err.message, { paramater, stream: itemStream });
-                }
-                itemStream.readItem();
+    public async parse(stream: IArgumentStream): Promise<CommandResult<ParsedArguments>> {
+        let hasPrompted = false;
+        const keywordsParser = this.keywords.getParser();
+        for (const paramater of this.descriptions) {
+            // it eats any keywords at any point in the stream
+            // as they can appear at any point technically.
+            const keywordResult = keywordsParser.parseKeywords(stream);
+            if (keywordResult.isErr()) {
+                return CommandResult.Err(keywordResult.err);
             }
-            const restResult = keywordsParser.parseRest(itemStream, rest);
-            if (restResult.isErr()) {
-                return CommandResult.Err(restResult.err);
+            if (stream.peekItem() === undefined) {
+                if (paramater.prompt && stream.isPromptable()) {
+                    const promptResult = await stream.prompt(paramater);
+                    if (promptResult.isErr()) {
+                        return promptResult as any;
+                    }
+                    hasPrompted = true;
+                } else {
+                    return ArgumentParseError.Result(
+                        `An argument for the paramater ${paramater.name} was expected but was not provided.`,
+                        { paramater, stream }
+                    );
+                }
             }
-            const immediateArguments = restResult.ok === undefined
-                || restResult.ok.length === 0
-                ? readItems
-                : readItems.slice(0, readItems.indexOf(restResult.ok[0]) + 1)
-            return CommandResult.Ok({
-                immediateArguments: immediateArguments,
-                keywords: keywordsParser.getKeywords(),
-                rest: restResult.ok
-            });
+            const result = paramater.acceptor.validator(stream.peekItem());
+            if (result.isErr()) {
+                return ArgumentParseError.Result(result.err.message, { paramater, stream });
+            }
+            stream.readItem();
         }
+        const restResult = await keywordsParser.parseRest(stream, hasPrompted, this.rest);
+        if (restResult.isErr()) {
+            return CommandResult.Err(restResult.err);
+        }
+        const immediateArguments = restResult.ok === undefined
+            || restResult.ok.length === 0
+            ? stream.source
+            : stream.source.slice(0, stream.source.indexOf(restResult.ok[0]))
+        return CommandResult.Ok({
+            immediateArguments: immediateArguments,
+            keywords: keywordsParser.getKeywords(),
+            rest: restResult.ok
+        });
     }
 }
 
 export class AbstractArgumentParseError extends CommandError {
     constructor(
-        public readonly stream: ArgumentStream,
+        public readonly stream: IArgumentStream,
         message: string) {
         super(message)
     }
 
-    public static Result<Ok>(message: string, options: { stream: ArgumentStream }): CommandResult<Ok, AbstractArgumentParseError> {
+    public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, AbstractArgumentParseError> {
         return CommandResult.Err(new AbstractArgumentParseError(options.stream, message));
     }
 }
@@ -370,18 +420,18 @@ export class AbstractArgumentParseError extends CommandError {
 export class ArgumentParseError extends AbstractArgumentParseError {
     constructor(
         public readonly paramater: ParamaterDescription,
-        stream: ArgumentStream,
+        stream: IArgumentStream,
         message: string) {
         super(stream, message)
     }
 
-    public static Result<Ok>(message: string, options: { paramater: ParamaterDescription, stream: ArgumentStream }): CommandResult<Ok, ArgumentParseError> {
+    public static Result<Ok>(message: string, options: { paramater: ParamaterDescription, stream: IArgumentStream }): CommandResult<Ok, ArgumentParseError> {
         return CommandResult.Err(new ArgumentParseError(options.paramater, options.stream, message));
     }
 }
 
 export class UnexpectedArgumentError extends AbstractArgumentParseError {
-    public static Result<Ok>(message: string, options: { stream: ArgumentStream }): CommandResult<Ok, UnexpectedArgumentError> {
+    public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, UnexpectedArgumentError> {
         return CommandResult.Err(new UnexpectedArgumentError(options.stream, message));
     }
 }

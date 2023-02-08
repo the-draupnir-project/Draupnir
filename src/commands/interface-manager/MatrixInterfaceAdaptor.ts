@@ -32,12 +32,16 @@ limitations under the License.
 import { CommandError, CommandResult } from "./Validation";
 import { LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
-import { MatrixSendClient } from "../../MatrixEmitter";
+import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
+import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
+import { ParamaterDescription } from "./ParamaterParsing";
+import { matrixPromptForAccept } from "./MatrixPromptForAccept";
 
 export interface MatrixContext {
     client: MatrixSendClient,
+    emitter: MatrixEmitter,
     roomId: string,
     event: any,
 }
@@ -49,7 +53,8 @@ type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunctio
     event: any,
     result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
-export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> {
+export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> implements InterfaceAcceptor {
+    public readonly isPromptable = true;
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
         private readonly renderer: RendererSignature<C, ExecutorType>,
@@ -67,7 +72,9 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      * @param args These will be the arguments to the parser function.
      */
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
-        const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, ...args);
+        const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
+        const stream = new PromptableArgumentStream(args, this, invocationRecord);
+        const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
         if (executorResult.isErr()) {
             this.reportValidationError(matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult.err);
             return;
@@ -90,7 +97,33 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         }
         await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
+
+    public async promptForAccept<PresentationType = unknown>(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
+        if (!(invocationRecord instanceof MatrixInvocationRecord)) {
+            throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
+        }
+        if (paramater.prompt === undefined) {
+            throw new TypeError(`paramater ${paramater.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
+        }
+        // Slowly starting to think that we're making a mistake by using `this` so much....
+        // First extract the prompt results in the command executor context
+        const promptOptions: PromptOptions = await paramater.prompt.call(invocationRecord.executorContext, paramater);
+        // Then present the prompt.
+        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept<PresentationType>>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, paramater, invocationRecord.command, promptOptions);
+        return promptResult;
+    }
 }
+
+export class MatrixInvocationRecord<ExecutorContext> implements CommandInvocationRecord {
+    constructor(
+        public readonly command: InterfaceCommand<BaseFunction>,
+        public readonly executorContext: ExecutorContext,
+        public readonly matrixContext: MatrixContext,
+    ) {
+
+    }
+}
+
 
 const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand<BaseFunction>, MatrixInterfaceAdaptor<MatrixContext, BaseFunction>>();
 

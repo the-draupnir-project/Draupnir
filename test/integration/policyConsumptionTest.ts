@@ -82,7 +82,7 @@ describe("Test: that policy lists are consumed by the associated synapse module"
 
         await waitForRuleChange(this.mjolnir, async () => {
             await getFirstReaction(this.mjolnir.client, this.mjolnir.managementRoomId, '✅', async () => {
-                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${banList} ${badUserId}` });
+                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${badUserId} ${banList}` });
             });
         });
         await assert.rejects(badUser.sendMessage(unprotectedRoom, { msgtype: 'm.text', body: 'test'}), 'The bad user should be banned and unable to send messages.');
@@ -93,7 +93,7 @@ describe("Test: that policy lists are consumed by the associated synapse module"
         // Test we can remove the rules.
         await waitForRuleChange(this.mjolnir, async () => {
             await getFirstReaction(this.mjolnir.client, this.mjolnir.managementRoomId, '✅', async () => {
-                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban ${banList} ${badUserId}` });
+                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban ${badUserId} ${banList}` });
             });
         });
         assert.ok(await badUser.sendMessage(unprotectedRoom, { msgtype: 'm.text', body: 'test'}));
@@ -110,7 +110,7 @@ describe("Test: that policy lists are consumed by the associated synapse module"
         await badUser.sendMessage(badRoom, {msgtype: 'm.text', body: "Very Bad Stuff in this room"});
         await waitForRuleChange(this.mjolnir, async () => {
             await getFirstReaction(this.mjolnir.client, this.mjolnir.managementRoomId, '✅', async () => {
-                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${banList} ${badRoom}` });
+                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${badRoom} ${banList}` });
             });
         });
         await assert.rejects(badUser.sendMessage(badRoom, { msgtype: 'm.text', body: 'test'}), 'should not be able to send messagea to a room which is listed.');
@@ -120,7 +120,7 @@ describe("Test: that policy lists are consumed by the associated synapse module"
         // Test we can remove these rules.
         await waitForRuleChange(this.mjolnir, async () => {
             await getFirstReaction(this.mjolnir.client, this.mjolnir.managementRoomId, '✅', async () => {
-                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban ${banList} ${badRoom}` });
+                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir unban ${badRoom} ${banList}` });
             });
         });
 
@@ -136,7 +136,7 @@ describe("Test: that policy lists are consumed by the associated synapse module"
         await moderator.sendMessage(targetRoom, {msgtype: 'm.text', body: "Fluffy Foxes."});
         await waitForRuleChange(this.mjolnir, async () => {
             await getFirstReaction(this.mjolnir.client, this.mjolnir.managementRoomId, '✅', async () => {
-                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${banList} ${targetRoom}` });
+                return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir ban ${targetRoom} ${banList}` });
             });
         });
         await assert.rejects(moderator.sendMessage(targetRoom, { msgtype: 'm.text', body: 'test'}), 'should not be able to send messages to a room which is listed.');

@@ -6,8 +6,14 @@
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
 
+export interface ISuperCoolStream<T> {
+    readonly source: T
+    peekItem(eof?: any): T|any,
+    readItem(eof?: any): T|any,
+    getPosition(): number,
+}
 
-export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> {
+export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> implements ISuperCoolStream<T> {
     protected position: number
     /**
      * Makes the super cool string stream.

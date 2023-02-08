@@ -15,6 +15,6 @@ export class AppservideBotCommandClient {
         if (!matchingCommand) {
             throw new TypeError(`Couldn't finnd a command from these items ${JSON.stringify(items)}`);
         }
-        return await matchingCommand.parseThenInvoke({ appservice: this.appservice }, ...stream.rest()) as CommandReturnType;
+        return await matchingCommand.parseThenInvoke({ appservice: this.appservice }, stream) as CommandReturnType;
     }
 }
