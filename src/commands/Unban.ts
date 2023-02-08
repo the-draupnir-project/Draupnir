@@ -36,6 +36,7 @@ import { Mjolnir } from "../Mjolnir";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import PolicyList from "../models/PolicyList";
 
 async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
     await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "UnbanBanCommand", "Unbanning users that match glob: " + rule.regex);
@@ -74,8 +75,10 @@ async function unban(
 ): Promise<CommandResult<any, CommandError>> {
     // first step is to resolve the policy list
     const policyListResult = typeof policyListReference === 'string'
-        ? await findPolicyListFromShortcode(this.mjolnir, policyListReference)
-        : await findPolicyListFromRoomReference(this.mjolnir, policyListReference);
+    ? await findPolicyListFromShortcode(this.mjolnir, policyListReference)
+    : policyListReference instanceof PolicyList
+    ? CommandResult.Ok(policyListReference)
+    : await findPolicyListFromRoomReference(this.mjolnir, policyListReference);
     if (policyListResult.isErr()) {
         return policyListResult;
     }
@@ -90,9 +93,11 @@ async function unban(
     }
 
     if (typeof entity === 'string' || entity instanceof UserID) {
+        const rawEnttiy = typeof entity === 'string' ? entity : entity.toString();
+        const isGlob = (string: string) => string.includes('*') ? true : string.includes('?');
         const rule = new MatrixGlob(entity.toString())
         this.mjolnir.unlistedUserRedactionHandler.removeUser(entity.toString());
-        if (keywords.getKeyword<boolean>("true", false)) {
+        if (!isGlob(rawEnttiy) || keywords.getKeyword<boolean>("true", false)) {
             await unbanUserFromRooms(this.mjolnir, rule);
         } else {
             await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "UnbanBanCommand", "Running unban without `unban <list> <user> true` will not override existing room level bans");
@@ -107,20 +112,26 @@ defineInterfaceCommand({
     table: "mjolnir",
     paramaters: paramaters([
         {
-            name: "list",
-            acceptor: union(
-                findPresentationType("MatrixRoomReference"),
-                findPresentationType("string")
-            )
-        },
-        {
             name: "entity",
             acceptor: union(
                 findPresentationType("UserID"),
                 findPresentationType("MatrixRoomReference"),
                 findPresentationType("string")
             )
-        }
+        },
+        {
+            name: "list",
+            acceptor: union(
+                findPresentationType("MatrixRoomReference"),
+                findPresentationType("string"),
+                findPresentationType("PolicyList"),
+            ),
+            prompt: async function (this: MjolnirContext) {
+                return {
+                    suggestions: this.mjolnir.policyListManager.lists
+                };
+            }
+        },
     ],
     undefined,
     new KeywordsDescription({
@@ -132,7 +143,7 @@ defineInterfaceCommand({
     })
     ),
     command: unban,
-    summary: "Removes an entity from a policy list. If the given the flag --true, the users matching the glob will be unbanned from all protected rooms."
+    summary: "Removes an entity from a policy list. If the entity is a glob, then the flag --true must be provided to unban users matching the glob from all protected rooms."
 })
 
 defineMatrixInterfaceAdaptor({
