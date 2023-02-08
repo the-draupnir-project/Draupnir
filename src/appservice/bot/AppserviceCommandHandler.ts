@@ -7,7 +7,7 @@ import { WeakEvent } from 'matrix-appservice-bridge';
 import { readCommand } from '../../commands/interface-manager/CommandReader';
 import { defineCommandTable, defineInterfaceCommand, findCommandTable } from '../../commands/interface-manager/InterfaceCommand';
 import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext } from '../../commands/interface-manager/MatrixInterfaceAdaptor';
-import { ArgumentStream, paramaters } from '../../commands/interface-manager/ParamaterParsing';
+import { ArgumentStream, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { CommandResult } from '../../commands/interface-manager/Validation';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
@@ -26,7 +26,7 @@ import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 
 
 const helpCommand = defineInterfaceCommand({
-    paramaters: paramaters([]),
+    parameters: parameters([]),
     table: "appservice bot",
     command: async function() { return CommandResult.Ok(findCommandTable("appservice bot").getCommands()) },
     designator: ["help"],

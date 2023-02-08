@@ -27,7 +27,7 @@ limitations under the License.
 
 import { MjolnirContext } from "./CommandHandler";
 import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { findPresentationType, KeywordsDescription, paramaters, ParsedKeywords, union } from "./interface-manager/ParamaterParsing";
+import { findPresentationType, KeywordsDescription, parameters, ParsedKeywords, union } from "./interface-manager/ParameterParsing";
 import { UserID, MatrixGlob, LogLevel } from "matrix-bot-sdk";
 import { CommandError, CommandResult } from "./interface-manager/Validation";
 import { findPolicyListFromRoomReference, findPolicyListFromShortcode } from "./Ban";
@@ -110,7 +110,7 @@ async function unban(
 defineInterfaceCommand({
     designator: ["unban"],
     table: "mjolnir",
-    paramaters: paramaters([
+    parameters: parameters([
         {
             name: "entity",
             acceptor: union(

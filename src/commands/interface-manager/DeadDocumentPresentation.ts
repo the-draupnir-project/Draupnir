@@ -4,7 +4,7 @@
  */
 
 import { DocumentNode } from "./DeadDocument"
-import { PresentationType } from "./ParamaterParsing";
+import { PresentationType } from "./ParameterParsing";
 
 type PresentationRenderer = (presentation: unknown) => DocumentNode;
 

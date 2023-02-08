@@ -5,7 +5,7 @@
 
 import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNode } from "./DeadDocument";
 import { findPresentationRenderer } from "./DeadDocumentPresentation";
-import { presentationTypeOf } from "./ParamaterParsing";
+import { presentationTypeOf } from "./ParameterParsing";
 
 type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
 

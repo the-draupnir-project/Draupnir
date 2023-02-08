@@ -5,7 +5,7 @@
 import { MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
-import { ArgumentParseError, RestDescription } from "./ParamaterParsing";
+import { ArgumentParseError, RestDescription } from "./ParameterParsing";
 import { CommandError, CommandResult } from "./Validation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
@@ -85,13 +85,13 @@ function formattedArgumentHint(command: InterfaceCommand<BaseFunction>, error: A
     for (const argument of argumentsUpToError) {
         commandContext += ` ${JSON.stringify(argument)}`;
     }
-    let badArgument = ` ${error.stream.peekItem()}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.paramater.acceptor.name} here`;
+    let badArgument = ` ${error.stream.peekItem()}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.parameter.acceptor.name} here`;
     return commandContext + badArgument;
 }
 
 function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): DocumentNode {
     return <p>
-        There was a problem when parsing the <code>{error.paramater.name}</code> parameter for this command.<br/>
+        There was a problem when parsing the <code>{error.parameter.name}</code> parameter for this command.<br/>
         {renderCommandHelp(command)}<br/>
         {error.message}<br/>
         <pre>{formattedArgumentHint(command, error)}</pre>

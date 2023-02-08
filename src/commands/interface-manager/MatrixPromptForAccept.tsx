@@ -8,14 +8,14 @@ import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { JSXFactory } from "./JSXFactory";
 import { MatrixContext } from "./MatrixInterfaceAdaptor";
 import { PromptResponseListener } from "./MatrixPromptUX";
-import { ParamaterDescription } from "./ParamaterParsing";
+import { ParameterDescription } from "./ParameterParsing";
 import { PromptOptions } from "./PromptForAccept";
 import { CommandResult } from "./Validation";
 
-async function promptDefault<PresentationType>(this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
+async function promptDefault<PresentationType>(this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
     await renderMatrixAndSend(
         <p>
-            No argument was provided for the paramater {paramater.name}, would you like to accept the default?<br/>
+            No argument was provided for the parameter {parameter.name}, would you like to accept the default?<br/>
             {defaultPrompt}
         </p>,
         this.roomId, this.event, this.client
@@ -26,10 +26,10 @@ async function promptDefault<PresentationType>(this: MatrixContext, paramater: P
 //        If there isn't a start attribute for `ol` then we'll need to take this into our own hands.
 
 async function promptSuggestions<PresentationType>(
-    this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
+    this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
 ): Promise</*event id*/string> {
     return (await renderMatrixAndSend(
-        <p>Please select one of the following options to provide as an argument for the paramater <code>{paramater.name}</code>:
+        <p>Please select one of the following options to provide as an argument for the parameter <code>{parameter.name}</code>:
             <ol>
                 {suggestions.map((suggestion: PresentationType) => {
                     return <li>
@@ -44,16 +44,16 @@ async function promptSuggestions<PresentationType>(
 }
 
 export async function matrixPromptForAccept<PresentationType = any> (
-    this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
+    this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
 ): Promise<CommandResult<PresentationType>> {
     const promptHelper = new PromptResponseListener(this.emitter, await this.client.getUserId(), this.client);
     if (promptOptions.default) {
-        await promptDefault.call(this, paramater, command, promptOptions.default);
+        await promptDefault.call(this, parameter, command, promptOptions.default);
         throw new TypeError("default prompts are not implemented yet.");
     }
     return await promptHelper.waitForPresentationList<PresentationType>(
         promptOptions.suggestions,
         this.roomId,
-        promptSuggestions.call(this, paramater, command, promptOptions.suggestions)
+        promptSuggestions.call(this, parameter, command, promptOptions.suggestions)
     );
 }

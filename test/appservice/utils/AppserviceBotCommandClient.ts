@@ -1,7 +1,7 @@
 import { MjolnirAppService } from "../../../src/appservice/AppService";
 import { ReadItem } from "../../../src/commands/interface-manager/CommandReader";
 import { findCommandTable } from "../../../src/commands/interface-manager/InterfaceCommand";
-import { ArgumentStream } from "../../../src/commands/interface-manager/ParamaterParsing";
+import { ArgumentStream } from "../../../src/commands/interface-manager/ParameterParsing";
 import { CommandResult } from "../../../src/commands/interface-manager/Validation";
 
 export class AppservideBotCommandClient {

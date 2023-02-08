@@ -32,7 +32,7 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
     rest(): ReadItem[],
     isPromptable(): boolean,
     // should prompt really return a new stream?
-    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>>,
+    prompt(parameterDescription: ParameterDescription): Promise<CommandResult<ReadItem>>,
 }
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
@@ -44,7 +44,7 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
         return false;
     }
 
-    prompt(paramaterDescription: ParamaterDescription): Promise<CommandResult<ReadItem>> {
+    prompt(parameterDescription: ParameterDescription): Promise<CommandResult<ReadItem>> {
         throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
     }
 }
@@ -52,10 +52,10 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
 // TODO: Presentation types should be extracted to their own file.
 // FIXME: PresentationTypes should not be limited to ReadItems.
 
-export type PredicateIsParamater = (readItem: ReadItem) => CommandResult<true>;
+export type PredicateIsParameter = (readItem: ReadItem) => CommandResult<true>;
 
 export interface PresentationType {
-    validator: PredicateIsParamater,
+    validator: PredicateIsParameter,
     name: string,
 }
 
@@ -82,7 +82,7 @@ export function makePresentationType(description: PresentationType) {
     return description;
 }
 
-export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem) => boolean): PredicateIsParamater {
+export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem) => boolean): PredicateIsParameter {
     return (readItem: ReadItem) => {
         const result = predicate(readItem);
         if (result) {
@@ -115,13 +115,13 @@ makePresentationType({
 })
 
 /**
- * Describes a rest paramater for a command.
+ * Describes a rest parameter for a command.
  * This consumes any arguments left over in the call to a command
  * into an array and ensures that each can be accepted by the `acceptor`.
  *
  * Any keywords in the rest of the command will be given to the `keywordParser`.
  */
-export class RestDescription<ExecutorContext = unknown> implements ParamaterDescription {
+export class RestDescription<ExecutorContext = unknown> implements ParameterDescription {
     constructor(
         public readonly name: string,
         /** The presentation type of each item. */
@@ -157,7 +157,7 @@ export class RestDescription<ExecutorContext = unknown> implements ParamaterDesc
                 if (validationResult.isErr()) {
                     return ArgumentParseError.Result(
                         validationResult.err.message,
-                        { paramater: this, stream }
+                        { parameter: this, stream }
                     );
                 }
                 items.push(stream.readItem());
@@ -176,11 +176,11 @@ interface KeywordArgumentsDescription {
 }
 
 /**
- * An extension of ParamaterDescription, some keyword arguments
+ * An extension of ParameterDescription, some keyword arguments
  * may just be flags that have no associated property in syntax,
  * and their presence is to associate the value `true`.
  */
-interface KeywordPropertyDescription extends ParamaterDescription {
+interface KeywordPropertyDescription extends ParameterDescription {
     readonly isFlag: boolean;
 }
 
@@ -251,11 +251,11 @@ class KeywordParser {
             if (validationResult.isOk()) {
                 return CommandResult.Ok(itemStream.readItem());
             } else {
-                return ArgumentParseError.Result(validationResult.err.message, { paramater: keyword, stream: itemStream });
+                return ArgumentParseError.Result(validationResult.err.message, { parameter: keyword, stream: itemStream });
             }
         } else {
             if (!keyword.isFlag) {
-                return ArgumentParseError.Result(`An associated argument was not provided for the keyword ${keyword.name}.`, { paramater: keyword, stream: itemStream });
+                return ArgumentParseError.Result(`An associated argument was not provided for the keyword ${keyword.name}.`, { parameter: keyword, stream: itemStream });
             } else {
                 return CommandResult.Ok(true);
             }
@@ -314,35 +314,35 @@ export interface ParsedArguments {
     readonly keywords: ParsedKeywords,
 }
 
-export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: ParamaterDescription<ExecutorContext>) => Promise<PromptOptions>;
+export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: ParameterDescription<ExecutorContext>) => Promise<PromptOptions>;
 
-export interface ParamaterDescription<ExecutorContext = unknown> {
+export interface ParameterDescription<ExecutorContext = unknown> {
     name: string,
     description?: string,
     acceptor: PresentationType,
     /**
      * Prompt the interface for an argument that was not provided.
      * @param this Expected to be the executor context that is used to provided to the command executor.
-     * @param description The paramater description being accepted.
+     * @param description The parameter description being accepted.
      * @returns PromptOptions, to be handled by the interface adaptor.
      */
     prompt?: Prompt<ExecutorContext>,
 }
 
-export type ParamaterParser = (stream: IArgumentStream) => Promise<CommandResult<ParsedArguments>>;
+export type ParameterParser = (stream: IArgumentStream) => Promise<CommandResult<ParsedArguments>>;
 
-// So this should really just be something used by defineInterfaceCommand which turns paramaters into a validator that can be used.
+// So this should really just be something used by defineInterfaceCommand which turns parameters into a validator that can be used.
 // It can't be, because then otherwise how does the semantics for union work?
-// We should have a new type of CommandResult that accepts a ParamterDescription, and can render what's wrong (e.g. missing paramater).
+// We should have a new type of CommandResult that accepts a ParamterDescription, and can render what's wrong (e.g. missing parameter).
 // Showing where in the item stream it is missing and the command syntax and everything lovely like that.
 // How does that work with Union?
-export function paramaters(descriptions: ParamaterDescription[], rest: undefined|RestDescription = undefined, keywords: KeywordsDescription = new KeywordsDescription({}, false)): IArgumentListParser {
+export function parameters(descriptions: ParameterDescription[], rest: undefined|RestDescription = undefined, keywords: KeywordsDescription = new KeywordsDescription({}, false)): IArgumentListParser {
     return new ArgumentListParser(descriptions, keywords, rest);
 }
 
 export interface IArgumentListParser {
-    readonly parse: ParamaterParser,
-    readonly descriptions: ParamaterDescription[],
+    readonly parse: ParameterParser,
+    readonly descriptions: ParameterDescription[],
     readonly rest?: RestDescription,
     readonly keywords: KeywordsDescription,
 }
@@ -353,7 +353,7 @@ export interface IArgumentListParser {
  */
 class ArgumentListParser implements IArgumentListParser {
     constructor(
-        public readonly descriptions: ParamaterDescription[],
+        public readonly descriptions: ParameterDescription[],
         public readonly keywords: KeywordsDescription,
         public readonly rest?: RestDescription,
     ) {
@@ -362,7 +362,7 @@ class ArgumentListParser implements IArgumentListParser {
     public async parse(stream: IArgumentStream): Promise<CommandResult<ParsedArguments>> {
         let hasPrompted = false;
         const keywordsParser = this.keywords.getParser();
-        for (const paramater of this.descriptions) {
+        for (const parameter of this.descriptions) {
             // it eats any keywords at any point in the stream
             // as they can appear at any point technically.
             const keywordResult = keywordsParser.parseKeywords(stream);
@@ -370,22 +370,22 @@ class ArgumentListParser implements IArgumentListParser {
                 return CommandResult.Err(keywordResult.err);
             }
             if (stream.peekItem() === undefined) {
-                if (paramater.prompt && stream.isPromptable()) {
-                    const promptResult = await stream.prompt(paramater);
+                if (parameter.prompt && stream.isPromptable()) {
+                    const promptResult = await stream.prompt(parameter);
                     if (promptResult.isErr()) {
                         return promptResult as any;
                     }
                     hasPrompted = true;
                 } else {
                     return ArgumentParseError.Result(
-                        `An argument for the paramater ${paramater.name} was expected but was not provided.`,
-                        { paramater, stream }
+                        `An argument for the parameter ${parameter.name} was expected but was not provided.`,
+                        { parameter, stream }
                     );
                 }
             }
-            const result = paramater.acceptor.validator(stream.peekItem());
+            const result = parameter.acceptor.validator(stream.peekItem());
             if (result.isErr()) {
-                return ArgumentParseError.Result(result.err.message, { paramater, stream });
+                return ArgumentParseError.Result(result.err.message, { parameter, stream });
             }
             stream.readItem();
         }
@@ -419,14 +419,14 @@ export class AbstractArgumentParseError extends CommandError {
 
 export class ArgumentParseError extends AbstractArgumentParseError {
     constructor(
-        public readonly paramater: ParamaterDescription,
+        public readonly parameter: ParameterDescription,
         stream: IArgumentStream,
         message: string) {
         super(stream, message)
     }
 
-    public static Result<Ok>(message: string, options: { paramater: ParamaterDescription, stream: IArgumentStream }): CommandResult<Ok, ArgumentParseError> {
-        return CommandResult.Err(new ArgumentParseError(options.paramater, options.stream, message));
+    public static Result<Ok>(message: string, options: { parameter: ParameterDescription, stream: IArgumentStream }): CommandResult<Ok, ArgumentParseError> {
+        return CommandResult.Err(new ArgumentParseError(options.parameter, options.stream, message));
     }
 }
 

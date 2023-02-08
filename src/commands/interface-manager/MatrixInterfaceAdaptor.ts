@@ -36,7 +36,7 @@ import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
 import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
-import { ParamaterDescription } from "./ParamaterParsing";
+import { ParameterDescription } from "./ParameterParsing";
 import { matrixPromptForAccept } from "./MatrixPromptForAccept";
 
 export interface MatrixContext {
@@ -98,18 +98,18 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
 
-    public async promptForAccept<PresentationType = unknown>(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
+    public async promptForAccept<PresentationType = unknown>(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
         if (!(invocationRecord instanceof MatrixInvocationRecord)) {
             throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
         }
-        if (paramater.prompt === undefined) {
-            throw new TypeError(`paramater ${paramater.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
+        if (parameter.prompt === undefined) {
+            throw new TypeError(`parameter ${parameter.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
         }
         // Slowly starting to think that we're making a mistake by using `this` so much....
         // First extract the prompt results in the command executor context
-        const promptOptions: PromptOptions = await paramater.prompt.call(invocationRecord.executorContext, paramater);
+        const promptOptions: PromptOptions = await parameter.prompt.call(invocationRecord.executorContext, parameter);
         // Then present the prompt.
-        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept<PresentationType>>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, paramater, invocationRecord.command, promptOptions);
+        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept<PresentationType>>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, parameter, invocationRecord.command, promptOptions);
         return promptResult;
     }
 }
