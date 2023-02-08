@@ -7,9 +7,6 @@ import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { CommandError, CommandResult } from "./Validation";
 import { LogService } from "matrix-bot-sdk";
 
-// Internal to PromptResponseListener and needs to be manually managed
-// ie calls to .on and .off, so this is why it's internal
-
 type PresentationByReactionKey = Map<string/*reaction key*/, any/*presentation*/>;
 
 // Returns true if the listener should be kept.
@@ -91,8 +88,6 @@ class ReactionHandler {
             for (const record of entry) {
                 const presentation = record.presentationByReaction.get(reactionKey);
                 if (presentation === undefined) {
-                    // FIXME: Should this be WARN? Technically the prompt should fail as saying
-                    // that the reaction wasn't understood.
                     LogService.warn("MatrixPromptUX", `Got an unknown reaction key for the event ${relatedEventId}: ${reactionKey}`)
                 } else {
                     const keepListener = record.listener(presentation);

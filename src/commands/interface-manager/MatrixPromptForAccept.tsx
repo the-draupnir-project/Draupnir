@@ -12,8 +12,6 @@ import { ParamaterDescription } from "./ParamaterParsing";
 import { PromptOptions } from "./PromptForAccept";
 import { CommandResult } from "./Validation";
 
-// How are prompts going to work?
-// We need to temporarily hook onto the event emitter.
 async function promptDefault<PresentationType>(this: MatrixContext, paramater: ParamaterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
     await renderMatrixAndSend(
         <p>

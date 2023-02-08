@@ -44,8 +44,6 @@ export class PromptableArgumentStream extends ArgumentStream {
     }
 
     public async prompt<T = ReadItem>(paramaterDescription: ParamaterDescription): Promise<CommandResult<T>> {
-        // FIXME I thought prompt for accept could return multiple items if there were
-        // othere paramaters after this one, but never mind..
         const result = await this.interfaceAcceptor.promptForAccept(
             paramaterDescription,
             this.invocationRecord
