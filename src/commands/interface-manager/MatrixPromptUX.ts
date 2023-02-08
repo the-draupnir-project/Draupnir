@@ -58,8 +58,10 @@ class ReactionHandler {
         }
     }
 
-    private async addBaseReactionsToEvent(roomId: string, eventId: string, presentationsByKey: PresentationByReactionKey) {
-        return await Promise.all([...presentationsByKey.keys()].slice(0, 5)
+    private async addBaseReactionsToEvent(
+            roomId: string, eventId: string, presentationsByKey: PresentationByReactionKey, limit = 5
+    ) {
+        return await Promise.all([...presentationsByKey.keys()].slice(0, limit).reverse()
             .map(key => this.client.unstableApis.addReactionToEvent(roomId, eventId, key)));
     }
 
