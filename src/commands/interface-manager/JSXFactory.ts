@@ -11,7 +11,6 @@ type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
 
 export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
     const node = makeDocumentNode(tag);
-    // why not just give nodes the properties object??
     if (properties) {
         for (const [key, value] of Object.entries(properties)) {
             node.attributeMap.set(key, value);
