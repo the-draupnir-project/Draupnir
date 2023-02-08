@@ -55,9 +55,6 @@ definePresentationRenderer(findPresentationType("PolicyList"), function(list: Po
 
 
 export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyListReference: MatrixRoomReference): Promise<CommandResult<PolicyList, CommandError>> {
-    // do we need to catch 404 here so we can tell the user the alias was wrong?
-    // Can we shortcut this by making a specific presentaion type for
-    // resolved room id? (that aliases can translate to)
     const policyListRoomId = (await policyListReference.resolve(this.client)).toRoomIdOrAlias();
     const policyList = mjolnir.policyListManager.lists.find(list => list.roomId === policyListRoomId);
     if (policyList !== undefined) {
@@ -158,4 +155,3 @@ defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "ban"),
     renderer: tickCrossRenderer
 })
-
