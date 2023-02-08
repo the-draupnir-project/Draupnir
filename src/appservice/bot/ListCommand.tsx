@@ -7,7 +7,7 @@ import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } f
 import { MatrixSendClient } from '../../MatrixEmitter';
 import { UnstartedMjolnir } from '../MjolnirManager';
 import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
-import { findPresentationType, paramaters } from '../../commands/interface-manager/ParamaterParsing';
+import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
 import { UserID } from 'matrix-bot-sdk';
 import { CommandError, CommandResult } from '../../commands/interface-manager/Validation';
@@ -27,7 +27,7 @@ import { renderMatrixAndSend } from '../../commands/interface-manager/DeadDocume
 const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
     designator: ["list", "unstarted"],
     table: "appservice bot",
-    paramaters: paramaters([]),
+    parameters: parameters([]),
     command: async function() {
         return CommandResult.Ok(this.appservice.mjolnirManager.getUnstartedMjolnirs());
     },
@@ -73,7 +73,7 @@ defineMatrixInterfaceAdaptor({
 const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
     designator: ["restart"],
     table: "appservice bot",
-    paramaters: paramaters([
+    parameters: parameters([
         {
             name: "mjolnir",
             acceptor: findPresentationType("UserID"),

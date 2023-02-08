@@ -4,7 +4,7 @@
  */
 
 import { ReadItem } from "./CommandReader";
-import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParamaterParsing";
+import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParameterParsing";
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";

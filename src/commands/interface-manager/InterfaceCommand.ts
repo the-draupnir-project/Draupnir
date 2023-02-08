@@ -29,7 +29,7 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { ParamaterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, ArgumentStream } from "./ParamaterParsing";
+import { ParameterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, ArgumentStream } from "./ParameterParsing";
 import { CommandResult } from "./Validation";
 
 /**
@@ -144,7 +144,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     // Really, surely this should be part of invoke?
     // probably... it's just that means that invoke has to return the validation result lol.
     // Though this makes no sense if parsing is part of finding a matching command.
-    public async parseArguments(stream: IArgumentStream): ReturnType<ParamaterParser> {
+    public async parseArguments(stream: IArgumentStream): ReturnType<ParameterParser> {
         return await this.argumentListParser.parse(stream);
     }
 
@@ -153,15 +153,15 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
     }
 
     public async parseThenInvoke(context: ThisParameterType<ExecutorType>, stream: IArgumentStream): Promise<ReturnType<ExecutorType>> {
-        const paramaterDescription = await this.parseArguments(stream);
-        if (paramaterDescription.isErr()) {
+        const parameterDescription = await this.parseArguments(stream);
+        if (parameterDescription.isErr()) {
             // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
-            return paramaterDescription as ReturnType<Awaited<ExecutorType>>;
+            return parameterDescription as ReturnType<Awaited<ExecutorType>>;
         }
         return await this.command.apply(context, [
-            paramaterDescription.ok.keywords,
-            ...paramaterDescription.ok.immediateArguments,
-            ...paramaterDescription.ok.rest ?? []
+            parameterDescription.ok.keywords,
+            ...parameterDescription.ok.immediateArguments,
+            ...parameterDescription.ok.rest ?? []
         ]);
     }
 }
@@ -173,7 +173,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction> {
 // There could be a description in defineInterfaceComomand
 // for what each callback is and does for the adaptors to hook into.
 export function defineInterfaceCommand<ExecutorType extends BaseFunction>(description: {
-    paramaters: IArgumentListParser,
+    parameters: IArgumentListParser,
     table: string|symbol,
     command: ExecutorType,
     designator: string[],
@@ -181,7 +181,7 @@ export function defineInterfaceCommand<ExecutorType extends BaseFunction>(descri
     description?: string,
 }) {
     const command = new InterfaceCommand<ExecutorType>(
-        description.paramaters,
+        description.parameters,
         description.command,
         description.designator,
         description.summary,

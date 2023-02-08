@@ -54,7 +54,7 @@ import { execSinceCommand } from "./SinceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
 import { BaseFunction, CommandTable, defineCommandTable } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
-import { ArgumentStream } from "./interface-manager/ParamaterParsing";
+import { ArgumentStream } from "./interface-manager/ParameterParsing";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException } from "./interface-manager/CommandException";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";

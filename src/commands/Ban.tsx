@@ -33,7 +33,7 @@ import { Mjolnir } from "../Mjolnir";
 import { RULE_ROOM, RULE_SERVER, RULE_USER } from "../models/ListRule";
 import PolicyList from "../models/PolicyList";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, makePresentationType, ParamaterDescription, paramaters, ParsedKeywords, RestDescription, simpleTypeValidator, union } from "./interface-manager/ParamaterParsing";
+import { findPresentationType, makePresentationType, ParameterDescription, parameters, ParsedKeywords, RestDescription, simpleTypeValidator, union } from "./interface-manager/ParameterParsing";
 import "./interface-manager/MatrixPresentations";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
@@ -112,7 +112,7 @@ async function ban(
 defineInterfaceCommand({
     designator: ["ban"],
     table: "mjolnir",
-    paramaters: paramaters([
+    parameters: parameters([
         {
             name: "entity",
             acceptor: union(
@@ -128,7 +128,7 @@ defineInterfaceCommand({
                 findPresentationType("string"),
                 findPresentationType("PolicyList"),
             ),
-            prompt: async function (this: MjolnirContext, paramater: ParamaterDescription): Promise<PromptOptions> {
+            prompt: async function (this: MjolnirContext, parameter: ParameterDescription): Promise<PromptOptions> {
                 return {
                     suggestions: this.mjolnir.policyListManager.lists
                 };
@@ -138,7 +138,7 @@ defineInterfaceCommand({
     new RestDescription<MjolnirContext>(
         "reason",
         findPresentationType("string"),
-        async function(_paramater) {
+        async function(_parameter) {
             return {
                 suggestions: this.mjolnir.config.commands.ban.defaultReasons
             }

@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, paramaters } from "./interface-manager/ParamaterParsing";
+import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { MjolnirBaseExecutor, MjolnirContext } from "./CommandHandler";
 import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { UserID } from "matrix-bot-sdk";
@@ -48,7 +48,7 @@ async function hijackRoomCommand(
 defineInterfaceCommand<MjolnirBaseExecutor>({
     designator: ["hijack", "room"],
     table: "mjolnir",
-    paramaters: paramaters([
+    parameters: parameters([
         {
             name: "room",
             acceptor: findPresentationType("MatrixRoomReference")

@@ -5,7 +5,7 @@
 
 import { ReadItem } from "./CommandReader";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
-import { ArgumentStream, ParamaterDescription } from "./ParamaterParsing";
+import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
 import { CommandResult } from "./Validation";
 
 export interface PromptOptions<PresentationType = any> {
@@ -15,11 +15,11 @@ export interface PromptOptions<PresentationType = any> {
 
 /**
  * The idea is that the InterfaceAcceptor can use the presentation type
- * to derive the prompt, or use the prompt given by the ParamaterDescription.
+ * to derive the prompt, or use the prompt given by the ParameterDescription.
  */
 export interface InterfaceAcceptor<PresentationType = any> {
     readonly isPromptable: boolean
-    promptForAccept(paramater: ParamaterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>>
+    promptForAccept(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>>
 }
 
 export interface CommandInvocationRecord {
@@ -43,9 +43,9 @@ export class PromptableArgumentStream extends ArgumentStream {
         return this.interfaceAcceptor.isPromptable
     }
 
-    public async prompt<T = ReadItem>(paramaterDescription: ParamaterDescription): Promise<CommandResult<T>> {
+    public async prompt<T = ReadItem>(parameterDescription: ParameterDescription): Promise<CommandResult<T>> {
         const result = await this.interfaceAcceptor.promptForAccept(
-            paramaterDescription,
+            parameterDescription,
             this.invocationRecord
         );
         if (result.isOk()) {

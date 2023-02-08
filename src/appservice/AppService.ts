@@ -174,7 +174,7 @@ export class MjolnirAppService {
     /**
      * Generate a registration file for a fresh deployment of the appservice.
      * Included to satisfy `matrix-appservice-bridge`'s `Cli` utility which allows a registration file to be registered when setting up a deployment of an appservice.
-     * @param reg Any existing paramaters to be included in the registration, to be mutated by this method.
+     * @param reg Any existing parameters to be included in the registration, to be mutated by this method.
      * @param callback To call when the registration has been generated with the final registration.
      */
     public static generateRegistration(reg: AppServiceRegistration, callback: (finalRegistration: AppServiceRegistration) => void) {
