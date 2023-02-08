@@ -39,21 +39,21 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import PolicyList from "../models/PolicyList";
 
 async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
-    await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "UnbanBanCommand", "Unbanning users that match glob: " + rule.regex);
+    await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", "Unbanning users that match glob: " + rule.regex);
     let unbannedSomeone = false;
     for (const protectedRoomId of mjolnir.protectedRoomsTracker.getProtectedRooms()) {
         const members = await mjolnir.client.getRoomMembers(protectedRoomId, undefined, ['ban'], undefined);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "UnbanBanCommand", `Found ${members.length} banned user(s)`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Found ${members.length} banned user(s)`);
         for (const member of members) {
             const victim = member.membershipFor;
             if (member.membership !== 'ban') continue;
             if (rule.test(victim)) {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "UnbanBanCommand", `Unbanning ${victim} in ${protectedRoomId}`, protectedRoomId);
+                await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Unbanning ${victim} in ${protectedRoomId}`, protectedRoomId);
 
                 if (!mjolnir.config.noop) {
                     await mjolnir.client.unbanUser(victim, protectedRoomId);
                 } else {
-                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "UnbanBanCommand", `Attempted to unban ${victim} in ${protectedRoomId} but Mjolnir is running in no-op mode`, protectedRoomId);
+                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", `Attempted to unban ${victim} in ${protectedRoomId} but Mjolnir is running in no-op mode`, protectedRoomId);
                 }
 
                 unbannedSomeone = true;
@@ -62,7 +62,7 @@ async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
     }
 
     if (unbannedSomeone) {
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "UnbanBanCommand", `Syncing lists to ensure no users were accidentally unbanned`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Syncing lists to ensure no users were accidentally unbanned`);
         await mjolnir.protectedRoomsTracker.syncLists();
     }
 }
@@ -100,7 +100,7 @@ async function unban(
         if (!isGlob(rawEnttiy) || keywords.getKeyword<boolean>("true", false)) {
             await unbanUserFromRooms(this.mjolnir, rule);
         } else {
-            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "UnbanBanCommand", "Running unban without `unban <list> <user> true` will not override existing room level bans");
+            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", "Running unban without `unban <list> <user> true` will not override existing room level bans");
         }
     }
 

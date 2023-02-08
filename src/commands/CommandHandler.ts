@@ -27,7 +27,6 @@ limitations under the License.
 
 import { Mjolnir } from "../Mjolnir";
 import { execStatusCommand } from "./StatusCommand";
-import "./UnbanBanCommand";
 import { execDumpRulesCommand, execRulesMatchingCommand } from "./DumpRulesCommand";
 import { LogService, RichReply } from "matrix-bot-sdk";
 import { htmlEscape } from "../utils";
