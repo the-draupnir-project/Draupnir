@@ -132,7 +132,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
         }
         context.output.writeString(`](${href})`);
     }
-).registerInnerNode(NodeTag.Fragment,
+).registerInnerNode(NodeTag.Root,
     blank,
     blank
 );

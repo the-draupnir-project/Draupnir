@@ -90,19 +90,19 @@ function formattedArgumentHint(command: InterfaceCommand<BaseFunction>, error: A
 }
 
 function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): DocumentNode {
-    return <p>
+    return <root>
         There was a problem when parsing the <code>{error.parameter.name}</code> parameter for this command.<br/>
         {renderCommandHelp(command)}<br/>
         {error.message}<br/>
         <pre>{formattedArgumentHint(command, error)}</pre>
-    </p>
+    </root>
 }
 
 function renderCommandException(command: InterfaceCommand<BaseFunction>, error: CommandException): DocumentNode {
-    return <p>
+    return <root>
         There was an unexpected error when processing this command:<br/>
         {error.message}<br/>
         Details can be found by providing the reference <code>{error.uuid}</code>
         to an administrator.
-    </p>
+    </root>
 }

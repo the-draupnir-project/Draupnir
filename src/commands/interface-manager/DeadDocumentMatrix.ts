@@ -4,7 +4,7 @@
  */
 
 import { MatrixSendClient } from "../../MatrixEmitter";
-import { AbstractNode, DocumentNode, FringeWalker } from "./DeadDocument";
+import { AbstractNode, DocumentNode, FringeWalker, NodeTag } from "./DeadDocument";
 import { HTML_RENDERER } from "./DeadDocumentHtml";
 import { MARKDOWN_RENDERER } from "./DeadDocumentMarkdown";
 import { PagedDuplexStream } from "./PagedDuplexStream";
@@ -30,6 +30,9 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
     const commitHook = (commitNode: DocumentNode, context: { output: PagedDuplexStream }) => {
         context.output.commit(commitNode);
     };
+    if (node.tag !== NodeTag.Root) {
+        throw new TypeError("Tried to render a node without a root, this will not be committable");
+    }
     const markdownOutput = new PagedDuplexStream();
     const markdownWalker = new FringeWalker(
         node,

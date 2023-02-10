@@ -62,7 +62,7 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
         context.output.writeString('>')
     },
     staticString('</a>')
-).registerInnerNode(NodeTag.Fragment,
+).registerInnerNode(NodeTag.Root,
     blank,
     blank
 );
