@@ -53,7 +53,7 @@ type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunctio
     event: any,
     result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
-export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction> implements InterfaceAcceptor {
+export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction = BaseFunction> implements InterfaceAcceptor {
     public readonly isPromptable = true;
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
