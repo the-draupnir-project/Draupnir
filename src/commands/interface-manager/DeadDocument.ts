@@ -253,7 +253,8 @@ const COMMITTABLE_NODES = new Set([
     NodeTag.ListItem,
     NodeTag.Paragraph,
     NodeTag.PreformattedText,
-    NodeTag.UnorderedList
+    NodeTag.UnorderedList,
+    NodeTag.Root,
 ]);
 
 class FringeStream extends SuperCoolStream<Flat> {
