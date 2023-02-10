@@ -301,7 +301,11 @@ export class FringeWalker<Context> {
             this.dynamicEnvironment.pop(node.node);
             return node.node;
         }
-        while (this.stream.peekItem() && !COMMITTABLE_NODES.has(this.stream.peekItem().node.tag)) {
+        const isAnnotatedNodeCommittable = (node: AnnotatedFringeNode): boolean => {
+            return COMMITTABLE_NODES.has(node.node.tag)
+                && node.type === FringeType.Post;
+        }
+        while (this.stream.peekItem() && !isAnnotatedNodeCommittable(this.stream.peekItem())) {
             const annotatedNode = this.stream.readItem();
             switch (annotatedNode.type) {
                 case FringeType.Pre:
