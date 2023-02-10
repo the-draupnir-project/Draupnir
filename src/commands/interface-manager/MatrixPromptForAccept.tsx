@@ -14,10 +14,10 @@ import { CommandResult } from "./Validation";
 
 async function promptDefault<PresentationType>(this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
     await renderMatrixAndSend(
-        <p>
+        <root>
             No argument was provided for the parameter {parameter.name}, would you like to accept the default?<br/>
             {defaultPrompt}
-        </p>,
+        </root>,
         this.roomId, this.event, this.client
     )
 }
@@ -29,7 +29,7 @@ async function promptSuggestions<PresentationType>(
     this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, suggestions: PresentationType[]
 ): Promise</*event id*/string> {
     return (await renderMatrixAndSend(
-        <p>Please select one of the following options to provide as an argument for the parameter <code>{parameter.name}</code>:
+        <root>Please select one of the following options to provide as an argument for the parameter <code>{parameter.name}</code>:
             <ol>
                 {suggestions.map((suggestion: PresentationType) => {
                     return <li>
@@ -37,7 +37,7 @@ async function promptSuggestions<PresentationType>(
                     </li>
                 })}
             </ol>
-        </p>,
+        </root>,
         this.roomId, this.event, this.client
     )).at(0) as string;
 

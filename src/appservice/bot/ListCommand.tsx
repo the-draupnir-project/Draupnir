@@ -45,7 +45,7 @@ defineMatrixInterfaceAdaptor({
         }
         const unstarted = result.ok;
         await renderMatrixAndSend(
-            <p>
+            <root>
                 <b>Unstarted Mjolnir: {unstarted.length}</b>
                 <ul>
                     {unstarted.map(mjolnir => {
@@ -58,7 +58,7 @@ defineMatrixInterfaceAdaptor({
                         </li>
                     })}
                 </ul>
-            </p>,
+            </root>,
             commandRoomId,
             event,
             client
