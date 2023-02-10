@@ -30,6 +30,7 @@ import { RichReply } from "matrix-bot-sdk";
 import { htmlEscape, parseDuration } from "../utils";
 import { HumanizeDurationLanguage, HumanizeDuration } from "humanize-duration-ts";
 import PolicyList from "../models/PolicyList";
+import { PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 
 const HUMANIZE_LAG_SERVICE: HumanizeDurationLanguage = new HumanizeDurationLanguage();
 const HUMANIZER: HumanizeDuration = new HumanizeDuration(HUMANIZE_LAG_SERVICE);
@@ -101,6 +102,12 @@ async function showMjolnirStatus(roomId: string, event: any, mjolnir: Mjolnir) {
     renderPolicyLists("Subscribed policy lists", subscribedLists);
     const subscribedAndProtectedLists = mjolnir.policyListManager.lists.filter(list => mjolnir.explicitlyProtectedRooms.includes(list.roomId));
     renderPolicyLists("Subscribed and protected policy lists", subscribedAndProtectedLists);
+
+    html += `<b>Version:</b> ${SOFTWARE_VERSION}<br/>`;
+    text += `Version: ${SOFTWARE_VERSION}\n`;
+
+    html += `<b>Repository:</b> <code>${PACKAGE_JSON['repository'] ?? 'Unknown'}</code>`;
+    text += `Repository: ${PACKAGE_JSON['repository'] ?? 'Unknown'}`;
 
     const reply = RichReply.createFor(roomId, event, text, html);
     reply["msgtype"] = "m.notice";

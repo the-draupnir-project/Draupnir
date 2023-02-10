@@ -7,6 +7,7 @@ RUN cd /tmp/src \
     && mv lib/ /mjolnir/ \
     && mv node_modules / \
     && mv mjolnir-entrypoint.sh / \
+    && mv package.json / \
     && cd / \
     && rm -rf /tmp/*
 

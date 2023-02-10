@@ -8,6 +8,8 @@ venv/
 
 /db
 
+# version file generated from yarn build
+src/version.txt
 # Logs
 logs
 *.log

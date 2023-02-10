@@ -29,6 +29,7 @@ import * as fs from "fs";
 import { load } from "js-yaml";
 import { MatrixClient, LogService } from "matrix-bot-sdk";
 import Config from "config";
+import path from "path";
 
 /**
  * The configuration, as read from production.yaml
@@ -283,3 +284,21 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     config.protectedRooms = [];
     return config;
 }
+
+export const SOFTWARE_VERSION = (() => {
+    try {
+        return fs.readFileSync(path.join(__dirname, 'version.txt'), 'utf-8')
+    } catch (e) {
+        LogService.error("config", "Could not read Draupnir version", e);
+        return "A version was either not provided when building Draupnir or could not be read."
+    }
+})();
+
+export const PACKAGE_JSON = (() => {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'));
+    } catch (e) {
+        LogService.error("config", "Could not read Draupnir package.json", e);
+        return {};
+    }
+})();
