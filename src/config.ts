@@ -286,12 +286,17 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
 }
 
 export const SOFTWARE_VERSION = (() => {
+    let versionFile;
+    const defaultText = "A version was either not provided when building Draupnir or could not be read.";
     try {
-        return fs.readFileSync(path.join(__dirname, 'version.txt'), 'utf-8')
+        versionFile = fs.readFileSync(path.join(__dirname, 'version.txt'), 'utf-8');
     } catch (e) {
         LogService.error("config", "Could not read Draupnir version", e);
-        return "A version was either not provided when building Draupnir or could not be read."
+        versionFile = defaultText;
     }
+    // it's important to ignore the newline if the version is going to be put
+    // into <pre> or <code> where it will create an unnecessary newline.
+    return /^(.*)$/m.exec(versionFile)?.at(0) ?? defaultText;
 })();
 
 export const PACKAGE_JSON = (() => {
