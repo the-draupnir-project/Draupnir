@@ -26,7 +26,7 @@ function restArgument(rest: RestDescription): string {
     return `[...${rest.name}]`;
 }
 
-function renderCommandHelp(command: InterfaceCommand<BaseFunction>): string {
+export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): string {
     const rest = command.argumentListParser.rest;
     const keywords = command.argumentListParser.keywords;
     return [

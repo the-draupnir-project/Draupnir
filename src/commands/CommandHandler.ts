@@ -57,7 +57,7 @@ import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/M
 import { ArgumentStream } from "./interface-manager/ParameterParsing";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException } from "./interface-manager/CommandException";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { tickCrossRenderer, renderCommandHelp } from "./interface-manager/MatrixHelpRenderer";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
@@ -165,6 +165,11 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 }
             }
 
+            // new commands
+            let newCommandsHelp = ''
+            for (const tableCommand of commandTable.getCommands()) {
+                newCommandsHelp += `${renderCommandHelp(tableCommand)}\n`;
+            }
             // Help menu
             const menu = "" +
                 "!mjolnir                                                            - Print status information\n" +
@@ -205,8 +210,10 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 "!mjolnir shutdown room <room alias/ID> [message]                    - Uses the bot's account to shut down a room, preventing access to the room on this server\n" +
                 "!mjolnir powerlevel <user ID> <power level> [room alias/ID]         - Sets the power level of the user in the specified room (or all protected rooms)\n" +
                 "!mjolnir help                                                       - This menu\n";
-            const html = `<b>Mjolnir help:</b><br><pre><code>${htmlEscape(menu)}</code></pre>`;
-            const text = `Mjolnir help:\n${menu}`;
+            let html = `<b>Old Commands:</b><br><pre><code>${htmlEscape(menu)}</code></pre>`;
+            let text = `Old Commands:\n${menu}`;
+            html += `<br/><b>New Commands:</b><br><pre><code>${htmlEscape(newCommandsHelp)}</code></pre>`;
+            text += `\n\nNew Commands:\n${newCommandsHelp}`;
             const reply = RichReply.createFor(roomId, event, text, html);
             reply["msgtype"] = "m.notice";
             return await mjolnir.client.sendMessage(roomId, reply);
