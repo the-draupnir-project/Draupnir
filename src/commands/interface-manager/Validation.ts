@@ -27,6 +27,8 @@ limitations under the License.
 
 type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Err) => any};
 
+const noValue = Symbol('noValue');
+
 /**
  * This is a utility specifically for validating user input, and reporting
  * what was wrong back to the end user in a way that makes sense.
@@ -41,17 +43,17 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
  */
  export class CommandResult<Ok, Err extends CommandError = CommandError> {
     private constructor(
-        private readonly okValue: Ok|null,
-        private readonly errValue: Err|null,
+        private readonly okValue: Ok|typeof noValue,
+        private readonly errValue: Err|typeof noValue,
     ) {
 
     }
     public static Ok<Ok, Err extends CommandError = CommandError>(value: Ok): CommandResult<Ok, Err> {
-        return new CommandResult<Ok, Err>(value, null);
+        return new CommandResult<Ok, Err>(value, noValue);
     }
 
     public static Err<Ok, Err extends CommandError = CommandError>(value: Err): CommandResult<Ok, Err> {
-        return new CommandResult<Ok, Err>(null, value);
+        return new CommandResult<Ok, Err>(noValue, value);
     }
 
     public async match(expression: ValidationMatchExpression<Ok, Err>) {
@@ -59,16 +61,16 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
     }
 
     public isOk(): boolean {
-        return this.okValue !== null;
+        return this.okValue !== noValue;
     }
 
     public isErr(): boolean {
-        return this.errValue !== null;
+        return this.errValue !== noValue;
     }
 
     public get ok(): Ok {
         if (this.isOk()) {
-            return this.okValue!;
+            return this.okValue as Ok;
         } else {
             throw new TypeError("You did not check isOk before accessing ok");
         }
@@ -76,7 +78,7 @@ type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Er
 
     public get err(): Err {
         if (this.isErr()) {
-            return this.errValue!;
+            return this.errValue as Err;
         } else {
             throw new TypeError("You did not check isErr before accessing err");
         }
