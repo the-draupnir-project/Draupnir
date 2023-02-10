@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { Mjolnir } from "../Mjolnir";
-import { execStatusCommand } from "./StatusCommand";
+import { showJoinsStatus } from "./JoinsCommand";
 import { execDumpRulesCommand, execRulesMatchingCommand } from "./DumpRulesCommand";
 import { LogService, RichReply } from "matrix-bot-sdk";
 import { htmlEscape } from "../utils";
@@ -70,6 +70,7 @@ import "./interface-manager/MatrixPresentations";
 import "./HijackRoomCommand";
 import "./Ban";
 import "./Unban";
+import "./StatusCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -82,8 +83,8 @@ export async function handleCommand(roomId: string, event: { content: { body: st
     const tokens = tokenize(cmd.replace("#", "\\#")).slice(/* get rid of ["!mjolnir", command] */ 2);
 
     try {
-        if (parts.length === 1 || parts[1] === 'status') {
-            return await execStatusCommand(roomId, event, mjolnir, parts.slice(2));
+        if (parts.length === 1 || parts[1] === 'joins') {
+            return await showJoinsStatus(roomId, event, mjolnir, parts.slice(/* ["joins"] */ 2));
         } else if (parts[1] === 'rules' && parts.length === 4 && parts[2] === 'matching') {
             return await execRulesMatchingCommand(roomId, event, mjolnir, parts[3])
         } else if (parts[1] === 'rules') {

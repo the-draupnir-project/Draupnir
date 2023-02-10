@@ -311,7 +311,7 @@ describe("Test: Testing RoomMemberManager", function() {
         // Initially, the command should show that same result.
         for (let roomId of roomIds) {
             const reply = await getFirstReply(mjolnir.matrixEmitter, mjolnir.managementRoomId, () => {
-                const command = `!mjolnir status joins ${roomId}`;
+                const command = `!mjolnir joins ${roomId}`;
                 return this.moderator.sendMessage(mjolnir.managementRoomId, { msgtype: 'm.text', body: command });
             });
             const body = reply["content"]?.["body"] as string;
@@ -329,7 +329,7 @@ describe("Test: Testing RoomMemberManager", function() {
             const joined = manager.getUsersInRoom(roomId, start, 100);
             assert.equal(joined.length, SAMPLE_SIZE / 2 /* half of the users */ + 1 /* mjolnir */, "We should now see all joined users in the room");
             const reply = await getFirstReply(mjolnir.matrixEmitter, mjolnir.managementRoomId, () => {
-                const command = `!mjolnir status joins ${roomId}`;
+                const command = `!mjolnir joins ${roomId}`;
                 return this.moderator.sendMessage(mjolnir.managementRoomId, { msgtype: 'm.text', body: command });
             });
             const body = reply["content"]?.["body"] as string;
@@ -362,7 +362,7 @@ describe("Test: Testing RoomMemberManager", function() {
         for (let i = 0; i < roomIds.length; ++i) {
             const roomId = roomIds[i];
             const reply = await getFirstReply(mjolnir.matrixEmitter, mjolnir.managementRoomId, () => {
-                const command = `!mjolnir status joins ${roomId}`;
+                const command = `!mjolnir joins ${roomId}`;
                 return this.moderator.sendMessage(mjolnir.managementRoomId, { msgtype: 'm.text', body: command });
             });
             const body = reply["content"]?.["body"] as string;
