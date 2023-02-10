@@ -91,8 +91,9 @@ export class CommandTable<ExecutorType extends BaseFunction> {
                 if (table.next === undefined) {
                     table.next = new Map();
                 }
-                const nextLookupEntry = {};
-                table.next!.set(designator.shift()!, nextLookupEntry);
+                const currentDesignator = designator.shift()!;
+                const nextLookupEntry = table.next.get(currentDesignator)
+                    ?? ((lookup: CommandLookupEntry<ExecutorType>) => (table.next?.set(currentDesignator, lookup), lookup))({});
                 internCommandHelper(nextLookupEntry, designator);
             }
         }
