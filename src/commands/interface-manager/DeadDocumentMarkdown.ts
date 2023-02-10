@@ -76,6 +76,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
         incrementDynamicEnvironment.apply(undefined, arguments);
         environment.bind(MarkdownVariables.ListType, node, NodeTag.UnorderedList);
+        environment.bind(MarkdownVariables.ListItemCount, node, 0);
     },
     blank
 ).registerInnerNode(NodeTag.ListItem,
