@@ -63,6 +63,7 @@ export enum NodeTag {
     BoldFace = 'b',
     ItalicFace = 'i',
     Anchor = 'a',
+    Fragment = 'fragment',
 }
 
 /**

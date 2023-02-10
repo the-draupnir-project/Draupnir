@@ -23,8 +23,13 @@ export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (Docum
             makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
         } else if (Array.isArray(rawChild)) {
             rawChild.forEach(ensureChild);
+        // Then it's a DocumentNode|LeafNode
         } else if (typeof rawChild.leafNode === 'boolean') {
-            node.addChild(rawChild);
+            if (rawChild.tag === NodeTag.Fragment) {
+                (rawChild as DocumentNode).getChildren().forEach(node.addChild, node);
+            } else {
+                node.addChild(rawChild);
+            }
         } else {
             const presentationType = presentationTypeOf(rawChild);
             if (presentationType !== undefined) {
