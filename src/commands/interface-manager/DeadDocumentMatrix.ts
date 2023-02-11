@@ -82,13 +82,40 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
  * @param client A MatrixClient to send the events with.
  */
 export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any, client: MatrixSendClient): Promise<string[]> {
-    // We desperatley need support for threads to make this work in a non-shit way.
-    return await renderMatrix(node, async (text: string, html: string) => {
-        return await client.sendMessage(roomId, {
+    const baseContent = (text: string, html: string) => {
+        return {
             msgtype: "m.notice",
             body: text,
             format: "org.matrix.custom.html",
             formatted_body: html,
-        });
+        }
+    };
+    const renderInitialReply = async (text: string, html: string) => {
+        return await client.sendMessage(roomId, {
+            ...baseContent(text, html),
+            "m.relates_to": {
+                "m.in_reply_to": {
+                  "event_id": event['event_id']
+                }
+            }
+        })
+    };
+    const renderThreadReply = async (eventId: string, text: string, html: string) => {
+        return await client.sendMessage(roomId, {
+            ...baseContent(text, html),
+            "m.relates_to": {
+                "rel_type": "m.thread",
+                "event_id": eventId,
+              }
+        })
+    };
+    let initialReplyId: string | undefined = undefined;
+    return await renderMatrix(node, async (text: string, html: string) => {
+        if (initialReplyId === undefined) {
+            initialReplyId = await renderInitialReply(text, html);
+            return initialReplyId;
+        } else {
+            return await renderThreadReply(initialReplyId, text, html);
+        }
     });
 }
