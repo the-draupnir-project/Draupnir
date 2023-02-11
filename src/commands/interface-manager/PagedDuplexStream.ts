@@ -69,13 +69,10 @@ export class PagedDuplexStream {
                 throw new TypeError('Commit is too large, could not write a page for this commit');
             }
             this.ensureNewPage();
-            this.appendToCurrentPage(this.buffer);
-            this.lastCommittedNode = node;
-        } else {
-            this.appendToCurrentPage(this.buffer);
-            this.buffer = '';
-            this.lastCommittedNode = node;
         }
+        this.appendToCurrentPage(this.buffer);
+        this.buffer = '';
+        this.lastCommittedNode = node;
     }
 
     public getLastCommittedNode(): DocumentNode | undefined {
