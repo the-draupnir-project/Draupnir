@@ -28,6 +28,7 @@ limitations under the License.
 import { Mjolnir } from "../Mjolnir";
 import { AbstractProtectionSetting } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
+import { ReadItem } from "../commands/interface-manager/CommandReader";
 
 /**
  * Represents a protection mechanism of sorts. Protections are intended to be
@@ -58,8 +59,9 @@ export abstract class Protection {
 
     /**
      * Return status information for `!mjolnir status ${protectionName}`.
+     * FIXME: protections need their own tables https://github.com/Gnuxie/Draupnir/issues/21
      */
-    async statusCommand(mjolnir: Mjolnir, subcommand: string[]): Promise<{html: string, text: string} | null> {
+    async statusCommand(mjolnir: Mjolnir, subcommand: ReadItem[]): Promise<{html: string, text: string} | null> {
         // By default, protections don't have any status to show.
         return null;
     }

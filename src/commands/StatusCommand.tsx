@@ -153,7 +153,7 @@ defineInterfaceCommand({
     ],
     new RestDescription<MjolnirContext>(
         "subcommand",
-        findPresentationType("string")
+        findPresentationType("any")
     )),
     command: async function (
         this: MjolnirContext, _keywords, protectionName: string, ...subcommands: string[]
