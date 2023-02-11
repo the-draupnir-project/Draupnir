@@ -54,11 +54,9 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
     checkEqual(currentHtmlNode, currentMarkdownNode);
     while (currentHtmlNode !== undefined) {
         if (outputs.some(o => o.peekPage())) {
-            // Ensure each stream has the same nodes in the new page.
-            // I'm really worried that somehow a stream can have a page waiting
-            // while also having buffered output? so when it is ensured, that output is appended?
-            // that means there's an implementation issue in the walker's though.
-            outputs.forEach(o => o.ensureNewPage());
+            // Make sure that any outputs that have buffered input start a fresh page,
+            // so that the same committed nodes end up in the same message.
+            outputs.filter(o => !o.peekPage()).forEach(o => o.ensureNewPage());
             // Send the new pages as an event.
             eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
         }
