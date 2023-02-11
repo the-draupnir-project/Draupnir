@@ -289,7 +289,7 @@ export const SOFTWARE_VERSION = (() => {
     let versionFile;
     const defaultText = "A version was either not provided when building Draupnir or could not be read.";
     try {
-        versionFile = fs.readFileSync(path.join(__dirname, 'version.txt'), 'utf-8');
+        versionFile = fs.readFileSync(path.join(__dirname, '../version.txt'), 'utf-8');
     } catch (e) {
         LogService.error("config", "Could not read Draupnir version", e);
         versionFile = defaultText;

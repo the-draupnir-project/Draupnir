@@ -8,7 +8,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "scripts": {
-    "build": "tsc && (git describe > src/version.txt || true)",
+    "build": "tsc && (git describe > version.txt || true)",
     "postbuild": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
     "lint": "tslint --project ./tsconfig.json -t stylish",
     "start:dev": "yarn build && node --async-stack-traces lib/index.js",
