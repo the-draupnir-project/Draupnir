@@ -29,6 +29,8 @@ import { Protection } from "./IProtection";
 import { DurationMSProtectionSetting, NumberProtectionSetting, StringSetProtectionSetting } from "./ProtectionSettings";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, UserID } from "matrix-bot-sdk";
+import { ReadItem } from "../commands/interface-manager/CommandReader";
+import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 
 const DEFAULT_BUCKET_DURATION_MS = 10_000;
 const DEFAULT_BUCKET_NUMBER = 6;
@@ -700,8 +702,8 @@ export class DetectFederationLag extends Protection {
     /**
      * Return (mostly) human-readable lag status.
      */
-    public async statusCommand(mjolnir: Mjolnir, subcommand: string[]): Promise<{html: string, text: string} | null> {
-        const roomId = subcommand[0] || "*";
+    public async statusCommand(mjolnir: Mjolnir, subcommand: ReadItem[]): Promise<{html: string, text: string} | null> {
+        const roomRef = subcommand[0] || "*";
         const localDomain = new UserID(await mjolnir.client.getUserId()).domain;
         const annotatedStats = (roomInfo: RoomInfo) => {
             const stats = roomInfo.globalStats()?.round();
@@ -719,7 +721,7 @@ export class DetectFederationLag extends Protection {
         };
         let text;
         let html;
-        if (roomId === "*") {
+        if (roomRef === "*") {
             // Collate data from all protected rooms.
             const result: any = {};
 
@@ -729,7 +731,8 @@ export class DetectFederationLag extends Protection {
             }
             text = JSON.stringify(result, null, 2);
             html = `<code>${JSON.stringify(result, null, "&nbsp;&nbsp;")}</code>`;
-        } else {
+        } else if (roomRef instanceof MatrixRoomReference) {
+            const roomId = (await roomRef.resolve(mjolnir.client)).toRoomIdOrAlias();
             // Fetch data from a specific room.
             const roomInfo = this.lagPerRoom.get(roomId);
             if (!roomInfo) {
@@ -744,6 +747,12 @@ export class DetectFederationLag extends Protection {
                     html = `<code>${JSON.stringify(stats, null, "&nbsp;&nbsp;")}</code>`;
                 }
             }
+        } else {
+            // FIXME, TODO:
+            // These subcommands should really be implemented as another command table
+            // That can be refered to in a command in another table.
+            // https://github.com/Gnuxie/Draupnir/issues/21
+            throw new TypeError(`Unexpected argument ${roomRef}`);
         }
         return {
                 text,
