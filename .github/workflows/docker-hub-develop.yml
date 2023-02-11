@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v2
+      - name: Unshallow for git describe so we can create version.txt
+        run: git fetch --prune --unshallow
       - name: Prepare version file
         run: git describe > version.txt
       - name: Log in to Docker Hub
