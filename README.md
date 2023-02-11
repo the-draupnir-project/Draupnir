@@ -6,7 +6,8 @@ for more information.
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
 This is a hard fork of [Mjolnir](https://github.com/mjolnir),
-maintained by its former lead developer
+with an entirely new framework for interacting with Matrix written to
+overcome some of the burdens there were holding development of mjolnir.
 
 ## Status
 
@@ -14,7 +15,11 @@ The command handler is currently being refactored and the syntax will become
 incompatible with legacy Mjolnir commands. The UX will be overhauled
 as such and we will consider the launch of Draupnir a 2.0.0 release.
 
-You probably shouldn't run Draupnir yet.
+As Draupnir heads towards `v2.0.0` releases will appear [here](https://github.com/Gnuxie/Draupnir/releases).
+Until `v2.0.0` there will be frequent changes to commands.
+
+Migrating from Mjolnir is straightforward, and Draupnir remains backwards compatible.
+So it is possible to try Draupnir and still have the option to switch back to Mjolnir.
 
 ## Features
 
