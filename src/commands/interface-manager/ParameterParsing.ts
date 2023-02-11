@@ -114,6 +114,11 @@ makePresentationType({
     validator: simpleTypeValidator('boolean', (item: ReadItem) => item === 'true' ? true : item === 'false')
 })
 
+makePresentationType({
+    name: 'any',
+    validator: simpleTypeValidator('any', (_item: ReadItem) => true)
+})
+
 /**
  * Describes a rest parameter for a command.
  * This consumes any arguments left over in the call to a command
