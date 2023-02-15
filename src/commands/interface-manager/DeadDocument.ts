@@ -64,6 +64,8 @@ export enum NodeTag {
     ItalicFace = 'i',
     Anchor = 'a',
     Fragment = 'fragment',
+    Details = 'details',
+    Summary = 'summary',
 }
 
 /**

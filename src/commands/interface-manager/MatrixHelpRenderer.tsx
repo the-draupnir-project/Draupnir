@@ -26,6 +26,15 @@ function restArgument(rest: RestDescription): string {
     return `[...${rest.name}]`;
 }
 
+export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): DocumentNode {
+    return <details>
+        <summary>
+        <code>{renderCommandHelp(command)}</code> - {command.summary}
+        </summary>
+        {command.description ?? 'No description.'}
+    </details>
+}
+
 export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): string {
     const rest = command.argumentListParser.rest;
     const keywords = command.argumentListParser.keywords;
@@ -38,7 +47,6 @@ export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): stri
     ].join(' ');
 }
 
-// What is really needed is a rendering protocol, that works with bullshit text+html that's really just string building like we're doing here or some other media format
 export async function renderHelp(client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<InterfaceCommand<BaseFunction>[], CommandError>): Promise<void> {
     const commands = result.ok;
     let text = ''
