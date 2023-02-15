@@ -28,7 +28,6 @@ limitations under the License.
 import { Mjolnir } from "../Mjolnir";
 import { showJoinsStatus } from "./JoinsCommand";
 import { LogService, RichReply } from "matrix-bot-sdk";
-import { htmlEscape } from "../utils";
 import { execSyncCommand } from "./SyncCommand";
 import { execPermissionCheckCommand } from "./PermissionCheckCommand";
 import { execCreateListCommand } from "./CreateBanListCommand";
@@ -51,12 +50,12 @@ import { execKickCommand } from "./KickCommand";
 import { parse as tokenize } from "shell-quote";
 import { execSinceCommand } from "./SinceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
-import { BaseFunction, CommandTable, defineCommandTable } from "./interface-manager/InterfaceCommand";
+import { BaseFunction, CommandTable, defineCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParameterParsing";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException } from "./interface-manager/CommandException";
-import { tickCrossRenderer, renderCommandHelp } from "./interface-manager/MatrixHelpRenderer";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 export interface MjolnirContext extends MatrixContext {
     mjolnir: Mjolnir,
@@ -71,6 +70,7 @@ import "./Ban";
 import "./Unban";
 import "./StatusCommand";
 import "./Rules";
+import "./Help";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -146,73 +146,19 @@ export async function handleCommand(roomId: string, event: { content: { body: st
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
-            const command = commandTable.findAMatchingCommand(stream);
-            if (command) {
-                const adaptor = findMatrixInterfaceAdaptor(command);
-                const mjolnirContext: MjolnirContext = {
-                    mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
-                };
-                try {
-                    return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
-                } catch (e) {
-                    const commandError = new CommandException(e, 'Unknown Unexpected Error');
-                    LogService.error("CommandHandler", commandError.uuid, commandError.message, e);
-                    await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
-                }
+            const command = commandTable.findAMatchingCommand(stream)
+            ?? findTableCommand("mjolnir", "help");
+            const adaptor = findMatrixInterfaceAdaptor(command);
+            const mjolnirContext: MjolnirContext = {
+                mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
+            };
+            try {
+                return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+            } catch (e) {
+                const commandError = new CommandException(e, 'Unknown Unexpected Error');
+                LogService.error("CommandHandler", commandError.uuid, commandError.message, e);
+                await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
             }
-
-            // new commands
-            let newCommandsHelp = ''
-            for (const tableCommand of commandTable.getCommands()) {
-                newCommandsHelp += `${renderCommandHelp(tableCommand)}\n`;
-            }
-            // Help menu
-            const menu = "" +
-                "!mjolnir                                                            - Print status information\n" +
-                "!mjolnir status                                                     - Print status information\n" +
-                "!mjolnir status protection <protection> [subcommand]                - Print status information for a protection\n" +
-                "!mjolnir ban <list shortcode> <user|room|server> <glob> [reason]    - Adds an entity to the ban list\n" +
-                "!mjolnir unban <list shortcode> <user|room|server> <glob> [apply]   - Removes an entity from the ban list. If apply is 'true', the users matching the glob will actually be unbanned\n" +
-                "!mjolnir redact <user ID> [room alias/ID] [limit]                   - Redacts messages by the sender in the target room (or all rooms), up to a maximum number of events in the backlog (default 1000)\n" +
-                "!mjolnir redact <event permalink>                                   - Redacts a message by permalink\n" +
-                "!mjolnir kick <glob> [room alias/ID] [reason]                       - Kicks a user or all of those matching a glob in a particular room or all protected rooms\n" +
-                "!mjolnir rules                                                      - Lists the rules currently in use by Mjolnir\n" +
-                "!mjolnir rules matching <user|room|server>                          - Lists the rules in use that will match this entity e.g. `!rules matching @foo:example.com` will show all the user and server rules, including globs, that match this user\n" +
-                "!mjolnir sync                                                       - Force updates of all lists and re-apply rules\n" +
-                "!mjolnir verify                                                     - Ensures Mjolnir can moderate all your rooms\n" +
-                "!mjolnir list create <shortcode> <alias localpart>                  - Creates a new ban list with the given shortcode and alias\n" +
-                "!mjolnir watch <room alias/ID>                                      - Watches a ban list\n" +
-                "!mjolnir unwatch <room alias/ID>                                    - Unwatches a ban list\n" +
-                "!mjolnir import <room alias/ID> <list shortcode>                    - Imports bans and ACLs into the given list\n" +
-                "!mjolnir default <shortcode>                                        - Sets the default list for commands\n" +
-                "!mjolnir deactivate <user ID>                                       - Deactivates a user ID\n" +
-                "!mjolnir protections                                                - List all available protections\n" +
-                "!mjolnir enable <protection>                                        - Enables a particular protection\n" +
-                "!mjolnir disable <protection>                                       - Disables a particular protection\n" +
-                "!mjolnir config set <protection>.<setting> [value]                  - Change a protection setting\n" +
-                "!mjolnir config add <protection>.<setting> [value]                  - Add a value to a list protection setting\n" +
-                "!mjolnir config remove <protection>.<setting> [value]               - Remove a value from a list protection setting\n" +
-                "!mjolnir config get [protection]                                    - List protection settings\n" +
-                "!mjolnir rooms                                                      - Lists all the protected rooms\n" +
-                "!mjolnir rooms add <room alias/ID>                                  - Adds a protected room (may cause high server load)\n" +
-                "!mjolnir rooms remove <room alias/ID>                               - Removes a protected room\n" +
-                "!mjolnir move <room alias> <room alias/ID>                          - Moves a <room alias> to a new <room ID>\n" +
-                "!mjolnir directory add <room alias/ID>                              - Publishes a room in the server's room directory\n" +
-                "!mjolnir directory remove <room alias/ID>                           - Removes a room from the server's room directory\n" +
-                "!mjolnir alias add <room alias> <target room alias/ID>              - Adds <room alias> to <target room>\n" +
-                "!mjolnir alias remove <room alias>                                  - Deletes the room alias from whatever room it is attached to\n" +
-                "!mjolnir resolve <room alias>                                       - Resolves a room alias to a room ID\n" +
-                "!mjolnir since <date>/<duration> <action> <limit> [rooms...] [reason] - Apply an action ('kick', 'ban', 'mute', 'unmute' or 'show') to all users who joined a room since <date>/<duration> (up to <limit> users)\n" +
-                "!mjolnir shutdown room <room alias/ID> [message]                    - Uses the bot's account to shut down a room, preventing access to the room on this server\n" +
-                "!mjolnir powerlevel <user ID> <power level> [room alias/ID]         - Sets the power level of the user in the specified room (or all protected rooms)\n" +
-                "!mjolnir help                                                       - This menu\n";
-            let html = `<b>Old Commands:</b><br><pre><code>${htmlEscape(menu)}</code></pre>`;
-            let text = `Old Commands:\n${menu}`;
-            html += `<br/><b>New Commands:</b><br><pre><code>${htmlEscape(newCommandsHelp)}</code></pre>`;
-            text += `\n\nNew Commands:\n${newCommandsHelp}`;
-            const reply = RichReply.createFor(roomId, event, text, html);
-            reply["msgtype"] = "m.notice";
-            return await mjolnir.client.sendMessage(roomId, reply);
         }
     } catch (e) {
         LogService.error("CommandHandler", e);

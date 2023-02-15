@@ -65,4 +65,10 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
 ).registerInnerNode(NodeTag.Root,
     blank,
     blank
+).registerInnerNode(NodeTag.Details,
+    staticString('<details>'),
+    staticString('</details>')
+).registerInnerNode(NodeTag.Summary,
+    staticString('<summary>'),
+    staticString('</summary>')
 );
