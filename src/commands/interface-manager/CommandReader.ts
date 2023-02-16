@@ -11,6 +11,7 @@ export interface ISuperCoolStream<T> {
     peekItem(eof?: any): T|any,
     readItem(eof?: any): T|any,
     getPosition(): number,
+    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean, body: (stream: ISuperCoolStream<T>) => Result}): Result;
 }
 
 export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> implements ISuperCoolStream<T> {
@@ -34,6 +35,15 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> i
 
     public getPosition(): number {
         return this.position;
+    }
+
+    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean; body: (stream: SuperCoolStream<T>) => Result; }): Result {
+        const previousPosition = this.position;
+        const bodyResult = description.body(this);
+        if (description.predicate(bodyResult)) {
+            this.position = previousPosition;
+        }
+        return bodyResult;
     }
 }
 
