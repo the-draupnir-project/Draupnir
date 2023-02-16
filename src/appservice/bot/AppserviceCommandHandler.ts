@@ -28,7 +28,7 @@ import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 const helpCommand = defineInterfaceCommand({
     parameters: parameters([]),
     table: "appservice bot",
-    command: async function() { return CommandResult.Ok(findCommandTable("appservice bot").getCommands()) },
+    command: async function() { return CommandResult.Ok(findCommandTable("appservice bot").getAllCommands()) },
     designator: ["help"],
     summary: "Display this message"
 })

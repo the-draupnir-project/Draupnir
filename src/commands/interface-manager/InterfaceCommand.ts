@@ -45,9 +45,11 @@ type CommandLookupEntry<ExecutorType extends BaseFunction> = {
     current?: InterfaceCommand<ExecutorType>
 };
 
-export class CommandTable<ExecutorType extends BaseFunction> {
+export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
     private readonly flattenedCommands = new Set<InterfaceCommand<BaseFunction>>();
     private readonly commands: CommandLookupEntry<ExecutorType> = { };
+    /** Imported tables are tables that "add commands" to this table. They are not sub commands. */
+    private readonly importedTables = new Set<CommandTable>();
 
     constructor() {
 
@@ -57,12 +59,20 @@ export class CommandTable<ExecutorType extends BaseFunction> {
      * Used to render the help command.
      * @returns All of the commands in this table.
      */
-    public getCommands(): InterfaceCommand<BaseFunction>[] {
+    public getAllCommands(): InterfaceCommand[] {
+        const importedCommands = [...this.importedTables].reduce((acc, t) => [...acc, ...t.getAllCommands()], []);
+        return [...this.getExportedCommands(), ...importedCommands]
+    }
+
+    /**
+     * @returns Only the commands interned in this table, excludes imported commands.
+     */
+    public getExportedCommands(): InterfaceCommand[] {
         return [...this.flattenedCommands.values()];
     }
 
     // We use the argument stream so that they can use stream.rest() to get the unconsumed arguments.
-    public findAMatchingCommand(stream: IArgumentStream) {
+    public findAnExportedMatchingCommand(stream: IArgumentStream) {
         const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: IArgumentStream): undefined|InterfaceCommand<ExecutorType> => {
             if (argumentStream.peekItem() === undefined || typeof argumentStream.peekItem() !== 'string') {
                 // Then they might be using something like "!mjolnir status"
@@ -77,6 +87,26 @@ export class CommandTable<ExecutorType extends BaseFunction> {
             }
         };
         return tableHelper(this.commands, stream);
+    }
+
+    public findAMatchingCommand(stream: IArgumentStream): InterfaceCommand|undefined {
+        const possibleExportedCommand = stream.savingPositionIf({
+            body: (s: IArgumentStream) => this.findAnExportedMatchingCommand(s),
+            predicate: command => command === undefined,
+        });
+        if (possibleExportedCommand) {
+            return possibleExportedCommand;
+        }
+        for (const table of this.importedTables.values()) {
+            const possibleCommand: InterfaceCommand|undefined = stream.savingPositionIf<InterfaceCommand|undefined>({
+                body: (s: IArgumentStream) => table.findAMatchingCommand(s),
+                predicate: command => command === undefined,
+            });
+            if (possibleCommand) {
+                return possibleCommand;
+            }
+        }
+        return undefined;
     }
 
     public internCommand(command: InterfaceCommand<ExecutorType>) {
@@ -99,6 +129,15 @@ export class CommandTable<ExecutorType extends BaseFunction> {
         }
 
         internCommandHelper(this.commands, [...command.designator]);
+    }
+
+    public importTable(table: CommandTable): void {
+        for (const command of table.getAllCommands()) {
+            if (this.findAMatchingCommand(new ArgumentStream(command.designator))) {
+                throw new TypeError(`Command ${JSON.stringify(command.designator)} is in conflict with this table and cannot be imported.`);
+            }
+        }
+        this.importedTables.add(table);
     }
 }
 
@@ -130,7 +169,7 @@ export function findTableCommand<ExecutorType extends BaseFunction>(tableName: s
     return command as InterfaceCommand<ExecutorType>;
 }
 
-export class InterfaceCommand<ExecutorType extends BaseFunction> {
+export class InterfaceCommand<ExecutorType extends BaseFunction = BaseFunction> {
     constructor(
         public readonly argumentListParser: IArgumentListParser,
         private readonly command: ExecutorType,
