@@ -25,22 +25,35 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
+import { UserID } from "matrix-bot-sdk";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
+import { MjolnirContext } from "./CommandHandler";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { CommandResult, CommandError } from "./interface-manager/Validation";
 
-// !mjolnir deactivate <user ID>
-export async function execDeactivateCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const victim = parts[2];
+defineInterfaceCommand({
+    table: "synapse admin",
+    designator: ["deactivate"],
+    summary: "Deactivates the user on the homeserver, preventing use of the account.",
+    parameters: parameters([
+        {
+            name: 'user',
+            acceptor: findPresentationType("UserID"),
+        }
+    ]),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetUser: UserID): Promise<CommandResult<void, CommandError>> {
+        const isAdmin = await this.mjolnir.isSynapseAdmin();
+        if (!isAdmin) {
+            return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
+        }
+        await this.mjolnir.shutdownSynapseRoom(targetUser.toString());
+        return CommandResult.Ok(undefined);
+    },
+})
 
-    const isAdmin = await mjolnir.isSynapseAdmin();
-    if (!isAdmin) {
-        const message = "I am not a Synapse administrator, or the endpoint is blocked";
-        const reply = RichReply.createFor(roomId, event, message, message);
-        reply['msgtype'] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
-    }
-
-    await mjolnir.deactivateSynapseUser(victim);
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-}
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("synapse admin", "deactivate"),
+    renderer: tickCrossRenderer,
+})

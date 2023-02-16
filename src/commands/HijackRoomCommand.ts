@@ -47,7 +47,7 @@ async function hijackRoomCommand(
 
 defineInterfaceCommand<MjolnirBaseExecutor>({
     designator: ["hijack", "room"],
-    table: "mjolnir",
+    table: "synapse admin",
     parameters: parameters([
         {
             name: "room",
@@ -63,6 +63,6 @@ defineInterfaceCommand<MjolnirBaseExecutor>({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "hijack", "room"),
+    interfaceCommand: findTableCommand("synapse admin", "hijack", "room"),
     renderer: tickCrossRenderer
 })
