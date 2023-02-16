@@ -13,10 +13,10 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
  * This is really useful because there are at least 3 ways of referring to a Matrix room,
  * and some of them require extra steps to be useful in certain contexts (aliases, permalinks).
  */
- export class MatrixRoomReference {
-    private constructor(
-        private readonly reference: string,
-        private readonly viaServers: string[] = []
+ export abstract class MatrixRoomReference {
+    protected constructor(
+        protected readonly reference: string,
+        protected readonly viaServers: string[] = []
     ) {
 
     }
@@ -26,11 +26,19 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
     }
 
     public static fromAlias(alias: string): MatrixRoomReference {
-        return new MatrixRoomReference(alias);
+        return new MatrixRoomAlias(alias);
     }
 
-    public static fromRoomId(roomId: string, viaServers: string[] = []): MatrixRoomReference {
-        return new MatrixRoomReference(roomId, viaServers);
+    public static fromRoomId(roomId: string, viaServers: string[] = []): MatrixRoomID {
+        return new MatrixRoomID(roomId, viaServers);
+    }
+
+    public static fromRoomIdOrAlias(roomIdOrAlias: string, viaServers: string[] = []): MatrixRoomReference {
+        if (roomIdOrAlias.startsWith('!')) {
+            return new MatrixRoomID(roomIdOrAlias, viaServers);
+        } else {
+            return new MatrixRoomAlias(roomIdOrAlias, viaServers);
+        }
     }
 
     /**
@@ -40,7 +48,7 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
      */
     public static fromPermalink(permalink: string): MatrixRoomReference {
         const parts = Permalinks.parseUrl(permalink);
-        return new MatrixRoomReference(parts.roomIdOrAlias, parts.viaServers);
+        return MatrixRoomReference.fromRoomIdOrAlias(parts.roomIdOrAlias, parts.viaServers);
     }
 
     /**
@@ -50,13 +58,13 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
      * @param client A client that we can use to resolve the room alias.
      * @returns A new MatrixRoomReference that contains the room id.
      */
-    public async resolve(client: { resolveRoom: ResolveRoom }): Promise<MatrixRoomReference> {
-        if (this.reference.startsWith('!')) {
+    public async resolve(client: { resolveRoom: ResolveRoom }): Promise<MatrixRoomID> {
+        if (this instanceof MatrixRoomID) {
             return this;
         } else {
             const alias = new RoomAlias(this.reference);
             const roomId = await client.resolveRoom(this.reference);
-            return new MatrixRoomReference(roomId, [alias.domain]);
+            return new MatrixRoomID(roomId, [alias.domain]);
         }
     }
 
@@ -65,7 +73,7 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
      * @param client A matrix client that should join the room.
      * @returns A MatrixRoomReference with the room id of the room which was joined.
      */
-    public async joinClient(client: { joinRoom: JoinRoom }): Promise<MatrixRoomReference> {
+    public async joinClient(client: { joinRoom: JoinRoom }): Promise<MatrixRoomID> {
         if (this.reference.startsWith('!')) {
             await client.joinRoom(this.reference, this.viaServers);
             return this;
@@ -73,7 +81,7 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
             const roomId = await client.joinRoom(this.reference);
             const alias = new RoomAlias(this.reference);
             // best we can do with the information we have.
-            return new MatrixRoomReference(roomId, [alias.domain]);
+            return new MatrixRoomID(roomId, [alias.domain]);
         }
     }
 
@@ -84,5 +92,23 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
      */
     public toRoomIdOrAlias(): string {
         return this.reference;
+    }
+}
+
+export class MatrixRoomID extends MatrixRoomReference {
+    public constructor(
+        reference: string,
+        viaServers: string[] = []
+    ) {
+        super(reference, viaServers);
+    }
+}
+
+export class MatrixRoomAlias extends MatrixRoomReference {
+    public constructor(
+        reference: string,
+        viaServers: string[] = []
+    ) {
+        super(reference, viaServers);
     }
 }

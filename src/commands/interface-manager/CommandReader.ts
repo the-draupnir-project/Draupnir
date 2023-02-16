@@ -179,7 +179,7 @@ function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
         return word.join('');
     }
     readUntil(/\s/, stream, word);
-    return MatrixRoomReference.fromAlias(word.join(''));
+    return MatrixRoomReference.fromRoomIdOrAlias(word.join(''));
 }
 
 /**

@@ -6,7 +6,7 @@
 import { ReadItem } from "./CommandReader";
 import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParameterParsing";
 import { UserID } from "matrix-bot-sdk";
-import { MatrixRoomReference } from "./MatrixRoomReference";
+import { MatrixRoomAlias, MatrixRoomID, MatrixRoomReference } from "./MatrixRoomReference";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
@@ -20,6 +20,16 @@ makePresentationType({
 makePresentationType({
     name: 'MatrixRoomReference',
     validator: simpleTypeValidator('MatrixRoomReference', (item: ReadItem) => item instanceof MatrixRoomReference),
+})
+
+makePresentationType({
+    name: 'MatrixRoomID',
+    validator: simpleTypeValidator('MatrixRoomID', (item: ReadItem) => item instanceof MatrixRoomID)
+})
+
+makePresentationType({
+    name: 'MatrixRoomAlias',
+    validator: simpleTypeValidator('MatrixRoomAlias', (item: ReadItem) => item instanceof MatrixRoomAlias)
 })
 
 // Wouldn't this be better as a custom document node so that we could render the plain text version differently?
