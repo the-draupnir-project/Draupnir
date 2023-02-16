@@ -25,23 +25,37 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { findPresentationType, parameters, ParsedKeywords, RestDescription } from "./interface-manager/ParameterParsing";
+import { CommandResult, CommandError } from "./interface-manager/Validation";
+import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { MjolnirContext } from "./CommandHandler";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
-// !mjolnir shutdown room <room> [<message>]
-export async function execShutdownRoomCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const victim = parts[3];
-    const reason = parts.slice(4).join(" ") || undefined;
+defineInterfaceCommand({
+    table: "synapse admin",
+    designator: ["shutdown", "room"],
+    summary: "Prevents access to the the room on this server and sends a message to all users that they have violated the terms of service.",
+    parameters: parameters([
+        {
+            name: 'room',
+            acceptor: findPresentationType("MatrixRoomReference"),
+        }
+    ],
+    new RestDescription("reason", findPresentationType("string"))),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetRoom: MatrixRoomReference, ...reasonParts: string[]): Promise<CommandResult<void, CommandError>> {
+        const isAdmin = await this.mjolnir.isSynapseAdmin();
+        if (!isAdmin) {
+            return CommandError.Result('I am not a Synapse administrator, or the endpoint to shutdown a room is blocked');
+        }
+        const reason = reasonParts.join(" ");
+        await this.mjolnir.shutdownSynapseRoom((await targetRoom.resolve(this.client)).toRoomIdOrAlias(), reason);
+        return CommandResult.Ok(undefined);
+    },
+})
 
-    const isAdmin = await mjolnir.isSynapseAdmin();
-    if (!isAdmin) {
-        const message = "I am not a Synapse administrator, or the endpoint is blocked";
-        const reply = RichReply.createFor(roomId, event, message, message);
-        reply['msgtype'] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
-    }
-
-    await mjolnir.shutdownSynapseRoom(await mjolnir.client.resolveRoom(victim), reason);
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-}
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("synapse admin", "shutdown", "room"),
+    renderer: tickCrossRenderer,
+})

@@ -35,16 +35,13 @@ import { execUnwatchCommand, execWatchCommand } from "./WatchUnwatchCommand";
 import { execRedactCommand } from "./RedactCommand";
 import { execImportCommand } from "./ImportCommand";
 import { execSetDefaultListCommand } from "./SetDefaultBanListCommand";
-import { execDeactivateCommand } from "./DeactivateCommand";
 import {
     execDisableProtection, execEnableProtection, execListProtections, execConfigGetProtection,
     execConfigSetProtection, execConfigAddProtection, execConfigRemoveProtection
 } from "./ProtectionsCommands";
 import { execListProtectedRooms } from "./ListProtectedRoomsCommand";
 import { execAddProtectedRoom, execRemoveProtectedRoom } from "./AddRemoveProtectedRoomsCommand";
-import { execAddRoomToDirectoryCommand, execRemoveRoomFromDirectoryCommand } from "./AddRemoveRoomFromDirectoryCommand";
 import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
-import { execShutdownRoomCommand } from "./ShutdownRoomCommand";
 import { execAddAliasCommand, execMoveAliasCommand, execRemoveAliasCommand, execResolveCommand } from "./AliasCommands";
 import { execKickCommand } from "./KickCommand";
 import { parse as tokenize } from "shell-quote";
@@ -63,9 +60,14 @@ export interface MjolnirContext extends MatrixContext {
 
 export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Promise<CommandResult<any>>;
 
+defineCommandTable("synapse admin");
+import "./HijackRoomCommand";
+import "./ShutdownRoomCommand";
+import "./DeactivateCommand";
+import "./AddRemoveProtectedRoomsCommand";
+
 defineCommandTable("mjolnir");
 import "./interface-manager/MatrixPresentations";
-import "./HijackRoomCommand";
 import "./Ban";
 import "./Unban";
 import "./StatusCommand";
@@ -101,8 +103,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execImportCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'default' && parts.length > 2) {
             return await execSetDefaultListCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'deactivate' && parts.length > 2) {
-            return await execDeactivateCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'protections') {
             return await execListProtections(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'enable' && parts.length > 1) {
@@ -125,10 +125,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execListProtectedRooms(roomId, event, mjolnir);
         } else if (parts[1] === 'move' && parts.length > 3) {
             return await execMoveAliasCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'directory' && parts.length > 3 && parts[2] === 'add') {
-            return await execAddRoomToDirectoryCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'directory' && parts.length > 3 && parts[2] === 'remove') {
-            return await execRemoveRoomFromDirectoryCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'alias' && parts.length > 4 && parts[2] === 'add') {
             return await execAddAliasCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'alias' && parts.length > 3 && parts[2] === 'remove') {
@@ -137,8 +133,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execResolveCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'powerlevel' && parts.length > 3) {
             return await execSetPowerLevelCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'shutdown' && parts[2] === 'room' && parts.length > 3) {
-            return await execShutdownRoomCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'since') {
             return await execSinceCommand(roomId, event, mjolnir, tokens);
         } else if (parts[1] === 'kick' && parts.length > 2) {

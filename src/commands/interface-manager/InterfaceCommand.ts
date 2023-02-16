@@ -142,11 +142,13 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
 }
 
 const COMMAND_TABLE_TABLE = new Map<string|symbol, CommandTable<BaseFunction>>();
-export function defineCommandTable(name: string|symbol) {
+export function defineCommandTable(name: string|symbol): CommandTable {
     if (COMMAND_TABLE_TABLE.has(name)) {
         throw new TypeError(`A table called ${name.toString()} already exists`);
     }
-    COMMAND_TABLE_TABLE.set(name, new CommandTable());
+    const table = new CommandTable();
+    COMMAND_TABLE_TABLE.set(name, table);
+    return table;
 }
 
 export function findCommandTable<ExecutorType extends BaseFunction>(name: string|symbol): CommandTable<ExecutorType> {

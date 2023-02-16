@@ -26,30 +26,62 @@ limitations under the License.
  */
 
 import { Mjolnir } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { MjolnirContext } from "./CommandHandler";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { parameters, findPresentationType, ParsedKeywords } from "./interface-manager/ParameterParsing";
+import { CommandResult, CommandError } from "./interface-manager/Validation";
+import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 
-async function addRemoveFromDirectory(inRoomId: string, event: any, mjolnir: Mjolnir, roomRef: string, visibility: "public" | "private") {
+async function addRemoveFromDirectory(mjolnir: Mjolnir, roomRef: MatrixRoomReference, visibility: "public" | "private"): Promise<CommandResult<void>> {
     const isAdmin = await mjolnir.isSynapseAdmin();
     if (!isAdmin) {
-        const message = "I am not a Synapse administrator, or the endpoint is blocked";
-        const reply = RichReply.createFor(inRoomId, event, message, message);
-        reply['msgtype'] = "m.notice";
-        mjolnir.client.sendMessage(inRoomId, reply);
-        return;
+        return CommandError.Result('I am not a Synapse administrator, or the endpoint to remove/add to the room directory is blocked');
     }
-
-    const targetRoomId = await mjolnir.client.resolveRoom(roomRef);
+    const targetRoomId = (await roomRef.resolve(mjolnir.client)).toRoomIdOrAlias();
     await mjolnir.client.setDirectoryVisibility(targetRoomId, visibility);
-
-    await mjolnir.client.unstableApis.addReactionToEvent(inRoomId, event['event_id'], '✅');
+    return CommandResult.Ok(undefined);
 }
 
-// !mjolnir directory add <room>
-export async function execAddRoomToDirectoryCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    await addRemoveFromDirectory(roomId, event, mjolnir, parts[3], "public");
-}
+// Note: While synapse admin API is not required for these endpoints,
+// I believe they were added to manage rooms other than the ones you are admin in.
+defineInterfaceCommand({
+    table: "synapse admin",
+    designator: ["directory", "add"],
+    summary: "Publishes a room in the server's room directory.",
+    parameters: parameters([
+        {
+            name: 'room',
+            acceptor: findPresentationType("MatrixRoomReference"),
+        }
+    ]),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetRoom: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+        return await addRemoveFromDirectory(this.mjolnir, targetRoom, "public");
+    },
+})
 
-// !mjolnir directory remove <room>
-export async function execRemoveRoomFromDirectoryCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    await addRemoveFromDirectory(roomId, event, mjolnir, parts[3], "private");
-}
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("synapse admin", "directory", "add"),
+    renderer: tickCrossRenderer,
+})
+
+defineInterfaceCommand({
+    table: "synapse admin",
+    designator: ["directory", "remove"],
+    summary: "Removes a room from the server's room directory.",
+    parameters: parameters([
+        {
+            name: 'room',
+            acceptor: findPresentationType("MatrixRoomReference"),
+        }
+    ]),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetRoom: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+        return await addRemoveFromDirectory(this.mjolnir, targetRoom, "private");
+    },
+})
+
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("synapse admin", "directory", "remove"),
+    renderer: tickCrossRenderer,
+})
