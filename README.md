@@ -5,7 +5,7 @@ for more information.
 
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
-This is a hard fork of [Mjolnir](https://github.com/mjolnir),
+This is a hard fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
 with an entirely new framework for interacting with Matrix written to
 overcome some of the burdens there were holding development of mjolnir.
 
