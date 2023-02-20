@@ -95,8 +95,21 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
 }
 
 export function presentationTypeOf(presentation: unknown): PresentationType|undefined {
-    return [...PRESENTATION_TYPES.values()]
-        .find(possibleType => possibleType.validator(presentation as ReadItem).isOk());
+    // We have no concept of presentation-subtype
+    // But we have a top type which is any...
+    const candidates = [...PRESENTATION_TYPES.values()]
+        .filter(possibleType => possibleType.validator(presentation as ReadItem).isOk()
+            && possibleType.name !== 'any'
+        );
+    if (candidates.length === 0) {
+        return undefined;
+    } else if (candidates.length === 1) {
+        return candidates[0];
+    } else {
+        // until there are subtype semantics we have to fail early so that we have a chance of knowing
+        // that we have a conflicting type.
+        throw new TypeError(`presentationTypeof: There are multiple candidates for the presentation ${presentation}: ${JSON.stringify(candidates.map(c => c.name))}`)
+    }
 }
 
 makePresentationType({
