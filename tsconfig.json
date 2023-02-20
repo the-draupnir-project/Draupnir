@@ -8,6 +8,7 @@
         "moduleResolution": "node",
         "newLine": "LF",
         "noImplicitReturns": true,
+	    "noImplicitThis": true,
         "noUnusedLocals": true,
         "target": "es2021",
         "noImplicitAny": true,
