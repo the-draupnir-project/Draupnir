@@ -55,7 +55,7 @@ definePresentationRenderer(findPresentationType("PolicyList"), function(list: Po
 
 
 export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyListReference: MatrixRoomReference): Promise<CommandResult<PolicyList, CommandError>> {
-    const policyListRoomId = (await policyListReference.resolve(this.client)).toRoomIdOrAlias();
+    const policyListRoomId = (await policyListReference.resolve(mjolnir.client)).toRoomIdOrAlias();
     const policyList = mjolnir.policyListManager.lists.find(list => list.roomId === policyListRoomId);
     if (policyList !== undefined) {
         return CommandResult.Ok(policyList);
