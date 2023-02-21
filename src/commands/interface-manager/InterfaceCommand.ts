@@ -71,6 +71,10 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
         return [...this.flattenedCommands.values()];
     }
 
+    public getImportedTables(): CommandTable[] {
+        return [...this.importedTables];
+    }
+
     // We use the argument stream so that they can use stream.rest() to get the unconsumed arguments.
     public findAnExportedMatchingCommand(stream: IArgumentStream) {
         const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: IArgumentStream): undefined|InterfaceCommand<ExecutorType> => {
