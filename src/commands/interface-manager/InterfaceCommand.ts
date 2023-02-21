@@ -51,7 +51,7 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
     /** Imported tables are tables that "add commands" to this table. They are not sub commands. */
     private readonly importedTables = new Set<CommandTable>();
 
-    constructor() {
+    constructor(public readonly name: string|symbol) {
 
     }
 
@@ -150,7 +150,7 @@ export function defineCommandTable(name: string|symbol): CommandTable {
     if (COMMAND_TABLE_TABLE.has(name)) {
         throw new TypeError(`A table called ${name.toString()} already exists`);
     }
-    const table = new CommandTable();
+    const table = new CommandTable(name);
     COMMAND_TABLE_TABLE.set(name, table);
     return table;
 }
