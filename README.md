@@ -47,11 +47,11 @@ See the [synapse module documentation](docs/synapse_module.md) for information o
 After your bot is up and running, you'll want to run a couple commands to get everything
 set up:
 
-1. `!draupnir list create COC code-of-conduct-ban-list` - This will create a new ban list
-   with the shortcode `COC` and an alias of `#code-of-conduct-ban-list:example.org`. You
+1. `!draupnir list create coc code-of-conduct-ban-list` - This will create a new ban list
+   with the shortcode `coc` and an alias of `#code-of-conduct-ban-list:example.org`. You
    will be invited to the room it creates automatically where you can change settings such
    as the visibility of the room.
-2. `!draupnir default COC` - This sets the default ban list to the list we just created to
+2. `!draupnir default coc` - This sets the default ban list to the list we just created to
    help with the ban commands later on.
 3. Review the [Moderator's Guide](https://github.com/matrix-org/mjolnir/blob/main/docs/moderators.md).
 4. Review `!mjolnir help` to see what else the bot can do.
