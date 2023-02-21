@@ -106,3 +106,8 @@ function renderCommandException(command: InterfaceCommand<BaseFunction>, error: 
         to an administrator.
     </root>
 }
+
+export function renderMentionPill(mxid: string, displayName: string): DocumentNode {
+    const url = `https://matrix.to/#/${mxid}`;
+    return <a href={url}>{displayName}</a>
+}

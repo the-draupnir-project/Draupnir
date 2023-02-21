@@ -41,9 +41,11 @@ import { Consequence } from "./consequence";
 import { htmlEscape } from "../utils";
 import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
+import { BanPropagation } from "./BanPropagation";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
+    new BanPropagation(),
     new BasicFlooding(),
     new WordList(),
     new MessageIsVoice(),
