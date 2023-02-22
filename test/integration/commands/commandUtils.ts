@@ -119,6 +119,40 @@ export async function getFirstReaction(matrix: MatrixEmitter, targetRoom: string
 }
 
 /**
+ * Get and wait for the first event that matches a predicate.
+ * @param details.lookAfterEvent A function that returns an event id to look for
+ * in the sync timeline before matching. Or a function that returns undefined if
+ * `getFirstEventMatching` should start matching events right away.
+ * @returns The event matching the predicate provided.
+ */
+export async function getFirstEventMatching(details: { matrix: MatrixEmitter, targetRoom: string, lookAfterEvent: () => Promise</*event id*/string|undefined>, predicate: (event: any) => boolean }): Promise<any> {
+    let targetCb;
+    try {
+        return await new Promise((resolve, reject) => {
+            details.lookAfterEvent().then((afterEventId: string|undefined) => {
+                // if the event has returned an event id, then we will wait for that in the timeline,
+                // otherwise the "event" isn't a matrix event and we just have to start looking right away.
+                let isAfterEventId = afterEventId === undefined;
+                targetCb = (roomId: string, event: any) => {
+                    if (event['event_id'] === afterEventId) {
+                        isAfterEventId = true;
+                        return;
+                    }
+                    if (isAfterEventId && details.predicate(event)) {
+                        resolve(event);
+                    }
+                };
+                details.matrix.on('room.event', targetCb)
+            })
+        })
+    } finally {
+        if (targetCb) {
+            details.matrix.off('room.event', targetCb)
+        }
+    }
+}
+
+/**
  * Create a new banlist for mjolnir to watch and return the shortcode that can be used to refer to the list in future commands.
  * @param managementRoom The room to send the create command to.
  * @param mjolnir A syncing matrix client.

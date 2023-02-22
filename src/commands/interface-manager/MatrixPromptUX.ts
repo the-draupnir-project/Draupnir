@@ -106,14 +106,16 @@ class ReactionHandler {
         roomId: string, eventId: string, presentationByReaction: PresentationByReactionKey, timeout = 600_000 // ten minutes
     ): Promise<CommandResult<T, CommandError>> {
         let record;
+        let timeoutId;
         const presentationOrTimeout = await Promise.race([
             new Promise(resolve => {
                 record = new ReactionPromptRecord(presentationByReaction, resolve);
                 this.addPresentationsForEvent(eventId, record);
                 this.addBaseReactionsToEvent(roomId, eventId, presentationByReaction);
             }),
-            new Promise(resolve => setTimeout(resolve, timeout)),
+            new Promise(resolve => timeoutId = setTimeout(resolve, timeout)),
         ]);
+        clearTimeout(timeoutId);
         if (presentationOrTimeout === undefined) {
             if (record !== undefined) {
                 this.removePromptRecordForEvent(eventId, record);
