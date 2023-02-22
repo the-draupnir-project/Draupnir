@@ -42,7 +42,7 @@ import { htmlEscape } from "../utils";
 import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
-import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
+import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
@@ -62,7 +62,20 @@ type EnabledProtectionsEvent = RawSchemedData & {
 }
 
 class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEvent> {
-    protected readonly schema = [];
+    protected readonly schema: SchemaMigration[] = [
+        async function enableBanPropagationByDefault(input: EnabledProtectionsEvent) {
+            const enabled = new Set(input.enabled);
+            const banPropagationProtection = PROTECTIONS.find(p => p.name === 'BanPropagationProtection');
+            if (banPropagationProtection === undefined) {
+                throw new TypeError("Couldn't find the ban propagation protection");
+            }
+            enabled.add(banPropagationProtection.name)
+            return {
+                enabled: [...enabled],
+                [SCHEMA_VERSION_KEY]: 1,
+            }
+        }
+    ];
     protected readonly isAllowedToInferNoVersionAsZero = true;
     private readonly enabledProtections = new Set</* protection name */string>();
 
@@ -88,7 +101,7 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
     protected async storeMatixData(): Promise<void> {
         const data: EnabledProtectionsEvent = {
             enabled: [...this.enabledProtections],
-            [SCHEMA_VERSION_KEY]: 0,
+            [SCHEMA_VERSION_KEY]: 1,
         }
         await this.mjolnir.client.setAccountData(ENABLED_PROTECTIONS_EVENT_TYPE, data);
     }
