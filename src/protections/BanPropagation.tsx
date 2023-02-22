@@ -35,12 +35,6 @@ import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRende
 import { RULE_USER } from "../models/ListRule";
 
 /**
- * This could not be implemented as a protection for the following reasons:
- * - To enable a protection by default would require a significant refactor
- * - For some reason bans aren't showing in the protection manager via room.event?
- */
-
-/**
  * Prompt the management room to propagate a user ban to a policy list of their choice.
  * @param mjolnir Mjolnir.
  * @param event The ban event.
@@ -79,31 +73,36 @@ export class BanPropagation extends Protection {
         This will then allow the bot to ban the user from all of your rooms.";
     }
 
-    // TODO: for the automated version we should check that the sender is in the management room.
-    // TODO: I really want this to be enabled by default.
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (event['type'] === 'm.room.member' && event['content']?.['membership'] === 'ban') {
-            const promptListener = new PromptResponseListener(
-                mjolnir.matrixEmitter,
-                await mjolnir.client.getUserId(),
-                mjolnir.client
-            );
-            // do not await, we don't want to block the protection manager
-            promptListener.waitForPresentationList(
-                mjolnir.policyListManager.lists,
-                mjolnir.managementRoomId,
-                promptBanPropagation(mjolnir, event, roomId)
-            ).then(listResult => {
-                if (listResult.isOk()) {
-                    const list = listResult.ok;
-                    return list.banEntity(RULE_USER, event['state_key'], event['content']?.["reason"]);
-                } else {
-                    LogService.warn("BanPropagation", "Timed out waiting for a response to a room level ban", listResult.err);
-                    return;
-                }
-            }).catch(e => {
-                LogService.error('BanPropagation', "Encountered an error while prompting the user for instructions to propagate a room level ban", e);
-            });
+        if (event['type'] !== 'm.room.member' || event['content']?.['membership'] !== 'ban') {
+            return;
         }
+        if (mjolnir.policyListManager.lists.map(
+                list => list.rulesMatchingEntity(event['state_key'], RULE_USER)
+            ).some(rules => rules.length > 0)
+        ) {
+            return; // The user is already banned.
+        }
+        const promptListener = new PromptResponseListener(
+            mjolnir.matrixEmitter,
+            await mjolnir.client.getUserId(),
+            mjolnir.client
+        );
+        // do not await, we don't want to block the protection manager
+        promptListener.waitForPresentationList(
+            mjolnir.policyListManager.lists,
+            mjolnir.managementRoomId,
+            promptBanPropagation(mjolnir, event, roomId)
+        ).then(listResult => {
+            if (listResult.isOk()) {
+                const list = listResult.ok;
+                return list.banEntity(RULE_USER, event['state_key'], event['content']?.["reason"]);
+            } else {
+                LogService.warn("BanPropagation", "Timed out waiting for a response to a room level ban", listResult.err);
+                return;
+            }
+        }).catch(e => {
+            LogService.error('BanPropagation', "Encountered an error while prompting the user for instructions to propagate a room level ban", e);
+        });
     }
 }
