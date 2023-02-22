@@ -257,6 +257,7 @@ describe("Test: Testing RoomMemberManager", function() {
         this.timeout(60000);
         const start = new Date(Date.now() - 10_000);
         const mjolnir: Mjolnir = this.mjolnir!;
+        mjolnir.protectionManager.disableProtection("BanPropagationProtection"); // don't respond to room level bans.
 
         // Setup a moderator.
         this.moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });

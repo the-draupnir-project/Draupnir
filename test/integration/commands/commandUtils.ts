@@ -118,6 +118,31 @@ export async function getFirstReaction(matrix: MatrixEmitter, targetRoom: string
     }
 }
 
+export async function getFirstEventMatching(details: { matrix: MatrixEmitter, targetRoom: string, lookAfterEvent: () => Promise</*event id*/string|undefined>, predicate: (event: any) => boolean }): Promise<any> {
+    let targetCb = undefined;
+    try {
+        return await new Promise((resolve, reject) => {
+            details.lookAfterEvent().then((afterEventId: string|undefined) => {
+                let isAfterEventId = afterEventId === undefined;
+                targetCb = (roomId: string, event: any) => {
+                    if (event['event_id'] === afterEventId) {
+                        isAfterEventId = true;
+                        return;
+                    }
+                    if (isAfterEventId && details.predicate(event)) {
+                        resolve(event);
+                    }
+                };
+                details.matrix.on('room.event', targetCb)
+            })
+        })
+    } finally {
+        if (targetCb) {
+            details.matrix.off('room.event', targetCb)
+        }
+    }
+}
+
 /**
  * Create a new banlist for mjolnir to watch and return the shortcode that can be used to refer to the list in future commands.
  * @param managementRoom The room to send the create command to.
