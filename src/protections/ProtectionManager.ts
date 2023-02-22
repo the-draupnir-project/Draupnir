@@ -42,6 +42,7 @@ import { htmlEscape } from "../utils";
 import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
+import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
@@ -56,19 +57,84 @@ const PROTECTIONS: Protection[] = [
 ];
 
 const ENABLED_PROTECTIONS_EVENT_TYPE = "org.matrix.mjolnir.enabled_protections";
+type EnabledProtectionsEvent = RawSchemedData & {
+    enabled: string[],
+}
+
+class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEvent> {
+    protected readonly schema = [];
+    protected readonly isAllowedToInferNoVersionAsZero = true;
+    private readonly enabledProtections = new Set</* protection name */string>();
+
+    constructor(
+        private readonly mjolnir: Mjolnir
+    ) {
+        super()
+    }
+
+    protected async requestMatrixData(): Promise<unknown> {
+        try {
+            return await this.mjolnir.client.getAccountData(ENABLED_PROTECTIONS_EVENT_TYPE);
+        } catch (e) {
+            if (e.statusCode === 404) {
+                LogService.warn('PolicyListManager', "Couldn't find account data for Draupnir's protections, assuming first start.", e);
+                return this.createFirstData();
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    protected async storeMatixData(): Promise<void> {
+        const data: EnabledProtectionsEvent = {
+            enabled: [...this.enabledProtections],
+            [SCHEMA_VERSION_KEY]: 0,
+        }
+        await this.mjolnir.client.setAccountData(ENABLED_PROTECTIONS_EVENT_TYPE, data);
+    }
+
+    protected async createFirstData(): Promise<EnabledProtectionsEvent> {
+        return { enabled: [], [SCHEMA_VERSION_KEY]: 0 };
+    }
+
+    public isEnabled(protection: Protection): boolean {
+        return this.enabledProtections.has(protection.name);
+    }
+
+    public async enable(protection: Protection): Promise<void> {
+        this.enabledProtections.add(protection.name);
+        protection.enabled = true;
+        await this.storeMatixData();
+    }
+
+    public async disable(protection: Protection): Promise<void> {
+        this.enabledProtections.delete(protection.name);
+        protection.enabled = false;
+        await this.storeMatixData();
+    }
+
+    public async start(): Promise<void> {
+        const data = await this.loadData();
+        for (const protection of data.enabled) {
+            this.enabledProtections.add(protection);
+        }
+    }
+}
+
 const CONSEQUENCE_EVENT_DATA = "org.matrix.mjolnir.consequence";
 
 /**
  * This is responsible for informing protections about relevant events and handle standard consequences.
  */
 export class ProtectionManager {
+    private enabledProtectionsManager: EnabledProtectionsManager;
     private _protections = new Map<string /* protection name */, Protection>();
     get protections(): Readonly<Map<string /* protection name */, Protection>> {
         return this._protections;
     }
 
-
     constructor(private readonly mjolnir: Mjolnir) {
+        this.enabledProtectionsManager = new EnabledProtectionsManager(this.mjolnir);
     }
 
     /*
@@ -76,6 +142,7 @@ export class ProtectionManager {
      * update their settings with any saved non-default values
      */
     public async start() {
+        await this.enabledProtectionsManager.start();
         this.mjolnir.reportManager.on("report.new", this.handleReport.bind(this));
         this.mjolnir.matrixEmitter.on("room.event", this.handleEvent.bind(this));
         for (const protection of PROTECTIONS) {
@@ -99,15 +166,7 @@ export class ProtectionManager {
      */
     public async registerProtection(protection: Protection) {
         this._protections.set(protection.name, protection)
-
-        let enabledProtections: { enabled: string[] } | null = null;
-        try {
-            enabledProtections = await this.mjolnir.client.getAccountData(ENABLED_PROTECTIONS_EVENT_TYPE);
-        } catch {
-            // this setting either doesn't exist, or we failed to read it (bad network?)
-            // TODO: retry on certain failures?
-        }
-        protection.enabled = enabledProtections?.enabled.includes(protection.name) ?? false;
+        protection.enabled = this.enabledProtectionsManager.isEnabled(protection) ?? false;
 
         const savedSettings = await this.getProtectionSettings(protection.name);
         for (let [key, value] of Object.entries(savedSettings)) {
@@ -163,13 +222,6 @@ export class ProtectionManager {
     }
 
     /*
-     * Make a list of the names of enabled protections and save them in a state event
-     */
-    private async saveEnabledProtections() {
-        const protections = this.enabledProtections.map(p => p.name);
-        await this.mjolnir.client.setAccountData(ENABLED_PROTECTIONS_EVENT_TYPE, { enabled: protections });
-    }
-    /*
      * Enable a protection by name and persist its enable state in to a state event
      *
      * @param name The name of the protection whose settings we're enabling
@@ -177,8 +229,7 @@ export class ProtectionManager {
     public async enableProtection(name: string) {
         const protection = this._protections.get(name);
         if (protection !== undefined) {
-            protection.enabled = true;
-            await this.saveEnabledProtections();
+            await this.enabledProtectionsManager.enable(protection);
         }
     }
 
@@ -205,8 +256,7 @@ export class ProtectionManager {
     public async disableProtection(name: string) {
         const protection = this._protections.get(name);
         if (protection !== undefined) {
-            protection.enabled = false;
-            await this.saveEnabledProtections();
+            await this.enabledProtectionsManager.disable(protection);
         }
     }
 
