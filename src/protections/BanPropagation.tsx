@@ -33,6 +33,7 @@ import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { RULE_USER } from "../models/ListRule";
+import { UserID } from "matrix-bot-sdk";
 
 /**
  * Prompt the management room to propagate a user ban to a policy list of their choice.
@@ -48,7 +49,7 @@ async function promptBanPropagation(
 ): Promise</*event id*/string> {
     return (await renderMatrixAndSend(
         <root>The user {renderMentionPill(event["state_key"], event["content"]?.["displayname"] ?? event["state_key"])} was banned
-                in <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br/>
+                in <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> by {new UserID(event["sender"])} for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br/>
                 Would you like to add the ban to a policy list?
             <ol>
                 {mjolnir.policyListManager.lists.map(list => <li>{list}</li>)}
