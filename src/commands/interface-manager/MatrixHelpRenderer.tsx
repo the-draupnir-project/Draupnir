@@ -5,7 +5,7 @@
 import { MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
-import { ArgumentParseError, RestDescription } from "./ParameterParsing";
+import { ArgumentParseError, ParameterDescription, RestDescription } from "./ParameterParsing";
 import { CommandError, CommandResult } from "./Validation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
@@ -26,12 +26,27 @@ function restArgument(rest: RestDescription): string {
     return `[...${rest.name}]`;
 }
 
+export function renderParameterDescription(description: ParameterDescription): DocumentNode {
+    return <fragment>
+        {description.name} - {description.description ?? 'no description'}<br/>
+    </fragment>
+}
+
 export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): DocumentNode {
     return <details>
         <summary>
         <code>{renderCommandHelp(command)}</code> - {command.summary}
         </summary>
-        {command.description ?? 'No description.'}
+        {command.description
+            ? <fragment><b>Description:</b><br/>{command.description}<br/></fragment>
+            : []
+        }
+        {command.argumentListParser.descriptions.length > 0
+            ? <fragment>
+                <b>Parameters:</b><br/>{...command.argumentListParser.descriptions.map(renderParameterDescription)}
+              </fragment>
+            : []
+        }
     </details>
 }
 
