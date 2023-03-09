@@ -27,7 +27,7 @@ describe("Test: utils", function() {
         });
         assert.equal(
             message.content.formatted_body,
-            `it's fun here in <a href="https://matrix.to/#/${managementRoomAlias}">${managementRoomAlias}</a>`
+            `it's fun here in <a href="https://matrix.to/#/${encodeURIComponent(managementRoomAlias)}">${managementRoomAlias}</a>`
         );
     });
 });

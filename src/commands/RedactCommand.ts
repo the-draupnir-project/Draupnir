@@ -49,6 +49,9 @@ export async function execRedactCommand(roomId: string, event: any, mjolnir: Mjo
     if (userId[0] !== '@') {
         // Assume it's a permalink
         const parsed = Permalinks.parseUrl(parts[2]);
+        if (parsed.roomIdOrAlias === undefined || parsed.eventId === undefined) {
+            throw new TypeError(`Got a malformed permalink ${parsed}`)
+        }
         const targetRoomId = await mjolnir.client.resolveRoom(parsed.roomIdOrAlias);
         await mjolnir.client.redactEvent(targetRoomId, parsed.eventId);
         await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');

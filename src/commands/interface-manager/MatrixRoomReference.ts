@@ -49,6 +49,9 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
      */
     public static fromPermalink(permalink: string): MatrixRoomReference {
         const parts = Permalinks.parseUrl(permalink);
+        if (parts.roomIdOrAlias === undefined) {
+            throw new TypeError(`There is no room id or alias in the permalink ${permalink}`);
+        }
         return MatrixRoomReference.fromRoomIdOrAlias(parts.roomIdOrAlias, parts.viaServers);
     }
 
