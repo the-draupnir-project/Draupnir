@@ -26,6 +26,7 @@ limitations under the License.
  */
 
 import { Bridge } from "matrix-appservice-bridge";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 import AccessControlUnit, { EntityAccess } from "../models/AccessControlUnit";
 import PolicyList from "../models/PolicyList";
 
