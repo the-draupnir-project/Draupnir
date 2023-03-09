@@ -3,7 +3,8 @@
  * All rights reserved.
  */
 
-import { Permalinks, RoomAlias } from "matrix-bot-sdk";
+import { RoomAlias } from "matrix-bot-sdk";
+import { Permalinks } from "./Permalinks";
 
 type JoinRoom = (roomIdOrAlias: string, viaServers?: string[]) => Promise</*room id*/string>;
 type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>

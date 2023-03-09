@@ -27,7 +27,8 @@ limitations under the License.
 
 import { Protection } from "./IProtection";
 import { Mjolnir } from "../Mjolnir";
-import { LogLevel, Permalinks, UserID } from "matrix-bot-sdk";
+import { LogLevel, UserID } from "matrix-bot-sdk";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 export class MessageIsVoice extends Protection {
 

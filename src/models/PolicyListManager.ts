@@ -25,11 +25,12 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "matrix-bot-sdk";
 import { Mjolnir } from "../Mjolnir";
 import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "./MatrixDataManager";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { PolicyList, WATCHED_LISTS_EVENT_TYPE, WARN_UNPROTECTED_ROOM_EVENT_PREFIX } from "./PolicyList";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 type WatchedListsEvent = RawSchemedData & { references?: string[]; };
 /**

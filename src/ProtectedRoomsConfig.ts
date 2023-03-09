@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import AwaitLock from 'await-lock';
-import { LogService, Permalinks } from "matrix-bot-sdk";
+import { LogService } from "matrix-bot-sdk";
 import { IConfig } from "./config";
 import { MatrixSendClient } from './MatrixEmitter';
 const PROTECTED_ROOMS_EVENT_TYPE = "org.matrix.mjolnir.protected_rooms";

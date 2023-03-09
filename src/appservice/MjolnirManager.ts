@@ -2,13 +2,14 @@ import { Mjolnir } from "../Mjolnir";
 import { Request, WeakEvent, BridgeContext, Bridge, Intent, Logger } from "matrix-appservice-bridge";
 import { getProvisionedMjolnirConfig } from "../config";
 import PolicyList from "../models/PolicyList";
-import { Permalinks, MatrixClient, UserID } from "matrix-bot-sdk";
+import { MatrixClient, UserID } from "matrix-bot-sdk";
 import { DataStore, MjolnirRecord } from "./datastore";
 import { AccessControl } from "./AccessControl";
 import { Access } from "../models/AccessControlUnit";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
 import { MatrixEmitter } from "../MatrixEmitter";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 const log = new Logger('MjolnirManager');
 

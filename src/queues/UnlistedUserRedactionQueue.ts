@@ -24,7 +24,8 @@ limitations under the License.
  * However, this file is modified and the modifications in this file
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
-import { LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "matrix-bot-sdk";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { Mjolnir } from "../Mjolnir";
 
 /**
