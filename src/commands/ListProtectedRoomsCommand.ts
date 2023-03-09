@@ -26,7 +26,8 @@ limitations under the License.
  */
 
 import { Mjolnir } from "../Mjolnir";
-import { Permalinks, RichReply } from "matrix-bot-sdk";
+import { RichReply } from "matrix-bot-sdk";
+import { Permalinks } from "./interface-manager/Permalinks";
 
 // !mjolnir rooms
 export async function execListProtectedRooms(roomId: string, event: any, mjolnir: Mjolnir) {

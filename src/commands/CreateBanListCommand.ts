@@ -27,7 +27,8 @@ limitations under the License.
 
 import { Mjolnir } from "../Mjolnir";
 import PolicyList from "../models/PolicyList";
-import { Permalinks, RichReply } from "matrix-bot-sdk";
+import { RichReply } from "matrix-bot-sdk";
+import { Permalinks } from "./interface-manager/Permalinks";
 
 // !mjolnir list create <shortcode> <alias localpart>
 export async function execCreateListCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {

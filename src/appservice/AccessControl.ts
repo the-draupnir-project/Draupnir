@@ -28,7 +28,6 @@ limitations under the License.
 import { Bridge } from "matrix-appservice-bridge";
 import AccessControlUnit, { EntityAccess } from "../models/AccessControlUnit";
 import PolicyList from "../models/PolicyList";
-import { Permalinks } from "matrix-bot-sdk";
 
 /**
  * Utility to manage which users have access to the application service,

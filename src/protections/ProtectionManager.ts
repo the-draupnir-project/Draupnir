@@ -35,7 +35,7 @@ import { MessageIsMedia } from "./MessageIsMedia";
 import { TrustedReporters } from "./TrustedReporters";
 import { JoinWaveShortCircuit } from "./JoinWaveShortCircuit";
 import { Mjolnir } from "../Mjolnir";
-import { LogLevel, LogService, Permalinks } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "matrix-bot-sdk";
 import { ProtectionSettingValidationError } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
 import { htmlEscape } from "../utils";
@@ -43,6 +43,7 @@ import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
 import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),

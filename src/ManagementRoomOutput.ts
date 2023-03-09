@@ -26,7 +26,8 @@ limitations under the License.
  */
 
 import * as Sentry from "@sentry/node";
-import { LogLevel, LogService, MessageType, Permalinks, TextualMessageEventContent, UserID } from "matrix-bot-sdk";
+import { LogLevel, LogService, MessageType, TextualMessageEventContent, UserID } from "matrix-bot-sdk";
+import { Permalinks } from "./commands/interface-manager/Permalinks";
 import { IConfig } from "./config";
 import { MatrixSendClient } from "./MatrixEmitter";
 import { htmlEscape } from "./utils";
