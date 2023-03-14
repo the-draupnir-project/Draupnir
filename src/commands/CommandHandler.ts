@@ -86,7 +86,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
     const tokens = tokenize(cmd.replace("#", "\\#")).slice(/* get rid of ["!mjolnir", command] */ 2);
 
     try {
-        if (parts.length === 1 || parts[1] === 'joins') {
+        if (parts[1] === 'joins') {
             return await showJoinsStatus(roomId, event, mjolnir, parts.slice(/* ["joins"] */ 2));
         } else if (parts[1] === 'sync') {
             return await execSyncCommand(roomId, event, mjolnir);
