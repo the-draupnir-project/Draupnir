@@ -19,7 +19,7 @@ jobs:
       - name: Get release tag
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Unshallow for git describe so we can create version.txt
-        run: git fetch --prune --unshallow --tags --all
+        run: git fetch --prune --unshallow --tags --all --force
       - name: Prepare version file
         run: git describe > version.txt
       - name: Log in to Docker Hub
