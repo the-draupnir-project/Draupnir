@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./IProtection";
+import { Protection } from "./Protection";
 import { MXIDListProtectionSetting, NumberProtectionSetting } from "./ProtectionSettings";
 import { Mjolnir } from "../Mjolnir";
 

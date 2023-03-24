@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./IProtection";
+import { Protection } from "./Protection";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import { isTrueJoinEvent } from "../utils";

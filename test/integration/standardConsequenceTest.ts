@@ -1,9 +1,6 @@
-import { strict as assert } from "assert";
-
 import { Mjolnir } from "../../src/Mjolnir";
-import { IProtection } from "../../src/protections/IProtection";
+import { Protection } from "../../src/protections/Protection";
 import { newTestUser, noticeListener } from "./clientHelper";
-import { matrixClient, mjolnir } from "./mjolnirSetupUtils";
 import { ConsequenceBan, ConsequenceRedact } from "../../src/protections/consequence";
 
 describe("Test: standard consequences", function() {
@@ -27,7 +24,7 @@ describe("Test: standard consequences", function() {
         await badUser.joinRoom(protectedRoomId);
         await this.mjolnir.addProtectedRoom(protectedRoomId);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "JY2TPN";
             description = "A test protection";
             settings = { };
@@ -71,7 +68,7 @@ describe("Test: standard consequences", function() {
         await badUser.joinRoom(protectedRoomId);
         await this.mjolnir.addProtectedRoom(protectedRoomId);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "0LxMTy";
             description = "A test protection";
             settings = { };
@@ -118,7 +115,7 @@ describe("Test: standard consequences", function() {
         await goodUser.joinRoom(protectedRoomId);
         await this.mjolnir.addProtectedRoom(protectedRoomId);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "95B1Cr";
             description = "A test protection";
             settings = { };

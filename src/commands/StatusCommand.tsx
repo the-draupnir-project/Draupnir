@@ -36,7 +36,7 @@ import { CommandError, CommandResult } from "./interface-manager/Validation";
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { JSXFactory } from "./interface-manager/JSXFactory";
-import { Protection } from "../protections/IProtection";
+import { Protection } from "../protections/Protection";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 

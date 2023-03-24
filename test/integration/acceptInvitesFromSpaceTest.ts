@@ -9,7 +9,7 @@ describe("Test: Accept Invites From Space", function() {
         await client.start();
     })
     this.afterEach(async function () {
-        await client.stop();
+        await client?.stop();
     })
     it("Mjolnir should accept an invite from a user in a nominated Space", async function() {
         this.timeout(20000);
@@ -17,7 +17,7 @@ describe("Test: Accept Invites From Space", function() {
         const mjolnir: Mjolnir = this.mjolnir!;
         const mjolnirUserId = await mjolnir.client.getUserId();
 
-        const space = await client.createSpace({
+        const space = await client!.createSpace({
             name: "mjolnir space invite test",
             invites: [mjolnirUserId],
             isPublic: false
@@ -30,8 +30,8 @@ describe("Test: Accept Invites From Space", function() {
         mjolnir.config.acceptInvitesFromSpace = space.roomId;
 
         const promise = new Promise(async resolve => {
-            const newRoomId = await client.createRoom({ invite: [mjolnirUserId] });
-            client.on("room.event", (roomId, event) => {
+            const newRoomId = await client!.createRoom({ invite: [mjolnirUserId] });
+            client!.on("room.event", (roomId, event) => {
                 if (
                     roomId === newRoomId
                     && event.type === "m.room.member"
