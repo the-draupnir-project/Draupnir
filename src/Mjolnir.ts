@@ -49,6 +49,7 @@ import { RoomMemberManager } from "./RoomMembers";
 import ProtectedRoomsConfig from "./ProtectedRoomsConfig";
 import { MatrixEmitter, MatrixSendClient } from "./MatrixEmitter";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
+import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -95,6 +96,8 @@ export class Mjolnir {
 
     private readonly commandTable = findCommandTable("mjolnir");
     public readonly policyListManager: PolicyListManager;
+
+    public readonly reactionHandler: MatrixReactionHandler;
 
     /**
      * Adds a listener to the client that will automatically accept invitations.
@@ -180,6 +183,7 @@ export class Mjolnir {
     ) {
         this.protectedRoomsConfig = new ProtectedRoomsConfig(client);
         this.policyListManager = new PolicyListManager(this);
+        this.reactionHandler = new MatrixReactionHandler(this.managementRoomId, client);
 
         const mutedModules = (LogService as any).mutedModules;
         if (!Array.isArray(mutedModules)) {
@@ -314,6 +318,7 @@ export class Mjolnir {
             await this.policyListManager.start();
             await this.resyncJoinedRooms(false);
             await this.protectionManager.start();
+            this.reactionHandler.start(this.matrixEmitter);
 
             if (this.config.verifyPermissionsOnStartup) {
                 await this.managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "Checking permissions...");
@@ -349,6 +354,7 @@ export class Mjolnir {
     public stop() {
         LogService.info("Mjolnir", "Stopping Mjolnir...");
         this.matrixEmitter.stop();
+        this.reactionHandler.stop(this.matrixEmitter);
         this.webapis.stop();
         this.reportPoller?.stop();
     }

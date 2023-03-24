@@ -79,7 +79,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
  * @param event An event to reply to, if any.
  * @param client A MatrixClient to send the events with.
  */
-export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any|undefined, client: MatrixSendClient): Promise<string[]> {
+export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any|undefined, client: MatrixSendClient, additionalContent = {}): Promise<string[]> {
     const baseContent = (text: string, html: string) => {
         return {
             msgtype: "m.notice",
@@ -91,6 +91,7 @@ export async function renderMatrixAndSend(node: DocumentNode, roomId: string, ev
     const renderInitialReply = async (text: string, html: string) => {
         return await client.sendMessage(roomId, {
             ...baseContent(text, html),
+            ...additionalContent,
             ...event === undefined
                 ? {} // if they don't supply a reply just send a top level event.
                 : { "m.relates_to": {
