@@ -1,17 +1,18 @@
 import { strict as assert } from "assert";
-import { Protection } from "../../src/protections/IProtection";
+import { MatrixClient } from "matrix-bot-sdk";
+import { Protection } from "../../src/protections/Protection";
 import { ProtectionSettingValidationError } from "../../src/protections/ProtectionSettings";
 import { NumberProtectionSetting, StringProtectionSetting, StringListProtectionSetting } from "../../src/protections/ProtectionSettings";
 import { newTestUser, noticeListener } from "./clientHelper";
 
 describe("Test: Protection settings", function() {
-    let client;
+    let syncingUser: MatrixClient|undefined;
     this.beforeEach(async function () {
-        client = await newTestUser(this.config.homeserverUrl, { name: { contains: "protection-settings" }});
-        await client.start();
+        syncingUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "protection-settings" }});
+        await syncingUser.start();
     })
     this.afterEach(async function () {
-        await client.stop();
+        await syncingUser?.stop();
     })
     it("Mjolnir refuses to save invalid protection setting values", async function() {
         this.timeout(20000);
@@ -55,6 +56,7 @@ describe("Test: Protection settings", function() {
     });
     it("Mjolnir responds to !set correctly", async function() {
         this.timeout(20000);
+        const client = (assert.notEqual(undefined, syncingUser), syncingUser!);
         await client.joinRoom(this.config.managementRoom);
 
         await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
@@ -80,6 +82,7 @@ describe("Test: Protection settings", function() {
     });
     it("Mjolnir adds a value to a list setting", async function() {
         this.timeout(20000);
+        const client = (assert.notEqual(undefined, syncingUser), syncingUser!);
         await client.joinRoom(this.config.managementRoom);
 
         await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
@@ -104,6 +107,7 @@ describe("Test: Protection settings", function() {
     });
     it("Mjolnir removes a value from a list setting", async function() {
         this.timeout(20000);
+        const client = (assert.notEqual(undefined, syncingUser), syncingUser!);
         await client.joinRoom(this.config.managementRoom);
 
         await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
@@ -129,6 +133,7 @@ describe("Test: Protection settings", function() {
     });
     it("Mjolnir will change a protection setting in-place", async function() {
         this.timeout(20000);
+        const client = (assert.notEqual(undefined, syncingUser), syncingUser!);
         await client.joinRoom(this.config.managementRoom);
 
         await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
@@ -141,7 +146,7 @@ describe("Test: Protection settings", function() {
             let i = 0;
             client.on('room.message', noticeListener(this.mjolnir.managementRoomId, (event) => {
                 if (event.content.body.includes("Changed d0sNrt.test ")) {
-                    if (++i == 2) {
+                    if (++i === 2) {
                         resolve(event);
                     }
                 }

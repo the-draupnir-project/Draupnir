@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { FirstMessageIsImage } from "./FirstMessageIsImage";
-import { Protection } from "./IProtection";
+import { Protection } from "./Protection";
 import { BasicFlooding } from "./BasicFlooding";
 import { DetectFederationLag } from "./DetectFederationLag";
 import { WordList } from "./WordList";

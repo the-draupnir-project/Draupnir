@@ -1,5 +1,5 @@
 import { Mjolnir } from "../../src/Mjolnir";
-import { IProtection } from "../../src/protections/IProtection";
+import { Protection } from "../../src/protections/Protection";
 import { newTestUser } from "./clientHelper";
 
 describe("Test: Report polling", function() {
@@ -16,12 +16,12 @@ describe("Test: Report polling", function() {
 
         const eventId = await client.sendMessage(protectedRoomId, {msgtype: "m.text", body: "uwNd3q"});
         await new Promise(async resolve => {
-            await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+            await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
                 name = "jYvufI";
                 description = "A test protection";
                 settings = { };
                 handleEvent = async (mjolnir: Mjolnir, roomId: string, event: any) => { };
-                handleReport = (mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string) => {
+                handleReport = async (mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string) => {
                     if (reason === "x5h1Je") {
                         resolve(null);
                     }
