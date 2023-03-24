@@ -1,11 +1,8 @@
 import { strict as assert } from "assert";
-
-import { Mjolnir } from "../../src/Mjolnir";
-import { IProtection } from "../../src/protections/IProtection";
+import { Protection } from "../../src/protections/IProtection";
 import { ProtectionSettingValidationError } from "../../src/protections/ProtectionSettings";
 import { NumberProtectionSetting, StringProtectionSetting, StringListProtectionSetting } from "../../src/protections/ProtectionSettings";
 import { newTestUser, noticeListener } from "./clientHelper";
-import { matrixClient, mjolnir } from "./mjolnirSetupUtils";
 
 describe("Test: Protection settings", function() {
     let client;
@@ -26,7 +23,7 @@ describe("Test: Protection settings", function() {
     it("Mjolnir successfully saves valid protection setting values", async function() {
         this.timeout(20000);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "05OVMS";
             description = "A test protection";
             settings = { test: new NumberProtectionSetting(3) };
@@ -41,8 +38,9 @@ describe("Test: Protection settings", function() {
     it("Mjolnir should accumulate changed settings", async function() {
         this.timeout(20000);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "HPUjKN";
+            description = "A test protection";
             settings = {
                 test1: new NumberProtectionSetting(3),
                 test2: new NumberProtectionSetting(4)
@@ -59,7 +57,7 @@ describe("Test: Protection settings", function() {
         this.timeout(20000);
         await client.joinRoom(this.config.managementRoom);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "JY2TPN";
             description = "A test protection";
             settings = { test: new StringProtectionSetting() };
@@ -84,7 +82,7 @@ describe("Test: Protection settings", function() {
         this.timeout(20000);
         await client.joinRoom(this.config.managementRoom);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "r33XyT";
             description = "A test protection";
             settings = { test: new StringListProtectionSetting() };
@@ -108,7 +106,7 @@ describe("Test: Protection settings", function() {
         this.timeout(20000);
         await client.joinRoom(this.config.managementRoom);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "oXzT0E";
             description = "A test protection";
             settings = { test: new StringListProtectionSetting() };
@@ -133,7 +131,7 @@ describe("Test: Protection settings", function() {
         this.timeout(20000);
         await client.joinRoom(this.config.managementRoom);
 
-        await this.mjolnir.protectionManager.registerProtection(new class implements IProtection {
+        await this.mjolnir.protectionManager.registerProtection(new class extends Protection {
             name = "d0sNrt";
             description = "A test protection";
             settings = { test: new StringProtectionSetting() };
