@@ -65,4 +65,12 @@ export abstract class Protection {
         // By default, protections don't have any status to show.
         return null;
     }
+
+    /**
+     * Allows protections to setup listeners when Mjolnir starts up.
+     * @param mjolnir The mjolnir instance associated with a given protection manager.
+     */
+    public async registerProtection(mjolnir: Mjolnir): Promise<void> {
+
+    }
 }

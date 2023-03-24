@@ -187,6 +187,7 @@ export class ProtectionManager {
             // this.getProtectionSettings() validates this data for us, so we don't need to
             protection.settings[key].setValue(value);
         }
+        await protection.registerProtection(this.mjolnir);
     }
 
     /*
