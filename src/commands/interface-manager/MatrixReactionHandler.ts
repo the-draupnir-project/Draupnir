@@ -29,7 +29,11 @@ export class MatrixReactionHandler extends EventEmitter {
         /**
          * A client to lookup the related events to reactions.
          */
-        private readonly client: MatrixSendClient
+        private readonly client: MatrixSendClient,
+        /**
+         * The user id of the client. Ignores reactions from this user
+         */
+        private readonly clientUserId: string
     ) {
         super();
         this.listener = this.handleEvent.bind(this);
@@ -51,6 +55,9 @@ export class MatrixReactionHandler extends EventEmitter {
             return;
         }
         if (relatesTo['rel_type'] !== 'm.annotation') {
+            return;
+        }
+        if (event['sender'] === this.clientUserId) {
             return;
         }
         const reactionKey = relatesTo['key'];

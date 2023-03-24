@@ -183,7 +183,7 @@ export class Mjolnir {
     ) {
         this.protectedRoomsConfig = new ProtectedRoomsConfig(client);
         this.policyListManager = new PolicyListManager(this);
-        this.reactionHandler = new MatrixReactionHandler(this.managementRoomId, client);
+        this.reactionHandler = new MatrixReactionHandler(this.managementRoomId, client, clientUserId);
 
         const mutedModules = (LogService as any).mutedModules;
         if (!Array.isArray(mutedModules)) {
