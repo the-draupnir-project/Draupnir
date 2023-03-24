@@ -151,7 +151,7 @@ describe("Test: Protection settings", function() {
         await client.sendMessage(this.mjolnir.managementRoomId, {msgtype: "m.text", body: "!mjolnir config set d0sNrt.test asd1"})
         await client.sendMessage(this.mjolnir.managementRoomId, {msgtype: "m.text", body: "!mjolnir config set d0sNrt.test asd2"})
         assert.equal(
-            (await replyPromise).content.body.split("\n", 3)[2],
+            (await replyPromise as any).content.body.split("\n", 3)[2],
             "Changed d0sNrt.test to asd2 (was asd1)"
         )
     });
