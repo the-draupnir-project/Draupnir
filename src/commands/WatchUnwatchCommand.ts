@@ -25,32 +25,52 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
-import { Permalinks } from "./interface-manager/Permalinks";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
+import { MjolnirContext } from "./CommandHandler";
+import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 
-// !mjolnir watch <room alias or ID>
-export async function execWatchCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const list = await mjolnir.policyListManager.watchList(Permalinks.forRoom(parts[2]));
-    if (!list) {
-        const replyText = "Cannot watch list due to error - is that a valid room alias?";
-        const reply = RichReply.createFor(roomId, event, replyText, replyText);
-        reply["msgtype"] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
-    }
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-}
+defineInterfaceCommand({
+    table: "mjolnir",
+    designator: ["watch"],
+    summary: "Watches a list and applies the list's assocated policies to draupnir's protected rooms.",
+    parameters: parameters([
+        {
+            name: 'list',
+            acceptor: findPresentationType("MatrixRoomReference"),
+        }
+    ]),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+        await this.mjolnir.policyListManager.watchList(list);
+        return CommandResult.Ok(undefined);
+    },
+})
 
-// !mjolnir unwatch <room alias or ID>
-export async function execUnwatchCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const list = await mjolnir.policyListManager.unwatchList(Permalinks.forRoom(parts[2]));
-    if (!list) {
-        const replyText = "Cannot unwatch list due to error - is that a valid room alias?";
-        const reply = RichReply.createFor(roomId, event, replyText, replyText);
-        reply["msgtype"] = "m.notice";
-        mjolnir.client.sendMessage(roomId, reply);
-        return;
-    }
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-}
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("mjolnir", "watch"),
+    renderer: tickCrossRenderer,
+})
+
+defineInterfaceCommand({
+    table: "mjolnir",
+    designator: ["unwatch"],
+    summary: "Unwatches a list and stops applying the list's assocated policies to draupnir's protected rooms.",
+    parameters: parameters([
+        {
+            name: 'list',
+            acceptor: findPresentationType("MatrixRoomReference"),
+        }
+    ]),
+    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+        await this.mjolnir.policyListManager.unwatchList(list);
+        return CommandResult.Ok(undefined);
+    },
+})
+
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("mjolnir", "unwatch"),
+    renderer: tickCrossRenderer,
+})
