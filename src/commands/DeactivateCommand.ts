@@ -48,7 +48,7 @@ defineInterfaceCommand({
         if (!isAdmin) {
             return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
         }
-        await this.mjolnir.shutdownSynapseRoom(targetUser.toString());
+        await this.mjolnir.deactivateSynapseUser(targetUser.toString());
         return CommandResult.Ok(undefined);
     },
 })
