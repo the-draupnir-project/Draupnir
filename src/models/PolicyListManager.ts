@@ -87,7 +87,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
             return null;
         }
 
-        const list = await this.addPolicyList(roomId.toRoomIdOrAlias(), roomRef.toPermalink());
+        const list = await this.addPolicyList(roomId.toRoomIdOrAlias(), roomId.toPermalink());
 
         await this.storeMatixData();
         await this.warnAboutUnprotectedPolicyListRoom(roomId.toRoomIdOrAlias());
