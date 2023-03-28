@@ -31,7 +31,6 @@ import { LogService, RichReply } from "matrix-bot-sdk";
 import { execSyncCommand } from "./SyncCommand";
 import { execPermissionCheckCommand } from "./PermissionCheckCommand";
 import { execCreateListCommand } from "./CreateBanListCommand";
-import { execUnwatchCommand, execWatchCommand } from "./WatchUnwatchCommand";
 import { execRedactCommand } from "./RedactCommand";
 import { execImportCommand } from "./ImportCommand";
 import { execSetDefaultListCommand } from "./SetDefaultBanListCommand";
@@ -73,6 +72,7 @@ import "./Ban";
 import "./Unban";
 import "./StatusCommand";
 import "./Rules";
+import "./WatchUnwatchCommand";
 import "./Help";
 
 export const COMMAND_PREFIX = "!mjolnir";
@@ -94,10 +94,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execPermissionCheckCommand(roomId, event, mjolnir);
         } else if (parts.length >= 5 && parts[1] === 'list' && parts[2] === 'create') {
             return await execCreateListCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'watch' && parts.length > 1) {
-            return await execWatchCommand(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'unwatch' && parts.length > 1) {
-            return await execUnwatchCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'redact' && parts.length > 1) {
             return await execRedactCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'import' && parts.length > 2) {

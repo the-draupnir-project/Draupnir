@@ -2,8 +2,8 @@ import expect from "expect";
 import { Mjolnir } from "../../src/Mjolnir";
 import { newTestUser } from "./clientHelper";
 import { getFirstEventMatching } from './commands/commandUtils';
-import { Permalinks } from "matrix-bot-sdk";
 import { RULE_USER } from "../../src/models/ListRule";
+import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
 
 // We will need to disable this in tests that are banning people otherwise it will cause
 // mocha to hang for awhile until it times out waiting for a response to a prompt.
@@ -28,7 +28,7 @@ describe("Ban propagation test", function() {
         const policyListId = await moderator.createRoom({ invite: [mjolnirId] });
         await moderator.setUserPowerLevel(mjolnirId, policyListId, 100);
         await mjolnir.client.joinRoom(policyListId);
-        await mjolnir.policyListManager.watchList(Permalinks.forRoom(policyListId));
+        await mjolnir.policyListManager.watchList(MatrixRoomReference.fromRoomId(policyListId));
 
         // check for the prompt
         const promptEvent = await getFirstEventMatching({

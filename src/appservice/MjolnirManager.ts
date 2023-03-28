@@ -10,6 +10,7 @@ import { randomUUID } from "crypto";
 import EventEmitter from "events";
 import { MatrixEmitter } from "../MatrixEmitter";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 
 const log = new Logger('MjolnirManager');
 
@@ -238,7 +239,7 @@ export class ManagedMjolnir {
             [mjolnirOwnerId],
             { name: `${mjolnirOwnerId}'s policy room` }
         );
-        const roomRef = Permalinks.forRoom(listRoomId);
+        const roomRef = MatrixRoomReference.fromPermalink(Permalinks.forRoom(listRoomId));
         await this.mjolnir.addProtectedRoom(listRoomId);
         return await this.mjolnir.policyListManager.watchList(roomRef);
     }

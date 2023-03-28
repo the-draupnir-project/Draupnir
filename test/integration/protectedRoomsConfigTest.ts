@@ -1,14 +1,14 @@
 
 import { strict as assert } from "assert";
-import { MatrixClient, Permalinks, UserID } from "matrix-bot-sdk";
+import { MatrixClient, Permalinks } from "matrix-bot-sdk";
+import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
 import { MatrixSendClient } from "../../src/MatrixEmitter";
 import { Mjolnir } from "../../src/Mjolnir";
 import PolicyList from "../../src/models/PolicyList";
 import { newTestUser } from "./clientHelper";
-import { createBanList, getFirstReaction } from "./commands/commandUtils";
+import { createBanList } from "./commands/commandUtils";
 
 async function createPolicyList(client: MatrixClient): Promise<PolicyList> {
-    const serverName = new UserID(await client.getUserId()).domain;
     const policyListId = await client.createRoom({ preset: "public_chat" });
     return new PolicyList(policyListId, Permalinks.forRoom(policyListId), client);
 }
@@ -37,7 +37,7 @@ describe('Test: config.protectAllJoinedRooms behaves correctly.', function() {
         await mjolnir.protectedRoomsTracker.syncLists();
         (await getProtectedRoomsFromAccountData(mjolnir.client))
             .forEach(roomId => assert.equal(implicitlyProtectedRooms.includes(roomId), false));
-        
+
         // ... but they are protected
         mjolnir.protectedRoomsTracker.getProtectedRooms()
             .forEach(roomId => assert.equal(implicitlyProtectedRooms.includes(roomId), true));
@@ -45,7 +45,7 @@ describe('Test: config.protectAllJoinedRooms behaves correctly.', function() {
         // We create one policy list with Mjolnir, and we watch another that is maintained by someone else.
         const policyListShortcode = await createBanList(mjolnir.managementRoomId, mjolnir.matrixEmitter, moderator);
         const unprotectedWatchedList = await createPolicyList(moderator);
-        await mjolnir.policyListManager.watchList(unprotectedWatchedList.roomRef);
+        await mjolnir.policyListManager.watchList(MatrixRoomReference.fromPermalink(unprotectedWatchedList.roomRef));
         await mjolnir.protectedRoomsTracker.syncLists();
 
         // We expect that the watched list will not be protected, despite config.protectAllJoinedRooms being true

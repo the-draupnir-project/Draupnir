@@ -30,7 +30,6 @@ import { Mjolnir } from "../Mjolnir";
 import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "./MatrixDataManager";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { PolicyList, WATCHED_LISTS_EVENT_TYPE, WARN_UNPROTECTED_ROOM_EVENT_PREFIX } from "./PolicyList";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 type WatchedListsEvent = RawSchemedData & { references?: string[]; };
 /**
@@ -70,18 +69,16 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
         return list;
     }
 
-    public async watchList(roomRef: string): Promise<PolicyList | null> {
-        const joinedRooms = await this.mjolnir.client.getJoinedRooms();
-        const permalink = Permalinks.parseUrl(roomRef);
-        if (!permalink.roomIdOrAlias)
-            return null;
-
-        const roomId = await this.mjolnir.client.resolveRoom(permalink.roomIdOrAlias);
-        if (!joinedRooms.includes(roomId)) {
-            await this.mjolnir.client.joinRoom(roomId, permalink.viaServers);
-        }
-
-        if (this.policyLists.find(b => b.roomId === roomId)) {
+    /**
+     * Watching a list applies all of its policies to a protected room.
+     * @param roomRef A matrix room reference to a policy list that should be watched.
+     *
+     * @returns The list that has been watched or null if the manager was already
+     * watching the list.
+     */
+    public async watchList(roomRef: MatrixRoomReference): Promise<PolicyList | null> {
+        const roomId = await roomRef.joinClient(this.mjolnir.client);
+        if (this.policyLists.find(b => b.roomId === roomId.toRoomIdOrAlias())) {
             // This room was already in our list of policy rooms, nothing else to do.
             // Note that we bailout *after* the call to `joinRoom`, in case a user
             // calls `watchList` in an attempt to repair something that was broken,
@@ -90,21 +87,21 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
             return null;
         }
 
-        const list = await this.addPolicyList(roomId, roomRef);
+        const list = await this.addPolicyList(roomId.toRoomIdOrAlias(), roomRef.toPermalink());
 
         await this.storeMatixData();
-        await this.warnAboutUnprotectedPolicyListRoom(roomId);
-
+        await this.warnAboutUnprotectedPolicyListRoom(roomId.toRoomIdOrAlias());
         return list;
     }
 
-    public async unwatchList(roomRef: string): Promise<PolicyList | null> {
-        const permalink = Permalinks.parseUrl(roomRef);
-        if (!permalink.roomIdOrAlias)
-            return null;
-
-        const roomId = await this.mjolnir.client.resolveRoom(permalink.roomIdOrAlias);
-        const list = this.policyLists.find(b => b.roomId === roomId) || null;
+    /**
+     * Stop watching the list and applying its associated policies.
+     * @param roomRef A matrix room reference to a list that should be unwatched.
+     * @returns The list being unwatched or null if we were not watching the list.
+     */
+    public async unwatchList(roomRef: MatrixRoomReference): Promise<PolicyList | null> {
+        const roomId = await roomRef.resolve(this.mjolnir.client);
+        const list = this.policyLists.find(b => b.roomId === roomId.toRoomIdOrAlias()) || null;
         if (list) {
             this.policyLists.splice(this.policyLists.indexOf(list), 1);
             this.mjolnir.ruleServer?.unwatch(list);
