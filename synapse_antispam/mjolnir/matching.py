@@ -70,4 +70,3 @@ def glob_to_regex(glob: str, word_boundary: bool = False) -> Pattern:
         res = r"\A" + res + r"\Z"
 
     return re.compile(res, re.IGNORECASE)
-

@@ -86,4 +86,3 @@ export class ProtectedRoomActivityTracker {
         return this.activeRoomsCache;
     }
 }
-
