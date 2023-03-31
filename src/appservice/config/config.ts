@@ -46,8 +46,6 @@ export interface IConfig {
     webAPI: {
         port: number
     },
-    /** A policy room for controlling access to the appservice -- just replace with mangement room tbh bloody hell m8 */
-    accessControlList: string,
     /** The admin room for the appservice bot. Not called managementRoom like mjolnir on purpose, so they're not mixed in code somehow. */
     adminRoom: string,
     /** configuration for matrix-appservice-bridge's Logger */

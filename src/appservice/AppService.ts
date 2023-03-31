@@ -81,7 +81,7 @@ export class MjolnirAppService {
             suppressEcho: false,
         });
         await bridge.initialise();
-        const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.accessControlList);
+        const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
         const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
         const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl);
         const appService = new MjolnirAppService(
