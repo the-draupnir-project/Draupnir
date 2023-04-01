@@ -52,7 +52,7 @@ export class MjolnirAppService {
         public readonly config: IConfig,
         public readonly bridge: Bridge,
         public readonly mjolnirManager: MjolnirManager,
-        private readonly accessControl: AccessControl,
+        public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
     ) {
         this.api = new Api(config.homeserver.url, mjolnirManager);
