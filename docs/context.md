@@ -1,3 +1,7 @@
+## Context for developing Draupnir
+
+#### And also context that is essential if you are developing anything
+that uses Policy Lists.
 
 ### Sync loop
 
@@ -8,15 +12,16 @@ pagination token called a sync token that the server will then
 respond to with any new events that the client needs to know about.
 <You can read more about sync here>
 
-Draupnir uses the matrix-bot-sdk for its client library.
-The `MatrixClient` from the matrix-bot-sdk can only provide us with
-the timeline portion of the `/sync` response.
+Draupnir uses the
+[matrix-bot-sdk](https://github.com/turt2live/matrix-bot-sdk)
+for its client library. The `MatrixClient` from the matrix-bot-sdk can
+only provide us with the timeline portion of the `/sync` response.
 Because the timeline portion of `/sync` provides a client with events
 in the order in which they are received by the server (and also
-as they are received by the server). As opposed to their mainline
-order in the DAG, then there is no way for Draupnir to rely
-on `/sync` to provide an accurate representation of state for a room
-[^full-state].
+as they are received by the server). As opposed to their
+[mainline order](https://spec.matrix.org/v1.6/rooms/v2/#definitions)
+in the DAG, then there is no way for Draupnir to rely on `/sync` to
+provide an accurate representation of state for a room[^full-state].
 
 #### Maintaining state
 
@@ -39,14 +44,15 @@ Matrix room.
 
 #### State events
 
-State events are a way of giving rooms generic meta-data.
+[State events](https://spec.matrix.org/latest/client-server-api/#types-of-room-events)
+are a way of giving rooms generic meta-data.
 They events are conveniently indexable by a key composed of both the
 `type` field on the event and also a `state_key`.
 These are both individually limited by a string which is no larger
-than "255 bytes". It is still unclear how implementations interpret
-this statement though, so it is better to be as conservative as
-possible, especially as you will still be dealing with legacy
-room versions.
+than "[255 bytes](https://spec.matrix.org/latest/client-server-api/#size-limits)".
+It is still unclear how implementations interpret this statement
+though, so it is better to be as conservative as possible, especially
+as you will still be dealing with legacy room versions.
 
 When a state event is sent to a room, the current mapping of the tuple
 `(type, state_key)` for a room is updated to refer to the new event.
@@ -62,7 +68,9 @@ and it is unclear if there are any clients or bots that do.
 #### Policies
 
 Policies are generic state events that are usually composed of three
-parts.
+parts. You should read specification about policy lists
+[here](https://spec.matrix.org/latest/client-server-api/#moderation-policy-lists)
+after this introduction.
 
 - `entity`: This is the target of a given policy such as a user that
 is being banned.
