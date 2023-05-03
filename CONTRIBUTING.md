@@ -23,6 +23,10 @@ We use Github Actions for continuous integration.
 If your change breaks the build, this will be shown in GitHub, so
 please keep an eye on the pull request for feedback.
 
+## How Draupnir works
+
+You should read the [context document](./docs/context.md).
+
 ## Development
 
 To run unit tests in a local development environment, you can use `yarn test`
