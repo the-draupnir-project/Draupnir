@@ -22,6 +22,7 @@ export type AppserviceBaseExecutor = (this: AppserviceContext, ...args: any[]) =
 
 import '../../commands/interface-manager/MatrixPresentations';
 import './ListCommand';
+import './AccessCommands';
 import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 
 

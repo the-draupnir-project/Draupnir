@@ -315,20 +315,35 @@ export class PolicyList extends EventEmitter {
     }
 
     /**
+     * Create a new policy rule in the list.
+     * @param entityType The type of entity the rule applies to e.g. RULE_USER for users.
+     * @param recommendation The recommendation e.g. `Recommendation.Ban` that the policy represents.
+     * @param entity The entity to be added to the policy list.
+     * @param additionalProperties Any other properties to embed in the rule such as a reason.
+     * @returns The event id of the policy.
+     */
+    public async createPolicy(entityType: EntityType, recommendation: Recommendation, entity: string, additionalProperties = {}): Promise<string> {
+        // '@' at the beginning of state keys is reserved.
+        const stateKey = entityType === RULE_USER ? '_' + entity.substring(1) : entity;
+        const eventId = await this.client.sendStateEvent(this.roomId, entityType, stateKey, {
+            recommendation,
+            entity,
+            ...additionalProperties
+        });
+        this.updateForEvent(eventId);
+        return eventId;
+    }
+
+    /**
      * Ban an entity with Recommendation.Ban from the list.
      * @param ruleType The type of rule e.g. RULE_USER.
      * @param entity The entity to ban.
      * @param reason A reason we are banning them.
      */
-    public async banEntity(ruleType: string, entity: string, reason?: string): Promise<void> {
-        // '@' at the beginning of state keys is reserved.
-        const stateKey = ruleType === RULE_USER ? '_' + entity.substring(1) : entity;
-        const event_id = await this.client.sendStateEvent(this.roomId, ruleType, stateKey, {
-            entity,
-            recommendation: Recommendation.Ban,
+    public async banEntity(ruleType: EntityType, entity: string, reason?: string): Promise<void> {
+        await this.createPolicy(ruleType, Recommendation.Ban, entity, {
             reason: reason || '<no reason supplied>',
         });
-        this.updateForEvent(event_id);
     }
 
     /**

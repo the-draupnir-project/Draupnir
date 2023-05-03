@@ -28,6 +28,7 @@ limitations under the License.
 import { Bridge } from "matrix-appservice-bridge";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import AccessControlUnit, { EntityAccess } from "../models/AccessControlUnit";
+import { EntityType, Recommendation } from "../models/ListRule";
 import PolicyList from "../models/PolicyList";
 
 /**
@@ -73,5 +74,13 @@ export class AccessControl {
 
     public getUserAccess(mxid: string): EntityAccess {
         return this.accessControlUnit.getAccessForUser(mxid, "CHECK_SERVER");
+    }
+
+    public async allow(mxid: string): Promise<void> {
+        await this.accessControlList.createPolicy(EntityType.RULE_USER, Recommendation.Allow, mxid);
+    }
+
+    public async remove(mxid: string): Promise<void> {
+        await this.accessControlList.unbanEntity(EntityType.RULE_USER, mxid);
     }
 }

@@ -13,7 +13,7 @@ export function readTestConfig(): IConfig {
 export async function setupHarness(): Promise<MjolnirAppService> {
     const config = readTestConfig();
     const utilityUser = await newTestUser(config.homeserver.url, { name: { contains: "utility" }});
-    await ensureAliasedRoomExists(utilityUser, config.accessControlList);
+    await ensureAliasedRoomExists(utilityUser, config.adminRoom);
     return await MjolnirAppService.run(9000, config, "mjolnir-registration.yaml");
 }
 
