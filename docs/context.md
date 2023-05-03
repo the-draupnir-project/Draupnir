@@ -64,7 +64,7 @@ as these perspectives converge,
 and there is only one somewhat reliable way to tell when that has
 happened. Draupnir doesn't use a reliable method[^full-state],
 and it is unclear if there are any clients or bots that do.
- 
+
 #### Policies
 
 Policies are generic state events that are usually composed of three
@@ -103,12 +103,25 @@ As such for a long part of Mjolnir's history some users were
 unbannable because this is also what was assumed in its implementation
 of unban.
 
+### The ban command
+
+When the ban command is invoked, Draupnir creates a new policy in
+the policy list that was selected by the user. This policy recommends
+that the entity specified in the command (usually a user) is to be
+banned. That is the extent of the command's responsibilities.
+However, rather than waiting for Draupnir to be informed of the new
+policy via the `/sync` loop, the ban command does take a shortcut
+by informing Draupnir's internal model of the policy list of the new
+policy immediately.
+
 ### Policy application in Draupnir
 
-<Go from using ban command to explaining the shortcut
-to updateForEvent and discovering a wild policy in a watched list
-to updating the internal model, talking also about revisions. All
-the way through to syncing the rooms.>
+When Draupnir finds a new policy from a `/sync` response, and Draupnir
+has re-requested the room state for the policy list Draupnir will
+begin synchronising policies with with the protected rooms.
+Draupnir starts synchronising rooms by visiting the most recently
+active room first.
+
 
 [^full-state]: matrix-bot-sdk could be modified to sync with
 `full_state` set to true. This has been
