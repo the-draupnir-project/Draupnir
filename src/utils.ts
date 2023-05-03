@@ -109,7 +109,7 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
                 }
             });
         } catch (error) {
-            await managementRoom.logMessage(LogLevel.DEBUG, "utils#redactUserMessagesIn", `Caught an error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}: ${error}`, targetRoomId);
+            await managementRoom.logMessage(LogLevel.ERROR, "utils#redactUserMessagesIn", `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}: ${error}`, targetRoomId);
         }
     }
 }
