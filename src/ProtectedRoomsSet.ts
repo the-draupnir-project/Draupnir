@@ -454,8 +454,8 @@ export class ProtectedRoomsSet {
             } else if (ruleKind === RULE_ROOM) {
                 ruleKind = 'room';
             }
-            html += `<li>${change.changeType} ${htmlEscape(ruleKind)} (<code>${htmlEscape(rule.recommendation ?? "")}</code>): <code>${htmlEscape(rule.entity)}</code> (${htmlEscape(rule.reason)})</li>`;
-            text += `* ${change.changeType} ${ruleKind} (${rule.recommendation}): ${rule.entity} (${rule.reason})\n`;
+            html += `<li><a href="https://matrix.to/#/${htmlEscape(change.sender)}">${htmlEscape(change.sender)}</a> ${change.changeType} ${htmlEscape(ruleKind)} (<code>${htmlEscape(rule.recommendation ?? "")}</code>): <code>${htmlEscape(rule.entity)}</code> (${htmlEscape(rule.reason)})</li>`;
+            text += `* ${change.sender} ${change.changeType} ${ruleKind} (${rule.recommendation}): ${rule.entity} (${rule.reason})\n`;
         }
 
         const message = {
