@@ -1,5 +1,5 @@
 These instructions are to build and run draupnir without using [Docker](./setup_docker.md).
-You need to have installed `yarn` 1.x and Node 16.
+You need to have installed `yarn` 1.x and Node 18.
 
 ```bash
 git clone https://github.com/gnuxie/draupnir.git
