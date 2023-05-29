@@ -28,7 +28,7 @@ limitations under the License.
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { MjolnirContext } from "./CommandHandler";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { MatrixRoomID, MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException } from "./interface-manager/CommandException";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
@@ -36,6 +36,7 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
+import { Permalinks } from "./interface-manager/Permalinks";
 
 defineInterfaceCommand({
     table: "mjolnir",
@@ -47,13 +48,12 @@ defineInterfaceCommand({
     }
 })
 
-// we reall need room references, not this bullshit.
 function renderProtectedRooms(rooms: string[]): DocumentNode {
     return <root>
         <details>
-            <summary><b>Protected Rooms:</b></summary>
+            <summary><b>Protected Rooms ({rooms.length}):</b></summary>
             <ul>
-                {rooms.map(r => <li>{r}</li>)}
+                {rooms.map(r => <li><a href={Permalinks.forRoom(r)}>{r}</a></li>)}
             </ul>
         </details>
     </root>
@@ -85,10 +85,21 @@ defineInterfaceCommand({
         }
     ]),
     command: async function (this: MjolnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
-        const roomID = await roomRef.resolve(this.mjolnir.client);
-        // change this ASAP to accept MatrixRoomReference, but it should still be resolved within the command
-        // and kept as a reference.
-        await this.mjolnir.addProtectedRoom(roomID.toRoomIdOrAlias());
+        const roomIDOrError = await (async () => {
+            try {
+                return CommandResult.Ok(await roomRef.joinClient(this.mjolnir.client));
+            } catch (e) {
+                return CommandException.Result<MatrixRoomID>(
+                    `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
+                    Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
+                    { exception: e }
+                );
+            }
+        })();
+        if (roomIDOrError.isErr()) {
+            return CommandResult.Err(roomIDOrError.err);
+        }
+        await this.mjolnir.addProtectedRoom(roomIDOrError.ok.toRoomIdOrAlias());
         return CommandResult.Ok(undefined);
     },
 })
@@ -109,7 +120,6 @@ defineInterfaceCommand({
         try {
             await this.mjolnir.client.leaveRoom(roomID.toRoomIdOrAlias());
         } catch (exception) {
-            // TODO find out whether CommandResult.Error is logges somewhere, so that we do not have to anymore.
             return CommandException.Result(`Failed to leave ${roomRef.toPermalink()} - the room is no longer being protected, but the bot could not leave.`, { exception });
         }
         return CommandResult.Ok(undefined);
@@ -122,11 +132,3 @@ for (const designator of [["rooms", "add"], ["rooms", "remove"]]) {
         renderer: tickCrossRenderer,
     })
 }
-
-// FIXME:
-// Mon, 29 May 2023 12:38:06 GMT [INFO] [MatrixInterfaceCommand] User input validation error when parsing command ["rooms","remove"]: Failed to leave https://matrix.to/#/!OxUALFPbSObCnVrRwa%3Alocalhost%3A9999 - the room is no longer being protected, but the bot could not leave.
-// but says this in the room:
-// There was an unexpected error when processing this command:
-//Failed to leave f - the room is no longer being protected, but the bot could not leave.
-//Details can be found by providing the reference 104a246a-b270-4fc3-a416-174b42a5f172to an administrator.
-// clearly it should also print that reference and the error in the log - and it isn't a validation error lol.
