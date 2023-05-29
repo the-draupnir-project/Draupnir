@@ -5,6 +5,7 @@
 
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
+import { Permalinks } from "./Permalinks";
 
 export interface ISuperCoolStream<T> {
     readonly source: T
@@ -91,15 +92,15 @@ const WHITESPACE = [' ', '\r', '\f', '\v', '\n', '\t'];
  * @returns ReadItems that have been read from this command.
  */
 export function readCommand(string: string): ReadItem[] {
-    return readCommandFromStream(new StringStream(string));
+    return readCommandFromStream(new StringStream(string))
 }
 
 function readCommandFromStream(stream: StringStream): ReadItem[] {
-    const words: any[] = [];
+    const words: ReadItem[] = [];
     while (stream.peekChar() !== undefined && (eatWhitespace(stream), true) && stream.peekChar() !== undefined) {
         words.push(readItem(stream));
     }
-    return words;
+    return words.map(applyPostReadTransformersToReadItem);
 }
 
 function eatWhitespace(stream: StringStream): void {
@@ -150,6 +151,37 @@ function defineReadItem(dispatchCharacter: string, macro: ReadMacro) {
         throw new TypeError(`Read macro already defined for this dispatch character: ${dispatchCharacter}`);
     }
     WORD_DISPATCH_CHARACTERS.set(dispatchCharacter, macro);
+}
+
+type PostReadStringReplaceTransformer = (item: string) => ReadItem|string;
+type TransformerEntry = { regex: RegExp, transformer: PostReadStringReplaceTransformer };
+const POST_READ_TRANSFORMERS = new Map<string, TransformerEntry>();
+
+
+/**
+ * Define a function that will be applied to ReadItem's that are strings that
+ * also match the regex.
+ * If the regex matches, the transformer function will be called with the read item
+ * and given the oppertunity to return a new version of the item.
+ *
+ * This is mainly used to transform URLs into a MatrixRoomReference.
+ */
+function definePostReadReplace(regex: RegExp, transformer: PostReadStringReplaceTransformer) {
+    if (POST_READ_TRANSFORMERS.has(regex.source)) {
+        throw new TypeError(`A transformer has already been defined for the regexp ${regex.source}`);
+    }
+    POST_READ_TRANSFORMERS.set(regex.source, { regex, transformer })
+}
+
+function applyPostReadTransformersToReadItem(item: ReadItem): ReadItem {
+    if (typeof item === 'string') {
+        for (const [_key, { regex, transformer }] of POST_READ_TRANSFORMERS) {
+            if (regex.test(item)) {
+                return transformer(item);
+            }
+        }
+    }
+    return item;
 }
 
 /**
@@ -233,3 +265,13 @@ function readKeyword(stream: StringStream): Keyword {
 
 defineReadItem('-', readKeyword);
 defineReadItem(':', readKeyword);
+
+definePostReadReplace(/^https:\/\/matrix\.to/, input => {
+    const url = Permalinks.parseUrl(input);
+    if (url.eventId !== undefined) {
+        // don't know what to turn event references into yet.
+        return input;
+    } else {
+        return MatrixRoomReference.fromPermalink(input);
+    }
+})
