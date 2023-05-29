@@ -141,7 +141,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
             } catch (e) {
                 const commandError = new CommandException(e, 'Unknown Unexpected Error');
-                LogService.error("CommandHandler", commandError.uuid, commandError.message, e);
                 await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
             }
         }

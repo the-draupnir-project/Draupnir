@@ -11,6 +11,7 @@ import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { CommandException } from "./CommandException";
+import { LogService } from "matrix-bot-sdk";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -73,12 +74,15 @@ export async function renderHelp(client: MatrixSendClient, commandRoomId: string
 
 export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<unknown, CommandError>): Promise<void> {
     const react = async (emote: string) => {
-        await client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], emote);
+        try {
+            await client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], emote);
+        } catch (e) {
+            LogService.error("tickCrossRenderer", "Couldn't react to the event", event['event_id'], e);
+        }
     }
     if (result.isOk()) {
         await react('✅')
     } else {
-        await react('❌');
         if (result.err instanceof ArgumentParseError) {
             await renderMatrixAndSend(
                 renderArgumentParseError(this.interfaceCommand, result.err),
@@ -86,6 +90,8 @@ export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixConte
                 event,
                 client);
         } else if (result.err instanceof CommandException) {
+            const commandError = result.err;
+            LogService.error("CommandException", commandError.uuid, commandError.message, commandError.exception);
             await renderMatrixAndSend(
                 renderCommandException(this.interfaceCommand, result.err),
                 commandRoomId,
@@ -94,6 +100,8 @@ export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixConte
         } else {
             await client.replyNotice(commandRoomId, event, result.err.message);
         }
+        // reacting is way less important than communicating what happened, do it last.
+        await react('❌');
     }
 }
 
