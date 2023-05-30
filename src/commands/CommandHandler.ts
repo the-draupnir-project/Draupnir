@@ -38,8 +38,6 @@ import {
     execDisableProtection, execEnableProtection, execListProtections, execConfigGetProtection,
     execConfigSetProtection, execConfigAddProtection, execConfigRemoveProtection
 } from "./ProtectionsCommands";
-import { execListProtectedRooms } from "./ListProtectedRoomsCommand";
-import { execAddProtectedRoom, execRemoveProtectedRoom } from "./AddRemoveProtectedRoomsCommand";
 import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
 import { execResolveCommand } from "./ResolveAlias";
 import { execKickCommand } from "./KickCommand";
@@ -64,13 +62,13 @@ defineCommandTable("synapse admin");
 import "./HijackRoomCommand";
 import "./ShutdownRoomCommand";
 import "./DeactivateCommand";
-import "./AddRemoveProtectedRoomsCommand";
 import "./AliasCommands";
 
 defineCommandTable("mjolnir").importTable(findCommandTable("synapse admin"));
 import "./Ban";
 import "./Unban";
 import "./StatusCommand";
+import "./Rooms";
 import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
@@ -114,12 +112,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execConfigRemoveProtection(roomId, event, mjolnir, parts.slice(3))
         } else if (parts[1] === 'config' && parts[2] === 'get') {
             return await execConfigGetProtection(roomId, event, mjolnir, parts.slice(3))
-        } else if (parts[1] === 'rooms' && parts.length > 3 && parts[2] === 'add') {
-            return await execAddProtectedRoom(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'rooms' && parts.length > 3 && parts[2] === 'remove') {
-            return await execRemoveProtectedRoom(roomId, event, mjolnir, parts);
-        } else if (parts[1] === 'rooms' && parts.length === 2) {
-            return await execListProtectedRooms(roomId, event, mjolnir);
         } else if (parts[1] === 'resolve' && parts.length > 2) {
             return await execResolveCommand(roomId, event, mjolnir, parts);
         } else if (parts[1] === 'powerlevel' && parts.length > 3) {
@@ -141,7 +133,6 @@ export async function handleCommand(roomId: string, event: { content: { body: st
                 return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
             } catch (e) {
                 const commandError = new CommandException(e, 'Unknown Unexpected Error');
-                LogService.error("CommandHandler", commandError.uuid, commandError.message, e);
                 await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
             }
         }
