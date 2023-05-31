@@ -153,7 +153,7 @@ commands:
 
   # The default reasons to be prompted with if the reason is missing from a ban command.
   ban:
-    defaultReasons: 
+    defaultReasons:
       - "spam"
       - "brigading"
       - "harassment"
