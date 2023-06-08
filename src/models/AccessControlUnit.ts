@@ -241,7 +241,7 @@ export default class AccessControlUnit {
 
     public unwatchList(list: PolicyList) {
         for (const cache of this.caches) {
-            cache.watchList(list);
+            cache.unwatchList(list);
         }
     }
 
