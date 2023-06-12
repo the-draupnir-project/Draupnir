@@ -2,7 +2,7 @@
 FROM node:18-slim
 COPY . /tmp/src
 RUN cd /tmp/src \
-    && yarn install \
+    && yarn install --network-timeout 100000 \
     && yarn build \
     && mv lib/ /mjolnir/ \
     && mv node_modules / \
