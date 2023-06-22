@@ -5,9 +5,9 @@
 
 import { WeakEvent } from 'matrix-appservice-bridge';
 import { readCommand } from '../../commands/interface-manager/CommandReader';
-import { defineCommandTable, defineInterfaceCommand, findCommandTable } from '../../commands/interface-manager/InterfaceCommand';
+import { defineCommandTable, defineInterfaceCommand, findCommandTable, findTableCommand } from '../../commands/interface-manager/InterfaceCommand';
 import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext } from '../../commands/interface-manager/MatrixInterfaceAdaptor';
-import { ArgumentStream, parameters } from '../../commands/interface-manager/ParameterParsing';
+import { ArgumentStream, RestDescription, findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { CommandResult } from '../../commands/interface-manager/Validation';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
@@ -26,23 +26,23 @@ import './AccessCommands';
 import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 
 
-const helpCommand = defineInterfaceCommand({
-    parameters: parameters([]),
+defineInterfaceCommand({
+    parameters: parameters([], new RestDescription('command parts', findPresentationType("any"))),
     table: "appservice bot",
-    command: async function() { return CommandResult.Ok(findCommandTable("appservice bot").getAllCommands()) },
+    command: async function () { return CommandResult.Ok(findCommandTable("appservice bot").getAllCommands()) },
     designator: ["help"],
     summary: "Display this message"
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: helpCommand,
+    interfaceCommand: findTableCommand("appservice bot", "help"),
     renderer: renderHelp
 })
 
 export class AppserviceCommandHandler {
     private readonly commandTable = findCommandTable("appservice bot");
 
-    constructor (
+    constructor(
         private readonly appservice: MjolnirAppService
     ) {
 

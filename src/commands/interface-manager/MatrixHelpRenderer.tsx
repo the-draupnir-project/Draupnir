@@ -3,7 +3,7 @@
  */
 
 import { MatrixSendClient } from "../../MatrixEmitter";
-import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
+import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
 import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
 import { ArgumentParseError, ParameterDescription, RestDescription } from "./ParameterParsing";
 import { CommandError, CommandResult } from "./Validation";
@@ -29,17 +29,17 @@ function restArgument(rest: RestDescription): string {
 
 export function renderParameterDescription(description: ParameterDescription): DocumentNode {
     return <fragment>
-        {description.name} - {description.description ?? 'no description'}<br/>
+        {description.name} - {description.description ?? 'no description'}<br />
     </fragment>
 }
 
 export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): DocumentNode {
     return <details>
         <summary>
-        <code>{renderCommandHelp(command)}</code> - {command.summary}
+            <code>{renderCommandHelp(command)}</code> - {command.summary}
         </summary>
         {command.description
-            ? <fragment><b>Description:</b><br/>{command.description}<br/></fragment>
+            ? <fragment><b>Description:</b><br />{command.description}<br /></fragment>
             : []
         }
         {command.argumentListParser.descriptions.length > 0
@@ -63,13 +63,27 @@ export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): stri
     ].join(' ');
 }
 
-export async function renderHelp(client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<InterfaceCommand<BaseFunction>[], CommandError>): Promise<void> {
-    const commands = result.ok;
-    let text = ''
-    for (const command of commands) {
-        text += `${renderCommandHelp(command)}\n`;
+function renderTableHelp(table: CommandTable): DocumentNode {
+    // FIXME: is it possible to force case of table names?
+    return <fragment>
+        <details>
+            <summary><b>{table.name} commands:</b></summary>
+            {table.getExportedCommands().map(renderCommandSummary)}
+            {table.getImportedTables().map(renderTableHelp)}
+        </details>
+    </fragment>
+}
+
+export async function renderHelp(client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<CommandTable, CommandError>): Promise<void> {
+    if (result.isErr()) {
+        throw new TypeError("This command isn't supposed to fail");
     }
-    await client.replyNotice(commandRoomId, event, text);
+    await renderMatrixAndSend(
+        renderTableHelp(result.ok),
+        commandRoomId,
+        event,
+        client
+    );
 }
 
 export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<unknown, CommandError>): Promise<void> {
@@ -122,17 +136,17 @@ function formattedArgumentHint(command: InterfaceCommand<BaseFunction>, error: A
 
 function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): DocumentNode {
     return <root>
-        There was a problem when parsing the <code>{error.parameter.name}</code> parameter for this command.<br/>
-        {renderCommandHelp(command)}<br/>
-        {error.message}<br/>
+        There was a problem when parsing the <code>{error.parameter.name}</code> parameter for this command.<br />
+        {renderCommandHelp(command)}<br />
+        {error.message}<br />
         <pre>{formattedArgumentHint(command, error)}</pre>
     </root>
 }
 
 function renderCommandException(command: InterfaceCommand<BaseFunction>, error: CommandException): DocumentNode {
     return <root>
-        There was an unexpected error when processing this command:<br/>
-        {error.message}<br/>
+        There was an unexpected error when processing this command:<br />
+        {error.message}<br />
         Details can be found by providing the reference <code>{error.uuid}</code>
         to an administrator.
     </root>
