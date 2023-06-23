@@ -65,13 +65,13 @@ export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): stri
 
 function renderTableHelp(table: CommandTable): DocumentNode {
     // FIXME: is it possible to force case of table names?
-    return <fragment>
+    return <root>
         <details>
             <summary><b>{table.name} commands:</b></summary>
             {table.getExportedCommands().map(renderCommandSummary)}
             {table.getImportedTables().map(renderTableHelp)}
         </details>
-    </fragment>
+    </root>
 }
 
 export async function renderHelp(client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<CommandTable, CommandError>): Promise<void> {
