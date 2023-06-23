@@ -28,7 +28,7 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
     designator: ["list", "unstarted"],
     table: "appservice bot",
     parameters: parameters([]),
-    command: async function() {
+    command: async function () {
         return CommandResult.Ok(this.appservice.mjolnirManager.getUnstartedMjolnirs());
     },
     summary: "List any Mjolnir that failed to start."
@@ -38,7 +38,7 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
 // and be used similar to like #=1 and #1.
 defineMatrixInterfaceAdaptor({
     interfaceCommand: listUnstarted,
-    renderer: async function(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<UnstartedMjolnir[]>) {
+    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<UnstartedMjolnir[]>) {
         tickCrossRenderer.call(this, client, commandRoomId, event, result); // don't await, it doesn't really matter.
         if (result.isErr()) {
             return; // just let the default handler deal with it.
@@ -53,7 +53,7 @@ defineMatrixInterfaceAdaptor({
                             {mjolnir.mjolnirRecord.owner},
                             <code>{mjolnir.mxid.toString()}</code>
                             <code>{mjolnir.failCode}</code>:
-                            <br/>
+                            <br />
                             {mjolnir.cause}
                         </li>
                     })}
@@ -77,9 +77,10 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
         {
             name: "mjolnir",
             acceptor: findPresentationType("UserID"),
+            description: 'The userid of the mjolnir to restart'
         }
     ]),
-    command: async(context, _keywords, mjolnirId: UserID): Promise<CommandResult<true>> => {
+    command: async (context, _keywords, mjolnirId: UserID): Promise<CommandResult<true>> => {
         const mjolnirManager = context.appservice.mjolnirManager;
         const mjolnir = mjolnirManager.findUnstartedMjolnir(mjolnirId.localpart);
         if (mjolnir?.mjolnirRecord === undefined) {
