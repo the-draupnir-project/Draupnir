@@ -159,6 +159,7 @@ export class MjolnirAppService {
         await this.bridge.getBot().getClient().joinRoom(this.config.adminRoom);
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
+        await this.bridge.listen(port);
         this.bridge.addAppServicePath({
             method: "GET",
             path: "/healthz",
@@ -167,7 +168,6 @@ export class MjolnirAppService {
                 res.status(200).send('ok');
             }
         })
-        await this.bridge.listen(port);
         log.info("MjolnirAppService started successfully");
     }
 
