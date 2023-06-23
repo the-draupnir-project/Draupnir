@@ -167,7 +167,9 @@ export class MjolnirAppService {
             handler: async (_req, res) => {
                 res.status(200).send('ok');
             }
-        })
+        });
+        // Activate /metrics endpoint for Prometheus
+        this.bridge.getPrometheusMetrics(true);
         log.info("MjolnirAppService started successfully");
     }
 
