@@ -29,7 +29,7 @@ import { AppserviceBotEmitter } from './AppserviceBotEmitter';
 defineInterfaceCommand({
     parameters: parameters([], new RestDescription('command parts', findPresentationType("any"))),
     table: "appservice bot",
-    command: async function () { return CommandResult.Ok(findCommandTable("appservice bot").getAllCommands()) },
+    command: async function () { return CommandResult.Ok(findCommandTable("appservice bot")) },
     designator: ["help"],
     summary: "Display this message"
 })
