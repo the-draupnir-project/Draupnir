@@ -75,8 +75,8 @@ export class MjolnirAppService {
             // It also allows us to combine constructor/initialize logic
             // to make the code base much simpler. A small hack to pay for an overall less hacky code base.
             controller: {
-                onUserQuery: () => {throw new Error("Mjolnir uninitialized")},
-                onEvent: () => {throw new Error("Mjolnir uninitialized")},
+                onUserQuery: () => { throw new Error("Mjolnir uninitialized") },
+                onEvent: () => { throw new Error("Mjolnir uninitialized") },
             },
             suppressEcho: false,
         });
@@ -114,7 +114,7 @@ export class MjolnirAppService {
         return service;
     }
 
-    public onUserQuery (queriedUser: MatrixUser) {
+    public onUserQuery(queriedUser: MatrixUser) {
         return {}; // auto-provision users with no additonal data
     }
 
@@ -159,6 +159,14 @@ export class MjolnirAppService {
         await this.bridge.getBot().getClient().joinRoom(this.config.adminRoom);
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
+        this.bridge.addAppServicePath({
+            method: "GET",
+            path: "/healthz",
+            authenticate: false,
+            handler: async (_req, res) => {
+                res.status(200).send('ok');
+            }
+        })
         await this.bridge.listen(port);
         log.info("MjolnirAppService started successfully");
     }
