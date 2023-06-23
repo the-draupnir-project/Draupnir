@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger } from "matrix-appservice-bridge";
+import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger, setBridgeVersion } from "matrix-appservice-bridge";
 import { MjolnirManager } from ".//MjolnirManager";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
@@ -33,6 +33,7 @@ import { Api } from "./Api";
 import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
+import { SOFTWARE_VERSION } from "../config";
 
 const log = new Logger("AppService");
 /**
@@ -169,6 +170,7 @@ export class MjolnirAppService {
             }
         });
         // Activate /metrics endpoint for Prometheus
+        setBridgeVersion(SOFTWARE_VERSION);
         this.bridge.getPrometheusMetrics(true);
         log.info("MjolnirAppService started successfully");
     }
