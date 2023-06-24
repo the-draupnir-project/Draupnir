@@ -11,6 +11,7 @@ import EventEmitter from "events";
 import { MatrixEmitter } from "../MatrixEmitter";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
+import { Gauge } from "prom-client";
 
 const log = new Logger('MjolnirManager');
 
@@ -30,7 +31,8 @@ export class MjolnirManager {
     private constructor(
         private readonly dataStore: DataStore,
         private readonly bridge: Bridge,
-        private readonly accessControl: AccessControl
+        private readonly accessControl: AccessControl,
+        private readonly instanceCountGauge: Gauge<"status" | "uuid">
     ) {
 
     }
@@ -42,8 +44,8 @@ export class MjolnirManager {
      * @param accessControl Who has access to the bridge.
      * @returns A new mjolnir manager.
      */
-    public static async makeMjolnirManager(dataStore: DataStore, bridge: Bridge, accessControl: AccessControl): Promise<MjolnirManager> {
-        const mjolnirManager = new MjolnirManager(dataStore, bridge, accessControl);
+    public static async makeMjolnirManager(dataStore: DataStore, bridge: Bridge, accessControl: AccessControl, instanceCountGauge: Gauge<"status" | "uuid">): Promise<MjolnirManager> {
+        const mjolnirManager = new MjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
         await mjolnirManager.startMjolnirs(await dataStore.list());
         return mjolnirManager;
     }
@@ -55,7 +57,7 @@ export class MjolnirManager {
      * @param client A client for the appservice virtual user that the new mjolnir should use.
      * @returns A new managed mjolnir.
      */
-    public async makeInstance(requestingUserId: string, managementRoomId: string, client: MatrixClient): Promise<ManagedMjolnir> {
+    public async makeInstance(localPart: string, requestingUserId: string, managementRoomId: string, client: MatrixClient): Promise<ManagedMjolnir> {
         const mxid = await client.getUserId();
         const intentListener = new MatrixIntentListener(mxid);
         const managedMjolnir = new ManagedMjolnir(
@@ -70,6 +72,18 @@ export class MjolnirManager {
         await managedMjolnir.start();
         this.mjolnirs.set(mxid, managedMjolnir);
         this.unstartedMjolnirs.delete(mxid);
+        // @ts-ignore
+        if (this.instanceCountGauge._getValue({ status: "offline", uuid: localPart })) {
+            this.instanceCountGauge.dec({ status: "offline", uuid: localPart });
+        }
+        // @ts-ignore
+        if (this.instanceCountGauge._getValue({ status: "disabled", uuid: localPart })) {
+            this.instanceCountGauge.dec({ status: "disabled", uuid: localPart });
+        }
+        // @ts-ignore
+        if (!this.instanceCountGauge._getValue({ status: "online", uuid: localPart })) {
+            this.instanceCountGauge.inc({ status: "online", uuid: localPart });
+        }
         return managedMjolnir;
     }
 
@@ -79,7 +93,7 @@ export class MjolnirManager {
      * @param ownerId The owner of the mjolnir. We ask for it explicitly to not leak access to another user's mjolnir.
      * @returns The matching managed mjolnir instance.
      */
-    public getMjolnir(mjolnirId: string, ownerId: string): ManagedMjolnir|undefined {
+    public getMjolnir(mjolnirId: string, ownerId: string): ManagedMjolnir | undefined {
         const mjolnir = this.mjolnirs.get(mjolnirId);
         if (mjolnir) {
             if (mjolnir.ownerId !== ownerId) {
@@ -141,7 +155,7 @@ export class MjolnirManager {
                 }
             });
 
-            const mjolnir = await this.makeInstance(requestingUserId, managementRoomId, mjIntent.matrixClient);
+            const mjolnir = await this.makeInstance(mjolnirLocalPart, requestingUserId, managementRoomId, mjIntent.matrixClient);
             await mjolnir.createFirstList(requestingUserId, "list");
 
             await this.dataStore.store({
@@ -164,7 +178,7 @@ export class MjolnirManager {
         return [...this.unstartedMjolnirs.values()];
     }
 
-    public findUnstartedMjolnir(localPart: string): UnstartedMjolnir|undefined {
+    public findUnstartedMjolnir(localPart: string): UnstartedMjolnir | undefined {
         return [...this.unstartedMjolnirs.values()].find(unstarted => unstarted.mjolnirRecord.local_part === localPart);
     }
 
@@ -195,8 +209,16 @@ export class MjolnirManager {
             // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
             mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
             this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord, mjIntent.userId);
+            // @ts-ignore
+            if (this.instanceCountGauge._getValue({ status: "online", uuid: mjolnirRecord.local_part })) {
+                this.instanceCountGauge.dec({ status: "online", uuid: mjolnirRecord.local_part });
+            }
+            // @ts-ignore
+            if (!this.instanceCountGauge._getValue({ status: "disabled", uuid: mjolnirRecord.local_part })) {
+                this.instanceCountGauge.inc({ status: "disabled", uuid: mjolnirRecord.local_part });
+            }
         } else {
-            await this.makeInstance(
+            await this.makeInstance(mjolnirRecord.local_part,
                 mjolnirRecord.owner,
                 mjolnirRecord.management_room,
                 mjIntent.matrixClient,
@@ -205,6 +227,14 @@ export class MjolnirManager {
                 // Don't await, we don't want to clobber initialization if this fails.
                 mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
                 this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord, mjIntent.userId);
+                // @ts-ignore
+                if (this.instanceCountGauge._getValue({ status: "online", uuid: mjolnirRecord.local_part })) {
+                    this.instanceCountGauge.dec({ status: "online", uuid: mjolnirRecord.local_part });
+                }
+                // @ts-ignore
+                if (!this.instanceCountGauge._getValue({ status: "offline", uuid: mjolnirRecord.local_part })) {
+                    this.instanceCountGauge.inc({ status: "offline", uuid: mjolnirRecord.local_part });
+                }
             });
         }
     }
@@ -279,7 +309,7 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
     public handleEvent(mxEvent: WeakEvent) {
         // These are ordered to be the same as matrix-bot-sdk's MatrixClient
         // They shouldn't need to be, but they are just in case it matters.
-        if (mxEvent['type'] === 'm.room.member' &&  mxEvent.state_key === this.mjolnirId) {
+        if (mxEvent['type'] === 'm.room.member' && mxEvent.state_key === this.mjolnirId) {
             if (mxEvent['content']['membership'] === 'leave') {
                 this.emit('room.leave', mxEvent.room_id, mxEvent);
             }

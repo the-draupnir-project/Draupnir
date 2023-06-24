@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger, setBridgeVersion } from "matrix-appservice-bridge";
+import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger, setBridgeVersion, PrometheusMetrics } from "matrix-appservice-bridge";
 import { MjolnirManager } from ".//MjolnirManager";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
@@ -55,6 +55,7 @@ export class MjolnirAppService {
         public readonly mjolnirManager: MjolnirManager,
         public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
+        private readonly prometheusMetrics: PrometheusMetrics
     ) {
         this.api = new Api(config.homeserver.url, mjolnirManager);
         this.commands = new AppserviceCommandHandler(this);
@@ -84,13 +85,22 @@ export class MjolnirAppService {
         await bridge.initialise();
         const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
         const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
-        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl);
+        // Activate /metrics endpoint for Prometheus
+        setBridgeVersion(SOFTWARE_VERSION);
+        const prometheus = bridge.getPrometheusMetrics(false);
+        const instanceCountGauge = prometheus.addGauge({
+            name: "draupnir_instances",
+            help: "Count of Draupnir Instances",
+            labels: ["status", "uuid"],
+        });
+        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
         const appService = new MjolnirAppService(
             config,
             bridge,
             mjolnirManager,
             accessControl,
-            dataStore
+            dataStore,
+            prometheus
         );
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
@@ -161,6 +171,7 @@ export class MjolnirAppService {
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
         await this.bridge.listen(port);
+        this.prometheusMetrics.addAppServicePath(this.bridge);
         this.bridge.addAppServicePath({
             method: "GET",
             path: "/healthz",
@@ -169,9 +180,6 @@ export class MjolnirAppService {
                 res.status(200).send('ok');
             }
         });
-        // Activate /metrics endpoint for Prometheus
-        setBridgeVersion(SOFTWARE_VERSION);
-        this.bridge.getPrometheusMetrics(true);
         log.info("MjolnirAppService started successfully");
     }
 
