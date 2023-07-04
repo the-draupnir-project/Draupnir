@@ -1,4 +1,5 @@
 import { read as configRead } from "../../src/config";
+import { WATCHED_LISTS_EVENT_TYPE } from "../../src/models/PolicyList";
 import { patchMatrixClient } from "../../src/utils";
 import { makeMjolnir, teardownManagementRoom } from "./mjolnirSetupUtils";
 
@@ -22,7 +23,7 @@ export const mochaHooks = {
             config.RUNTIME.client = this.mjolnir.client;
             await Promise.all([
                 this.mjolnir.client.setAccountData('org.matrix.mjolnir.protected_rooms', { rooms: [] }),
-                this.mjolnir.client.setAccountData('org.matrix.mjolnir.watched_lists', { references: [] }),
+                this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE,  { references: [] }),
             ]);
             await this.mjolnir.start();
             console.log("mochaHooks.beforeEach DONE");
@@ -34,7 +35,7 @@ export const mochaHooks = {
             await this.mjolnir.stop();
             await Promise.all([
                 this.mjolnir.client.setAccountData('org.matrix.mjolnir.protected_rooms', { rooms: [] }),
-                this.mjolnir.client.setAccountData('org.matrix.mjolnir.watched_lists', { references: [] }),
+                this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, { references: [] }),
             ]);
             // remove alias from management room and leave it.
             await teardownManagementRoom(this.mjolnir.client, this.mjolnir.managementRoomId, this.managementRoomAlias);

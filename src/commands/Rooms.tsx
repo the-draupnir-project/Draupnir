@@ -117,6 +117,7 @@ defineInterfaceCommand({
     ]),
     command: async function (this: MjolnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
         const roomID = await roomRef.resolve(this.mjolnir.client);
+        await this.mjolnir.removeProtectedRoom(roomID.toRoomIdOrAlias());
         try {
             await this.mjolnir.client.leaveRoom(roomID.toRoomIdOrAlias());
         } catch (exception) {
