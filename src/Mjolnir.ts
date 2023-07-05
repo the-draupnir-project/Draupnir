@@ -167,7 +167,7 @@ export class Mjolnir {
 
         const ruleServer = config.web.ruleServer ? new RuleServer() : null;
         const mjolnir = new Mjolnir(client, await client.getUserId(), matrixEmitter, managementRoomId, config, ruleServer);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "index", "Mjolnir is starting up. Use !mjolnir to query status.");
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "index", "Draupnir is starting up. Use !draupnir to query status.");
         Mjolnir.addJoinOnInviteListener(mjolnir, client, config);
         return mjolnir;
     }
