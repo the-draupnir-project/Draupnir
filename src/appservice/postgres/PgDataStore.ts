@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { trace } from '../../utils';
 import { PostgresStore, SchemaUpdateFunction } from "matrix-appservice-bridge";
 import { DataStore, MjolnirRecord } from "../datastore";
 
@@ -32,14 +33,17 @@ export class PgDataStore extends PostgresStore implements DataStore {
         super(getSchema(), { url: connectionString })
     }
 
+    @trace('PgDataStore.init')
     public async init(): Promise<void> {
         await this.ensureSchema();
     }
 
+    @trace('PgDataStore.close')
     public async close(): Promise<void> {
         await this.destroy();
     }
 
+    @trace('PgDataStore.list')
     public async list(): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir`;
         if (!result.count) {
@@ -49,17 +53,20 @@ export class PgDataStore extends PostgresStore implements DataStore {
         return result.flat() as MjolnirRecord[];
     }
 
+    @trace('PgDataStore.store')
     public async store(mjolnirRecord: MjolnirRecord): Promise<void> {
         await this.sql`INSERT INTO mjolnir (local_part, owner, management_room)
         VALUES (${mjolnirRecord.local_part}, ${mjolnirRecord.owner}, ${mjolnirRecord.management_room})`;
     }
 
+    @trace('PgDataStore.lookupByOwner')
     public async lookupByOwner(owner: string): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir
         WHERE owner = ${owner}`;
         return result.flat() as MjolnirRecord[];
     }
 
+    @trace('PgDataStore.lookupByLocalPart')
     public async lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir
         WHERE local_part = ${localPart}`;

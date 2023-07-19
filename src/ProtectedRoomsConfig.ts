@@ -30,6 +30,7 @@ import { LogService } from "matrix-bot-sdk";
 import { Permalinks } from './commands/interface-manager/Permalinks';
 import { IConfig } from "./config";
 import { MatrixSendClient } from './MatrixEmitter';
+import { trace, traceSync } from './utils';
 const PROTECTED_ROOMS_EVENT_TYPE = "org.matrix.mjolnir.protected_rooms";
 
 /**
@@ -54,6 +55,7 @@ export default class ProtectedRoomsConfig {
      * Will also ensure we are able to join all of the rooms.
      * @param config The config to load the rooms from under `config.protectedRooms`.
      */
+    @trace('ProtectedRoomsConfig.loadProtectedRoomsFromConfig')
     public async loadProtectedRoomsFromConfig(config: IConfig): Promise<void> {
         // Ensure we're also joined to the rooms we're protecting
         LogService.info("ProtectedRoomsConfig", "Resolving protected rooms...");
@@ -74,6 +76,7 @@ export default class ProtectedRoomsConfig {
      * Load any rooms that have been explicitly protected from the account data of the mjolnir user.
      * Will not ensure we can join all the rooms. This so mjolnir can continue to operate if bogus rooms have been persisted to the account data.
      */
+    @trace('ProtectedRoomsConfig.loadProtectedRoomsFromAccountData')
     public async loadProtectedRoomsFromAccountData(): Promise<void> {
         LogService.debug("ProtectedRoomsConfig", "Loading protected rooms...");
         try {
@@ -96,6 +99,7 @@ export default class ProtectedRoomsConfig {
      * Save the room as explicitly protected.
      * @param roomId The room to persist as explicitly protected.
      */
+    @trace('ProtectedRoomsConfig.addProtectedRoom')
     public async addProtectedRoom(roomId: string): Promise<void> {
         this.explicitlyProtectedRooms.add(roomId);
         await this.saveProtectedRoomsToAccountData();
@@ -105,6 +109,7 @@ export default class ProtectedRoomsConfig {
      * Remove the room from the explicitly protected set of rooms.
      * @param roomId The room that should no longer be persisted as protected.
      */
+    @trace('ProtectedRoomsConfig.removeProtectedRoom')
     public async removeProtectedRoom(roomId: string): Promise<void> {
         this.explicitlyProtectedRooms.delete(roomId);
         await this.saveProtectedRoomsToAccountData([roomId]);
@@ -115,6 +120,7 @@ export default class ProtectedRoomsConfig {
      * This will NOT be the complete set of protected rooms, if `config.protectAllJoinedRooms` is true and should never be treated as the complete set.
      * @returns The rooms that are marked as explicitly protected in both the config and Mjolnir's account data.
      */
+    @traceSync('ProtectedRoomsConfig.getExplicitlyProtectedRooms')
     public getExplicitlyProtectedRooms(): string[] {
         return [...this.explicitlyProtectedRooms.keys()]
     }
@@ -123,13 +129,14 @@ export default class ProtectedRoomsConfig {
      * Persist the set of explicitly protected rooms to the client's account data.
      * @param excludeRooms Rooms that should not be persisted to the account data, and removed if already present.
      */
+    @trace('ProtectedRoomsConfig.saveProtectedRoomsToAccountData')
     private async saveProtectedRoomsToAccountData(excludeRooms: string[] = []): Promise<void> {
         // NOTE: this stops Mjolnir from racing with itself when saving the config
         //       but it doesn't stop a third party client on the same account racing with us instead.
         await this.accountDataLock.acquireAsync();
         try {
             const additionalProtectedRooms: string[] = await this.client.getAccountData(PROTECTED_ROOMS_EVENT_TYPE)
-                .then((rooms: {rooms?: string[]}) => Array.isArray(rooms?.rooms) ? rooms.rooms : [])
+                .then((rooms: { rooms?: string[] }) => Array.isArray(rooms?.rooms) ? rooms.rooms : [])
                 .catch(e => (LogService.warn("ProtectedRoomsConfig", "Could not load protected rooms from account data", e), []));
 
             const roomsToSave = new Set([...this.explicitlyProtectedRooms.keys(), ...additionalProtectedRooms]);

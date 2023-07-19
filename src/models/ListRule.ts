@@ -26,6 +26,7 @@ limitations under the License.
  */
 
 import { MatrixGlob } from "matrix-bot-sdk";
+import { traceSync } from "../utils";
 
 export enum EntityType {
     /// `entity` is to be parsed as a glob of users IDs
@@ -143,6 +144,7 @@ export abstract class ListRule {
     /**
      * Determine whether this rule should apply to a given entity.
      */
+    @traceSync('ListRule.isMatch')
     public isMatch(entity: string): boolean {
         return this.glob.test(entity);
     }
@@ -150,6 +152,7 @@ export abstract class ListRule {
     /**
      * @returns Whether the entity in he rule represents a Matrix glob (and not a literal).
      */
+    @traceSync('ListRule.isGlob')
     public isGlob(): boolean {
         return /[*?]/.test(this.entity);
     }

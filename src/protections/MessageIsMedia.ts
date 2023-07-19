@@ -29,6 +29,7 @@ import { Protection } from "./Protection";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, UserID } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { trace } from "../utils";
 
 export class MessageIsMedia extends Protection {
 
@@ -45,6 +46,7 @@ export class MessageIsMedia extends Protection {
         return "If a user posts an image or video, that message will be redacted. No bans are issued.";
     }
 
+    @trace("MessageIsMedia.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (event['type'] === 'm.room.message') {
             const content = event['content'] || {};

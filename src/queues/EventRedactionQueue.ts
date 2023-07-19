@@ -27,7 +27,7 @@ limitations under the License.
 import { LogLevel, MatrixClient } from "matrix-bot-sdk"
 import { ERROR_KIND_FATAL } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
-import { redactUserMessagesIn } from "../utils";
+import { redactUserMessagesIn, trace, traceSync } from "../utils";
 import ManagementRoomOutput from "../ManagementRoomOutput";
 import { MatrixSendClient } from "../MatrixEmitter";
 
@@ -59,11 +59,13 @@ export class RedactUserInRoom implements QueuedRedaction {
         this.roomId = roomId;
     }
 
+    @trace("RedactUserInRoom.redact")
     public async redact(client: MatrixClient, managementRoom: ManagementRoomOutput) {
         await managementRoom.logMessage(LogLevel.DEBUG, "Mjolnir", `Redacting events from ${this.userId} in room ${this.roomId}.`);
         await redactUserMessagesIn(client, managementRoom, this.userId, [this.roomId]);
     }
 
+    @traceSync("RedactUserInRoom.redactionEqual")
     public redactionEqual(redaction: QueuedRedaction): boolean {
         if (redaction instanceof RedactUserInRoom) {
             return redaction.userId === this.userId && redaction.roomId === this.roomId;
@@ -86,6 +88,7 @@ export class EventRedactionQueue {
      * @param redaction a QueuedRedaction.
      * @returns True if the queue already has the redaction, false otherwise.
      */
+    @traceSync("EventRedactionQueue.has")
     public has(redaction: QueuedRedaction): boolean {
         return !!this.toRedact.get(redaction.roomId)?.find(r => r.redactionEqual(redaction));
     }
@@ -95,6 +98,7 @@ export class EventRedactionQueue {
      * @param redaction A `QueuedRedaction` to await processing
      * @returns `true` if the redaction was added to the queue, `false` if it is a duplicate of a redaction already present in the queue.
      */
+    @traceSync("EventRedactionQueue.add")
     public add(redaction: QueuedRedaction): boolean {
         if (this.has(redaction)) {
             return false;
@@ -119,6 +123,7 @@ export class EventRedactionQueue {
      * @param limitToRoomId If the roomId is provided, only redactions for that room will be processed.
      * @returns A description of any errors encountered by each QueuedRedaction that was processed.
      */
+    @trace("EventRedactionQueue.process")
     public async process(client: MatrixSendClient, managementRoom: ManagementRoomOutput, limitToRoomId?: string): Promise<RoomUpdateError[]> {
         const errors: RoomUpdateError[] = [];
         const redact = async (currentBatch: QueuedRedaction[]) => {

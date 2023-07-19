@@ -29,6 +29,7 @@ import * as crypto from "crypto";
 import { LogService } from "matrix-bot-sdk";
 import { EntityType, ListRule } from "./ListRule";
 import PolicyList from "./PolicyList";
+import { traceSync } from "../utils";
 
 export const USER_MAY_INVITE = 'user_may_invite';
 export const CHECK_EVENT_FOR_SPAM = 'check_event_for_spam';
@@ -100,6 +101,7 @@ export default class RuleServer {
      * The lower the token, the longer a rule has been tracked for (relative to other rules in this RuleServer).
      * The token is incremented before adding new rules to be served.
      */
+    @traceSync("RuleServer.nextToken")
     private nextToken(): void {
         this.currentToken += 1;
         this.ruleStartsByToken.push([]);
@@ -120,6 +122,7 @@ export default class RuleServer {
      * @returns The `EventRules` object describing which rules have been created based on the policy the event represents
      * or `undefined` if there are no `EventRules` associated with the event.
      */
+    @traceSync("RuleServer.getEventRules")
     private getEventRules(roomId: string, eventId: string): EventRules | undefined {
         return this.rulesByEvent.get(roomId)?.get(eventId);
     }
@@ -129,6 +132,7 @@ export default class RuleServer {
      * @param eventRules Add rules for an associated policy room event. (e.g. m.policy.rule.user).
      * @throws If there are already rules associated with the event specified in `eventRules.eventId`.
      */
+    @traceSync("RuleServer.addEventRules")
     private addEventRules(eventRules: EventRules): void {
         const { roomId, eventId, token } = eventRules;
         if (this.rulesByEvent.get(roomId)?.has(eventId)) {
@@ -147,6 +151,7 @@ export default class RuleServer {
      * Stop serving the rules from this policy rule.
      * @param eventRules The EventRules to stop serving from the rule server.
      */
+    @traceSync("RuleServer.stopEventRules")
     private stopEventRules(eventRules: EventRules): void {
         const { eventId, roomId, token } = eventRules;
         this.rulesByEvent.get(roomId)?.delete(eventId);
@@ -163,6 +168,7 @@ export default class RuleServer {
      * Update the rule server to reflect a ListRule change.
      * @param change A ListRuleChange sourced from a BanList.
      */
+    @traceSync("RuleServer.applyRuleChange")
     private applyRuleChange(change: ListRuleChange): void {
         if (change.changeType === ChangeType.Added) {
             const eventRules = new EventRules(change.event.event_id, change.event.room_id, toRuleServerFormat(change.rule), this.currentToken);
@@ -196,6 +202,7 @@ export default class RuleServer {
      * as we won't be able to serve rules that have already been interned in the BanList.
      * @param banList a BanList to watch for rule changes with.
      */
+    @traceSync("RuleServer.watch")
     public watch(banList: PolicyList): void {
         banList.on('PolicyList.update', this.banListUpdateListener);
     }
@@ -204,6 +211,7 @@ export default class RuleServer {
      * Remove all of the rules that have been created from the policies in this banList.
      * @param banList The BanList to unwatch.
      */
+    @traceSync("RuleServer.unwatch")
     public unwatch(banList: PolicyList): void {
         banList.removeListener('PolicyList.update', this.banListUpdateListener);
         const listRules = this.rulesByEvent.get(banList.roomId);
@@ -221,6 +229,7 @@ export default class RuleServer {
      * @param banList The BanList that the changes happened in.
      * @param changes An array of ListRuleChanges.
      */
+    @traceSync("RuleServer.update")
     private update(banList: BanList, changes: ListRuleChange[]) {
         if (changes.length > 0) {
             this.nextToken();
@@ -233,6 +242,7 @@ export default class RuleServer {
      * @param sinceToken A token that has previously been issued by this server.
      * @returns An object with the rules that have been started and stopped since the token and a new token to poll for more rules with.
      */
+    @traceSync("RuleServer.getUpdates")
     public getUpdates(sinceToken: string | null): { start: RuleServerRule[], stop: string[], reset?: boolean, since: string } {
         const updatesSince = <T = EventRules | string>(token: number | null, policyStore: T[][]): T[] => {
             if (token === null) {

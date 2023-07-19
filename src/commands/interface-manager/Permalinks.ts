@@ -32,6 +32,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+import { traceSync } from '../../utils';
+
 /**
  * The parts of a permalink.
  * @see Permalinks
@@ -67,6 +69,7 @@ export class Permalinks {
     private constructor() {
     }
 
+    @traceSync('Permalinks.encodeViaArgs')
     private static encodeViaArgs(servers: string[]): string {
         if (!servers || !servers.length) return "";
 
@@ -79,6 +82,7 @@ export class Permalinks {
      * @param {string[]} viaServers The servers to route the permalink through.
      * @returns {string} A room permalink.
      */
+    @traceSync('Permalinks.forRoom')
     public static forRoom(roomIdOrAlias: string, viaServers: string[] = []): string {
         return `https://matrix.to/#/${encodeURIComponent(roomIdOrAlias)}${Permalinks.encodeViaArgs(viaServers)}`;
     }
@@ -88,6 +92,7 @@ export class Permalinks {
      * @param {string} userId The user ID to create a permalink for.
      * @returns {string} A user permalink.
      */
+    @traceSync('Permalinks.forUser')
     public static forUser(userId: string): string {
         return `https://matrix.to/#/${encodeURIComponent(userId)}`;
     }
@@ -99,6 +104,7 @@ export class Permalinks {
      * @param {string[]} viaServers The servers to route the permalink through.
      * @returns {string} An event permalink.
      */
+    @traceSync('Permalinks.forEvent')
     public static forEvent(roomIdOrAlias: string, eventId: string, viaServers: string[] = []): string {
         return `https://matrix.to/#/${encodeURIComponent(roomIdOrAlias)}/${encodeURIComponent(eventId)}${Permalinks.encodeViaArgs(viaServers)}`;
     }
@@ -108,6 +114,7 @@ export class Permalinks {
      * @param {string} matrixTo The matrix.to URL to parse.
      * @returns {PermalinkParts} The parts of the permalink.
      */
+    @traceSync('Permalinks.parseUrl')
     public static parseUrl(matrixTo: string): PermalinkParts {
         const matrixToRegexp = /^https:\/\/matrix\.to\/#\/(?<entity>[^/?]+)\/?(?<eventId>[^?]+)?(?<query>\?[^]*)?$/;
 

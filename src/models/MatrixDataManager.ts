@@ -2,6 +2,8 @@
  * Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
  */
 
+import { trace } from "../utils";
+
 export const SCHEMA_VERSION_KEY = 'ge.applied-langua.ge.draupnir.schema_version';
 
 export type RawSchemedData = object & Record<typeof SCHEMA_VERSION_KEY, unknown>;
@@ -15,6 +17,7 @@ export abstract class MatrixDataManager<Format extends RawSchemedData = RawSchem
     protected abstract storeMatixData(data: Format): Promise<void>;
     protected abstract createFirstData(): Promise<Format>;
 
+    @trace('MatrixDataManager.migrateData')
     protected async migrateData(rawData: RawSchemedData): Promise<RawSchemedData> {
         const startingVersion = rawData[SCHEMA_VERSION_KEY] as number;
         // Rememeber, version 0 has no migrations
@@ -33,6 +36,7 @@ export abstract class MatrixDataManager<Format extends RawSchemedData = RawSchem
         }
     }
 
+    @trace('MatrixDataManager.loadData')
     protected async loadData(): Promise<Format> {
         const rawData = await this.requestMatrixData();
         if (rawData === undefined) {

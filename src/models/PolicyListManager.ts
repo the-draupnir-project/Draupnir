@@ -30,6 +30,7 @@ import { Mjolnir } from "../Mjolnir";
 import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "./MatrixDataManager";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { PolicyList, WATCHED_LISTS_EVENT_TYPE, WARN_UNPROTECTED_ROOM_EVENT_PREFIX } from "./PolicyList";
+import { trace, traceSync } from "../utils";
 
 type WatchedListsEvent = RawSchemedData & { references?: string[]; };
 /**
@@ -50,6 +51,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
         return [...this.policyLists];
     }
 
+    @traceSync("PolicyListManager.resolveListShortcode")
     public resolveListShortcode(listShortcode: string): PolicyList | undefined {
         return this.lists.find(list => list.listShortcode.toLocaleLowerCase() === listShortcode);
     }
@@ -59,6 +61,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
      * @param roomId The room id for the `PolicyList`.
      * @param roomRef A reference (matrix.to URL) for the `PolicyList`.
      */
+    @trace('PolicyListManager.addPolicyList')
     private async addPolicyList(roomId: string, roomRef: string): Promise<PolicyList> {
         const list = new PolicyList(roomId, roomRef, this.mjolnir.client);
         this.mjolnir.ruleServer?.watch(list);
@@ -76,6 +79,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
      * @returns The list that has been watched or null if the manager was already
      * watching the list.
      */
+    @trace('PolicyListManager.watchList')
     public async watchList(roomRef: MatrixRoomReference): Promise<PolicyList | null> {
         const roomId = await roomRef.joinClient(this.mjolnir.client);
         if (this.policyLists.find(b => b.roomId === roomId.toRoomIdOrAlias())) {
@@ -99,6 +103,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
      * @param roomRef A matrix room reference to a list that should be unwatched.
      * @returns The list being unwatched or null if we were not watching the list.
      */
+    @trace('PolicyListManager.unwatchList')
     public async unwatchList(roomRef: MatrixRoomReference): Promise<PolicyList | null> {
         const roomId = await roomRef.resolve(this.mjolnir.client);
         const list = this.policyLists.find(b => b.roomId === roomId.toRoomIdOrAlias()) || null;
@@ -112,10 +117,12 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
         return list;
     }
 
+    @trace('PolicyListManager.createFirstData')
     protected async createFirstData(): Promise<RawSchemedData> {
         return { [SCHEMA_VERSION_KEY]: 0 };
     }
 
+    @trace('PolicyListManager.requestMatrixData')
     protected async requestMatrixData(): Promise<unknown> {
         try {
             return await this.mjolnir.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
@@ -132,6 +139,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
     /**
      * Load the watched policy lists from account data, only used when Mjolnir is initialized.
      */
+    @trace('PolicyListManager.start')
     public async start() {
         this.policyLists = [];
         const watchedListsEvent = await super.loadData();
@@ -154,6 +162,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
     /**
      * Store to account the list of policy rooms.
      */
+    @trace('PolicyListManager.storeMatixData')
     protected async storeMatixData() {
         let list = this.policyLists.map(b => b.roomRef);
         await this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, {
@@ -171,6 +180,7 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
      *
      * @param roomId The id of the room to check/warn.
      */
+    @trace('PolicyListManager.warnAboutUnprotectedPolicyListRoom')
     private async warnAboutUnprotectedPolicyListRoom(roomId: string) {
         if (!this.mjolnir.config.protectAllJoinedRooms) {
             return; // doesn't matter

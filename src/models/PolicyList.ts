@@ -31,6 +31,7 @@ import { ALL_RULE_TYPES, EntityType, ListRule, Recommendation, ROOM_RULE_TYPES, 
 import { MatrixSendClient } from "../MatrixEmitter";
 import AwaitLock from "await-lock";
 import { monotonicFactory } from "ulidx";
+import { trace, traceSync } from "../utils";
 
 /**
  * Account data event type used to store the permalinks to each of the policylists.
@@ -156,6 +157,7 @@ export class PolicyList extends EventEmitter {
      * @param createRoomOptions Additional room create options such as an alias.
      * @returns The room id for the newly created policy list.
      */
+    @trace('PolicyList.createList')
     public static async createList(
         client: MatrixSendClient,
         shortcode: string,
@@ -178,7 +180,7 @@ export class PolicyList extends EventEmitter {
             "state_default": 50,
             "users": {
                 [await client.getUserId()]: 100,
-                ...invite.reduce((users, mxid) => ({...users,  [mxid]: 50 }), {}),
+                ...invite.reduce((users, mxid) => ({ ...users, [mxid]: 50 }), {}),
             },
             "users_default": 0,
         };
@@ -193,7 +195,7 @@ export class PolicyList extends EventEmitter {
                 {
                     type: SHORTCODE_EVENT_TYPE,
                     state_key: "",
-                    content: {shortcode: shortcode}
+                    content: { shortcode: shortcode }
                 }
             ],
             power_level_content_override: powerLevels,
@@ -248,6 +250,7 @@ export class PolicyList extends EventEmitter {
      * @param recommendation A specific recommendation to filter for e.g. `m.ban`. Please remember recommendation varients are normalized.
      * @returns The active ListRules for the ban list of that kind.
      */
+    @traceSync('PolicyList.rulesOfKind')
     public rulesOfKind(kind: string, recommendation?: Recommendation): ListRule[] {
         const rules: ListRule[] = []
         const stateKeyMap = this.state.get(kind);
@@ -289,6 +292,7 @@ export class PolicyList extends EventEmitter {
      * @param entity The entity to test e.g. the user id, server name or a room id.
      * @returns All of the rules that match this entity.
      */
+    @traceSync('PolicyList.rulesMatchingEntity')
     public rulesMatchingEntity(entity: string, ruleKind?: string): ListRule[] {
         const ruleTypeOf: (entityPart: string) => string = (entityPart: string) => {
             if (ruleKind) {
@@ -322,6 +326,7 @@ export class PolicyList extends EventEmitter {
      * @param additionalProperties Any other properties to embed in the rule such as a reason.
      * @returns The event id of the policy.
      */
+    @trace('PolicyList.createPolicy')
     public async createPolicy(entityType: EntityType, recommendation: Recommendation, entity: string, additionalProperties = {}): Promise<string> {
         // '@' at the beginning of state keys is reserved.
         const stateKey = entityType === RULE_USER ? '_' + entity.substring(1) : entity;
@@ -340,6 +345,7 @@ export class PolicyList extends EventEmitter {
      * @param entity The entity to ban.
      * @param reason A reason we are banning them.
      */
+    @trace('PolicyList.banEntity')
     public async banEntity(ruleType: EntityType, entity: string, reason?: string): Promise<void> {
         await this.createPolicy(ruleType, Recommendation.Ban, entity, {
             reason: reason || '<no reason supplied>',
@@ -353,6 +359,7 @@ export class PolicyList extends EventEmitter {
      * @param entity The entity to unban from this list.
      * @returns true if any rules were removed and the entity was unbanned, otherwise false because there were no rules.
      */
+    @trace('PolicyList.unbanEntity')
     public async unbanEntity(ruleType: string, entity: string): Promise<boolean> {
         let typesToCheck = [ruleType];
         switch (ruleType) {
@@ -377,7 +384,7 @@ export class PolicyList extends EventEmitter {
                 typesToCheck.map(stateType => this.client.getRoomStateEvent(this.roomId, stateType, stateKey)
                     .then(_ => stateType) // We need the state type as getRoomState only returns the content, not the top level.
                     .catch(e => e.statusCode === 404 ? null : Promise.reject(e))))
-                ).filter(e => e); // remove nulls. I don't know why TS still thinks there can be nulls after this??
+            ).filter(e => e); // remove nulls. I don't know why TS still thinks there can be nulls after this??
             if (typesToRemove.length === 0) {
                 return;
             }
@@ -393,6 +400,7 @@ export class PolicyList extends EventEmitter {
      * and updating the model to reflect the room.
      * @returns A description of any rules that were added, modified or removed from the list as a result of this update.
      */
+    @trace('PolicyList.updateList')
     public async updateList(): Promise<ReturnType<PolicyList["updateListWithState"]>> {
         await this.updateListLock.acquireAsync();
         try {
@@ -409,6 +417,7 @@ export class PolicyList extends EventEmitter {
      * @param state Room state to update the list with, provided by `updateList`
      * @returns Any changes that have been made to the PolicyList.
      */
+    @traceSync('PolicyList.updateListWithState')
     private updateListWithState(state: any): { revision: Revision, changes: ListRuleChange[] } {
         const changes: ListRuleChange[] = [];
         for (const event of state) {
@@ -524,6 +533,7 @@ export class PolicyList extends EventEmitter {
      * Inform the `PolicyList` about a new event from the room it is modelling.
      * @param event An event from the room the `PolicyList` models to inform an instance about.
      */
+    @traceSync('PolicyList.updateForEvent')
     public updateForEvent(eventId: string): void {
         if (this.stateByEventId.has(eventId) || this.batchedEvents.has(eventId)) {
             return; // we already know about this event.
@@ -555,6 +565,7 @@ class UpdateBatcher {
     /**
      * Reset the state for the next batch.
      */
+    @traceSync('UpdateBatcher.reset')
     private reset() {
         this.latestEventId = null;
         this.isWaiting = false;
@@ -566,6 +577,7 @@ class UpdateBatcher {
      * and emit a batch.
      * @param eventId The id of the first event for this batch.
      */
+    @trace('UpdateBatcher.checkBatch')
     private async checkBatch(eventId: string): Promise<void> {
         let start = Date.now();
         do {
@@ -580,6 +592,7 @@ class UpdateBatcher {
      * Adds an event to the batch.
      * @param eventId The event to inform the batcher about.
      */
+    @traceSync('UpdateBatcher.addToBatch')
     public addToBatch(eventId: string): void {
         if (this.isWaiting) {
             this.latestEventId = eventId;
@@ -625,6 +638,7 @@ export class Revision {
      * @param revision The revision we want to check this supersedes.
      * @returns True if this Revision supersedes the other revision.
      */
+    @traceSync('Revision.supersedes')
     public supersedes(revision: Revision): boolean {
         return this.ulid > revision.ulid;
     }

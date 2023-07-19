@@ -12,6 +12,7 @@ import { MatrixEmitter } from "../MatrixEmitter";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { Gauge } from "prom-client";
+import { trace, traceSync } from "../utils";
 
 const log = new Logger('MjolnirManager');
 
@@ -44,6 +45,7 @@ export class MjolnirManager {
      * @param accessControl Who has access to the bridge.
      * @returns A new mjolnir manager.
      */
+    @trace('MjolnirManager.makeMjolnirManager')
     public static async makeMjolnirManager(dataStore: DataStore, bridge: Bridge, accessControl: AccessControl, instanceCountGauge: Gauge<"status" | "uuid">): Promise<MjolnirManager> {
         const mjolnirManager = new MjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
         await mjolnirManager.startMjolnirs(await dataStore.list());
@@ -57,6 +59,7 @@ export class MjolnirManager {
      * @param client A client for the appservice virtual user that the new mjolnir should use.
      * @returns A new managed mjolnir.
      */
+    @trace('MjolnirManager.makeInstance')
     public async makeInstance(localPart: string, requestingUserId: string, managementRoomId: string, client: MatrixClient): Promise<ManagedMjolnir> {
         const mxid = await client.getUserId();
         const intentListener = new MatrixIntentListener(mxid);
@@ -93,6 +96,7 @@ export class MjolnirManager {
      * @param ownerId The owner of the mjolnir. We ask for it explicitly to not leak access to another user's mjolnir.
      * @returns The matching managed mjolnir instance.
      */
+    @traceSync('MjolnirManager.getMjolnir')
     public getMjolnir(mjolnirId: string, ownerId: string): ManagedMjolnir | undefined {
         const mjolnir = this.mjolnirs.get(mjolnirId);
         if (mjolnir) {
@@ -111,6 +115,7 @@ export class MjolnirManager {
      * @param ownerId An owner of multiple mjolnirs.
      * @returns Any mjolnirs that they own.
      */
+    @traceSync('MjolnirManager.getOwnedMjolnirs')
     public getOwnedMjolnirs(ownerId: string): ManagedMjolnir[] {
         // TODO we need to use the database for this but also provide the utility
         // for going from a MjolnirRecord to a ManagedMjolnir.
@@ -121,6 +126,7 @@ export class MjolnirManager {
     /**
      * Listener that should be setup and called by `MjolnirAppService` while listening to the bridge abstraction provided by matrix-appservice-bridge.
      */
+    @traceSync('MjolnirManager.onEvent')
     public onEvent(request: Request<WeakEvent>, context: BridgeContext) {
         // TODO We need a way to map a room id (that the event is from) to a set of managed mjolnirs that should be informed.
         // https://github.com/matrix-org/mjolnir/issues/412
@@ -132,6 +138,7 @@ export class MjolnirManager {
      * @param requestingUserId The mxid of the user we are creating a mjolnir for.
      * @returns The matrix id of the new mjolnir and its management room.
      */
+    @trace('MjolnirManager.provisionNewMjolnir')
     public async provisionNewMjolnir(requestingUserId: string): Promise<[string, string]> {
         const access = this.accessControl.getUserAccess(requestingUserId);
         if (access.outcome !== Access.Allowed) {
@@ -170,14 +177,17 @@ export class MjolnirManager {
         }
     }
 
+    @traceSync('MjolnirManager.reportUnstartedMjolnir')
     public reportUnstartedMjolnir(code: UnstartedMjolnir.FailCode, cause: any, mjolnirRecord: MjolnirRecord, mxid: string): void {
         this.unstartedMjolnirs.set(mjolnirRecord.local_part, new UnstartedMjolnir(mjolnirRecord, new UserID(mxid), code, cause));
     }
 
+    @traceSync('MjolnirManager.getUnstartedMjolnirs')
     public getUnstartedMjolnirs(): UnstartedMjolnir[] {
         return [...this.unstartedMjolnirs.values()];
     }
 
+    @traceSync('MjolnirManager.findUnstartedMjolnir')
     public findUnstartedMjolnir(localPart: string): UnstartedMjolnir | undefined {
         return [...this.unstartedMjolnirs.values()].find(unstarted => unstarted.mjolnirRecord.local_part === localPart);
     }
@@ -187,6 +197,7 @@ export class MjolnirManager {
      * @param localPart The localpart of the virtual user we need a client for.
      * @returns A bridge intent with the complete mxid of the virtual user and a MatrixClient.
      */
+    @trace('MjolnirManager.makeMatrixIntent')
     private async makeMatrixIntent(localPart: string): Promise<Intent> {
         const mjIntent = this.bridge.getIntentFromLocalpart(localPart);
         await mjIntent.ensureRegistered();
@@ -198,6 +209,7 @@ export class MjolnirManager {
      * Will be added to `this.unstartedMjolnirs` if we fail to start it AND it is not already running.
      * @param mjolnirRecord The record for the mjolnir that we want to start.
      */
+    @trace('MjolnirManager.startMjolnir')
     public async startMjolnir(mjolnirRecord: MjolnirRecord): Promise<void> {
         // if a mjolnir is in `this.mjonirs` it is started, as if it is present, it is going to be given Matrix events.
         if (this.mjolnirs.has(mjolnirRecord.local_part)) {
@@ -244,6 +256,7 @@ export class MjolnirManager {
     /**
      * Used at startup to create all the ManagedMjolnir instances and start them so that they will respond to users.
      */
+    @trace('MjolnirManager.startMjolnirs')
     public async startMjolnirs(mjolnirRecords: MjolnirRecord[]): Promise<void> {
         for (const mjolnirRecord of mjolnirRecords) {
             await this.startMjolnir(mjolnirRecord);
@@ -258,17 +271,21 @@ export class ManagedMjolnir {
         private readonly matrixEmitter: MatrixIntentListener,
     ) { }
 
+    @trace('ManagedMjolnir.onEvent')
     public async onEvent(request: Request<WeakEvent>) {
         this.matrixEmitter.handleEvent(request.getData());
     }
 
+    @trace('ManagedMjolnir.joinRoom')
     public async joinRoom(roomId: string) {
         await this.mjolnir.client.joinRoom(roomId);
     }
+    @trace('ManagedMjolnir.addProtectedRoom')
     public async addProtectedRoom(roomId: string) {
         await this.mjolnir.addProtectedRoom(roomId);
     }
 
+    @trace('ManagedMjolnir.createFirstList')
     public async createFirstList(mjolnirOwnerId: string, shortcode: string) {
         const listRoomId = await PolicyList.createList(
             this.mjolnir.client,
@@ -281,6 +298,8 @@ export class ManagedMjolnir {
         return await this.mjolnir.policyListManager.watchList(roomRef);
     }
 
+    // @ts-ignore (Due to annotation)
+    @traceSync('ManagedMjolnir.managementRoomId')
     public get managementRoomId(): string {
         return this.mjolnir.managementRoomId;
     }
@@ -289,6 +308,7 @@ export class ManagedMjolnir {
      * Intended to be called by the MjolnirManager to make sure the mjolnir is ready to listen to events.
      * This managed mjolnir should not be informed of any events via `onEvent` until `start` is called.
      */
+    @trace('ManagedMjolnir.start')
     public async start(): Promise<void> {
         await this.mjolnir.start();
     }
@@ -306,6 +326,7 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
         super()
     }
 
+    @traceSync('MatrixIntentListener.handleEvent')
     public handleEvent(mxEvent: WeakEvent) {
         // These are ordered to be the same as matrix-bot-sdk's MatrixClient
         // They shouldn't need to be, but they are just in case it matters.
@@ -333,6 +354,7 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
     /**
      * To be called by `Mjolnir`.
      */
+    @trace('MatrixIntentListener.start')
     public async start() {
         // Nothing to do.
     }
@@ -340,6 +362,7 @@ export class MatrixIntentListener extends EventEmitter implements MatrixEmitter 
     /**
      * To be called by `Mjolnir`.
      */
+    @traceSync('MatrixIntentListener.stop')
     public stop() {
         // Nothing to do.
     }

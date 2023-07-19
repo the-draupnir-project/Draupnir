@@ -24,6 +24,7 @@ limitations under the License.
  * are NOT distributed, contributed, or committed under the Apache License.
  */
 
+import { trace, traceSync } from "../../utils";
 import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
 import { PromptOptions } from "./PromptForAccept";
 import { CommandError, CommandResult } from "./Validation";
@@ -36,10 +37,12 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
 }
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
+    @traceSync('ArgumentStream.rest')
     public rest() {
         return this.source.slice(this.position);
     }
 
+    @traceSync('ArgumentStream.isPromptable')
     public isPromptable(): boolean {
         return false;
     }
@@ -94,7 +97,7 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
     }
 }
 
-export function presentationTypeOf(presentation: unknown): PresentationType|undefined {
+export function presentationTypeOf(presentation: unknown): PresentationType | undefined {
     // We have no concept of presentation-subtype
     // But we have a top type which is any...
     const candidates = [...PRESENTATION_TYPES.values()]
@@ -190,7 +193,7 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
  * argument that can be accepted by a command.
  */
 interface KeywordArgumentsDescription {
-    readonly [prop: string]: KeywordPropertyDescription|undefined;
+    readonly [prop: string]: KeywordPropertyDescription | undefined;
 }
 
 /**
@@ -225,14 +228,15 @@ export class KeywordsDescription {
  * A read only map of keywords to their associated properties.
  */
 export class ParsedKeywords {
-    constructor (
+    constructor(
         private readonly descriptions: KeywordArgumentsDescription,
         private readonly keywords: ReadonlyMap<string, ReadItem>
     ) {
 
     }
 
-    public getKeyword<T extends ReadItem|boolean>(keyword: string, defaultValue: T|undefined = undefined): T|undefined {
+    @traceSync('ParsedKeywords.getKeyword')
+    public getKeyword<T extends ReadItem | boolean>(keyword: string, defaultValue: T | undefined = undefined): T | undefined {
         const keywordDescription = this.descriptions[keyword];
         if (keywordDescription === undefined) {
             throw new TypeError(`${keyword} is not a keyword that has been expected for this command.`);
@@ -258,11 +262,13 @@ class KeywordParser {
     ) {
     }
 
+    @traceSync('KeywordParser.getKeywords')
     public getKeywords(): ParsedKeywords {
         return new ParsedKeywords(this.description.description, this.arguments);
     }
 
 
+    @traceSync('KeywordParser.readKeywordAssociatedProperty')
     private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): CommandResult<any, ArgumentParseError> {
         if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
             const validationResult = keyword.acceptor.validator(itemStream.peekItem());
@@ -280,6 +286,7 @@ class KeywordParser {
         }
     }
 
+    @traceSync('KeywordParser.parseKeywords')
     public parseKeywords(itemStream: IArgumentStream): CommandResult<this> {
         while (itemStream.peekItem() !== undefined && itemStream.peekItem() instanceof Keyword) {
             const item = itemStream.readItem() as Keyword;
@@ -309,7 +316,8 @@ class KeywordParser {
         return CommandResult.Ok(this);
     }
 
-    public async parseRest(stream: IArgumentStream, shouldPromptForRest = false, restDescription?: RestDescription): Promise<CommandResult<ReadItem[]|undefined>> {
+    @trace('KeywordParser.parseRest')
+    public async parseRest(stream: IArgumentStream, shouldPromptForRest = false, restDescription?: RestDescription): Promise<CommandResult<ReadItem[] | undefined>> {
         if (restDescription !== undefined) {
             return await restDescription.parseRest(stream, shouldPromptForRest, this)
         } else {
@@ -332,7 +340,7 @@ export interface ParsedArguments {
     readonly keywords: ParsedKeywords,
 }
 
-export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: ParameterDescription<ExecutorContext>) => Promise<PromptOptions>;
+export type Prompt<ExecutorContext> = (this: ExecutorContext, description: ParameterDescription<ExecutorContext>) => Promise<PromptOptions>;
 
 export interface ParameterDescription<ExecutorContext = unknown> {
     name: string,
@@ -354,7 +362,7 @@ export type ParameterParser = (stream: IArgumentStream) => Promise<CommandResult
 // We should have a new type of CommandResult that accepts a ParamterDescription, and can render what's wrong (e.g. missing parameter).
 // Showing where in the item stream it is missing and the command syntax and everything lovely like that.
 // How does that work with Union?
-export function parameters(descriptions: ParameterDescription[], rest: undefined|RestDescription = undefined, keywords: KeywordsDescription = new KeywordsDescription({}, false)): IArgumentListParser {
+export function parameters(descriptions: ParameterDescription[], rest: undefined | RestDescription = undefined, keywords: KeywordsDescription = new KeywordsDescription({}, false)): IArgumentListParser {
     return new ArgumentListParser(descriptions, keywords, rest);
 }
 
@@ -377,6 +385,7 @@ class ArgumentListParser implements IArgumentListParser {
     ) {
     }
 
+    @trace('ArgumentListParser.parse')
     public async parse(stream: IArgumentStream): Promise<CommandResult<ParsedArguments>> {
         let hasPrompted = false;
         const keywordsParser = this.keywords.getParser();
@@ -430,6 +439,7 @@ export class AbstractArgumentParseError extends CommandError {
         super(message)
     }
 
+    @traceSync('AbstractArgumentParseError.Result')
     public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, AbstractArgumentParseError> {
         return CommandResult.Err(new AbstractArgumentParseError(options.stream, message));
     }
@@ -443,12 +453,14 @@ export class ArgumentParseError extends AbstractArgumentParseError {
         super(stream, message)
     }
 
+    @traceSync('ArgumentParseError.Result')
     public static Result<Ok>(message: string, options: { parameter: ParameterDescription, stream: IArgumentStream }): CommandResult<Ok, ArgumentParseError> {
         return CommandResult.Err(new ArgumentParseError(options.parameter, options.stream, message));
     }
 }
 
 export class UnexpectedArgumentError extends AbstractArgumentParseError {
+    @traceSync('UnexpectedArgumentError.Result')
     public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, UnexpectedArgumentError> {
         return CommandResult.Err(new UnexpectedArgumentError(options.stream, message));
     }

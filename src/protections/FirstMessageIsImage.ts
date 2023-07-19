@@ -28,7 +28,7 @@ limitations under the License.
 import { Protection } from "./Protection";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { isTrueJoinEvent } from "../utils";
+import { isTrueJoinEvent, trace } from "../utils";
 
 export class FirstMessageIsImage extends Protection {
 
@@ -49,6 +49,7 @@ export class FirstMessageIsImage extends Protection {
             "they'll be banned for spam. This does not publish the ban to any of your ban lists.";
     }
 
+    @trace("FirstMessageIsImage.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (!this.justJoined[roomId]) this.justJoined[roomId] = [];
 

@@ -34,7 +34,7 @@ import {
 import { ALL_RULE_TYPES as ALL_BAN_LIST_RULE_TYPES } from "./models/ListRule";
 import { COMMAND_PREFIX, handleCommand } from "./commands/CommandHandler";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
-import { htmlEscape } from "./utils";
+import { htmlEscape, trace, traceSync } from "./utils";
 import { ReportManager } from "./report/ReportManager";
 import { ReportPoller } from "./report/ReportPoller";
 import { WebAPIs } from "./webapis/WebAPIs";
@@ -108,6 +108,7 @@ export class Mjolnir {
      * @param {boolean} options.autojoinOnlyIfManager Whether to only accept an invitation by a user present in the `managementRoom`.
      * @param {string} options.acceptInvitesFromSpace A space of users to accept invites from, ignores invites form users not in this space.
      */
+    @trace('Mjolnir.addJoinOnInviteListener')
     private static addJoinOnInviteListener(mjolnir: Mjolnir, client: MatrixSendClient, options: { [key: string]: any }) {
         mjolnir.matrixEmitter.on("room.invite", async (roomId: string, inviteEvent: any) => {
             const membershipEvent = new MembershipEvent(inviteEvent);
@@ -152,6 +153,7 @@ export class Mjolnir {
      * @param {MatrixSendClient} client The client for Mjolnir to use.
      * @returns A new Mjolnir instance that can be started without further setup.
      */
+    @trace('Mjolnir.setupMjolnirFromConfig')
     static async setupMjolnirFromConfig(client: MatrixSendClient, matrixEmitter: MatrixEmitter, config: IConfig): Promise<Mjolnir> {
         if (!config.autojoinOnlyIfManager && config.acceptInvitesFromSpace === getDefaultConfig().acceptInvitesFromSpace) {
             throw new TypeError("`autojoinOnlyIfManager` has been disabled, yet no space has been provided for `acceptInvitesFromSpace`.");
@@ -286,6 +288,7 @@ export class Mjolnir {
     /**
      * Start Mjölnir.
      */
+    @trace('Mjolnir.start')
     public async start() {
         try {
             // Start the web server.
@@ -351,6 +354,7 @@ export class Mjolnir {
     /**
      * Stop Mjolnir from syncing and processing commands.
      */
+    @traceSync('Mjolnir.stop')
     public stop() {
         LogService.info("Mjolnir", "Stopping Mjolnir...");
         this.matrixEmitter.stop();
@@ -374,6 +378,7 @@ export class Mjolnir {
      * use `protectRoom` instead.
      * @param roomId The room to be explicitly protected by mjolnir and persisted in config.
      */
+    @trace('Mjolnir.addProtectedRoom')
     public async addProtectedRoom(roomId: string) {
         await this.protectedRoomsConfig.addProtectedRoom(roomId);
         this.protectRoom(roomId);
@@ -383,6 +388,7 @@ export class Mjolnir {
      * Protect the room, but do not persist it to the account data.
      * @param roomId The room to protect.
      */
+    @traceSync('Mjolnir.protectRoom')
     private protectRoom(roomId: string): void {
         this.protectedRoomsTracker.addProtectedRoom(roomId);
         this.roomJoins.addRoom(roomId);
@@ -394,6 +400,7 @@ export class Mjolnir {
      * use `unprotectRoom` instead.
      * @param roomId The room to remove from account data and stop protecting.
      */
+    @trace('Mjolnir.removeProtectedRoom')
     public async removeProtectedRoom(roomId: string) {
         await this.protectedRoomsConfig.removeProtectedRoom(roomId);
         this.unprotectRoom(roomId);
@@ -403,6 +410,7 @@ export class Mjolnir {
      * Unprotect a room.
      * @param roomId The room to stop protecting.
      */
+    @trace('Mjolnir.unprotectRoom')
     private unprotectRoom(roomId: string): void {
         this.roomJoins.removeRoom(roomId);
         this.protectedRoomsTracker.removeProtectedRoom(roomId);
@@ -413,6 +421,7 @@ export class Mjolnir {
      * This is to implement `config.protectAllJoinedRooms` functionality.
      * @param withSync Whether to synchronize all protected rooms with the watched policy lists afterwards.
      */
+    @trace('Mjolnir.resyncJoinedRooms')
     private async resyncJoinedRooms(withSync = true): Promise<void> {
         if (!this.config.protectAllJoinedRooms) return;
 
@@ -450,6 +459,7 @@ export class Mjolnir {
         }
     }
 
+    @trace('Mjolnir.handleEvent')
     private async handleEvent(roomId: string, event: any) {
         // Check for UISI errors
         if (roomId === this.managementRoomId) {
@@ -477,6 +487,7 @@ export class Mjolnir {
         }
     }
 
+    @trace('Mjolnir.isSynapseAdmin')
     public async isSynapseAdmin(): Promise<boolean> {
         try {
             const endpoint = `/_synapse/admin/v1/users/${await this.client.getUserId()}/admin`;
@@ -488,11 +499,13 @@ export class Mjolnir {
         }
     }
 
+    @trace('Mjolnir.deactivateSynapseUser')
     public async deactivateSynapseUser(userId: string): Promise<any> {
         const endpoint = `/_synapse/admin/v1/deactivate/${userId}`;
         return await this.client.doRequest("POST", endpoint);
     }
 
+    @trace('Mjolnir.shutdownSynapseRoom')
     public async shutdownSynapseRoom(roomId: string, message?: string): Promise<any> {
         const endpoint = `/_synapse/admin/v1/rooms/${roomId}`;
         return await this.client.doRequest("DELETE", endpoint, null, {
@@ -507,6 +520,7 @@ export class Mjolnir {
      * @param roomId the room where the user (or the bot) shall be made administrator.
      * @param userId optionally specify the user mxID to be made administrator.
      */
+    @trace('Mjolnir.makeUserRoomAdmin')
     public async makeUserRoomAdmin(roomId: string, userId: string): Promise<void> {
         const endpoint = `/_synapse/admin/v1/rooms/${roomId}/make_room_admin`;
         return await this.client.doRequest("POST", endpoint, null, {

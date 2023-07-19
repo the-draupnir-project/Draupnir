@@ -27,6 +27,7 @@ limitations under the License.
 
 import { EventEmitter } from "events";
 import { default as parseDuration } from "parse-duration";
+import { traceSync } from "../utils";
 
 // Define a few aliases to simplify parsing durations.
 
@@ -36,7 +37,7 @@ parseDuration["weeks"] = parseDuration["week"] = parseDuration["wk"];
 parseDuration["months"] = parseDuration["month"];
 parseDuration["years"] = parseDuration["year"];
 
-export class ProtectionSettingValidationError extends Error {};
+export class ProtectionSettingValidationError extends Error { };
 
 /*
  * @param TChange Type for individual pieces of data (e.g. `string`)
@@ -82,6 +83,7 @@ export class AbstractProtectionListSetting<TChange, TValue> extends AbstractProt
      * @param data Value to add to the current setting value
      * @returns The potential new value of this setting object
      */
+    @traceSync("AbstractProtectionSetting.addValue")
     addValue(data: TChange): TValue {
         throw new Error("not Implemented");
     }
@@ -92,6 +94,7 @@ export class AbstractProtectionListSetting<TChange, TValue> extends AbstractProt
      * @param data Value to remove from the current setting value
      * @returns The potential new value of this setting object
      */
+    @traceSync("AbstractProtectionSetting.removeValue")
     removeValue(data: TChange): TValue {
         throw new Error("not Implemented");
     }
@@ -110,14 +113,16 @@ export class StringListProtectionSetting extends AbstractProtectionListSetting<s
     value: string[] = [];
     fromString = (data: string): string => data;
     validate = (data: string): boolean => true;
+    @traceSync("StringListProtectionSetting.addValue")
     addValue(data: string): string[] {
         this.emit("add", data);
         this.value.push(data);
         return this.value;
     }
+    @traceSync("StringListProtectionSetting.removeValue")
     removeValue(data: string): string[] {
         this.emit("remove", data);
-        this.value =  this.value.filter(i => i !== data);
+        this.value = this.value.filter(i => i !== data);
         return this.value;
     }
 }
@@ -126,11 +131,13 @@ export class StringSetProtectionSetting extends AbstractProtectionListSetting<st
     value: Set<string> = new Set();
     fromString = (data: string): string => data;
     validate = (data: string): boolean => true;
+    @traceSync("StringSetProtectionSetting.addValue")
     addValue(data: string): Set<string> {
         this.emit("add", data);
         this.value.add(data);
         return this.value;
     }
+    @traceSync("StringSetProtectionSetting.removeValue")
     removeValue(data: string): Set<string> {
         this.emit("remove", data);
         this.value.delete(data);
@@ -145,13 +152,13 @@ export class MXIDListProtectionSetting extends StringListProtectionSetting {
 }
 
 export class NumberProtectionSetting extends AbstractProtectionSetting<number, number> {
-    min: number|undefined;
-    max: number|undefined;
+    min: number | undefined;
+    max: number | undefined;
 
     constructor(
-            defaultValue: number,
-            min: number|undefined = undefined,
-            max: number|undefined = undefined
+        defaultValue: number,
+        min: number | undefined = undefined,
+        max: number | undefined = undefined
     ) {
         super();
         this.setValue(defaultValue);
@@ -159,10 +166,12 @@ export class NumberProtectionSetting extends AbstractProtectionSetting<number, n
         this.max = max;
     }
 
+    @traceSync("NumberProtectionSetting.fromString")
     fromString(data: string) {
         let number = Number(data);
         return isNaN(number) ? undefined : number;
     }
+    @traceSync("NumberProtectionSetting.validate")
     validate(data: number) {
         return (!isNaN(data)
             && (this.min === undefined || this.min <= data)
@@ -177,18 +186,20 @@ export class NumberProtectionSetting extends AbstractProtectionSetting<number, n
  */
 export class DurationMSProtectionSetting extends AbstractProtectionSetting<number, number> {
     constructor(
-            defaultValue: number,
-            public readonly minMS: number|undefined = undefined,
-            public readonly maxMS: number|undefined = undefined
+        defaultValue: number,
+        public readonly minMS: number | undefined = undefined,
+        public readonly maxMS: number | undefined = undefined
     ) {
         super();
         this.setValue(defaultValue);
     }
 
+    @traceSync("DurationMSProtectionSetting.fromString")
     fromString(data: string) {
         let number = parseDuration(data);
         return isNaN(number) ? undefined : number;
     }
+    @traceSync("DurationMSProtectionSetting.validate")
     validate(data: number) {
         return (!isNaN(data)
             && (this.minMS === undefined || this.minMS <= data)

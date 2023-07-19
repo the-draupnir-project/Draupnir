@@ -28,6 +28,7 @@ limitations under the License.
 import { Protection } from "./Protection";
 import { MXIDListProtectionSetting, NumberProtectionSetting } from "./ProtectionSettings";
 import { Mjolnir } from "../Mjolnir";
+import { trace } from "../utils";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
 
@@ -57,6 +58,7 @@ export class TrustedReporters extends Protection {
         return "Count reports from trusted reporters and take a configured action";
     }
 
+    @trace("TrustedReporters.handleReport")
     public async handleReport(mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string): Promise<any> {
         if (!this.settings.mxids.value.includes(reporterId)) {
             // not a trusted user, we're not interested

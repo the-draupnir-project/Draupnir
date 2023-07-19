@@ -30,6 +30,7 @@ import { Permalinks } from "../commands/interface-manager/Permalinks";
 import AccessControlUnit, { EntityAccess } from "../models/AccessControlUnit";
 import { EntityType, Recommendation } from "../models/ListRule";
 import PolicyList from "../models/PolicyList";
+import { trace, traceSync } from "../utils";
 
 /**
  * Utility to manage which users have access to the application service,
@@ -41,7 +42,7 @@ export class AccessControl {
     private constructor(
         private readonly accessControlList: PolicyList,
         private readonly accessControlUnit: AccessControlUnit
-        ) {
+    ) {
     }
 
     /**
@@ -50,6 +51,7 @@ export class AccessControl {
      * @param bridge The matrix-appservice-bridge, used to get the appservice bot.
      * @returns A new instance of `AccessControl` to be used by `MjolnirAppService`.
      */
+    @trace('AccessControl.setupAccessControl')
     public static async setupAccessControl(
         /** The room id for the access control list. */
         accessControlListId: string,
@@ -66,20 +68,24 @@ export class AccessControl {
         return new AccessControl(accessControlList, accessControlUnit);
     }
 
+    @traceSync('AccessControl.handleEvent')
     public handleEvent(roomId: string, event: any) {
         if (roomId === this.accessControlList.roomId) {
             this.accessControlList.updateForEvent(event);
         }
     }
 
+    @traceSync('AccessControl.getUserAccess')
     public getUserAccess(mxid: string): EntityAccess {
         return this.accessControlUnit.getAccessForUser(mxid, "CHECK_SERVER");
     }
 
+    @trace('AccessControl.allow')
     public async allow(mxid: string): Promise<void> {
         await this.accessControlList.createPolicy(EntityType.RULE_USER, Recommendation.Allow, mxid);
     }
 
+    @trace('AccessControl.remove')
     public async remove(mxid: string): Promise<void> {
         await this.accessControlList.unbanEntity(EntityType.RULE_USER, mxid);
     }

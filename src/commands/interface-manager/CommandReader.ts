@@ -6,16 +6,17 @@
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
 import { Permalinks } from "./Permalinks";
+import { traceSync } from "../../utils";
 
 export interface ISuperCoolStream<T> {
     readonly source: T
-    peekItem(eof?: any): T|any,
-    readItem(eof?: any): T|any,
+    peekItem(eof?: any): T | any,
+    readItem(eof?: any): T | any,
     getPosition(): number,
-    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean, body: (stream: ISuperCoolStream<T>) => Result}): Result;
+    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean, body: (stream: ISuperCoolStream<T>) => Result }): Result;
 }
 
-export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> implements ISuperCoolStream<T> {
+export class SuperCoolStream<T extends { at: (...args: any) => any | undefined }> implements ISuperCoolStream<T> {
     protected position: number
     /**
      * Makes the super cool string stream.
@@ -26,18 +27,22 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> i
         this.position = start;
     }
 
+    @traceSync('SuperCoolStream.pop')
     public peekItem(eof = undefined) {
         return this.source.at(this.position) ?? eof;
     }
 
+    @traceSync('SuperCoolStream.readItem')
     public readItem(eof = undefined) {
         return this.source.at(this.position++) ?? eof;
     }
 
+    @traceSync('SuperCoolStream.getPosition')
     public getPosition(): number {
         return this.position;
     }
 
+    @traceSync('SuperCoolStream.savingPositionIf')
     savingPositionIf<Result>(description: { predicate: (t: Result) => boolean; body: (stream: SuperCoolStream<T>) => Result; }): Result {
         const previousPosition = this.position;
         const bodyResult = description.body(this);
@@ -52,10 +57,12 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> i
  * Helper for peeking and reading character by character.
  */
 class StringStream extends SuperCoolStream<string> {
+    @traceSync('StringStream.peekChar')
     public peekChar(...args: any[]) {
         return this.peekItem(...args);
     }
 
+    @traceSync('StringStream.readChar')
     public readChar(...args: any[]) {
         return this.readItem(...args);
     }
@@ -153,7 +160,7 @@ function defineReadItem(dispatchCharacter: string, macro: ReadMacro) {
     WORD_DISPATCH_CHARACTERS.set(dispatchCharacter, macro);
 }
 
-type PostReadStringReplaceTransformer = (item: string) => ReadItem|string;
+type PostReadStringReplaceTransformer = (item: string) => ReadItem | string;
 type TransformerEntry = { regex: RegExp, transformer: PostReadStringReplaceTransformer };
 const POST_READ_TRANSFORMERS = new Map<string, TransformerEntry>();
 
@@ -204,7 +211,7 @@ function readUntil(regex: RegExp, stream: StringStream, output: string[]) {
  * @param stream The stream to consume the room reference from.
  * @returns A MatrixRoomReference or string if what has been read does not represent a room.
  */
-function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
+function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference | string {
     const word: string[] = [stream.readChar()!];
     readUntil(/[:\s]/, stream, word);
     if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {
@@ -223,7 +230,7 @@ defineReadItem('!', readRoomIDOrAlias);
 /**
  * Read the word as a UserID, otherwise return a string if what has been read doesn not represent a user.
  */
-defineReadItem('@', (stream: StringStream): UserID|string => {
+defineReadItem('@', (stream: StringStream): UserID | string => {
     const word: string[] = [stream.readChar()!];
     readUntil(/[:\s]/, stream, word);
     if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {

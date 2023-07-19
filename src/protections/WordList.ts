@@ -29,13 +29,13 @@ import { Protection } from "./Protection";
 import { ConsequenceBan, ConsequenceRedact } from "./consequence";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { isTrueJoinEvent } from "../utils";
+import { isTrueJoinEvent, trace } from "../utils";
 
 export class WordList extends Protection {
 
     settings = {};
 
-    private justJoined: { [roomId: string]: { [username: string]: Date} } = {};
+    private justJoined: { [roomId: string]: { [username: string]: Date } } = {};
     private badWords?: RegExp;
 
     constructor() {
@@ -50,6 +50,7 @@ export class WordList extends Protection {
             "will be banned from that room.  This will not publish the ban to a ban list.";
     }
 
+    @trace("WordList.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
 
         const content = event['content'] || {};

@@ -28,7 +28,7 @@ limitations under the License.
 import { PowerLevelAction } from "matrix-bot-sdk/lib/models/PowerLevelAction";
 import { LogService, UserID } from "matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
-import { htmlEscape } from "../utils";
+import { htmlEscape, trace } from "../utils";
 import { JSDOM } from 'jsdom';
 import { EventEmitter } from 'events';
 import { Mjolnir } from "../Mjolnir";
@@ -122,6 +122,7 @@ export class ReportManager extends EventEmitter {
      * @param event The event being reported.
      * @param reason A reason provided by the reporter.
      */
+    @trace('ReportManager.handleServerAbuseReport')
     public async handleServerAbuseReport({ roomId, reporterId, event, reason }: { roomId: string, reporterId: string, event: any, reason?: string }) {
         this.emit("report.new", { roomId: roomId, reporterId: reporterId, event: event, reason: reason });
         if (this.mjolnir.config.displayReports) {
@@ -135,6 +136,7 @@ export class ReportManager extends EventEmitter {
      * @param roomId The room in which the reaction took place.
      * @param event The reaction.
      */
+    @trace('ReportManager.handleReaction')
     public async handleReaction({ roomId, event }: { roomId: string, event: any }) {
         if (event.sender === await this.mjolnir.client.getUserId()) {
             // Let's not react to our own reactions.
@@ -296,6 +298,7 @@ export class ReportManager extends EventEmitter {
         * @param failureEventId The event to annotate with a "FAIL" in case of failure.
         * @param onSuccessRemoveEventId Optionally, an event to remove in case of success (e.g. the confirmation dialog).
         */
+    @trace('ReportManager.executeAction')
     private async executeAction({ label, report, successEventId, failureEventId, onSuccessRemoveEventId, moderationRoomId }: { label: string, report: IReportWithAction, successEventId: string, failureEventId: string, onSuccessRemoveEventId?: string, moderationRoomId: string }) {
         let action: IUIAction | undefined = ACTIONS.get(label);
         if (!action) {
@@ -707,7 +710,7 @@ class DisplayManager {
             // Ignore.
         }
 
-        let eventContent: { msg: string} | { html: string } | { text: string };
+        let eventContent: { msg: string } | { html: string } | { text: string };
         try {
             if (event["type"] === "m.room.encrypted") {
                 eventContent = { msg: "<encrypted content>" };
@@ -848,7 +851,7 @@ class DisplayManager {
         }
 
         // ...insert HTML content
-        for (let {key, value} of [
+        for (let { key, value } of [
             { key: 'event-content', value: eventContent },
         ]) {
             let node = document.getElementById(key);

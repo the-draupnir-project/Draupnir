@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+import { traceSync } from "../../utils";
 import { DocumentNode } from "./DeadDocument";
 
 /**
@@ -26,20 +27,24 @@ export class PagedDuplexStream {
         return this.pages.at(this.pages.length - 1)!;
     }
 
+    @traceSync('PagedDuplexStream.appendToCurrentPage')
     private appendToCurrentPage(string: string) {
         const currentIndex = this.pages.length - 1;
         this.pages[currentIndex] = this.pages[currentIndex] + string;
     }
 
+    @traceSync('PagedDuplexStream.writeString')
     public writeString(string: string): PagedDuplexStream {
         this.buffer += string;
         return this;
     }
 
+    @traceSync('PagedDuplexStream.getPosition')
     public getPosition(): number {
         return this.buffer.length;
     }
 
+    @traceSync('PagedDuplexStream.isPageAndBufferOverSize')
     public isPageAndBufferOverSize(): boolean {
         return (this.currentPage.length + this.buffer.length) > this.sizeLimit;
     }
@@ -48,6 +53,7 @@ export class PagedDuplexStream {
      * Creates a new page from the previously committed text
      * @returns A page with all committed text.
      */
+    @traceSync('PagedDuplexStream.ensureNewPage')
     public ensureNewPage(): void {
         if (this.currentPage.length !== 0) {
             this.pages.push('');
@@ -63,6 +69,7 @@ export class PagedDuplexStream {
      * @throws TypeError if the buffer is larger than the `sizeLimit`.
      * @returns A page if the buffered text will force the current page to go over the size limit.
      */
+    @traceSync('PagedDuplexStream.commit')
     public commit(node: DocumentNode): void {
         if (this.isPageAndBufferOverSize()) {
             if (this.currentPage.length === 0 && (this.buffer.length > this.sizeLimit)) {
@@ -75,10 +82,12 @@ export class PagedDuplexStream {
         this.lastCommittedNode = node;
     }
 
+    @traceSync('PagedDuplexStream.getLastCommittedNode')
     public getLastCommittedNode(): DocumentNode | undefined {
         return this.lastCommittedNode;
     }
 
+    @traceSync('PagedDuplexStream.peekPage')
     public peekPage(): string | undefined {
         // We consider a page "ready" when it is no longer the current page.
         if (this.pages.length < 2) {
@@ -87,6 +96,7 @@ export class PagedDuplexStream {
         return this.pages.at(0);
     }
 
+    @traceSync('PagedDuplexStream.readPage')
     public readPage(): string | undefined {
         // We consider a page "ready" when it is no longer the current page.
         if (this.pages.length < 2) {

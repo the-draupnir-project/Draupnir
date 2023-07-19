@@ -31,6 +31,7 @@ import { Mjolnir } from "../Mjolnir";
 import { LogLevel, UserID } from "matrix-bot-sdk";
 import { ReadItem } from "../commands/interface-manager/CommandReader";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
+import { trace, traceSync } from "../utils";
 
 const DEFAULT_BUCKET_DURATION_MS = 10_000;
 const DEFAULT_BUCKET_NUMBER = 6;
@@ -105,6 +106,7 @@ class TimedHistogram<T> {
      * @param now The current date, used to create a new bucket to the event if
      *  necessary and to determine whether some buckets are too old.
      */
+    @traceSync("TimedHistogram.push")
     push(event: T, now: Date) {
         let timeStamp = now.getTime();
         let latestBucket = this.buckets[this.buckets.length - 1];
@@ -125,6 +127,7 @@ class TimedHistogram<T> {
      * If any buckets are too old, remove them. If there are (still) too
      * many buckets, remove the oldest ones.
      */
+    @traceSync("TimedHistogram.trimBuckets")
     private trimBuckets(settings: HistogramSettings, now: Date) {
         if (this.buckets.length > settings.bucketNumber) {
             this.buckets.splice(0, this.buckets.length - settings.bucketNumber);
@@ -143,6 +146,7 @@ class TimedHistogram<T> {
     /**
      * Change the settings of a histogram.
      */
+    @traceSync("TimedHistogram.updateSettings")
     public updateSettings(settings: HistogramSettings, now: Date) {
         this.trimBuckets(settings, now);
         this.settings = settings;
@@ -203,6 +207,7 @@ class Stats {
         }
     }
 
+    @traceSync("Stats.round")
     public round(): { min: number, max: number, mean: number, median: number, stddev: number, length: number } {
         return {
             min: Math.round(this.min),
@@ -229,6 +234,7 @@ class NumbersTimedHistogram extends TimedHistogram<number> {
      *
      * @returns `null` if the histogram is empty, otherwise `Stats`.
      */
+    @traceSync("NumbersTimedHistogram.stats")
     public stats(): Stats | null {
         if (this.buckets.length === 0) {
             return null;
@@ -274,11 +280,13 @@ class ServerInfo {
      *
      * @param lag The duration of lag, in ms.
      */
+    @traceSync("ServerInfo.pushLag")
     pushLag(lag: number, now: Date) {
         this.latestMessage = now;
         this.histogram.push(lag, now);
     }
 
+    @traceSync("ServerInfo.updateSettings")
     updateSettings(settings: HistogramSettings, now: Date) {
         this.histogram.updateSettings(settings, now);
     }
@@ -288,6 +296,7 @@ class ServerInfo {
      *
      * @returns `null` if the histogram is empty, otherwise `Stats`.
      */
+    @traceSync("ServerInfo.stats")
     stats(now?: Date) {
         if (now) {
             this.latestStatsUpdate = now;
@@ -374,6 +383,7 @@ class RoomInfo {
      * @param thresholds The thresholds to use to determine whether an origin server is currently lagging.
      * @param now Instant at which all of this was measured.
      */
+    @traceSync("RoomInfo.pushLag")
     pushLag(serverId: string, lag: number, settings: HistogramSettings, thresholds: WarningThresholds, now: Date = new Date()): AlertDiff {
         this.latestMessage = now;
 
@@ -431,6 +441,7 @@ class RoomInfo {
      * @returns null if we have no recent data at all,
      * some stats otherwise.
      */
+    @traceSync("RoomInfo.globalStats")
     public globalStats(): Stats | null {
         return this.totalLag.stats();
     }
@@ -444,6 +455,7 @@ class RoomInfo {
      *
      * @returns `true` is that server is currently on alert.
      */
+    @traceSync("RoomInfo.isServerOnAlert")
     public isServerOnAlert(serverId: string): boolean {
         return this.serverAlerts.has(serverId);
     }
@@ -451,10 +463,12 @@ class RoomInfo {
     /**
      * The list of servers currently on alert.
      */
+    @traceSync("RoomInfo.serversOnAlert")
     public serversOnAlert(): IterableIterator<string> {
         return this.serverAlerts.keys();
     }
 
+    @traceSync("RoomInfo.cleanup")
     public cleanup(settings: HistogramSettings, now: Date, oldest: Date) {
         // Cleanup global histogram.
         //
@@ -539,6 +553,7 @@ export class DetectFederationLag extends Protection {
         this.settings.bucketDuration.on("set", () => this.updateLatestHistogramSettings());
         this.settings.bucketNumber.on("set", () => this.updateLatestHistogramSettings());
     }
+    @traceSync("DetectFederationLag.dispose")
     dispose() {
         this.settings.bucketDuration.removeAllListeners();
         this.settings.bucketNumber.removeAllListeners();
@@ -553,6 +568,7 @@ export class DetectFederationLag extends Protection {
     /**
      * @param now An argument used only by tests, to simulate events taking place at a specific date.
      */
+    @trace("DetectFederationLag.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any, now: Date = new Date()) {
         // First, handle all cases in which we should ignore the event.
         if (!this.firstMessage) {
@@ -672,6 +688,7 @@ export class DetectFederationLag extends Protection {
      * @param now Now.
      * @param oldest Prune any data older than `oldest`.
      */
+    @trace("DetectFederationLag.cleanup")
     public async cleanup(now: Date = new Date()) {
         const oldest: Date = this.getOldestAcceptableData(now);
         const lagPerRoomDeleteIds = [];
@@ -689,9 +706,12 @@ export class DetectFederationLag extends Protection {
         }
     }
 
+    @traceSync("DetectFederationLag.getOldestAcceptableData")
     private getOldestAcceptableData(now: Date): Date {
         return new Date(now.getTime() - this.latestHistogramSettings.bucketDurationMS * this.latestHistogramSettings.bucketNumber)
     }
+
+    @traceSync("DetectFederationLag.updateLatestHistogramSettings")
     private updateLatestHistogramSettings() {
         this.latestHistogramSettings = Object.freeze({
             bucketDurationMS: this.settings.bucketDuration.value,
@@ -702,7 +722,8 @@ export class DetectFederationLag extends Protection {
     /**
      * Return (mostly) human-readable lag status.
      */
-    public async statusCommand(mjolnir: Mjolnir, subcommand: ReadItem[]): Promise<{html: string, text: string} | null> {
+    @trace("DetectFederationLag.statusCommand")
+    public async statusCommand(mjolnir: Mjolnir, subcommand: ReadItem[]): Promise<{ html: string, text: string } | null> {
         const roomRef = subcommand[0] || "*";
         const localDomain = new UserID(await mjolnir.client.getUserId()).domain;
         const annotatedStats = (roomInfo: RoomInfo) => {
@@ -755,8 +776,8 @@ export class DetectFederationLag extends Protection {
             throw new TypeError(`Unexpected argument ${roomRef}`);
         }
         return {
-                text,
-                html
+            text,
+            html
         }
     }
 }

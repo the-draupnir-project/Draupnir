@@ -37,6 +37,7 @@ import { ReactionListener } from "../commands/interface-manager/MatrixReactionHa
 import { PolicyListManager } from "../models/PolicyListManager";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { findPolicyListFromRoomReference } from "../commands/Ban";
+import { trace } from '../utils';
 
 const PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.ban_propagation';
 
@@ -65,8 +66,8 @@ async function promptBanPropagation(
     const reactionMap = makePolicyListShortcodeReferenceMap(mjolnir.policyListManager);
     const promptEventId = (await renderMatrixAndSend(
         <root>The user {renderMentionPill(event["state_key"], event["content"]?.["displayname"] ?? event["state_key"])} was banned
-                in <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> by {new UserID(event["sender"])} for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br/>
-                Would you like to add the ban to a policy list?
+            in <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> by {new UserID(event["sender"])} for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br />
+            Would you like to add the ban to a policy list?
             <ol>
                 {mjolnir.policyListManager.lists.map(list => <li>{list}</li>)}
             </ol>
@@ -100,6 +101,7 @@ export class BanPropagation extends Protection {
         This will then allow the bot to ban the user from all of your rooms.";
     }
 
+    @trace("BanPropagation.registerProtection")
     public async registerProtection(mjolnir: Mjolnir): Promise<void> {
         const listener: ReactionListener = async (key, item, context: BanPropagationMessageContext) => {
             try {
@@ -122,13 +124,14 @@ export class BanPropagation extends Protection {
         mjolnir.reactionHandler.on(PROPAGATION_PROMPT_LISTENER, listener);
     }
 
+    @trace("BanPropagation.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (event['type'] !== 'm.room.member' || event['content']?.['membership'] !== 'ban') {
             return;
         }
         if (mjolnir.policyListManager.lists.map(
-                list => list.rulesMatchingEntity(event['state_key'], RULE_USER)
-            ).some(rules => rules.length > 0)
+            list => list.rulesMatchingEntity(event['state_key'], RULE_USER)
+        ).some(rules => rules.length > 0)
         ) {
             return; // The user is already banned.
         }

@@ -31,6 +31,7 @@ import { LogService, MatrixClient } from "matrix-bot-sdk";
 import RuleServer from "../models/RuleServer";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
+import { trace, traceSync } from "../utils";
 
 
 /**
@@ -44,7 +45,7 @@ export class WebAPIs {
     private webController: express.Express = express();
     private httpServer?: Server;
 
-    constructor(private reportManager: ReportManager, private readonly config: IConfig, private readonly ruleServer: RuleServer|null) {
+    constructor(private reportManager: ReportManager, private readonly config: IConfig, private readonly ruleServer: RuleServer | null) {
         // Setup JSON parsing.
         this.webController.use(express.json());
     }
@@ -52,6 +53,7 @@ export class WebAPIs {
     /**
      * Start accepting requests to the Web API.
      */
+    @trace('WebAPIs.start')
     public async start() {
         if (!this.config.web.enabled) {
             return;
@@ -91,12 +93,13 @@ export class WebAPIs {
             }
             const ruleServer: RuleServer = this.ruleServer;
             this.webController.get(updatesUrl, async (request, response) => {
-                await this.handleRuleServerUpdate(ruleServer, { request, response, since: request.query.since as string});
+                await this.handleRuleServerUpdate(ruleServer, { request, response, since: request.query.since as string });
             });
             LogService.info("WebAPIs", `configuring ${updatesUrl}... DONE`);
         }
     }
 
+    @traceSync('WebAPIs.stop')
     public stop() {
         if (this.httpServer) {
             console.log("Stopping WebAPIs.");
@@ -115,6 +118,7 @@ export class WebAPIs {
      * @param request The request. Its body SHOULD hold an object `{reason?: string}`
      * @param response The response. Used to propagate HTTP success/error.
      */
+    @trace('WebAPIs.handleReport')
     async handleReport({ roomId, eventId, request, response }: { roomId: string, eventId: string, request: express.Request, response: express.Response }) {
         // To display any kind of useful information, we need
         //
@@ -135,7 +139,7 @@ export class WebAPIs {
 
                 if (authorization) {
                     [, accessToken] = AUTHORIZATION.exec(authorization)!;
-                } else if (typeof(request.query["access_token"]) === 'string') {
+                } else if (typeof (request.query["access_token"]) === 'string') {
                     // Authentication mechanism 2: Access token as query parameter.
                     accessToken = request.query["access_token"];
                 } else {
@@ -206,6 +210,7 @@ export class WebAPIs {
         }
     }
 
+    @trace('WebAPIs.handleRuleServerUpdate')
     async handleRuleServerUpdate(ruleServer: RuleServer, { since, request, response }: { since: string, request: express.Request, response: express.Response }) {
         // FIXME Have to do this because express sends keep alive by default and during tests.
         // The server will never be able to close because express never closes the sockets, only stops accepting new connections.

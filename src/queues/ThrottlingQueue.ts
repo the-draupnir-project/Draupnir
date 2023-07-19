@@ -27,6 +27,7 @@ limitations under the License.
 
 import { LogLevel } from "matrix-bot-sdk";
 import { Mjolnir } from "../Mjolnir";
+import { trace, traceSync } from "../utils";
 
 export type Task<T> = (queue: ThrottlingQueue) => Promise<T>;
 
@@ -67,6 +68,7 @@ export class ThrottlingQueue {
     /**
      * Stop the queue, make sure we can never use it again.
      */
+    @traceSync('ThrottlingQueue.dispose')
     public dispose() {
         this.stop();
         this._tasks = null;
@@ -85,6 +87,7 @@ export class ThrottlingQueue {
      * @param task Some code to execute.
      * @return A promise resolved/rejected once `task` is complete.
      */
+    @traceSync('ThrottlingQueue.push')
     public push<T>(task: Task<T>): Promise<T> {
         // Wrap `task` into a `Promise` to inform enqueuer when
         // the task is complete.
@@ -111,6 +114,7 @@ export class ThrottlingQueue {
      *
      * @param durationMS A number of milliseconds to wait until resuming operations.
      */
+    @traceSync('ThrottlingQueue.block')
     public block(durationMS: number) {
         if (!this.tasks) {
             throw new TypeError("Cannot `block()` on a ThrottlingQueue that has already been disposed of.");
@@ -124,6 +128,7 @@ export class ThrottlingQueue {
      *
      * Does nothing if the loop is already started.
      */
+    @traceSync('ThrottlingQueue.start')
     private start() {
         if (this.timeout) {
             // Already started.
@@ -142,6 +147,7 @@ export class ThrottlingQueue {
      * Does nothing if the loop is already stopped. A loop stopped with `stop()` may be
      * resumed by calling `push()` or `start()`.
      */
+    @traceSync('ThrottlingQueue.stop')
     private stop() {
         if (!this.timeout) {
             // Already stopped.
@@ -177,6 +183,7 @@ export class ThrottlingQueue {
      * 2. Otherwise, execute task.
      * 3. Once task is complete (whether succeeded or failed), retrigger the loop.
      */
+    @trace('ThrottlingQueue.step')
     private async step() {
         // Pull task.
         const task = this.tasks.shift();

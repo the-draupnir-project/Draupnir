@@ -27,6 +27,7 @@ limitations under the License.
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { Mjolnir } from "../Mjolnir";
+import { trace, traceSync } from "../utils";
 
 /**
  * A queue of users who have been flagged for redaction typically by the flooding or image protection.
@@ -41,18 +42,22 @@ export class UnlistedUserRedactionQueue {
     constructor() {
     }
 
+    @traceSync('UnlistedUserRedactionQueue.addUser')
     public addUser(userId: string) {
         this.usersToRedact.add(userId);
     }
 
+    @traceSync('UnlistedUserRedactionQueue.removeUser')
     public removeUser(userId: string) {
         this.usersToRedact.delete(userId);
     }
 
+    @traceSync('UnlistedUserRedactionQueue.isUserQueued')
     public isUserQueued(userId: string): boolean {
         return this.usersToRedact.has(userId);
     }
 
+    @trace('UnlistedUserRedactionQueue.handleEvent')
     public async handleEvent(roomId: string, event: any, mjolnir: Mjolnir) {
         if (this.isUserQueued(event['sender'])) {
             const permalink = Permalinks.forEvent(roomId, event['event_id']);

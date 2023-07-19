@@ -30,7 +30,7 @@ import { LogLevel, LogService, MessageType, TextualMessageEventContent, UserID }
 import { Permalinks } from "./commands/interface-manager/Permalinks";
 import { IConfig } from "./config";
 import { MatrixSendClient } from "./MatrixEmitter";
-import { htmlEscape } from "./utils";
+import { htmlEscape, trace } from "./utils";
 
 const levelToFn = {
     [LogLevel.DEBUG.toString()]: LogService.debug,
@@ -64,6 +64,7 @@ export default class ManagementRoomOutput {
      * @param msgtype The desired message type of the returned TextualMessageEventContent
      * @returns A TextualMessageEventContent with replaced room IDs
      */
+    @trace('ManagementRoomOutput.replaceRoomIdsWithPills')
     private async replaceRoomIdsWithPills(text: string, roomIds: Set<string>, msgtype: MessageType = "m.text"): Promise<TextualMessageEventContent> {
         const content: TextualMessageEventContent = {
             body: text,

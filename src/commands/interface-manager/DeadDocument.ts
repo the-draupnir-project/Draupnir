@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+import { traceSync } from "../../utils";
 import { SuperCoolStream } from "./CommandReader";
 
 /**
@@ -27,7 +28,7 @@ import { SuperCoolStream } from "./CommandReader";
  */
 
 export interface AbstractNode {
-    readonly parent: DocumentNode|null;
+    readonly parent: DocumentNode | null;
     readonly leafNode: boolean;
     readonly tag: NodeTag;
 }
@@ -35,9 +36,9 @@ export interface AbstractNode {
 export interface DocumentNode extends AbstractNode {
     readonly leafNode: false;
     attributeMap: Map<string, any>,
-    addChild<Node extends DocumentNode|LeafNode>(node: Node): Node
-    getChildren(): (DocumentNode|LeafNode)[]
-    getFirstChild(): DocumentNode|LeafNode|undefined;
+    addChild<Node extends DocumentNode | LeafNode>(node: Node): Node
+    getChildren(): (DocumentNode | LeafNode)[]
+    getFirstChild(): DocumentNode | LeafNode | undefined;
 }
 
 export interface LeafNode extends AbstractNode {
@@ -74,11 +75,11 @@ export enum NodeTag {
  * where we can use ad-hoc mixins.
  */
 interface DeadDocumentNode extends DocumentNode {
-    children: (DocumentNode|LeafNode)[];
+    children: (DocumentNode | LeafNode)[];
     attributeMap: Map<string, any>,
 }
 
-export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentNode, node: Node): Node {
+export function addChild<Node extends DocumentNode | LeafNode>(this: DeadDocumentNode, node: Node): Node {
     if (this.children.includes(node)) {
         return node;
     }
@@ -86,11 +87,11 @@ export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentN
     return node;
 }
 
-export function getChildren(this: DeadDocumentNode): (DocumentNode|LeafNode)[] {
+export function getChildren(this: DeadDocumentNode): (DocumentNode | LeafNode)[] {
     return [...this.children];
 }
 
-export function getFirstChild(this: DeadDocumentNode): DocumentNode|LeafNode|undefined {
+export function getFirstChild(this: DeadDocumentNode): DocumentNode | LeafNode | undefined {
     return this.children.at(0);
 }
 
@@ -153,7 +154,7 @@ export enum FringeType {
 
 type AnnotatedFringeNode = {
     type: FringeType,
-    node: DocumentNode|LeafNode
+    node: DocumentNode | LeafNode
 };
 
 type Flat = AnnotatedFringeNode[];
@@ -166,13 +167,13 @@ function fringeInternalNode(node: DocumentNode, flat: Flat): Flat {
     if (node.getChildren().length === 0) {
         return flat;
     } else {
-        return node.getChildren().reduce((previous: Flat, child: DocumentNode|LeafNode) => {
+        return node.getChildren().reduce((previous: Flat, child: DocumentNode | LeafNode) => {
             return fringe(child, previous);
         }, flat);
     }
 }
 
-function fringe(node: DocumentNode|LeafNode, flat: Flat = []): Flat {
+function fringe(node: DocumentNode | LeafNode, flat: Flat = []): Flat {
     if (node.leafNode) {
         flat.push({ type: FringeType.Leaf, node });
         return flat;
@@ -200,6 +201,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
 
     }
 
+    @traceSync('SimpleFringeRenderer.getRenderer')
     private getRenderer<T>(table: Map<NodeTag, T>, type: FringeType, tag: NodeTag): T {
         const entry = table.get(tag);
         if (entry) {
@@ -208,26 +210,31 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         throw new TypeError(`Couldn't find a ${type} renderer for ${tag}`);
     }
 
+    @traceSync('SimpleFringeRenderer.getPreRenderer')
     public getPreRenderer(tag: NodeTag): FringeInnerRenderFunction<Context> {
         return this.getRenderer(this.preRenderers, FringeType.Pre, tag);
     }
 
+    @traceSync('SimpleFringeRenderer.getLeafRenderer')
     public getLeafRenderer(tag: NodeTag): FringeLeafRenderFunction<Context> {
         return this.getRenderer(this.leafRenderers, FringeType.Leaf, tag);
     }
 
+    @traceSync('SimpleFringeRenderer.getPostRenderer')
     public getPostRenderer(tag: NodeTag): FringeInnerRenderFunction<Context> {
         return this.getRenderer(this.postRenderers, FringeType.Post, tag);
     }
 
-    public internRenderer<T extends FringeInnerRenderFunction<Context>|FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, table: Map<NodeTag, T>, renderer: T): void {
+    @traceSync('SimpleFringeRenderer.internRenderer')
+    public internRenderer<T extends FringeInnerRenderFunction<Context> | FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, table: Map<NodeTag, T>, renderer: T): void {
         if (table.has(tag)) {
             throw new TypeError(`There is already a renderer registered for ${type} ${tag}`);
         }
         table.set(tag, renderer);
     }
 
-    public registerRenderer<T extends FringeInnerRenderFunction<Context>|FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): SimpleFringeRenderer<Context> {
+    @traceSync('SimpleFringeRenderer.registerRenderer')
+    public registerRenderer<T extends FringeInnerRenderFunction<Context> | FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): SimpleFringeRenderer<Context> {
         // The casting in here is evil. Not sure how to fix it.
         switch (type) {
             case FringeType.Pre:
@@ -243,6 +250,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         return this;
     }
 
+    @traceSync('SimpleFringeRenderer.registerInnerNode')
     public registerInnerNode(tag: NodeTag, pre: FringeInnerRenderFunction<Context>, post: FringeInnerRenderFunction<Context>): SimpleFringeRenderer<Context> {
         this.internRenderer(FringeType.Pre, tag, this.preRenderers, pre);
         this.internRenderer(FringeType.Post, tag, this.postRenderers, post);
@@ -284,7 +292,8 @@ export class FringeWalker<Context> {
         this.stream = new FringeStream(fringe(root));
     }
 
-    public increment(): DocumentNode|undefined {
+    @traceSync('FringeWalker.increment')
+    public increment(): DocumentNode | undefined {
         const renderInnerNode = (node: AnnotatedFringeNode) => {
             if (node.node.leafNode) {
                 throw new TypeError("Leaf nodes should not be in the Pre/Post position");
@@ -340,7 +349,7 @@ export class TagDynamicEnvironmentEntry {
     constructor(
         public readonly node: DocumentNode,
         public value: any,
-        public readonly previous: undefined|TagDynamicEnvironmentEntry,
+        public readonly previous: undefined | TagDynamicEnvironmentEntry,
     ) {
 
     }
@@ -365,8 +374,9 @@ export class TagDynamicEnvironmentEntry {
  * as the restoration of previous values can be handled automatically for us.
  */
 export class TagDynamicEnvironment {
-    private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
+    private readonly environments = new Map<string, TagDynamicEnvironmentEntry | undefined>();
 
+    @traceSync('TagDynamicEnvironment.read')
     public read(variableName: string): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
@@ -376,6 +386,7 @@ export class TagDynamicEnvironment {
         }
     }
 
+    @traceSync('TagDynamicEnvironment.write')
     public write(variableName: string, value: any): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
@@ -385,6 +396,7 @@ export class TagDynamicEnvironment {
         }
     }
 
+    @traceSync('TagDynamicEnvironment.bind')
     public bind(variableName: string, node: DocumentNode, value: any): any {
         const entry = this.environments.get(variableName);
         const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
@@ -392,6 +404,7 @@ export class TagDynamicEnvironment {
         return value
     }
 
+    @traceSync('TagDynamicEnvironment.pop')
     public pop(node: DocumentNode): void {
         for (const [variableName, environment] of this.environments.entries()) {
             if (Object.is(environment?.node, node)) {

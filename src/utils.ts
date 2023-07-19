@@ -25,6 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
+import opentelemetry from "@opentelemetry/api";
 import {
     LogLevel,
     LogService,
@@ -134,7 +135,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
     const isGlob = sender.includes("*");
     const roomEventFilter = {
         rooms: [roomId],
-        ... isGlob ? {} : {senders: [sender]}
+        ...isGlob ? {} : { senders: [sender] }
     };
 
     const matcher = new MatrixGlob(sender);
@@ -167,11 +168,11 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * if `null`, start from the most recent point in the timeline.
      * @returns The response part of the `/messages` API, see `BackfillResponse`.
      */
-    async function backfill(from: string|null): Promise<BackfillResponse> {
+    async function backfill(from: string | null): Promise<BackfillResponse> {
         const qs = {
             filter: JSON.stringify(roomEventFilter),
             dir: "b",
-            ... from ? { from } : {}
+            ...from ? { from } : {}
         };
         LogService.info("utils", "Backfilling with token: " + from);
         return client.doRequest("GET", `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`, qs);
@@ -195,10 +196,10 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
     }
     // We check that we have the token because rooms/messages is not required to provide one
     // and will not provide one when there is no more history to paginate.
-    let token: string|null = null;
+    let token: string | null = null;
     do {
         const bfMessages: BackfillResponse = await backfill(token);
-        const previousToken: string|null = token;
+        const previousToken: string | null = token;
         token = bfMessages['end'] ?? null;
         const events = filterEvents(bfMessages['chunk'] || []);
         // If we are using a glob, there may be no relevant events in this chunk.
@@ -287,13 +288,13 @@ function patchMatrixClientForConciseExceptions() {
             const method: string | undefined = err.method
                 ? err.method
                 : "req" in err && err.req instanceof ClientRequest
-                ? err.req.method
-                : params.method;
+                    ? err.req.method
+                    : params.method;
             const path: string = err.url
                 ? err.url
                 : "req" in err && err.req instanceof ClientRequest
-                ? err.req.path
-                : params.uri ?? '';
+                    ? err.req.path
+                    : params.uri ?? '';
             let body: unknown = null;
             if ("body" in err) {
                 body = err.body;
@@ -503,3 +504,105 @@ export function initializeSentry(config: IConfig) {
 // Set to `true` once we have initialized `Sentry` to ensure
 // that we do not attempt to initialize it more than once.
 let sentryInitialized = false;
+
+/**
+ * Adds a nested span around a function
+ *
+ * @param target The function thats annotated
+ * @param context The content of the function
+ * @returns The result of the function
+ */
+export function trace(spanName: string) {
+    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
+        return {
+            get() {
+                const wrapperFn = (...args: any[]) => {
+                    const tracer = opentelemetry.trace.getTracer(
+                        'draupnir-appservice-tracer'
+                    );
+
+                    return tracer.startActiveSpan(spanName, async (parentSpan) => {
+                        const result = propertyDescriptor.value.apply(this, args);
+                        parentSpan.end();
+                        return result;
+                    });
+                }
+
+                Object.defineProperty(this, memberName, {
+                    value: wrapperFn,
+                    configurable: true,
+                    writable: true
+                });
+                return wrapperFn;
+            }
+        }
+    }
+}
+
+/**
+ * Adds a nested span around a sync function
+ *
+ * @param target The function thats annotated
+ * @param context The content of the function
+ * @returns The result of the function
+ */
+export function traceSync(spanName: string) {
+    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
+        return {
+            get() {
+                const wrapperFn = (...args: any[]) => {
+                    const tracer = opentelemetry.trace.getTracer(
+                        'draupnir-appservice-tracer'
+                    );
+
+                    return tracer.startActiveSpan(spanName, (parentSpan) => {
+                        const result = propertyDescriptor.value.apply(this, args);
+                        parentSpan.end();
+                        return result;
+                    });
+                }
+
+                Object.defineProperty(this, memberName, {
+                    value: wrapperFn,
+                    configurable: true,
+                    writable: true
+                });
+                return wrapperFn;
+            }
+        }
+    }
+}
+
+
+/**
+ * Adds a independent span around a function
+ *
+ * @param target The function thats annotated
+ * @param context The content of the function
+ * @returns The result of the function
+ */
+export function independentTrace(spanName: string) {
+    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
+        return {
+            get() {
+                const wrapperFn = (...args: any[]) => {
+                    const tracer = opentelemetry.trace.getTracer(
+                        'draupnir-appservice-tracer'
+                    );
+
+                    const span = tracer.startSpan(spanName);
+                    const result = propertyDescriptor.value.apply(this, args);
+                    span.end();
+                    return result;
+                }
+
+                Object.defineProperty(this, memberName, {
+                    value: wrapperFn,
+                    configurable: true,
+                    writable: true
+                });
+                return wrapperFn;
+            }
+        }
+    }
+}

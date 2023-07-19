@@ -4,13 +4,14 @@
  */
 
 import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
+import { trace, traceSync } from "../../utils";
 import { CommandError, CommandResult } from "./Validation";
 import { LogService } from "matrix-bot-sdk";
 
 type PresentationByReactionKey = Map<string/*reaction key*/, any/*presentation*/>;
 
 // Returns true if the listener should be kept.
-type ReactionPromptListener = (presentation: any) => boolean|void;
+type ReactionPromptListener = (presentation: any) => boolean | void;
 
 // Instead of providing a map of reaciton keys to presentations, should instead
 // there be provided an object that can quickly be interned and uninterened from the table
@@ -36,6 +37,7 @@ class ReactionHandler {
         matrixEmitter.on('room.event', this.handleEvent.bind(this))
     }
 
+    @traceSync('ReactionHandler.addPresentationsForEvent')
     private addPresentationsForEvent(eventId: string, promptRecord: ReactionPromptRecord): void {
         const promptRecords = (() => {
             let entry = this.promptRecordByEvent.get(eventId);
@@ -48,6 +50,7 @@ class ReactionHandler {
         promptRecords.add(promptRecord);
     }
 
+    @traceSync('ReactionHandler.removePromptRecordForEvent')
     private removePromptRecordForEvent(eventId: string, promptRecord: ReactionPromptRecord): void {
         const promptRecords = this.promptRecordByEvent.get(eventId);
         if (promptRecords !== undefined) {
@@ -58,14 +61,16 @@ class ReactionHandler {
         }
     }
 
+    @trace('ReactionHandler.addBaseReactionsToEvent')
     private async addBaseReactionsToEvent(
-            roomId: string, eventId: string, presentationsByKey: PresentationByReactionKey, limit = 7
+        roomId: string, eventId: string, presentationsByKey: PresentationByReactionKey, limit = 7
     ) {
         return await [...presentationsByKey.keys()].slice(0, limit)
             .reduce((acc, key) => acc.then(_ => this.client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve());
     }
 
+    @traceSync('ReactionHandler.handleEvent')
     private handleEvent(roomId: string, event: { event_id: string, type: string, content: any, sender: string }): void {
         // Horrid, would be nice to have some pattern matchy thingo
         if (event.type !== 'm.reaction') {
@@ -102,6 +107,7 @@ class ReactionHandler {
         }
     }
 
+    @trace('ReactionHandler.waitForReactionToPrompt')
     public async waitForReactionToPrompt<T>(
         roomId: string, eventId: string, presentationByReaction: PresentationByReactionKey, timeout = 600_000 // ten minutes
     ): Promise<CommandResult<T, CommandError>> {
@@ -161,6 +167,7 @@ export class PromptResponseListener {
         this.reactionHandler = new ReactionHandler(matrixEmitter, userId, client);
     }
 
+    @traceSync('PromptResponseListener.indexToReactionKey')
     private indexToReactionKey(index: number): string {
         return `${(index + 1).toString()}.`;
     }
@@ -168,6 +175,7 @@ export class PromptResponseListener {
     // This won't work, we have to have a special key in the original event
     // that means we should be waiting for it, that can't be abused/forged.
     // As we can't have the event id AOT.
+    @trace('PromptResponseListener.waitForPresentationList')
     public async waitForPresentationList<T>(presentations: T[], roomId: string, eventPromise: Promise<string>): Promise<CommandResult<T>> {
         const presentationByReactionKey = presentations.reduce(
             (map: PresentationByReactionKey, presentation: T, index: number) => {

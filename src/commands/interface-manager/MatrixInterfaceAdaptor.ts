@@ -38,6 +38,7 @@ import { tickCrossRenderer } from "./MatrixHelpRenderer";
 import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
 import { ParameterDescription } from "./ParameterParsing";
 import { matrixPromptForAccept } from "./MatrixPromptForAccept";
+import { trace } from "../../utils";
 
 export interface MatrixContext {
     client: MatrixSendClient,
@@ -71,6 +72,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      * along with the result of the executor.
      * @param args These will be the arguments to the parser function.
      */
+    @trace('MatrixInterfaceAdaptor.invoke')
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
         const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
         const stream = new PromptableArgumentStream(args, this, invocationRecord);
@@ -89,6 +91,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     // and an error discovered because their is a fault or an error running the command. Though i don't think this is correct
     // since any CommandError recieved is an expected error. It means there is no fault. An exception on the other hand does
     // so this suggests we should just remove this.
+    @trace('MatrixInterfaceAdaptor.reportValidationError')
     private async reportValidationError(client: MatrixSendClient, roomId: string, event: any, validationError: CommandError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
@@ -98,6 +101,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
     }
 
+    @trace('MatrixInterfaceAdaptor.promptForAccept')
     public async promptForAccept<PresentationType = unknown>(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
         if (!(invocationRecord instanceof MatrixInvocationRecord)) {
             throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
@@ -150,9 +154,9 @@ export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<Ba
  * @param renderer Render the result of the application command back to a room.
  */
 export function defineMatrixInterfaceAdaptor<ExecutorType extends (...args: any) => Promise<any>>(details: {
-        interfaceCommand: InterfaceCommand<ExecutorType>,
-        renderer: RendererSignature<MatrixContext, ExecutorType>
-    }) {
+    interfaceCommand: InterfaceCommand<ExecutorType>,
+    renderer: RendererSignature<MatrixContext, ExecutorType>
+}) {
     internMatrixInterfaceAdaptor(
         details.interfaceCommand,
         new MatrixInterfaceAdaptor(

@@ -29,6 +29,7 @@ import { Protection } from "./Protection";
 import { NumberProtectionSetting } from "./ProtectionSettings";
 import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
+import { trace } from "../utils";
 
 // if this is exceeded, we'll ban the user for spam and redact their messages
 export const DEFAULT_MAX_PER_MINUTE = 10;
@@ -51,6 +52,7 @@ export class BasicFlooding extends Protection {
             "banned for spam. This does not publish the ban to any of your ban lists.";
     }
 
+    @trace("BasicFlooding.handleEvent")
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (!this.lastEvents[roomId]) this.lastEvents[roomId] = {};
 
@@ -63,7 +65,7 @@ export class BasicFlooding extends Protection {
             event['origin_server_ts'] = (new Date()).getTime();
         }
 
-        forUser.push({originServerTs: event['origin_server_ts'], eventId: event['event_id']});
+        forUser.push({ originServerTs: event['origin_server_ts'], eventId: event['event_id'] });
 
         // Do some math to see if the user is spamming
         let messageCount = 0;
