@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import { MatrixGlob } from "matrix-bot-sdk";
-import { traceSync } from "../utils";
 
 export enum EntityType {
     /// `entity` is to be parsed as a glob of users IDs
