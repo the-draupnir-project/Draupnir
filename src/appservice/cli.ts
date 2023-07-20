@@ -3,6 +3,8 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import { AlwaysOnSampler, Sampler, SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -45,16 +47,27 @@ if (process.env.TRACING_ENABLED) {
         console.error("Unable to start tracing without the env variable `TRACING_TRACE_URL` being set. Check https://opentelemetry.io/docs/instrumentation/js/exporters/ for more infomration.");
         process.exit(1);
     }
+    if (process.env.TRACING_METRIC_URL === undefined || process.env.TRACING_METRIC_URL === "") {
+        console.error("Unable to start tracing without the env variable `TRACING_METRIC_URL` being set. Check https://opentelemetry.io/docs/instrumentation/js/exporters/ for more infomration.");
+        process.exit(1);
+    }
     console.info(`Starting tracing and pushing to ${process.env.TRACING_TRACE_URL}`);
 
     const exporter = new OTLPTraceExporter({
         //url: "<your-otlp-endpoint>/v1/traces",
         url: process.env.TRACING_TRACE_URL
     });
+    const metrics_exporter = new OTLPMetricExporter({
+        //url: "<your-otlp-endpoint>/v1/metrics",
+        url: process.env.TRACING_METRIC_URL
+    });
 
     const sdk = new NodeSDK({
         sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
         traceExporter: exporter,
+        metricReader: new PeriodicExportingMetricReader({
+            exporter: metrics_exporter
+        }),
         serviceName: "Draupnir-Appservice",
         instrumentations: [getNodeAutoInstrumentations({
             // This just prints an error
