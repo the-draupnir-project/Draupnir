@@ -3,8 +3,8 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import { AlwaysOnSampler, Sampler, SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+// import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+// import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
