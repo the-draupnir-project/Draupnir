@@ -77,3 +77,6 @@ mjolnir.egg-info/
 
 # VS
 .vs
+
+# meow
+package-lock.json
