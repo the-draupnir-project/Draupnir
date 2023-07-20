@@ -56,7 +56,16 @@ if (process.env.TRACING_ENABLED) {
         sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
         traceExporter: exporter,
         serviceName: "Draupnir-Appservice",
-        instrumentations: [getNodeAutoInstrumentations()]
+        instrumentations: [getNodeAutoInstrumentations({
+            // This just prints an error
+            '@opentelemetry/instrumentation-grpc': {
+                enabled: false,
+            },
+            // This is too noisy
+            '@opentelemetry/instrumentation-fs': {
+                enabled: false,
+            },
+        })]
     });
 
     sdk.start();
