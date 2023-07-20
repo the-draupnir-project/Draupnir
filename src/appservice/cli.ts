@@ -57,17 +57,18 @@ if (process.env.TRACING_ENABLED) {
         //url: "<your-otlp-endpoint>/v1/traces",
         url: process.env.TRACING_TRACE_URL
     });
-    const metrics_exporter = new OTLPMetricExporter({
-        //url: "<your-otlp-endpoint>/v1/metrics",
-        url: process.env.TRACING_METRIC_URL
-    });
+    // const metrics_exporter = new OTLPMetricExporter({
+    //     //url: "<your-otlp-endpoint>/v1/metrics",
+    //     url: process.env.TRACING_METRIC_URL
+    // });
 
     const sdk = new NodeSDK({
         sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
         traceExporter: exporter,
-        metricReader: new PeriodicExportingMetricReader({
-            exporter: metrics_exporter
-        }),
+        // Broken
+        // metricReader: new PeriodicExportingMetricReader({
+        //     exporter: metrics_exporter
+        // }),
         serviceName: "Draupnir-Appservice",
         instrumentations: [getNodeAutoInstrumentations({
             // This just prints an error
