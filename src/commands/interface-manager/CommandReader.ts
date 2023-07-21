@@ -59,7 +59,6 @@ class StringStream extends SuperCoolStream<string> {
         return this.peekItem(...args);
     }
 
-    @traceSync('StringStream.readChar')
     public readChar(...args: any[]) {
         return this.readItem(...args);
     }
