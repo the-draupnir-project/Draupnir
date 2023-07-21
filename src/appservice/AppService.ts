@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger } from "matrix-appservice-bridge";
+import { AppServiceRegistration, Bridge, Request, WeakEvent, BridgeContext, MatrixUser, Logger, setBridgeVersion, PrometheusMetrics } from "matrix-appservice-bridge";
 import { MjolnirManager } from ".//MjolnirManager";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
@@ -33,6 +33,7 @@ import { Api } from "./Api";
 import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
+import { SOFTWARE_VERSION } from "../config";
 
 const log = new Logger("AppService");
 /**
@@ -54,6 +55,7 @@ export class MjolnirAppService {
         public readonly mjolnirManager: MjolnirManager,
         public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
+        private readonly prometheusMetrics: PrometheusMetrics
     ) {
         this.api = new Api(config.homeserver.url, mjolnirManager);
         this.commands = new AppserviceCommandHandler(this);
@@ -75,21 +77,30 @@ export class MjolnirAppService {
             // It also allows us to combine constructor/initialize logic
             // to make the code base much simpler. A small hack to pay for an overall less hacky code base.
             controller: {
-                onUserQuery: () => {throw new Error("Mjolnir uninitialized")},
-                onEvent: () => {throw new Error("Mjolnir uninitialized")},
+                onUserQuery: () => { throw new Error("Mjolnir uninitialized") },
+                onEvent: () => { throw new Error("Mjolnir uninitialized") },
             },
             suppressEcho: false,
         });
         await bridge.initialise();
         const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
         const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
-        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl);
+        // Activate /metrics endpoint for Prometheus
+        setBridgeVersion(SOFTWARE_VERSION);
+        const prometheus = bridge.getPrometheusMetrics(false);
+        const instanceCountGauge = prometheus.addGauge({
+            name: "draupnir_instances",
+            help: "Count of Draupnir Instances",
+            labels: ["status", "uuid"],
+        });
+        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
         const appService = new MjolnirAppService(
             config,
             bridge,
             mjolnirManager,
             accessControl,
-            dataStore
+            dataStore,
+            prometheus
         );
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
@@ -114,7 +125,7 @@ export class MjolnirAppService {
         return service;
     }
 
-    public onUserQuery (queriedUser: MatrixUser) {
+    public onUserQuery(queriedUser: MatrixUser) {
         return {}; // auto-provision users with no additonal data
     }
 
@@ -160,6 +171,15 @@ export class MjolnirAppService {
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
         await this.bridge.listen(port);
+        this.prometheusMetrics.addAppServicePath(this.bridge);
+        this.bridge.addAppServicePath({
+            method: "GET",
+            path: "/healthz",
+            authenticate: false,
+            handler: async (_req, res) => {
+                res.status(200).send('ok');
+            }
+        });
         log.info("MjolnirAppService started successfully");
     }
 
