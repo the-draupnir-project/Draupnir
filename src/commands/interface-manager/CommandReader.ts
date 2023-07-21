@@ -27,12 +27,10 @@ export class SuperCoolStream<T extends { at: (...args: any) => any | undefined }
         this.position = start;
     }
 
-    @traceSync('SuperCoolStream.pop')
     public peekItem(eof = undefined) {
         return this.source.at(this.position) ?? eof;
     }
 
-    @traceSync('SuperCoolStream.readItem')
     public readItem(eof = undefined) {
         return this.source.at(this.position++) ?? eof;
     }
@@ -57,7 +55,6 @@ export class SuperCoolStream<T extends { at: (...args: any) => any | undefined }
  * Helper for peeking and reading character by character.
  */
 class StringStream extends SuperCoolStream<string> {
-    @traceSync('StringStream.peekChar')
     public peekChar(...args: any[]) {
         return this.peekItem(...args);
     }

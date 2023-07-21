@@ -66,12 +66,10 @@ export class CommandResult<Ok, Err extends CommandError = CommandError> {
         return this.okValue ? await expression.ok!(this.ok) : await expression.err!(this.err);
     }
 
-    @traceSync('CommandResult.isOk')
     public isOk(): boolean {
         return this.okValue !== noValue;
     }
 
-    @traceSync('CommandResult.isErr')
     public isErr(): boolean {
         return this.errValue !== noValue;
     }
