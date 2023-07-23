@@ -34,6 +34,7 @@ import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
+import { Registry } from 'prom-client';
 
 const log = new Logger("AppService");
 /**
@@ -86,13 +87,18 @@ export class MjolnirAppService {
         const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
         const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
         // Activate /metrics endpoint for Prometheus
+
+        // This should happen automatically but in testing this didn't happen in the docker image
         setBridgeVersion(SOFTWARE_VERSION);
-        const prometheus = bridge.getPrometheusMetrics(false);
+
+        // Due to the way the tests and this prom library works we need to explicitly create a new one each time.
+        const prometheus = bridge.getPrometheusMetrics(true, new Registry());
         const instanceCountGauge = prometheus.addGauge({
             name: "draupnir_instances",
             help: "Count of Draupnir Instances",
             labels: ["status", "uuid"],
         });
+
         const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
         const appService = new MjolnirAppService(
             config,
