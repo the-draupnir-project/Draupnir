@@ -134,7 +134,7 @@ export class MjolnirManager {
                 name: `${requestingUserId}'s mjolnir`,
                 power_level_content_override: {users: {
                     [requestingUserId]: 100,
-                    [await mjIntent.matrixClient.getUserId()]: 101 
+                    [await mjIntent.matrixClient.getUserId()]: 101
                 }}
             });
 
