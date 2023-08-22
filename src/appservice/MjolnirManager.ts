@@ -131,7 +131,11 @@ export class MjolnirManager {
             const managementRoomId = await mjIntent.matrixClient.createRoom({
                 preset: 'private_chat',
                 invite: [requestingUserId],
-                name: `${requestingUserId}'s mjolnir`
+                name: `${requestingUserId}'s mjolnir`,
+                power_level_content_override: {users: {
+                    [requestingUserId]: 100,
+                    [await mjIntent.matrixClient.getUserId()]: 100 
+                }}
             });
 
             const mjolnir = await this.makeInstance(requestingUserId, managementRoomId, mjIntent.matrixClient);
