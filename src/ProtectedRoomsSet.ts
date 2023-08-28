@@ -373,6 +373,16 @@ export class ProtectedRoomsSet {
     private async applyUserBans(roomIds: string[]): Promise<RoomUpdateError[]> {
         // We can only ban people who are not already banned, and who match the rules.
         const errors: RoomUpdateError[] = [];
+
+        const addErrorToReport = (roomId: string, e: any) => {
+            const message = e.message || (e.body ? e.body.error : '<no message>');
+            errors.push({
+                roomId,
+                errorMessage: message,
+                errorKind: message && message.includes("You don't have permission to ban") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL,
+            });
+        };
+
         for (const roomId of roomIds) {
             try {
                 // We specifically use sendNotice to avoid having to escape HTML
@@ -405,9 +415,13 @@ export class ProtectedRoomsSet {
                         await this.managementRoomOutput.logMessage(LogLevel.INFO, "ApplyBan", `Banning ${member.userId} in ${roomId} for: ${reason}`, roomId);
 
                         if (!this.config.noop) {
-                            await this.client.banUser(member.userId, roomId, memberAccess.rule!.reason);
-                            if (this.automaticRedactGlobs.find(g => g.test(reason.toLowerCase()))) {
-                                this.redactUser(member.userId, roomId);
+                            try {
+                                await this.client.banUser(member.userId, roomId, memberAccess.rule!.reason);
+                                if (this.automaticRedactGlobs.find(g => g.test(reason.toLowerCase()))) {
+                                    this.redactUser(member.userId, roomId);
+                                }
+                            } catch (e) {
+                                addErrorToReport(roomId, e);
                             }
                         } else {
                             await this.managementRoomOutput.logMessage(LogLevel.WARN, "ApplyBan", `Tried to ban ${member.userId} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
@@ -415,12 +429,7 @@ export class ProtectedRoomsSet {
                     }
                 }
             } catch (e) {
-                const message = e.message || (e.body ? e.body.error : '<no message>');
-                errors.push({
-                    roomId,
-                    errorMessage: message,
-                    errorKind: message && message.includes("You don't have permission to ban") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL,
-                });
+                addErrorToReport(roomId, e)
             }
         }
 
