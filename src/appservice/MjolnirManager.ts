@@ -132,10 +132,13 @@ export class MjolnirManager {
                 preset: 'private_chat',
                 invite: [requestingUserId],
                 name: `${requestingUserId}'s mjolnir`,
-                power_level_content_override: {users: {
-                    [requestingUserId]: 100,
-                    [await mjIntent.matrixClient.getUserId()]: 101
-                }}
+                power_level_content_override: {
+                    users: {
+                        [requestingUserId]: 100,
+                        // Give the mjolnir a higher PL so that can avoid issues with managing the management room.
+                        [await mjIntent.matrixClient.getUserId()]: 101
+                    }
+                }
             });
 
             const mjolnir = await this.makeInstance(requestingUserId, managementRoomId, mjIntent.matrixClient);
