@@ -5,7 +5,7 @@ import { getMessagesByUserIn } from "../../../src/utils";
 import { LogService } from "matrix-bot-sdk";
 import { getFirstReaction } from "./commandUtils";
 
- describe("Test: The redaction command", function () {
+describe("Test: The redaction command", function () {
     // If a test has a timeout while awaitng on a promise then we never get given control back.
     afterEach(function() { this.moderator?.stop(); });
 
