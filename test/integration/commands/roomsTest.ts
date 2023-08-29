@@ -2,7 +2,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction, getFirstReply } from "./commandUtils";
 
- describe("Test: The rooms commands", function () {
+describe("Test: The rooms commands", function () {
     // If a test has a timeout while awaitng on a promise then we never get given control back.
     afterEach(function() { this.moderator?.stop(); });
 
