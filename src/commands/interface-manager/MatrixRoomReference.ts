@@ -14,7 +14,7 @@ type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
  * This is really useful because there are at least 3 ways of referring to a Matrix room,
  * and some of them require extra steps to be useful in certain contexts (aliases, permalinks).
  */
- export abstract class MatrixRoomReference {
+export abstract class MatrixRoomReference {
     protected constructor(
         protected readonly reference: string,
         protected readonly viaServers: string[] = []

@@ -241,7 +241,7 @@ export class ListRuleBan extends ListRule {
 /**
  * A rule representing an "allow".
  */
- export class ListRuleAllow extends ListRule {
+export class ListRuleAllow extends ListRule {
     constructor(
         /**
          * The event source for the rule.
