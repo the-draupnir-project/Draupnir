@@ -80,5 +80,3 @@ describe("Test: ThrottlingQueue", function() {
         queue.dispose();
     });
 });
-
-

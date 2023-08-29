@@ -37,8 +37,8 @@ def glob_to_regex(glob: str, word_boundary: bool = False) -> Pattern:
     Args:
         glob: pattern to match
         word_boundary: If True, the pattern will be allowed to match at word boundaries
-           anywhere in the string. Otherwise, the pattern is anchored at the start and
-           end of the string.
+        anywhere in the string. Otherwise, the pattern is anchored at the start and
+        end of the string.
 
     Returns:
         compiled regex pattern
@@ -70,4 +70,3 @@ def glob_to_regex(glob: str, word_boundary: bool = False) -> Pattern:
         res = r"\A" + res + r"\Z"
 
     return re.compile(res, re.IGNORECASE)
-

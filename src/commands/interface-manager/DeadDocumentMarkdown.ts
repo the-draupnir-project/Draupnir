@@ -83,7 +83,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     function(_fringe, node, context, environment) {
         const indentationLevel: number = (() => {
             const value = environment.read(MarkdownVariables.IndentationLevel);
-             if (!Number.isInteger(value)) {
+            if (!Number.isInteger(value)) {
                 throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers. Did you forget to enclose in <ul> or <ol>?`)
             } else {
                 return value;

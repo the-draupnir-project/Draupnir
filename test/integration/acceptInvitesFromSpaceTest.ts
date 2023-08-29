@@ -45,4 +45,3 @@ describe("Test: Accept Invites From Space", function() {
         await promise;
     });
 });
-

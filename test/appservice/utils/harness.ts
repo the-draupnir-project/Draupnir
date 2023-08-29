@@ -21,4 +21,3 @@ export async function isPolicyRoom(user: MatrixClient, roomId: string): Promise<
     const createEvent = new CreateEvent(await user.getRoomStateEvent(roomId, "m.room.create", ""));
     return PolicyList.ROOM_TYPE_VARIANTS.includes(createEvent.type);
 }
-

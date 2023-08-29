@@ -31,4 +31,3 @@ describe("Test: utils", function() {
         );
     });
 });
-
