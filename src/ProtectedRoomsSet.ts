@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { LogLevel, MatrixGlob, UserID } from "matrix-bot-sdk";
+import { LogLevel, LogService, MatrixGlob, UserID } from "matrix-bot-sdk";
 import { IConfig } from "./config";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { MatrixSendClient } from "./MatrixEmitter";
@@ -465,6 +465,27 @@ export class ProtectedRoomsSet {
         renderOptions: { title?: string, noErrorsText?: string }
     ): Promise<void> {
         printActionResult(this.client, this.managementRoomId, errors, renderOptions);
+    }
+
+    public async unbanUser(user: string): Promise<RoomUpdateError[]> {
+        const errors: RoomUpdateError[] = [];
+        for (const room of this.protectedRoomActivityTracker.protectedRoomsByActivity()) {
+            try {
+                await this.client.unbanUser(user, room);
+            } catch (e) {
+                // FIXME: We need to know if `info` is acceptable or not.
+                // Technically these kinds of errors are expected to occur,
+                // so not sure if it warrants reporting as ERROR.
+                LogService.info('ProtectedRoomSet', `Unable to unban a user ${user} from ${room}`, e);
+                const message = e.message || (e.body ? e.body.error : '<no message>');
+                errors.push({
+                    roomId: room,
+                    errorMessage: message,
+                    errorKind: message && message.includes("You don't have permission to ban") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL,
+                });
+            }
+        }
+        return errors;
     }
 
     public requiredProtectionPermissions() {

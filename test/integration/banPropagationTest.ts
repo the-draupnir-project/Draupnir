@@ -54,5 +54,26 @@ describe("Ban propagation test", function() {
         expect(rules.length).toBe(1);
         expect(rules[0].entity).toBe('@test:example.com');
         expect(rules[0].reason).toBe('spam');
+
+        // now unban them >:3
+        const unbanPrompt = await getFirstEventMatching({
+            matrix: mjolnir.matrixEmitter,
+            targetRoom: mjolnir.managementRoomId,
+            lookAfterEvent: async function () {
+                // ban a user in one of our protected rooms using the moderator
+                await moderator.unbanUser('@test:example.com', protectedRooms[0]);
+                return undefined;
+            },
+            predicate: function (event: any): boolean {
+                return (event['content']?.['body'] ?? '').startsWith('The user')
+            }
+        });
+
+        await moderator.unstableApis.addReactionToEvent(
+            mjolnir.managementRoomId, unbanPrompt['event_id'], 'unban from all'
+        );
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        const rulesAfterUnban = policyList.rulesMatchingEntity('@test:example.com', RULE_USER);
+        expect(rulesAfterUnban.length).toBe(0);
     })
 })
