@@ -28,13 +28,12 @@ limitations under the License.
 import { LogLevel, LogService, MatrixGlob, UserID } from "matrix-bot-sdk";
 import { Permalinks } from "./commands/interface-manager/Permalinks";
 import { IConfig } from "./config";
-import ErrorCache, { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "./ErrorCache";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { MatrixSendClient } from "./MatrixEmitter";
 import AccessControlUnit, { Access } from "./models/AccessControlUnit";
 import { RULE_ROOM, RULE_SERVER, RULE_USER } from "./models/ListRule";
 import PolicyList, { ListRuleChange, Revision } from "./models/PolicyList";
-import { RoomUpdateError } from "./models/RoomUpdateError";
+import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION, RoomUpdateError } from "./models/RoomUpdateError";
 import { ProtectionManager } from "./protections/ProtectionManager";
 import { EventRedactionQueue, RedactUserInRoom } from "./queues/EventRedactionQueue";
 import { ProtectedRoomActivityTracker } from "./queues/ProtectedRoomActivityTracker";
@@ -74,8 +73,6 @@ export class ProtectedRoomsSet {
      * has finished applying ACL and bans when syncing.
      */
     private readonly eventRedactionQueue = new EventRedactionQueue();
-
-    private readonly errorCache = new ErrorCache();
 
     /**
      * These are globs sourced from `config.automaticallyRedactForReasons` that are matched against the reason of an
@@ -205,8 +202,6 @@ export class ProtectedRoomsSet {
         }
         this.protectedRoomActivityTracker.handleEvent(roomId, event);
         if (event['type'] === 'm.room.power_levels' && event['state_key'] === '') {
-            // power levels were updated - recheck permissions
-            this.errorCache.resetError(roomId, ERROR_KIND_PERMISSION);
             await this.managementRoomOutput.logMessage(LogLevel.DEBUG, "Mjolnir", `Power levels changed in ${roomId} - checking permissions...`, roomId);
             const errors = await this.protectionManager.verifyPermissionsIn(roomId);
             const hadErrors = await this.printActionResult(errors);
@@ -481,7 +476,6 @@ export class ProtectedRoomsSet {
         if (errors.length <= 0) return false;
 
         if (!logAnyways) {
-            errors = errors.filter(e => this.errorCache.triggerError(e.roomId, e.errorKind));
             if (errors.length <= 0) {
                 LogService.warn("Mjolnir", "Multiple errors are happening, however they are muted. Please check the management room.");
                 return true;

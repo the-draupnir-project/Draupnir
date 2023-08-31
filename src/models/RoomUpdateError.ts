@@ -25,6 +25,9 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
+export const ERROR_KIND_PERMISSION = "permission";
+export const ERROR_KIND_FATAL = "fatal";
+
 export interface RoomUpdateError {
     roomId: string;
     errorMessage: string;
