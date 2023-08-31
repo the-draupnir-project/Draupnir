@@ -39,7 +39,7 @@ import { LogLevel, LogService } from "matrix-bot-sdk";
 import { ProtectionSettingValidationError } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
 import { htmlEscape } from "../utils";
-import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
+import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../models/RoomUpdateError";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
 import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";

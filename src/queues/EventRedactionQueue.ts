@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 import { LogLevel, MatrixClient } from "matrix-bot-sdk"
-import { ERROR_KIND_FATAL } from "../ErrorCache";
+import { ERROR_KIND_FATAL } from "../models/RoomUpdateError";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { redactUserMessagesIn } from "../utils";
 import ManagementRoomOutput from "../ManagementRoomOutput";
