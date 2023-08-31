@@ -25,15 +25,14 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { LogLevel, LogService, MatrixGlob, UserID } from "matrix-bot-sdk";
-import { Permalinks } from "./commands/interface-manager/Permalinks";
+import { LogLevel, MatrixGlob, UserID } from "matrix-bot-sdk";
 import { IConfig } from "./config";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { MatrixSendClient } from "./MatrixEmitter";
 import AccessControlUnit, { Access } from "./models/AccessControlUnit";
 import { RULE_ROOM, RULE_SERVER, RULE_USER } from "./models/ListRule";
 import PolicyList, { ListRuleChange, Revision } from "./models/PolicyList";
-import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION, RoomUpdateError } from "./models/RoomUpdateError";
+import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION, printActionResult, RoomUpdateError } from "./models/RoomUpdateError";
 import { ProtectionManager } from "./protections/ProtectionManager";
 import { EventRedactionQueue, RedactUserInRoom } from "./queues/EventRedactionQueue";
 import { ProtectedRoomActivityTracker } from "./queues/ProtectedRoomActivityTracker";
@@ -204,20 +203,20 @@ export class ProtectedRoomsSet {
         if (event['type'] === 'm.room.power_levels' && event['state_key'] === '') {
             await this.managementRoomOutput.logMessage(LogLevel.DEBUG, "Mjolnir", `Power levels changed in ${roomId} - checking permissions...`, roomId);
             const errors = await this.protectionManager.verifyPermissionsIn(roomId);
-            const hadErrors = await this.printActionResult(errors);
-            if (!hadErrors) {
-                await this.managementRoomOutput.logMessage(LogLevel.DEBUG, "Mjolnir", `All permissions look OK.`);
-            }
+            await this.printActionResult(errors, { title: "There were errors verifying permissions.", noErrorsText: "All permissions look OK."});
             return;
         } else if (event['type'] === "m.room.member") {
             // The reason we have to apply bans on each member change is because
             // we cannot eagerly ban users (that is to ban them when they have never been a member)
             // as they can be force joined to a room they might not have known existed.
             // Only apply bans and then redactions in the room we are currently looking at.
-            const banErrors = await this.applyUserBans([roomId]);
-            const redactionErrors = await this.processRedactionQueue(roomId);
-            await this.printActionResult(banErrors);
-            await this.printActionResult(redactionErrors);
+            const errors = [
+                await this.applyUserBans([roomId]),
+                await this.processRedactionQueue(roomId),
+            ].flat();
+            if (errors.length > 0) {
+                await this.printActionResult(errors, { title: 'There were errors updating member bans.' });
+            }
         }
     }
 
@@ -225,26 +224,12 @@ export class ProtectedRoomsSet {
      * Synchronize all the protected rooms with all of the policies described in the watched policy lists.
      */
     private async syncRoomsWithPolicies() {
-        let hadErrors = false;
-        const [aclErrors, banErrors] = await Promise.all([
+        const errors = (await Promise.all([
             this.applyServerAcls(this.policyLists, this.protectedRoomsByActivity()),
-            this.applyUserBans(this.protectedRoomsByActivity())
-        ]);
-        const redactionErrors = await this.processRedactionQueue();
-        hadErrors = hadErrors || await this.printActionResult(aclErrors, "Errors updating server ACLs:");
-        hadErrors = hadErrors || await this.printActionResult(banErrors, "Errors updating member bans:");
-        hadErrors = hadErrors || await this.printActionResult(redactionErrors, "Error updating redactions:");
-
-        if (!hadErrors) {
-            const html = `<font color="#00cc00">Done updating rooms - no errors</font>`;
-            const text = "Done updating rooms - no errors";
-            await this.client.sendMessage(this.managementRoomId, {
-                msgtype: "m.notice",
-                body: text,
-                format: "org.matrix.custom.html",
-                formatted_body: html,
-            });
-        }
+            this.applyUserBans(this.protectedRoomsByActivity()),
+            this.processRedactionQueue()
+        ])).flat();
+        await this.printActionResult(errors, { title: "There were errors synchronising the protected rooms." });
     }
 
     /**
@@ -472,63 +457,25 @@ export class ProtectedRoomsSet {
         return true;
     }
 
-    private async printActionResult(errors: RoomUpdateError[], title: string | null = null, logAnyways = false) {
-        if (errors.length <= 0) return false;
-
-        if (!logAnyways) {
-            if (errors.length <= 0) {
-                LogService.warn("Mjolnir", "Multiple errors are happening, however they are muted. Please check the management room.");
-                return true;
-            }
-        }
-
-        let html = "";
-        let text = "";
-
-        const htmlTitle = title ? `${title}<br />` : '';
-        const textTitle = title ? `${title}\n` : '';
-
-        html += `<font color="#ff0000"><b>${htmlTitle}${errors.length} errors updating protected rooms!</b></font><br /><ul>`;
-        text += `${textTitle}${errors.length} errors updating protected rooms!\n`;
-        const viaServers = [(new UserID(await this.client.getUserId())).domain];
-        for (const error of errors) {
-            const alias = (await this.client.getPublishedAlias(error.roomId)) || error.roomId;
-            const url = Permalinks.forRoom(alias, viaServers);
-            html += `<li><a href="${url}">${alias}</a> - ${error.errorMessage}</li>`;
-            text += `${url} - ${error.errorMessage}\n`;
-        }
-        html += "</ul>";
-
-        const message = {
-            msgtype: "m.notice",
-            body: text,
-            format: "org.matrix.custom.html",
-            formatted_body: html,
-        };
-        await this.client.sendMessage(this.managementRoomId, message);
-        return true;
+    private async printActionResult(
+        errors: RoomUpdateError[],
+        renderOptions: { title?: string, noErrorsText?: string }
+    ): Promise<void> {
+        printActionResult(this.client, this.managementRoomId, errors, renderOptions);
     }
 
     public requiredProtectionPermissions() {
         throw new TypeError("Unimplemented, need to put protections into here too.")
     }
 
-    public async verifyPermissions(verbose = true, printRegardless = false) {
+    public async verifyPermissions() {
         const errors: RoomUpdateError[] = [];
         for (const roomId of this.protectedRooms) {
             errors.push(...(await this.protectionManager.verifyPermissionsIn(roomId)));
         }
-
-        const hadErrors = await this.printActionResult(errors, "Permission errors in protected rooms:", printRegardless);
-        if (!hadErrors && verbose) {
-            const html = `<font color="#00cc00">All permissions look OK.</font>`;
-            const text = "All permissions look OK.";
-            await this.client.sendMessage(this.managementRoomId, {
-                msgtype: "m.notice",
-                body: text,
-                format: "org.matrix.custom.html",
-                formatted_body: html,
-            });
-        }
+        await this.printActionResult(errors, {
+            title: "There are permission errors in protected rooms.",
+            noErrorsText: "All permissions look OK."
+        });
     }
 }
