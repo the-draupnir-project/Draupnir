@@ -44,4 +44,3 @@ describe("Test: Report polling", function() {
         await new Promise(resolve => setTimeout(resolve, 1000));
     });
 });
-

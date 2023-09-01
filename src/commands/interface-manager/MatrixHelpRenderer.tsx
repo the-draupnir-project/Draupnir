@@ -44,7 +44,7 @@ export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): D
         }
         {command.argumentListParser.descriptions.length > 0
             ? <fragment>
-                <b>Parameters:</b><br />{...command.argumentListParser.descriptions.map(renderParameterDescription)}
+                <b>Parameters:</b><br/>{...command.argumentListParser.descriptions.map(renderParameterDescription)}
             </fragment>
             : []
         }

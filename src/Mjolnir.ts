@@ -514,4 +514,3 @@ export class Mjolnir {
         });
     }
 }
-

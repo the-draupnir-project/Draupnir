@@ -19,7 +19,7 @@ This guide assumes you will be using Docker and that you are able to provide a p
 4. Generate the appservice registration file. This will be used by both the appservice and your homeserver.
    Here, you must specify the direct link the Matrix Homeserver can use to access the appservice, including the Matrix port it will send messages through (if this bridge runs on the same machine you can use `localhost` as the `$HOST` name):
    
-   `docker run -rm -v /your/path/to/draupnir-data:/data gnuxie/draupnir appservice -r -u "http://$HOST:$MATRIX_PORT" -f /data/config/draupnir-registration.yaml`
+   `docker run --rm -v /your/path/to/draupnir-data:/data gnuxie/draupnir appservice -r -u "http://$HOST:$MATRIX_PORT" -f /data/config/draupnir-registration.yaml`
 
 5. Step 4 created an application service bot. This will be a bot iwth the mxid specified in `draupnir-registration.yaml` under `sender_localpart`. You now need to invite it in the access control room that you have created in Step 1.
    

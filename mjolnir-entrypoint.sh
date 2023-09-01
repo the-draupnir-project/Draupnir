@@ -7,8 +7,8 @@
 # We maintain the behaviour where if it looks like someone is providing an executable to `docker run`, then we will execute that instead.
 # This aids configuration and debugging of the image if for example node needed to be started via another method.
 case "$1" in
-  bot) shift; set -- node /mjolnir/index.js "$@";;
-  appservice) shift; set -- node /mjolnir/appservice/cli.js "$@";;
+    bot) shift; set -- node /mjolnir/index.js "$@";;
+    appservice) shift; set -- node /mjolnir/appservice/cli.js "$@";;
 esac
 
 exec "$@";

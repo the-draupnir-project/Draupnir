@@ -62,4 +62,3 @@ describe('Test: config.protectAllJoinedRooms behaves correctly.', function() {
         assert.equal(shortcodeInfo.shortcode, policyListShortcode);
     })
 });
-

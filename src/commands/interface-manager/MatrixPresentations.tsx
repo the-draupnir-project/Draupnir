@@ -38,4 +38,3 @@ definePresentationRenderer(findPresentationType('UserID'), function (presentatio
         {presentation.toString()}
     </a>
 })
-

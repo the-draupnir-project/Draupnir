@@ -1,6 +1,6 @@
 import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
-import { LogService, MatrixClient, Permalinks, UserID } from "matrix-bot-sdk";
+import { LogService, MatrixClient, Permalinks, UserID, MembershipEvent } from "matrix-bot-sdk";
 import PolicyList, { ChangeType } from "../../src/models/PolicyList";
 import { ServerAcl } from "../../src/models/ServerAcl";
 import { getFirstReaction } from "./commands/commandUtils";
@@ -11,6 +11,7 @@ import AccessControlUnit, { Access, EntityAccess } from "../../src/models/Access
 import { randomUUID } from "crypto";
 import { MatrixSendClient } from "../../src/MatrixEmitter";
 import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
+import { MjolnirTestContext } from "./mjolnirSetupUtils";
 
 /**
  * Create a policy rule in a policy room.
@@ -593,5 +594,46 @@ describe('Test: Creating policy lists.', function() {
             },
             TypeError
         );
+    })
+})
+
+describe.only('Test: Continue to ban other marked members when one member cannot be banned', function() {
+    it('Failing to ban a moderator should not stop other members being banned.', async function(this: MjolnirTestContext) {
+        if (this.mjolnir === undefined) {
+            throw new TypeError("Mjolnir was never created.")
+        }
+        const mjolnir: Mjolnir = this.mjolnir;
+        const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "mx-moderator" } });
+        await moderator.joinRoom(mjolnir.managementRoomId);
+        const mjolnirId = await mjolnir.client.getUserId();
+
+        const protectedRoom = await moderator.createRoom({ invite: [mjolnirId], preset: 'public_chat'});
+        await mjolnir.client.joinRoom(protectedRoom);
+        await moderator.setUserPowerLevel(mjolnirId, protectedRoom, 100);
+        await mjolnir.addProtectedRoom(protectedRoom);
+
+        const banListId = await moderator.createRoom({ invite: [mjolnirId] });
+        await mjolnir.client.joinRoom(banListId);
+        await mjolnir.policyListManager.watchList(MatrixRoomReference.fromRoomId(banListId));
+
+        await mjolnir.protectedRoomsTracker.syncLists();
+
+        const spamUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "mx-spammer" } });
+        const rudeUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "mx-rude" } });
+        const sillyModerator = await newTestUser(this.config.homeserverUrl, { name: { contains: "mx-moderator" } });
+        await Promise.all([spamUser, rudeUser, sillyModerator].map(c => c.joinRoom(protectedRoom)));
+        await moderator.setUserPowerLevel((await sillyModerator.getUserId()), protectedRoom, 100);
+
+        await createPolicyRule(moderator, banListId, RULE_USER, '@*mx*:*', "don't like them go away.");
+        await mjolnir.protectedRoomsTracker.syncLists();
+
+        const roomMembers = await moderator.getRoomMembers(protectedRoom);
+
+        const assertMembership = (userId: string, membership: string, members: MembershipEvent[]) => {
+            assert.equal(members.find(e => e.stateKey === userId)?.membership, membership);
+        };
+
+        assertMembership(await spamUser.getUserId(), 'ban', roomMembers);
+        assertMembership(await rudeUser.getUserId(), 'ban', roomMembers);
     })
 })

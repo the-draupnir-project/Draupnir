@@ -65,5 +65,3 @@ export interface DataStore {
      */
     lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]>;
 }
-
-

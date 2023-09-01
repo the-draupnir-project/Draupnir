@@ -182,8 +182,8 @@ export class ReportManager extends EventEmitter {
 
         - We're in the management room;
         - Either
-          - `initialNoticeReport` is defined and we're reacting to one of our reports; or
-          - `confirmationReport` is defined and we're reacting to a confirmation request.
+            - `initialNoticeReport` is defined and we're reacting to one of our reports; or
+            - `confirmationReport` is defined and we're reacting to a confirmation request.
         */
 
         if (confirmationReport) {
@@ -284,18 +284,18 @@ export class ReportManager extends EventEmitter {
 
 
     /**
-      * Execute a report-specific action.
-      *
-      * This is executed when the user clicks on an action to execute (if the action
-      * does not need confirmation) or when the user clicks on "confirm" in a confirmation
-      * (otherwise).
-      *
-      * @param label The type of action to execute, e.g. `kick-user`.
-      * @param report The abuse report on which to take action.
-      * @param successEventId The event to annotate with a "OK" in case of success.
-      * @param failureEventId The event to annotate with a "FAIL" in case of failure.
-      * @param onSuccessRemoveEventId Optionally, an event to remove in case of success (e.g. the confirmation dialog).
-      */
+        * Execute a report-specific action.
+        *
+        * This is executed when the user clicks on an action to execute (if the action
+        * does not need confirmation) or when the user clicks on "confirm" in a confirmation
+        * (otherwise).
+        *
+        * @param label The type of action to execute, e.g. `kick-user`.
+        * @param report The abuse report on which to take action.
+        * @param successEventId The event to annotate with a "OK" in case of success.
+        * @param failureEventId The event to annotate with a "FAIL" in case of failure.
+        * @param onSuccessRemoveEventId Optionally, an event to remove in case of success (e.g. the confirmation dialog).
+        */
     private async executeAction({ label, report, successEventId, failureEventId, onSuccessRemoveEventId, moderationRoomId }: { label: string, report: IReportWithAction, successEventId: string, failureEventId: string, onSuccessRemoveEventId?: string, moderationRoomId: string }) {
         let action: IUIAction | undefined = ACTIONS.get(label);
         if (!action) {

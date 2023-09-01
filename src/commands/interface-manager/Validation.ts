@@ -41,7 +41,7 @@ const noValue = Symbol('noValue');
  * TO be clear this is only used when the user has done something wrong
  * and we need to communicate that. It is not for any other situation.
  */
- export class CommandResult<Ok, Err extends CommandError = CommandError> {
+export class CommandResult<Ok, Err extends CommandError = CommandError> {
     private constructor(
         private readonly okValue: Ok|typeof noValue,
         private readonly errValue: Err|typeof noValue,

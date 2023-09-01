@@ -54,4 +54,3 @@ describe("Test: shutdown command", function() {
         });
     });
 });
-

@@ -26,4 +26,4 @@ describe("Test: !help command", function() {
         await client.sendMessage(this.mjolnir.managementRoomId, {msgtype: "m.text", body: "!mjolnir help"})
         await reply
     })
-}) 
+})

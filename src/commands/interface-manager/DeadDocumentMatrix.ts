@@ -108,7 +108,7 @@ export async function renderMatrixAndSend(node: DocumentNode, roomId: string, ev
             "m.relates_to": {
                 "rel_type": "m.thread",
                 "event_id": eventId,
-              }
+            }
         })
     };
     let initialReplyId: string | undefined = undefined;
