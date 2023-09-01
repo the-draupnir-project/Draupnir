@@ -18,12 +18,12 @@ repos:
       - id: eslint
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
         types: [file]
-          # in case of mirror starting to track prereleases or need for plugins
-          #additional_dependencies:
-          #[
-          # https://www.npmjs.com/package/eslint
-          #"eslint@v8.48.0"
-          #]
+        additional_dependencies: [
+            # https://www.npmjs.com/package/eslint
+            "eslint@v8.48.0",
+            # https://www.npmjs.com/package/eslint-plugin-editorconfig
+            "eslint-plugin-editorconfig@4.0.3"
+          ]
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: "2.7.2"
     hooks:
