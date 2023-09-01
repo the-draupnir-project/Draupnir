@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import opentelemetry from "@opentelemetry/api";
+import opentelemetry, { Span } from "@opentelemetry/api";
 import {
     LogLevel,
     LogService,
@@ -521,7 +521,7 @@ export function trace(spanName: string) {
                         'draupnir-appservice-tracer'
                     );
 
-                    return tracer.startActiveSpan(spanName, async (parentSpan) => {
+                    return tracer.startActiveSpan(spanName, async (parentSpan: Span) => {
                         const result = propertyDescriptor.value.apply(this, args);
                         parentSpan.end();
                         return result;
@@ -555,7 +555,7 @@ export function traceSync(spanName: string) {
                         'draupnir-appservice-tracer'
                     );
 
-                    return tracer.startActiveSpan(spanName, (parentSpan) => {
+                    return tracer.startActiveSpan(spanName, (parentSpan: Span) => {
                         const result = propertyDescriptor.value.apply(this, args);
                         parentSpan.end();
                         return result;
