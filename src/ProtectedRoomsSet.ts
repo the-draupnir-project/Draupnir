@@ -293,6 +293,9 @@ export class ProtectedRoomsSet {
     private async applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<RoomUpdateError[]> {
         // we need to provide mutual exclusion so that we do not have requests updating the m.room.server_acl event
         // finish out of order and therefore leave the room out of sync with the policy lists.
+        if (this.config.disableServerACL) {
+            return [];
+        }
         return new Promise((resolve, reject) => {
             this.aclChain = this.aclChain
                 .then(() => this._applyServerAcls(lists, roomIds))
