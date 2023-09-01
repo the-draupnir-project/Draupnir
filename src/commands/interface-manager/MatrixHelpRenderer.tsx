@@ -64,10 +64,13 @@ export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): stri
 }
 
 function renderTableHelp(table: CommandTable): DocumentNode {
-    // FIXME: is it possible to force case of table names?
+    let tableName = table.name;
+    if (typeof table.name === 'string') {
+        tableName = table.name.charAt(0).toUpperCase() + table.name.slice(1);
+    }
     return <root>
         <details>
-            <summary><b>{table.name} commands:</b></summary>
+            <summary><b>{tableName} commands:</b></summary>
             {table.getExportedCommands().map(renderCommandSummary)}
             {table.getImportedTables().map(renderTableHelp)}
         </details>
