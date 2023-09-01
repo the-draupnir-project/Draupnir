@@ -213,7 +213,9 @@ export class MjolnirAppService {
         reg.setHomeserverToken(AppServiceRegistration.generateToken());
         reg.setAppServiceToken(AppServiceRegistration.generateToken());
         reg.setSenderLocalpart("mjolnir-bot");
+        // This is kept for backwards compat
         reg.addRegexPattern("users", "@mjolnir_.*", true);
+        reg.addRegexPattern("users", "@draupnir_.*", true);
         reg.setRateLimited(false);
         callback(reg);
     }

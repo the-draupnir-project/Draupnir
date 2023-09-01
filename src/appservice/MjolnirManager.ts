@@ -146,13 +146,13 @@ export class MjolnirManager {
         }
         const provisionedMjolnirs = await this.dataStore.lookupByOwner(requestingUserId);
         if (provisionedMjolnirs.length === 0) {
-            const mjolnirLocalPart = `mjolnir_${randomUUID()}`;
+            const mjolnirLocalPart = `draupnir_${randomUUID()}`;
             const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
 
             const managementRoomId = await mjIntent.matrixClient.createRoom({
                 preset: 'private_chat',
                 invite: [requestingUserId],
-                name: `${requestingUserId}'s mjolnir`,
+                name: `${requestingUserId}'s Draupnir`,
                 power_level_content_override: {
                     users: {
                         [requestingUserId]: 100,
@@ -173,7 +173,7 @@ export class MjolnirManager {
 
             return [mjIntent.userId, managementRoomId];
         } else {
-            throw new Error(`User: ${requestingUserId} has already provisioned ${provisionedMjolnirs.length} mjolnirs.`);
+            throw new Error(`User: ${requestingUserId} has already provisioned ${provisionedMjolnirs.length} Draupnirs.`);
         }
     }
 
