@@ -73,11 +73,11 @@ export function setToArray<T>(set: Set<T>): T[] {
 
 /**
  * This increments a prometheus gauge. Used in the Appservice MjolnirManager.
- * 
+ *
  * The ts-ignore is mandatory since we access a private method due to lack of a public one.
- * 
+ *
  * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
- * 
+ *
  * @param gauge The Gauge to be modified
  * @param status The status value that should be modified
  * @param uuid The UUID of the instance. (Usually the localPart)
@@ -91,11 +91,11 @@ export function incrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "of
 
 /**
  * This decrements a prometheus gauge. Used in the Appservice MjolnirManager.
- * 
+ *
  * The ts-ignore is mandatory since we access a private method due to lack of a public one.
- * 
+ *
  * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
- * 
+ *
  * @param gauge The Gauge to be modified
  * @param status The status value that should be modified
  * @param uuid The UUID of the instance. (Usually the localPart)
