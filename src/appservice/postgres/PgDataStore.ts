@@ -18,7 +18,7 @@ import { PostgresStore, SchemaUpdateFunction } from "matrix-appservice-bridge";
 import { DataStore, MjolnirRecord } from "../datastore";
 
 function getSchema(): SchemaUpdateFunction[] {
-    const nSchema = 1;
+    const nSchema = 2;
     const schema = [];
     for (let schemaID = 1; schemaID < nSchema + 1; schemaID++) {
         schema.push(require(`./schema/v${schemaID}`).runSchema);
@@ -41,7 +41,7 @@ export class PgDataStore extends PostgresStore implements DataStore {
     }
 
     public async list(): Promise<MjolnirRecord[]> {
-        const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir`;
+        const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir`;
         if (!result.count) {
             return [];
         }
@@ -50,18 +50,18 @@ export class PgDataStore extends PostgresStore implements DataStore {
     }
 
     public async store(mjolnirRecord: MjolnirRecord): Promise<void> {
-        await this.sql`INSERT INTO mjolnir (local_part, owner, management_room)
+        await this.sql`INSERT INTO draupnir (local_part, owner, management_room)
         VALUES (${mjolnirRecord.local_part}, ${mjolnirRecord.owner}, ${mjolnirRecord.management_room})`;
     }
 
     public async lookupByOwner(owner: string): Promise<MjolnirRecord[]> {
-        const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir
+        const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir
         WHERE owner = ${owner}`;
         return result.flat() as MjolnirRecord[];
     }
 
     public async lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]> {
-        const result = await this.sql`SELECT local_part, owner, management_room FROM mjolnir
+        const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir
         WHERE local_part = ${localPart}`;
         return result.flat() as MjolnirRecord[];
     }
