@@ -12,7 +12,7 @@ import { MatrixEmitter } from "../MatrixEmitter";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { Gauge } from "prom-client";
-import { decrementGuageValue, incrementGuageValue } from "../utils";
+import { decrementGaugeValue, incrementGaugeValue } from "../utils";
 
 const log = new Logger('MjolnirManager');
 
@@ -73,9 +73,9 @@ export class MjolnirManager {
         await managedMjolnir.start();
         this.mjolnirs.set(mxid, managedMjolnir);
         this.unstartedMjolnirs.delete(mxid);
-        incrementGuageValue(this.instanceCountGauge, "offline", localPart);
-        decrementGuageValue(this.instanceCountGauge, "disabled", localPart);
-        incrementGuageValue(this.instanceCountGauge, "online", localPart);
+        incrementGaugeValue(this.instanceCountGauge, "offline", localPart);
+        decrementGaugeValue(this.instanceCountGauge, "disabled", localPart);
+        incrementGaugeValue(this.instanceCountGauge, "online", localPart);
         return managedMjolnir;
     }
 
@@ -194,8 +194,8 @@ export class MjolnirManager {
             // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
             mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
             this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord, mjIntent.userId);
-            decrementGuageValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
-            incrementGuageValue(this.instanceCountGauge, "disabled", mjolnirRecord.local_part);
+            decrementGaugeValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
+            incrementGaugeValue(this.instanceCountGauge, "disabled", mjolnirRecord.local_part);
         } else {
             await this.makeInstance(
                 mjolnirRecord.local_part,
@@ -207,8 +207,8 @@ export class MjolnirManager {
                 // Don't await, we don't want to clobber initialization if this fails.
                 mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
                 this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord, mjIntent.userId);
-                decrementGuageValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
-                incrementGuageValue(this.instanceCountGauge, "offline", mjolnirRecord.local_part);
+                decrementGaugeValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
+                incrementGaugeValue(this.instanceCountGauge, "offline", mjolnirRecord.local_part);
             });
         }
     }

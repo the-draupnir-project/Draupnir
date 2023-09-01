@@ -82,7 +82,7 @@ export function setToArray<T>(set: Set<T>): T[] {
  * @param status The status value that should be modified
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
-export function incrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
     // @ts-ignore
     if (!gauge._getValue({ status: status, uuid: uuid })) {
         gauge.inc({ status: status, uuid: uuid });
@@ -100,7 +100,7 @@ export function incrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "of
  * @param status The status value that should be modified
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
-export function decrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+export function decrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
     // @ts-ignore
     if (gauge._getValue({ status: status, uuid: uuid })) {
         gauge.dec({ status: status, uuid: uuid });
