@@ -73,6 +73,10 @@ verifyPermissionsOnStartup: true
 # turn on to trial some untrusted configuration or lists.
 noop: false
 
+# Whether or not Draupnir should apply `m.room.server_acl` events.
+# DO NOT change this to `true` unless you are very confident that you know what you are doing.
+disableServerACL: false
+
 # Whether Draupnir should check member lists quicker (by using a different endpoint),
 # keep in mind that enabling this will miss invited (but not joined) users.
 #

@@ -436,7 +436,7 @@ export class ProtectionManager {
                     errorKind: ERROR_KIND_PERMISSION,
                 });
             }
-            if (userLevel < aclLevel) {
+            if (!this.mjolnir.config.disableServerACL && userLevel < aclLevel) {
                 errors.push({
                     roomId,
                     errorMessage: `Missing power level for server ACLs: ${userLevel} < ${aclLevel}`,
