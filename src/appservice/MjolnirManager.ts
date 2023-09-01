@@ -12,6 +12,7 @@ import { MatrixEmitter } from "../MatrixEmitter";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { Gauge } from "prom-client";
+import { decrementGuageValue, incrementGuageValue } from "../utils";
 
 const log = new Logger('MjolnirManager');
 
@@ -72,18 +73,9 @@ export class MjolnirManager {
         await managedMjolnir.start();
         this.mjolnirs.set(mxid, managedMjolnir);
         this.unstartedMjolnirs.delete(mxid);
-        // @ts-ignore
-        if (this.instanceCountGauge._getValue({ status: "offline", uuid: localPart })) {
-            this.instanceCountGauge.dec({ status: "offline", uuid: localPart });
-        }
-        // @ts-ignore
-        if (this.instanceCountGauge._getValue({ status: "disabled", uuid: localPart })) {
-            this.instanceCountGauge.dec({ status: "disabled", uuid: localPart });
-        }
-        // @ts-ignore
-        if (!this.instanceCountGauge._getValue({ status: "online", uuid: localPart })) {
-            this.instanceCountGauge.inc({ status: "online", uuid: localPart });
-        }
+        incrementGuageValue(this.instanceCountGauge, "offline", localPart);
+        decrementGuageValue(this.instanceCountGauge, "disabled", localPart);
+        incrementGuageValue(this.instanceCountGauge, "online", localPart);
         return managedMjolnir;
     }
 
@@ -202,14 +194,8 @@ export class MjolnirManager {
             // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
             mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
             this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.Unauthorized, access.outcome, mjolnirRecord, mjIntent.userId);
-            // @ts-ignore
-            if (this.instanceCountGauge._getValue({ status: "online", uuid: mjolnirRecord.local_part })) {
-                this.instanceCountGauge.dec({ status: "online", uuid: mjolnirRecord.local_part });
-            }
-            // @ts-ignore
-            if (!this.instanceCountGauge._getValue({ status: "disabled", uuid: mjolnirRecord.local_part })) {
-                this.instanceCountGauge.inc({ status: "disabled", uuid: mjolnirRecord.local_part });
-            }
+            decrementGuageValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
+            incrementGuageValue(this.instanceCountGauge, "disabled", mjolnirRecord.local_part);
         } else {
             await this.makeInstance(
                 mjolnirRecord.local_part,
@@ -221,14 +207,8 @@ export class MjolnirManager {
                 // Don't await, we don't want to clobber initialization if this fails.
                 mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
                 this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord, mjIntent.userId);
-                // @ts-ignore
-                if (this.instanceCountGauge._getValue({ status: "online", uuid: mjolnirRecord.local_part })) {
-                    this.instanceCountGauge.dec({ status: "online", uuid: mjolnirRecord.local_part });
-                }
-                // @ts-ignore
-                if (!this.instanceCountGauge._getValue({ status: "offline", uuid: mjolnirRecord.local_part })) {
-                    this.instanceCountGauge.inc({ status: "offline", uuid: mjolnirRecord.local_part });
-                }
+                decrementGuageValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
+                incrementGuageValue(this.instanceCountGauge, "offline", mjolnirRecord.local_part);
             });
         }
     }

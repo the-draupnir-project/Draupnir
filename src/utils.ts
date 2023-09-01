@@ -41,6 +41,7 @@ import * as _ from '@sentry/tracing'; // Performing the import activates tracing
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { IConfig } from "./config";
 import { MatrixSendClient } from "./MatrixEmitter";
+import { Gauge } from "prom-client";
 
 // Define a few aliases to simplify parsing durations.
 
@@ -68,6 +69,42 @@ export function setToArray<T>(set: Set<T>): T[] {
         arr.push(v);
     }
     return arr;
+}
+
+/**
+ * This increments a prometheus gauge. Used in the Appservice MjolnirManager.
+ * 
+ * The ts-ignore is mandatory since we access a private method due to lack of a public one.
+ * 
+ * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
+ * 
+ * @param gauge The Gauge to be modified
+ * @param status The status value that should be modified
+ * @param uuid The UUID of the instance. (Usually the localPart)
+ */
+export function incrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+    // @ts-ignore
+    if (!gauge._getValue({ status: status, uuid: uuid })) {
+        gauge.inc({ status: status, uuid: uuid });
+    }
+}
+
+/**
+ * This decrements a prometheus gauge. Used in the Appservice MjolnirManager.
+ * 
+ * The ts-ignore is mandatory since we access a private method due to lack of a public one.
+ * 
+ * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
+ * 
+ * @param gauge The Gauge to be modified
+ * @param status The status value that should be modified
+ * @param uuid The UUID of the instance. (Usually the localPart)
+ */
+export function decrementGuageValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+    // @ts-ignore
+    if (gauge._getValue({ status: status, uuid: uuid })) {
+        gauge.dec({ status: status, uuid: uuid });
+    }
 }
 
 export function isTrueJoinEvent(event: any): boolean {
@@ -134,7 +171,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
     const isGlob = sender.includes("*");
     const roomEventFilter = {
         rooms: [roomId],
-        ... isGlob ? {} : {senders: [sender]}
+        ...isGlob ? {} : { senders: [sender] }
     };
 
     const matcher = new MatrixGlob(sender);
@@ -167,11 +204,11 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * if `null`, start from the most recent point in the timeline.
      * @returns The response part of the `/messages` API, see `BackfillResponse`.
      */
-    async function backfill(from: string|null): Promise<BackfillResponse> {
+    async function backfill(from: string | null): Promise<BackfillResponse> {
         const qs = {
             filter: JSON.stringify(roomEventFilter),
             dir: "b",
-            ... from ? { from } : {}
+            ...from ? { from } : {}
         };
         LogService.info("utils", "Backfilling with token: " + from);
         return client.doRequest("GET", `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`, qs);
@@ -195,10 +232,10 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
     }
     // We check that we have the token because rooms/messages is not required to provide one
     // and will not provide one when there is no more history to paginate.
-    let token: string|null = null;
+    let token: string | null = null;
     do {
         const bfMessages: BackfillResponse = await backfill(token);
-        const previousToken: string|null = token;
+        const previousToken: string | null = token;
         token = bfMessages['end'] ?? null;
         const events = filterEvents(bfMessages['chunk'] || []);
         // If we are using a glob, there may be no relevant events in this chunk.
@@ -287,13 +324,13 @@ function patchMatrixClientForConciseExceptions() {
             const method: string | undefined = err.method
                 ? err.method
                 : "req" in err && err.req instanceof ClientRequest
-                ? err.req.method
-                : params.method;
+                    ? err.req.method
+                    : params.method;
             const path: string = err.url
                 ? err.url
                 : "req" in err && err.req instanceof ClientRequest
-                ? err.req.path
-                : params.uri ?? '';
+                    ? err.req.path
+                    : params.uri ?? '';
             let body: unknown = null;
             if ("body" in err) {
                 body = err.body;
