@@ -8,10 +8,7 @@ charset = utf-8
 indent_style = space
 indent_size = 4
 
-[{LICENSE,NOTICE}]
-indent_size = off
-
-[*.{md,yml,yaml,json}]
+[{LICENSE,NOTICE,*.{md,yml,yaml,json}}]
 trim_trailing_whitespace = false
 indent_style = space
-indent_size = off
+indent_size = unset
