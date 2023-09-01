@@ -209,7 +209,9 @@ export class MjolnirAppService {
         reg.setHomeserverToken(AppServiceRegistration.generateToken());
         reg.setAppServiceToken(AppServiceRegistration.generateToken());
         reg.setSenderLocalpart('draupnir-moderation');
+        // This is maintained for backwards compatibility with mjolnir4all.
         reg.addRegexPattern("users", "@mjolnir_.*", true);
+        reg.addRegexPattern("users", "@draupnir_.*", true);
         reg.setRateLimited(false);
         callback(reg);
     }
