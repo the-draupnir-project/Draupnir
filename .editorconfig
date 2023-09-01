@@ -9,9 +9,9 @@ indent_style = space
 indent_size = 4
 
 [{LICENSE,NOTICE}]
-indent_size = off
+indent_size = unset
 
 [*.{md,yml,yaml,json}]
 trim_trailing_whitespace = false
 indent_style = space
-indent_size = off
+indent_size = unset
