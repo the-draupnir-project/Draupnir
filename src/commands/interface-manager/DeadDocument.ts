@@ -66,6 +66,7 @@ export enum NodeTag {
     Fragment = 'fragment',
     Details = 'details',
     Summary = 'summary',
+    Font = 'font',
 }
 
 /**

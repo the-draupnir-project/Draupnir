@@ -142,4 +142,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.Summary,
     staticString('<summary>'),
     staticString('</summary>')
+).registerInnerNode(NodeTag.Font,
+    blank,
+    blank
 );
