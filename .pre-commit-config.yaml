@@ -22,7 +22,11 @@ repos:
             # https://www.npmjs.com/package/eslint
             "eslint@v8.48.0",
             # https://www.npmjs.com/package/eslint-plugin-editorconfig
-            "eslint-plugin-editorconfig@4.0.3"
+            "eslint-plugin-editorconfig@4.0.3",
+            # https://www.npmjs.com/package/@typescript-eslint/eslint-plugin
+            "@typescript-eslint/eslint-plugin@6.5.0",
+            # https://www.npmjs.com/package/@typescript-eslint/parser
+            "@typescript-eslint/parser@6.5.0"
           ]
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: "2.7.2"
