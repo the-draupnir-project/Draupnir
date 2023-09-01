@@ -104,6 +104,9 @@ export class ServerAcl {
         if (!allowed || allowed.length === 0) {
             allowed.push("*"); // allow everything
         }
+        if (!allowed.some(server => new MatrixGlob(server).test(this.homeserver))) {
+            allowed.push(this.homeserver);
+        }
         return {
             allow: allowed,
             deny: this.safeDeniedServers(),
