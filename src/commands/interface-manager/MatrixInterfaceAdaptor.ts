@@ -39,6 +39,7 @@ import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, P
 import { ParameterDescription } from "./ParameterParsing";
 import { matrixPromptForAccept } from "./MatrixPromptForAccept";
 import { trace } from "../../utils";
+import { Span } from "@opentelemetry/api";
 
 export interface MatrixContext {
     client: MatrixSendClient,
@@ -74,6 +75,8 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      */
     @trace
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
+        // The span is always the last element due to order of args. And since we try to hide it we dont have it in the type and need to go via unknown here.
+        const _parentSpan: Span = args.pop() as unknown as Span;
         const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
         const stream = new PromptableArgumentStream(args, this, invocationRecord);
         const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
