@@ -17,7 +17,7 @@ export abstract class MatrixDataManager<Format extends RawSchemedData = RawSchem
     protected abstract storeMatixData(data: Format): Promise<void>;
     protected abstract createFirstData(): Promise<Format>;
 
-    @trace('MatrixDataManager.migrateData')
+    @trace
     protected async migrateData(rawData: RawSchemedData): Promise<RawSchemedData> {
         const startingVersion = rawData[SCHEMA_VERSION_KEY] as number;
         // Rememeber, version 0 has no migrations
@@ -36,7 +36,7 @@ export abstract class MatrixDataManager<Format extends RawSchemedData = RawSchem
         }
     }
 
-    @trace('MatrixDataManager.loadData')
+    @trace
     protected async loadData(): Promise<Format> {
         const rawData = await this.requestMatrixData();
         if (rawData === undefined) {

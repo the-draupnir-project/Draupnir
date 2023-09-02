@@ -50,7 +50,7 @@ export class WordList extends Protection {
             "will be banned from that room.  This will not publish the ban to a ban list.";
     }
 
-    @trace("WordList.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
 
         const content = event['content'] || {};

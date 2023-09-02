@@ -46,7 +46,7 @@ export class MessageIsVoice extends Protection {
         return "If a user posts a voice message, that message will be redacted. No bans are issued.";
     }
 
-    @trace("MessageIsVoice.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (event['type'] === 'm.room.message' && event['content']) {
             if (event['content']['msgtype'] !== 'm.audio') return;

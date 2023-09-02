@@ -49,7 +49,7 @@ export class FirstMessageIsImage extends Protection {
             "they'll be banned for spam. This does not publish the ban to any of your ban lists.";
     }
 
-    @trace("FirstMessageIsImage.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (!this.justJoined[roomId]) this.justJoined[roomId] = [];
 

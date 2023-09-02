@@ -46,7 +46,7 @@ export class MessageIsMedia extends Protection {
         return "If a user posts an image or video, that message will be redacted. No bans are issued.";
     }
 
-    @trace("MessageIsMedia.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (event['type'] === 'm.room.message') {
             const content = event['content'] || {};

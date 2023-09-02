@@ -27,7 +27,7 @@ limitations under the License.
 
 import { EventEmitter } from "events";
 import { default as parseDuration } from "parse-duration";
-import { traceSync } from "../utils";
+import { trace } from "../utils";
 
 // Define a few aliases to simplify parsing durations.
 
@@ -83,7 +83,7 @@ export class AbstractProtectionListSetting<TChange, TValue> extends AbstractProt
      * @param data Value to add to the current setting value
      * @returns The potential new value of this setting object
      */
-    @traceSync("AbstractProtectionSetting.addValue")
+    @trace
     addValue(data: TChange): TValue {
         throw new Error("not Implemented");
     }
@@ -94,7 +94,7 @@ export class AbstractProtectionListSetting<TChange, TValue> extends AbstractProt
      * @param data Value to remove from the current setting value
      * @returns The potential new value of this setting object
      */
-    @traceSync("AbstractProtectionSetting.removeValue")
+    @trace
     removeValue(data: TChange): TValue {
         throw new Error("not Implemented");
     }
@@ -113,13 +113,13 @@ export class StringListProtectionSetting extends AbstractProtectionListSetting<s
     value: string[] = [];
     fromString = (data: string): string => data;
     validate = (data: string): boolean => true;
-    @traceSync("StringListProtectionSetting.addValue")
+    @trace
     addValue(data: string): string[] {
         this.emit("add", data);
         this.value.push(data);
         return this.value;
     }
-    @traceSync("StringListProtectionSetting.removeValue")
+    @trace
     removeValue(data: string): string[] {
         this.emit("remove", data);
         this.value = this.value.filter(i => i !== data);
@@ -131,13 +131,13 @@ export class StringSetProtectionSetting extends AbstractProtectionListSetting<st
     value: Set<string> = new Set();
     fromString = (data: string): string => data;
     validate = (data: string): boolean => true;
-    @traceSync("StringSetProtectionSetting.addValue")
+    @trace
     addValue(data: string): Set<string> {
         this.emit("add", data);
         this.value.add(data);
         return this.value;
     }
-    @traceSync("StringSetProtectionSetting.removeValue")
+    @trace
     removeValue(data: string): Set<string> {
         this.emit("remove", data);
         this.value.delete(data);
@@ -166,12 +166,12 @@ export class NumberProtectionSetting extends AbstractProtectionSetting<number, n
         this.max = max;
     }
 
-    @traceSync("NumberProtectionSetting.fromString")
+    @trace
     fromString(data: string) {
         let number = Number(data);
         return isNaN(number) ? undefined : number;
     }
-    @traceSync("NumberProtectionSetting.validate")
+    @trace
     validate(data: number) {
         return (!isNaN(data)
             && (this.min === undefined || this.min <= data)
@@ -194,12 +194,12 @@ export class DurationMSProtectionSetting extends AbstractProtectionSetting<numbe
         this.setValue(defaultValue);
     }
 
-    @traceSync("DurationMSProtectionSetting.fromString")
+    @trace
     fromString(data: string) {
         let number = parseDuration(data);
         return isNaN(number) ? undefined : number;
     }
-    @traceSync("DurationMSProtectionSetting.validate")
+    @trace
     validate(data: number) {
         return (!isNaN(data)
             && (this.minMS === undefined || this.minMS <= data)

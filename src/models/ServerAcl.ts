@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { MatrixGlob } from "matrix-bot-sdk";
-import { setToArray, traceSync } from "../utils";
+import { setToArray, trace } from "../utils";
 
 export interface ServerAclContent {
     allow: string[];
@@ -47,7 +47,7 @@ export class ServerAcl {
      * Checks the ACL for any entries that might ban ourself.
      * @returns A list of deny entries that will not ban our own homeserver.
      */
-    @traceSync("ServerAcl.safeDeniedServers")
+    @trace
     public safeDeniedServers(): string[] {
         // The reason we do this check here rather than in the `denyServer` method
         // is because `literalAclContent` exists and also we want to be defensive about someone
@@ -62,43 +62,43 @@ export class ServerAcl {
         return entries;
     }
 
-    @traceSync("ServerAcl.allowIpAddresses")
+    @trace
     public allowIpAddresses(): ServerAcl {
         this.allowIps = true;
         return this;
     }
 
-    @traceSync("ServerAcl.denyIpAddresses")
+    @trace
     public denyIpAddresses(): ServerAcl {
         this.allowIps = false;
         return this;
     }
 
-    @traceSync("ServerAcl.allowServer")
+    @trace
     public allowServer(glob: string): ServerAcl {
         this.allowedServers.add(glob);
         return this;
     }
 
-    @traceSync("ServerAcl.setAllowedServers")
+    @trace
     public setAllowedServers(globs: string[]): ServerAcl {
         this.allowedServers = new Set<string>(globs);
         return this;
     }
 
-    @traceSync("ServerAcl.denyServer")
+    @trace
     public denyServer(glob: string): ServerAcl {
         this.deniedServers.add(glob);
         return this;
     }
 
-    @traceSync("ServerAcl.setDeniedServers")
+    @trace
     public setDeniedServers(globs: string[]): ServerAcl {
         this.deniedServers = new Set<string>(globs);
         return this;
     }
 
-    @traceSync("ServerAcl.literalAclContent")
+    @trace
     public literalAclContent(): ServerAclContent {
         return {
             allow: setToArray(this.allowedServers),
@@ -107,7 +107,7 @@ export class ServerAcl {
         };
     }
 
-    @traceSync("ServerAcl.safeAclContent")
+    @trace
     public safeAclContent(): ServerAclContent {
         const allowed = setToArray(this.allowedServers);
         if (!allowed || allowed.length === 0) {
@@ -120,7 +120,7 @@ export class ServerAcl {
         };
     }
 
-    @traceSync("ServerAcl.matches")
+    @trace
     public matches(acl: any): boolean {
         if (!acl) return false;
 

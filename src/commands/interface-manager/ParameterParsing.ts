@@ -24,7 +24,7 @@ limitations under the License.
  * are NOT distributed, contributed, or committed under the Apache License.
  */
 
-import { trace, traceSync } from "../../utils";
+import { trace } from "../../utils";
 import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
 import { PromptOptions } from "./PromptForAccept";
 import { CommandError, CommandResult } from "./Validation";
@@ -37,12 +37,12 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
 }
 
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
-    @traceSync('ArgumentStream.rest')
+    @trace
     public rest() {
         return this.source.slice(this.position);
     }
 
-    @traceSync('ArgumentStream.isPromptable')
+    @trace
     public isPromptable(): boolean {
         return false;
     }
@@ -235,7 +235,7 @@ export class ParsedKeywords {
 
     }
 
-    @traceSync('ParsedKeywords.getKeyword')
+    @trace
     public getKeyword<T extends ReadItem | boolean>(keyword: string, defaultValue: T | undefined = undefined): T | undefined {
         const keywordDescription = this.descriptions[keyword];
         if (keywordDescription === undefined) {
@@ -262,13 +262,13 @@ class KeywordParser {
     ) {
     }
 
-    @traceSync('KeywordParser.getKeywords')
+    @trace
     public getKeywords(): ParsedKeywords {
         return new ParsedKeywords(this.description.description, this.arguments);
     }
 
 
-    @traceSync('KeywordParser.readKeywordAssociatedProperty')
+    @trace
     private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): CommandResult<any, ArgumentParseError> {
         if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
             const validationResult = keyword.acceptor.validator(itemStream.peekItem());
@@ -286,7 +286,7 @@ class KeywordParser {
         }
     }
 
-    @traceSync('KeywordParser.parseKeywords')
+    @trace
     public parseKeywords(itemStream: IArgumentStream): CommandResult<this> {
         while (itemStream.peekItem() !== undefined && itemStream.peekItem() instanceof Keyword) {
             const item = itemStream.readItem() as Keyword;
@@ -316,7 +316,7 @@ class KeywordParser {
         return CommandResult.Ok(this);
     }
 
-    @trace('KeywordParser.parseRest')
+    @trace
     public async parseRest(stream: IArgumentStream, shouldPromptForRest = false, restDescription?: RestDescription): Promise<CommandResult<ReadItem[] | undefined>> {
         if (restDescription !== undefined) {
             return await restDescription.parseRest(stream, shouldPromptForRest, this)
@@ -385,7 +385,7 @@ class ArgumentListParser implements IArgumentListParser {
     ) {
     }
 
-    @trace('ArgumentListParser.parse')
+    @trace
     public async parse(stream: IArgumentStream): Promise<CommandResult<ParsedArguments>> {
         let hasPrompted = false;
         const keywordsParser = this.keywords.getParser();
@@ -439,7 +439,7 @@ export class AbstractArgumentParseError extends CommandError {
         super(message)
     }
 
-    @traceSync('AbstractArgumentParseError.Result')
+    @trace
     public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, AbstractArgumentParseError> {
         return CommandResult.Err(new AbstractArgumentParseError(options.stream, message));
     }
@@ -453,14 +453,14 @@ export class ArgumentParseError extends AbstractArgumentParseError {
         super(stream, message)
     }
 
-    @traceSync('ArgumentParseError.Result')
+    @trace
     public static Result<Ok>(message: string, options: { parameter: ParameterDescription, stream: IArgumentStream }): CommandResult<Ok, ArgumentParseError> {
         return CommandResult.Err(new ArgumentParseError(options.parameter, options.stream, message));
     }
 }
 
 export class UnexpectedArgumentError extends AbstractArgumentParseError {
-    @traceSync('UnexpectedArgumentError.Result')
+    @trace
     public static Result<Ok>(message: string, options: { stream: IArgumentStream }): CommandResult<Ok, UnexpectedArgumentError> {
         return CommandResult.Err(new UnexpectedArgumentError(options.stream, message));
     }

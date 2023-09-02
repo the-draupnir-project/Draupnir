@@ -38,7 +38,7 @@ import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import { ProtectionSettingValidationError } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
-import { htmlEscape, trace, traceSync } from "../utils";
+import { htmlEscape, trace } from "../utils";
 import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
 import { RoomUpdateError } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
@@ -86,7 +86,7 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
         super()
     }
 
-    @trace("EnabledProtectionsManager.requestMatrixData")
+    @trace
     protected async requestMatrixData(): Promise<unknown> {
         try {
             return await this.mjolnir.client.getAccountData(ENABLED_PROTECTIONS_EVENT_TYPE);
@@ -100,7 +100,7 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
         }
     }
 
-    @trace("EnabledProtectionsManager.storeMatixData")
+    @trace
     protected async storeMatixData(): Promise<void> {
         const data: EnabledProtectionsEvent = {
             enabled: [...this.enabledProtections],
@@ -109,31 +109,31 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
         await this.mjolnir.client.setAccountData(ENABLED_PROTECTIONS_EVENT_TYPE, data);
     }
 
-    @trace("EnabledProtectionsManager.createFirstData")
+    @trace
     protected async createFirstData(): Promise<EnabledProtectionsEvent> {
         return { enabled: [], [SCHEMA_VERSION_KEY]: 0 };
     }
 
-    @traceSync("EnabledProtectionsManager.isEnabled")
+    @trace
     public isEnabled(protection: Protection): boolean {
         return this.enabledProtections.has(protection.name);
     }
 
-    @trace("EnabledProtectionsManager.enable")
+    @trace
     public async enable(protection: Protection): Promise<void> {
         this.enabledProtections.add(protection.name);
         protection.enabled = true;
         await this.storeMatixData();
     }
 
-    @trace("EnabledProtectionsManager.disable")
+    @trace
     public async disable(protection: Protection): Promise<void> {
         this.enabledProtections.delete(protection.name);
         protection.enabled = false;
         await this.storeMatixData();
     }
 
-    @trace("EnabledProtectionsManager.start")
+    @trace
     public async start(): Promise<void> {
         const data = await this.loadData();
         for (const protection of data.enabled) {
@@ -162,7 +162,7 @@ export class ProtectionManager {
      * Take all the builtin protections, register them to set their enabled (or not) state and
      * update their settings with any saved non-default values
      */
-    @trace('ProtectionManager.start')
+    @trace
     public async start() {
         await this.enabledProtectionsManager.start();
         this.mjolnir.reportManager.on("report.new", this.handleReport.bind(this));
@@ -186,7 +186,7 @@ export class ProtectionManager {
      *
      * @param protection The protection object we want to register
      */
-    @trace('ProtectionManager.registerProtection')
+    @trace
     public async registerProtection(protection: Protection) {
         this._protections.set(protection.name, protection)
         protection.enabled = this.enabledProtectionsManager.isEnabled(protection) ?? false;
@@ -204,7 +204,7 @@ export class ProtectionManager {
      *
      * @param protection The protection object we want to unregister
      */
-    @traceSync('ProtectionManager.unregisterProtection')
+    @trace
     public unregisterProtection(protectionName: string) {
         if (!(this._protections.has(protectionName))) {
             throw new Error("Failed to find protection by name: " + protectionName);
@@ -220,7 +220,7 @@ export class ProtectionManager {
      * @param protectionName Which protection these settings belong to
      * @param changedSettings The settings to change and their values
      */
-    @trace('ProtectionManager.setProtectionSettings')
+    @trace
     public async setProtectionSettings(protectionName: string, changedSettings: { [setting: string]: any }): Promise<any> {
         const protection = this._protections.get(protectionName);
         if (protection === undefined) {
@@ -252,7 +252,7 @@ export class ProtectionManager {
      *
      * @param name The name of the protection whose settings we're enabling
      */
-    @trace('ProtectionManager.enableProtection')
+    @trace
     public async enableProtection(name: string) {
         const protection = this._protections.get(name);
         if (protection !== undefined) {
@@ -270,7 +270,7 @@ export class ProtectionManager {
      * @return If there is a protection with this name *and* it is enabled,
      * return the protection.
      */
-    @traceSync('ProtectionManager.getProtection')
+    @trace
     public getProtection(protectionName: string): Protection | null {
         return this._protections.get(protectionName) ?? null;
     }
@@ -281,7 +281,7 @@ export class ProtectionManager {
      *
      * @param name The name of the protection whose settings we're disabling
      */
-    @trace('ProtectionManager.disableProtection')
+    @trace
     public async disableProtection(name: string) {
         const protection = this._protections.get(name);
         if (protection !== undefined) {
@@ -297,7 +297,7 @@ export class ProtectionManager {
      * @param protectionName The name of the protection whose settings we're reading
      * @returns Every saved setting for this protectionName that has a valid value
      */
-    @trace('ProtectionManager.getProtectionSettings')
+    @trace
     public async getProtectionSettings(protectionName: string): Promise<{ [setting: string]: any }> {
         let savedSettings: { [setting: string]: any } = {}
         try {
@@ -332,7 +332,7 @@ export class ProtectionManager {
         return validatedSettings;
     }
 
-    @trace('ProtectionManager.handleConsequences')
+    @trace
     private async handleConsequences(protection: Protection, roomId: string, eventId: string, sender: string, consequences: Consequence[]) {
         for (const consequence of consequences) {
             try {
@@ -366,7 +366,7 @@ export class ProtectionManager {
         }
     }
 
-    @trace('ProtectionManager.handleEvent')
+    @trace
     private async handleEvent(roomId: string, event: any) {
         if (this.mjolnir.protectedRoomsTracker.getProtectedRooms().includes(roomId)) {
             if (event['sender'] === await this.mjolnir.client.getUserId()) return; // Ignore ourselves
@@ -397,12 +397,12 @@ export class ProtectionManager {
     }
 
 
-    @traceSync('ProtectionManager.requiredProtectionPermissions')
+    @trace
     private requiredProtectionPermissions(): Set<string> {
         return new Set(this.enabledProtections.map((p) => p.requiredStatePermissions).flat())
     }
 
-    @trace('ProtectionManager.hanverifyPermissionsIndleEvent')
+    @trace
     public async verifyPermissionsIn(roomId: string): Promise<RoomUpdateError[]> {
         const errors: RoomUpdateError[] = [];
         const additionalPermissions = this.requiredProtectionPermissions();
@@ -490,7 +490,7 @@ export class ProtectionManager {
         return errors;
     }
 
-    @trace('ProtectionManager.handleReport')
+    @trace
     private async handleReport({ roomId, reporterId, event, reason }: { roomId: string, reporterId: string, event: any, reason?: string }) {
         for (const protection of this.enabledProtections) {
             await protection.handleReport(this.mjolnir, roomId, reporterId, event, reason);

@@ -512,67 +512,46 @@ let sentryInitialized = false;
  * @param context The content of the function
  * @returns The result of the function
  */
-export function trace(spanName: string) {
-    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
-        return {
-            get() {
-                const wrapperFn = (...args: any[]) => {
-                    const tracer = opentelemetry.trace.getTracer(
-                        'draupnir-appservice-tracer'
-                    );
+export function trace(originalMethod: any, context: ClassMethodDecoratorContext) {
+    if (context.kind !== "method") {
+        console.error("Used trace decorator on wrong kind");
+    }
+    let spanName = String(context.name);
 
-                    return tracer.startActiveSpan(spanName, async (parentSpan: Span) => {
-                        const result = propertyDescriptor.value.apply(this, args);
-                        parentSpan.end();
-                        return result;
-                    });
-                }
+    if (originalMethod && typeof originalMethod.then === 'function' && originalMethod[Symbol.toStringTag] === "Promise") {
+        return async function replacementMethod(this: any, ...args: any[]) {
+            const tracer = opentelemetry.trace.getTracer(
+                'draupnir-appservice-tracer'
+            );
 
-                Object.defineProperty(this, memberName, {
-                    value: wrapperFn,
-                    configurable: true,
-                    writable: true
-                });
-                return wrapperFn;
+            if (this.constructor.name) {
+                spanName = `${this.constructor.name}.${spanName}`
             }
-        }
+
+            return tracer.startActiveSpan(spanName, async (parentSpan: Span) => {
+                const result = await originalMethod.call(this, args);
+                parentSpan.end();
+                return result;
+            });
+        };
+    } else {
+        return function replacementMethod(this: any, ...args: any[]) {
+            const tracer = opentelemetry.trace.getTracer(
+                'draupnir-appservice-tracer'
+            );
+
+            if (this.constructor.name) {
+                spanName = `${this.constructor.name}.${spanName}`
+            }
+
+            return tracer.startActiveSpan(spanName, (parentSpan: Span) => {
+                const result = originalMethod.call(this, args);
+                parentSpan.end();
+                return result;
+            });
+        };
     }
 }
-
-/**
- * Adds a nested span around a sync function
- *
- * @param target The function thats annotated
- * @param context The content of the function
- * @returns The result of the function
- */
-export function traceSync(spanName: string) {
-    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
-        return {
-            get() {
-                const wrapperFn = (...args: any[]) => {
-                    const tracer = opentelemetry.trace.getTracer(
-                        'draupnir-appservice-tracer'
-                    );
-
-                    return tracer.startActiveSpan(spanName, (parentSpan: Span) => {
-                        const result = propertyDescriptor.value.apply(this, args);
-                        parentSpan.end();
-                        return result;
-                    });
-                }
-
-                Object.defineProperty(this, memberName, {
-                    value: wrapperFn,
-                    configurable: true,
-                    writable: true
-                });
-                return wrapperFn;
-            }
-        }
-    }
-}
-
 
 /**
  * Adds a independent span around a function
@@ -581,28 +560,38 @@ export function traceSync(spanName: string) {
  * @param context The content of the function
  * @returns The result of the function
  */
-export function independentTrace(spanName: string) {
-    return (_target: any, memberName: string, propertyDescriptor: PropertyDescriptor) => {
-        return {
-            get() {
-                const wrapperFn = (...args: any[]) => {
-                    const tracer = opentelemetry.trace.getTracer(
-                        'draupnir-appservice-tracer'
-                    );
+export function independentTrace(originalMethod: any, { name }: ClassMethodDecoratorContext) {
+    let spanName = String(name);
 
-                    const span = tracer.startSpan(spanName);
-                    const result = propertyDescriptor.value.apply(this, args);
-                    span.end();
-                    return result;
-                }
+    if (originalMethod && typeof originalMethod.then === 'function' && originalMethod[Symbol.toStringTag] === "Promise") {
+        return async function replacementMethod(this: any, ...args: any[]) {
+            const tracer = opentelemetry.trace.getTracer(
+                'draupnir-appservice-tracer'
+            );
 
-                Object.defineProperty(this, memberName, {
-                    value: wrapperFn,
-                    configurable: true,
-                    writable: true
-                });
-                return wrapperFn;
+            if (this.constructor.name) {
+                spanName = `${this.constructor.name}.${spanName}`
             }
-        }
+
+            const span = tracer.startSpan(spanName);
+            const result = await originalMethod.call(this, args);
+            span.end();
+            return result;
+        };
+    } else {
+        return function replacementMethod(this: any, ...args: any[]) {
+            const tracer = opentelemetry.trace.getTracer(
+                'draupnir-appservice-tracer'
+            );
+
+            if (this.constructor.name) {
+                spanName = `${this.constructor.name}.${spanName}`
+            }
+
+            const span = tracer.startSpan(spanName);
+            const result = originalMethod.call(this, args);
+            span.end();
+            return result;
+        };
     }
 }

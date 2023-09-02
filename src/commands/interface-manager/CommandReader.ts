@@ -6,7 +6,7 @@
 import { UserID } from "matrix-bot-sdk";
 import { MatrixRoomReference } from "./MatrixRoomReference";
 import { Permalinks } from "./Permalinks";
-import { traceSync } from "../../utils";
+import { trace } from "../../utils";
 
 export interface ISuperCoolStream<T> {
     readonly source: T
@@ -35,12 +35,12 @@ export class SuperCoolStream<T extends { at: (...args: any) => any | undefined }
         return this.source.at(this.position++) ?? eof;
     }
 
-    @traceSync('SuperCoolStream.getPosition')
+    @trace
     public getPosition(): number {
         return this.position;
     }
 
-    @traceSync('SuperCoolStream.savingPositionIf')
+    @trace
     savingPositionIf<Result>(description: { predicate: (t: Result) => boolean; body: (stream: SuperCoolStream<T>) => Result; }): Result {
         const previousPosition = this.position;
         const bodyResult = description.body(this);

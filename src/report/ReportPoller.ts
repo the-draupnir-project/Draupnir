@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { Mjolnir, REPORT_POLL_EVENT_TYPE } from "../Mjolnir";
-import { trace, traceSync } from "../utils";
+import { trace } from "../utils";
 import { ReportManager } from './ReportManager';
 import { LogLevel } from "matrix-bot-sdk";
 
@@ -54,7 +54,7 @@ export class ReportPoller {
         private manager: ReportManager,
     ) { }
 
-    @traceSync('ReportPoller.schedulePoll')
+    @trace
     private schedulePoll() {
         if (this.timeout === null) {
             /*
@@ -72,7 +72,7 @@ export class ReportPoller {
         }
     }
 
-    @trace('ReportPoller.getAbuseReports')
+    @trace
     private async getAbuseReports() {
         let response_: {
             event_reports: { room_id: string, event_id: string, sender: string, reason: string }[],
@@ -133,7 +133,7 @@ export class ReportPoller {
         }
     }
 
-    @trace('ReportPoller.tryGetAbuseReports')
+    @trace
     private async tryGetAbuseReports() {
         this.timeout = null;
 
@@ -147,7 +147,7 @@ export class ReportPoller {
     }
 
 
-    @traceSync('ReportPoller.start')
+    @trace
     public start(startFrom: number) {
         if (this.timeout === null) {
             this.from = startFrom;
@@ -158,7 +158,7 @@ export class ReportPoller {
     }
 
 
-    @traceSync('ReportPoller.stop')
+    @trace
     public stop() {
         if (this.timeout !== null) {
             clearTimeout(this.timeout);

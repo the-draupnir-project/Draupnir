@@ -29,7 +29,7 @@ import PolicyList, { ChangeType, ListRuleChange } from "./PolicyList";
 import { EntityType, ListRule, Recommendation, RULE_SERVER, RULE_USER } from "./ListRule";
 import { LogService, UserID } from "matrix-bot-sdk";
 import { ServerAcl } from "./ServerAcl";
-import { traceSync } from '../utils';
+import { trace } from '../utils';
 
 /**
  * The ListRuleCache is a cache for all the rules in a set of lists for a specific entity type and recommendation.
@@ -89,7 +89,7 @@ class ListRuleCache {
      * Will automatically update with the list.
      * @param list A PolicyList.
      */
-    @traceSync('ListRuleCache.watchList')
+    @trace
     public watchList(list: PolicyList): void {
         list.on('PolicyList.update', this.listUpdateListener);
         const rules = list.rulesOfKind(this.entityType, this.recommendation);
@@ -101,7 +101,7 @@ class ListRuleCache {
      * Will stop updating the cache from this list.
      * @param list A PolicyList.
      */
-    @traceSync('ListRuleCache.unwatchList')
+    @trace
     public unwatchList(list: PolicyList): void {
         list.removeListener('PolicyList.update', this.listUpdateListener);
         const rules = list.rulesOfKind(this.entityType, this.recommendation);
@@ -126,7 +126,7 @@ class ListRuleCache {
      * Remove a rule from the cache as it is now invalid. e.g. it was removed from a policy list.
      * @param rule The rule to remove.
      */
-    @traceSync('ListRuleCache.uninternRule')
+    @trace
     private uninternRule(rule: ListRule) {
         /**
          * Remove a rule from the map, there may be rules from different lists in the cache.
@@ -155,7 +155,7 @@ class ListRuleCache {
      * Add a rule to the cache e.g. it was added to a policy list.
      * @param rule The rule to add.
      */
-    @traceSync('ListRuleCache.internRule')
+    @trace
     private internRule(rule: ListRule) {
         /**
          * Add a rule to the map, there might be duplicates of this rule in other lists.
@@ -180,7 +180,7 @@ class ListRuleCache {
      * Update the cache for a single `ListRuleChange`.
      * @param change The change made to a rule that was present in the policy list.
      */
-    @traceSync('ListRuleCache.updateCacheForChange')
+    @trace
     private updateCacheForChange(change: ListRuleChange): void {
         if (change.rule.kind !== this.entityType || change.rule.recommendation !== this.recommendation) {
             return;
@@ -202,7 +202,7 @@ class ListRuleCache {
      * Update the cache for a change in a policy list.
      * @param changes The changes that were made to list rules since the last update to this policy list.
      */
-    @traceSync('ListRuleCache.updateCache')
+    @trace
     private updateCache(changes: ListRuleChange[]) {
         changes.forEach(this.updateCacheForChange, this);
     }
@@ -240,14 +240,14 @@ export default class AccessControlUnit {
         policyLists.forEach(this.watchList, this);
     }
 
-    @traceSync('AccessControlUnit.watchList')
+    @trace
     public watchList(list: PolicyList) {
         for (const cache of this.caches) {
             cache.watchList(list);
         }
     }
 
-    @traceSync('AccessControlUnit.unwatchList')
+    @trace
     public unwatchList(list: PolicyList) {
         for (const cache of this.caches) {
             cache.unwatchList(list);
@@ -259,7 +259,7 @@ export default class AccessControlUnit {
      * @param domain The server name to test.
      * @returns A description of the access that the server has.
      */
-    @traceSync('AccessControlUnit.getAccessForServer')
+    @trace
     public getAccessForServer(domain: string): EntityAccess {
         return this.getAccessForEntity(domain, this.serverAllows, this.serverBans);
     }
@@ -270,7 +270,7 @@ export default class AccessControlUnit {
      * @param policy Whether to check the server part of the user id against server rules.
      * @returns A description of the access that the user has.
      */
-    @traceSync('AccessControlUnit.getAccessForUser')
+    @trace
     public getAccessForUser(mxid: string, policy: "CHECK_SERVER" | "IGNORE_SERVER"): EntityAccess {
         const userAccess = this.getAccessForEntity(mxid, this.userAllows, this.userBans);
         if (userAccess.outcome === Access.Allowed) {
@@ -285,7 +285,7 @@ export default class AccessControlUnit {
         }
     }
 
-    @traceSync('AccessControlUnit.getAccessForEntity')
+    @trace
     private getAccessForEntity(entity: string, allowCache: ListRuleCache, bannedCache: ListRuleCache): EntityAccess {
         // Check if the entity is explicitly allowed.
         // We have to infer that a rule exists for '*' if the allowCache is empty, otherwise you brick the ACL.
@@ -307,7 +307,7 @@ export default class AccessControlUnit {
      * @param serverName The name of the server that you are operating from, used to ensure you cannot brick yourself.
      * @returns A new `ServerAcl` instance with deny and allow entries created from the rules in this unit.
      */
-    @traceSync('AccessControlUnit.compileServerAcl')
+    @trace
     public compileServerAcl(serverName: string): ServerAcl {
         const acl = new ServerAcl(serverName).denyIpAddresses();
         const allowedServers = this.serverAllows.allRules;

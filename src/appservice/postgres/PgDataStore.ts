@@ -33,17 +33,17 @@ export class PgDataStore extends PostgresStore implements DataStore {
         super(getSchema(), { url: connectionString })
     }
 
-    @trace('PgDataStore.init')
+    @trace
     public async init(): Promise<void> {
         await this.ensureSchema();
     }
 
-    @trace('PgDataStore.close')
+    @trace
     public async close(): Promise<void> {
         await this.destroy();
     }
 
-    @trace('PgDataStore.list')
+    @trace
     public async list(): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir`;
         if (!result.count) {
@@ -53,20 +53,20 @@ export class PgDataStore extends PostgresStore implements DataStore {
         return result.flat() as MjolnirRecord[];
     }
 
-    @trace('PgDataStore.store')
+    @trace
     public async store(mjolnirRecord: MjolnirRecord): Promise<void> {
         await this.sql`INSERT INTO mjolnir (local_part, owner, management_room)
         VALUES (${mjolnirRecord.local_part}, ${mjolnirRecord.owner}, ${mjolnirRecord.management_room})`;
     }
 
-    @trace('PgDataStore.lookupByOwner')
+    @trace
     public async lookupByOwner(owner: string): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir
         WHERE owner = ${owner}`;
         return result.flat() as MjolnirRecord[];
     }
 
-    @trace('PgDataStore.lookupByLocalPart')
+    @trace
     public async lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]> {
         const result = await this.sql`SELECT local_part, owner, management_room FROM draupnir
         WHERE local_part = ${localPart}`;

@@ -5,7 +5,7 @@
 
 import { RoomAlias } from "matrix-bot-sdk";
 import { Permalinks } from "./Permalinks";
-import { traceSync, trace } from "../../utils";
+import { trace } from "../../utils";
 
 type JoinRoom = (roomIdOrAlias: string, viaServers?: string[]) => Promise</*room id*/string>;
 type ResolveRoom = (roomIdOrAlias: string) => Promise</* room id */string>
@@ -23,12 +23,12 @@ export abstract class MatrixRoomReference {
 
     }
 
-    @traceSync('MatrixRoomReference.toPermalink')
+    @trace
     public toPermalink(): string {
         return Permalinks.forRoom(this.reference, this.viaServers);
     }
 
-    @traceSync('MatrixRoomReference.fromAlias')
+    @trace
     public static fromAlias(alias: string): MatrixRoomReference {
         return new MatrixRoomAlias(alias);
     }
@@ -37,7 +37,7 @@ export abstract class MatrixRoomReference {
         return new MatrixRoomID(roomId, viaServers);
     }
 
-    @traceSync('MatrixRoomReference.fromRoomIdOrAlias')
+    @trace
     public static fromRoomIdOrAlias(roomIdOrAlias: string, viaServers: string[] = []): MatrixRoomReference {
         if (roomIdOrAlias.startsWith('!')) {
             return new MatrixRoomID(roomIdOrAlias, viaServers);
@@ -51,7 +51,7 @@ export abstract class MatrixRoomReference {
      * @param permalink A permalink to a matrix room.
      * @returns A MatrixRoomReference.
      */
-    @traceSync('MatrixRoomReference.fromPermalink')
+    @trace
     public static fromPermalink(permalink: string): MatrixRoomReference {
         const parts = Permalinks.parseUrl(permalink);
         if (parts.roomIdOrAlias === undefined) {
@@ -67,7 +67,7 @@ export abstract class MatrixRoomReference {
      * @param client A client that we can use to resolve the room alias.
      * @returns A new MatrixRoomReference that contains the room id.
      */
-    @trace('MatrixRoomReference.resolve')
+    @trace
     public async resolve(client: { resolveRoom: ResolveRoom }): Promise<MatrixRoomID> {
         if (this instanceof MatrixRoomID) {
             return this;
@@ -83,7 +83,7 @@ export abstract class MatrixRoomReference {
      * @param client A matrix client that should join the room.
      * @returns A MatrixRoomReference with the room id of the room which was joined.
      */
-    @trace('MatrixRoomReference.joinClient')
+    @trace
     public async joinClient(client: { joinRoom: JoinRoom }): Promise<MatrixRoomID> {
         if (this.reference.startsWith('!')) {
             await client.joinRoom(this.reference, this.viaServers);
@@ -101,7 +101,7 @@ export abstract class MatrixRoomReference {
      * which will be necessary to use if our homeserver hasn't joined the room yet.
      * @returns A string representing a room id or alias.
      */
-    @traceSync('MatrixRoomReference.toRoomIdOrAlias')
+    @trace
     public toRoomIdOrAlias(): string {
         return this.reference;
     }

@@ -58,7 +58,7 @@ export class TrustedReporters extends Protection {
         return "Count reports from trusted reporters and take a configured action";
     }
 
-    @trace("TrustedReporters.handleReport")
+    @trace
     public async handleReport(mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string): Promise<any> {
         if (!this.settings.mxids.value.includes(reporterId)) {
             // not a trusted user, we're not interested

@@ -38,7 +38,7 @@ import { RoomUpdateError } from "./models/RoomUpdateError";
 import { ProtectionManager } from "./protections/ProtectionManager";
 import { EventRedactionQueue, RedactUserInRoom } from "./queues/EventRedactionQueue";
 import { ProtectedRoomActivityTracker } from "./queues/ProtectedRoomActivityTracker";
-import { htmlEscape, trace, traceSync } from "./utils";
+import { htmlEscape, trace } from "./utils";
 
 /**
  * This class aims to synchronize `m.ban` rules in a set of policy lists with
@@ -141,7 +141,7 @@ export class ProtectedRoomsSet {
      * @param userId The user whose messages we want to redact.
      * @param roomId The room we want to redact them in.
      */
-    @traceSync('ProtectedRoomsSet.redactUser')
+    @trace
     public redactUser(userId: string, roomId: string) {
         this.eventRedactionQueue.add(new RedactUserInRoom(userId, roomId));
     }
@@ -156,17 +156,17 @@ export class ProtectedRoomsSet {
         return this.automaticRedactionReasons;
     }
 
-    @traceSync('ProtectedRoomsSet.getProtectedRooms')
+    @trace
     public getProtectedRooms() {
         return [...this.protectedRooms.keys()]
     }
 
-    @traceSync('ProtectedRoomsSet.isProtectedRoom')
+    @trace
     public isProtectedRoom(roomId: string): boolean {
         return this.protectedRooms.has(roomId);
     }
 
-    @traceSync('ProtectedRoomsSet.watchList')
+    @trace
     public watchList(policyList: PolicyList): void {
         if (!this.policyLists.includes(policyList)) {
             this.policyLists.push(policyList);
@@ -175,7 +175,7 @@ export class ProtectedRoomsSet {
         }
     }
 
-    @traceSync('ProtectedRoomsSet.unwatchList')
+    @trace
     public unwatchList(policyList: PolicyList): void {
         this.policyLists = this.policyLists.filter(list => list.roomId !== policyList.roomId);
         this.accessControlUnit.unwatchList(policyList);
@@ -190,7 +190,7 @@ export class ProtectedRoomsSet {
      * @param roomId Limit processing to one room only, otherwise process redactions for all rooms.
      * @returns The list of errors encountered, for reporting to the management room.
      */
-    @trace('ProtectedRoomsSet.processRedactionQueue')
+    @trace
     public async processRedactionQueue(roomId?: string): Promise<RoomUpdateError[]> {
         return await this.eventRedactionQueue.process(this.client, this.managementRoomOutput, roomId);
     }
@@ -198,12 +198,12 @@ export class ProtectedRoomsSet {
     /**
      * @returns The protected rooms ordered by the most recently active first.
      */
-    @traceSync('ProtectedRoomsSet.protectedRoomsByActivity')
+    @trace
     public protectedRoomsByActivity(): string[] {
         return this.protectedRoomActivityTracker.protectedRoomsByActivity();
     }
 
-    @trace('ProtectedRoomsSet.handleEvent')
+    @trace
     public async handleEvent(roomId: string, event: any) {
         if (event['sender'] === this.clientUserId) {
             throw new TypeError("`ProtectedRooms::handleEvent` should not be used to inform about events sent by mjolnir.");
@@ -237,7 +237,7 @@ export class ProtectedRoomsSet {
     /**
      * Synchronize all the protected rooms with all of the policies described in the watched policy lists.
      */
-    @trace('ProtectedRoomsSet.syncRoomsWithPolicies')
+    @trace
     private async syncRoomsWithPolicies() {
         let hadErrors = false;
         const [aclErrors, banErrors] = await Promise.all([
@@ -265,7 +265,7 @@ export class ProtectedRoomsSet {
      * Update each watched list and then synchronize all the protected rooms with all the policies described in the watched lists,
      * banning and applying any changed ACLS via `syncRoomsWithPolicies`.
      */
-    @trace('ProtectedRoomsSet.syncLists')
+    @trace
     public async syncLists() {
         for (const list of this.policyLists) {
             const { revision } = await list.updateList();
@@ -278,7 +278,7 @@ export class ProtectedRoomsSet {
         await this.syncRoomsWithPolicies();
     }
 
-    @traceSync('ProtectedRoomsSet.addProtectedRoom')
+    @trace
     public addProtectedRoom(roomId: string): void {
         if (this.protectedRooms.has(roomId)) {
             // we need to protect ourselves form syncing all the lists unnecessarily
@@ -289,7 +289,7 @@ export class ProtectedRoomsSet {
         this.protectedRoomActivityTracker.addProtectedRoom(roomId);
     }
 
-    @traceSync('ProtectedRoomsSet.removeProtectedRoom')
+    @trace
     public removeProtectedRoom(roomId: string): void {
         this.protectedRoomActivityTracker.removeProtectedRoom(roomId);
         this.protectedRooms.delete(roomId);
@@ -302,7 +302,7 @@ export class ProtectedRoomsSet {
      * @param policyList The `PolicyList` which we will check for changes and apply them to all protected rooms.
      * @returns When all of the protected rooms have been updated.
      */
-    @trace('ProtectedRoomsSet.syncWithUpdatedPolicyList')
+    @trace
     private async syncWithUpdatedPolicyList(policyList: PolicyList, changes: ListRuleChange[], revision: Revision): Promise<void> {
         // avoid resyncing the rooms if we have already done so for the latest revision of this list.
         const previousRevision = this.listRevisions.get(policyList);
@@ -323,7 +323,7 @@ export class ProtectedRoomsSet {
      * @param {string[]} roomIds The room IDs to apply the ACLs in.
      * @param {Mjolnir} mjolnir The Mjolnir client to apply the ACLs with.
      */
-    @trace('ProtectedRoomsSet.applyServerAcls')
+    @trace
     private async applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<RoomUpdateError[]> {
         // we need to provide mutual exclusion so that we do not have requests updating the m.room.server_acl event
         // finish out of order and therefore leave the room out of sync with the policy lists.
@@ -384,7 +384,7 @@ export class ProtectedRoomsSet {
      * @param {string[]} roomIds The room IDs to apply the bans in.
      * @param {Mjolnir} mjolnir The Mjolnir client to apply the bans with.
      */
-    @trace('ProtectedRoomsSet.applyUserBans')
+    @trace
     private async applyUserBans(roomIds: string[]): Promise<RoomUpdateError[]> {
         // We can only ban people who are not already banned, and who match the rules.
         const errors: RoomUpdateError[] = [];
@@ -456,7 +456,7 @@ export class ProtectedRoomsSet {
      * @param changes A list of changes that have been made to a particular ban list.
      * @returns true if the message was sent, false if it wasn't (because there there were no changes to report).
      */
-    @trace('ProtectedRoomsSet.printBanlistChanges')
+    @trace
     private async printBanlistChanges(changes: ListRuleChange[], list: PolicyList): Promise<boolean> {
         if (changes.length <= 0) return false;
 
@@ -535,7 +535,7 @@ export class ProtectedRoomsSet {
         throw new TypeError("Unimplemented, need to put protections into here too.")
     }
 
-    @trace('ProtectedRoomsSet.verifyPermissions')
+    @trace
     public async verifyPermissions(verbose = true, printRegardless = false) {
         const errors: RoomUpdateError[] = [];
         for (const roomId of this.protectedRooms) {

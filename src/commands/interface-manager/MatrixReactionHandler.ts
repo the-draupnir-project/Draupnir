@@ -6,7 +6,7 @@
 import { EventEmitter } from "stream";
 import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { LogService } from "matrix-bot-sdk";
-import { trace, traceSync } from "../../utils";
+import { trace } from "../../utils";
 
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
@@ -47,7 +47,7 @@ export class MatrixReactionHandler extends EventEmitter {
      * @param roomId The room the event took place in.
      * @param event The Matrix event.
      */
-    @trace('MatrixReactionHandler.handleEvent')
+    @trace
     private async handleEvent(roomId: string, event: any): Promise<void> {
         if (roomId !== this.roomId) {
             return;
@@ -94,7 +94,7 @@ export class MatrixReactionHandler extends EventEmitter {
      * Start listening for reactions to events.
      * Called normally by an associated mjolnir instance when it is started.
      */
-    @traceSync('MatrixReactionHandler.start')
+    @trace
     public start(emitter: MatrixEmitter): void {
         emitter.on('room.event', this.listener);
     }
@@ -102,7 +102,7 @@ export class MatrixReactionHandler extends EventEmitter {
     /**
      * Stop listening for reactions to events.
      */
-    @traceSync('MatrixReactionHandler.stop')
+    @trace
     public stop(emitter: MatrixEmitter): void {
         emitter.off('room.event', this.listener);
     }
@@ -114,7 +114,7 @@ export class MatrixReactionHandler extends EventEmitter {
      * @param additionalContext Any additional context that should be associated with a matrix event for the listener.
      * @returns An object that should be deep copied into a the content of a new Matrix event.
      */
-    @traceSync('MatrixReactionHandler.createAnnotation')
+    @trace
     public createAnnotation(listenerName: string, reactionMap: ItemByReactionKey, additionalContext: any = undefined): any {
         return {
             [REACTION_ANNOTATION_KEY]: {
@@ -132,7 +132,7 @@ export class MatrixReactionHandler extends EventEmitter {
      * @param eventId The event id of the event to add reactions to.
      * @param reactionMap The reaction map.
      */
-    @trace('MatrixReactionHandler.addReactionsToEvent')
+    @trace
     public async addReactionsToEvent(client: MatrixSendClient, roomId: string, eventId: string, reactionMap: ItemByReactionKey): Promise<void> {
         await [...reactionMap.keys()]
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),

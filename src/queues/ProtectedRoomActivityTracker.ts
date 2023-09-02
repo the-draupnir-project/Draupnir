@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { traceSync } from "../utils";
+import { trace } from "../utils";
 
 /**
  * Used to keep track of protected rooms so they are always ordered for activity.
@@ -46,7 +46,7 @@ export class ProtectedRoomActivityTracker {
      * Inform the tracker that a new room is being protected by Mjolnir.
      * @param roomId The room Mjolnir is now protecting.
      */
-    @traceSync("ProtectedRoomActivityTracker.addProtectedRoom")
+    @trace
     public addProtectedRoom(roomId: string): void {
         this.protectedRoomActivities.set(roomId, /* epoch */ 0);
         this.activeRoomsCache = null;
@@ -56,7 +56,7 @@ export class ProtectedRoomActivityTracker {
      * Inform the trakcer that a room is no longer being protected by Mjolnir.
      * @param roomId The roomId that is no longer being protected by Mjolnir.
      */
-    @traceSync("ProtectedRoomActivityTracker.removeProtectedRoom")
+    @trace
     public removeProtectedRoom(roomId: string): void {
         this.protectedRoomActivities.delete(roomId);
         this.activeRoomsCache = null;
@@ -68,7 +68,7 @@ export class ProtectedRoomActivityTracker {
      * @param event The new event.
      *
      */
-    @traceSync("ProtectedRoomActivityTracker.handleEvent")
+    @trace
     public handleEvent(roomId: string, event: any): void {
         const last_origin_server_ts = this.protectedRoomActivities.get(roomId);
         if (last_origin_server_ts !== undefined && Number.isInteger(event.origin_server_ts)) {
@@ -82,7 +82,7 @@ export class ProtectedRoomActivityTracker {
     /**
      * @returns A list of protected rooms ids ordered by activity.
      */
-    @traceSync("ProtectedRoomActivityTracker.protectedRoomsByActivity")
+    @trace
     public protectedRoomsByActivity(): string[] {
         if (!this.activeRoomsCache) {
             this.activeRoomsCache = [...this.protectedRoomActivities]

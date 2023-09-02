@@ -34,7 +34,7 @@ import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
-import { independentTrace, trace, traceSync } from "../utils";
+import { independentTrace, trace } from "../utils";
 
 const log = new Logger("AppService");
 
@@ -70,7 +70,7 @@ export class MjolnirAppService {
      * @param registrationFilePath A file path to the registration file to read the namespace and tokens from.
      * @returns A new `MjolnirAppService`.
      */
-    @independentTrace('MjolnirAppService.run')
+    @independentTrace
     public static async makeMjolnirAppService(config: IConfig, dataStore: DataStore, registrationFilePath: string) {
         const bridge = new Bridge({
             homeserverUrl: config.homeserver.url,
@@ -118,7 +118,7 @@ export class MjolnirAppService {
      * @param config The parsed configuration file.
      * @param registrationFilePath A path to their homeserver registration file.
      */
-    @independentTrace('MjolnirAppService.run')
+    @independentTrace
     public static async run(port: number, config: IConfig, registrationFilePath: string): Promise<MjolnirAppService> {
         Logger.configure(config.logging ?? { console: "debug" });
         const dataStore = new PgDataStore(config.db.connectionString);
@@ -130,7 +130,7 @@ export class MjolnirAppService {
         return service;
     }
 
-    @traceSync('MjolnirAppService.onUserQuery')
+    @trace
     public onUserQuery(queriedUser: MatrixUser) {
         return {}; // auto-provision users with no additonal data
     }
@@ -142,7 +142,7 @@ export class MjolnirAppService {
      * @param request A matrix-appservice-bridge request encapsulating a Matrix event.
      * @param context Additional context for the Matrix event.
      */
-    @trace('MjolnirAppService.onEvent')
+    @trace
     public async onEvent(request: Request<WeakEvent>, context: BridgeContext) {
         const mxEvent = request.getData();
         // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
@@ -173,7 +173,7 @@ export class MjolnirAppService {
      * Start the appservice. See `run`.
      * @param port The port that the appservice should listen on to receive transactions from the homeserver.
      */
-    @independentTrace('MjolnirAppService.run')
+    @independentTrace
     private async start(port: number) {
         await this.bridge.getBot().getClient().joinRoom(this.config.adminRoom);
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
@@ -194,7 +194,7 @@ export class MjolnirAppService {
     /**
      * Stop listening to requests from both the homeserver and web api and disconnect from the datastore.
      */
-    @trace('MjolnirAppService.close')
+    @trace
     public async close(): Promise<void> {
         await this.bridge.close();
         await this.dataStore.close();
@@ -207,7 +207,7 @@ export class MjolnirAppService {
      * @param reg Any existing parameters to be included in the registration, to be mutated by this method.
      * @param callback To call when the registration has been generated with the final registration.
      */
-    @traceSync('MjolnirAppService.close')
+    @trace
     public static generateRegistration(reg: AppServiceRegistration, callback: (finalRegistration: AppServiceRegistration) => void) {
         reg.setId(AppServiceRegistration.generateToken());
         reg.setHomeserverToken(AppServiceRegistration.generateToken());

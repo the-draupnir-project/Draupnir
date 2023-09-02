@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { traceSync } from "./utils";
+import { trace } from "./utils";
 
 export const ERROR_KIND_PERMISSION = "permission";
 export const ERROR_KIND_FATAL = "fatal";
@@ -53,7 +53,7 @@ export default class ErrorCache {
      * @param roomId The room to reset the error cache for.
      * @param kind The kind of error we are resetting.
      */
-    @traceSync('ErrorCache.resetError')
+    @trace
     public resetError(roomId: string, kind: string) {
         if (!this.roomsToErrors.has(roomId)) {
             this.roomsToErrors.set(roomId, new Map());
@@ -68,7 +68,7 @@ export default class ErrorCache {
      * @returns True if the error kind has been triggered in that room,
      * meaning it has been longer than the time specified in `TRIGGER_INTERVALS` since the last trigger (or the first trigger). Otherwise false.
      */
-    @traceSync('ErrorCache.triggerError')
+    @trace
     public triggerError(roomId: string, kind: string): boolean {
         if (!this.roomsToErrors.get(roomId)) {
             this.roomsToErrors.set(roomId, new Map());

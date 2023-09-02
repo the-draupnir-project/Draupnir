@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { traceSync } from "../../utils";
+import { trace } from "../../utils";
 import { SuperCoolStream } from "./CommandReader";
 
 /**
@@ -201,7 +201,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
 
     }
 
-    @traceSync('SimpleFringeRenderer.getRenderer')
+    @trace
     private getRenderer<T>(table: Map<NodeTag, T>, type: FringeType, tag: NodeTag): T {
         const entry = table.get(tag);
         if (entry) {
@@ -210,22 +210,22 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         throw new TypeError(`Couldn't find a ${type} renderer for ${tag}`);
     }
 
-    @traceSync('SimpleFringeRenderer.getPreRenderer')
+    @trace
     public getPreRenderer(tag: NodeTag): FringeInnerRenderFunction<Context> {
         return this.getRenderer(this.preRenderers, FringeType.Pre, tag);
     }
 
-    @traceSync('SimpleFringeRenderer.getLeafRenderer')
+    @trace
     public getLeafRenderer(tag: NodeTag): FringeLeafRenderFunction<Context> {
         return this.getRenderer(this.leafRenderers, FringeType.Leaf, tag);
     }
 
-    @traceSync('SimpleFringeRenderer.getPostRenderer')
+    @trace
     public getPostRenderer(tag: NodeTag): FringeInnerRenderFunction<Context> {
         return this.getRenderer(this.postRenderers, FringeType.Post, tag);
     }
 
-    @traceSync('SimpleFringeRenderer.internRenderer')
+    @trace
     public internRenderer<T extends FringeInnerRenderFunction<Context> | FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, table: Map<NodeTag, T>, renderer: T): void {
         if (table.has(tag)) {
             throw new TypeError(`There is already a renderer registered for ${type} ${tag}`);
@@ -233,7 +233,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         table.set(tag, renderer);
     }
 
-    @traceSync('SimpleFringeRenderer.registerRenderer')
+    @trace
     public registerRenderer<T extends FringeInnerRenderFunction<Context> | FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): SimpleFringeRenderer<Context> {
         // The casting in here is evil. Not sure how to fix it.
         switch (type) {
@@ -250,7 +250,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         return this;
     }
 
-    @traceSync('SimpleFringeRenderer.registerInnerNode')
+    @trace
     public registerInnerNode(tag: NodeTag, pre: FringeInnerRenderFunction<Context>, post: FringeInnerRenderFunction<Context>): SimpleFringeRenderer<Context> {
         this.internRenderer(FringeType.Pre, tag, this.preRenderers, pre);
         this.internRenderer(FringeType.Post, tag, this.postRenderers, post);
@@ -292,7 +292,7 @@ export class FringeWalker<Context> {
         this.stream = new FringeStream(fringe(root));
     }
 
-    @traceSync('FringeWalker.increment')
+    @trace
     public increment(): DocumentNode | undefined {
         const renderInnerNode = (node: AnnotatedFringeNode) => {
             if (node.node.leafNode) {
@@ -376,7 +376,7 @@ export class TagDynamicEnvironmentEntry {
 export class TagDynamicEnvironment {
     private readonly environments = new Map<string, TagDynamicEnvironmentEntry | undefined>();
 
-    @traceSync('TagDynamicEnvironment.read')
+    @trace
     public read(variableName: string): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
@@ -386,7 +386,7 @@ export class TagDynamicEnvironment {
         }
     }
 
-    @traceSync('TagDynamicEnvironment.write')
+    @trace
     public write(variableName: string, value: any): any {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
@@ -396,7 +396,7 @@ export class TagDynamicEnvironment {
         }
     }
 
-    @traceSync('TagDynamicEnvironment.bind')
+    @trace
     public bind(variableName: string, node: DocumentNode, value: any): any {
         const entry = this.environments.get(variableName);
         const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
@@ -404,7 +404,7 @@ export class TagDynamicEnvironment {
         return value
     }
 
-    @traceSync('TagDynamicEnvironment.pop')
+    @trace
     public pop(node: DocumentNode): void {
         for (const [variableName, environment] of this.environments.entries()) {
             if (Object.is(environment?.node, node)) {

@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { trace, traceSync } from "../../utils";
+import { trace } from "../../utils";
 
 type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Err) => any };
 
@@ -51,17 +51,17 @@ export class CommandResult<Ok, Err extends CommandError = CommandError> {
 
     }
 
-    @traceSync('CommandResult.Ok')
+    @trace
     public static Ok<Ok, Err extends CommandError = CommandError>(value: Ok): CommandResult<Ok, Err> {
         return new CommandResult<Ok, Err>(value, noValue);
     }
 
-    @traceSync('CommandResult.Err')
+    @trace
     public static Err<Ok, Err extends CommandError = CommandError>(value: Err): CommandResult<Ok, Err> {
         return new CommandResult<Ok, Err>(noValue, value);
     }
 
-    @trace('CommandResult.match')
+    @trace
     public async match(expression: ValidationMatchExpression<Ok, Err>) {
         return this.okValue ? await expression.ok!(this.ok) : await expression.err!(this.err);
     }
@@ -104,7 +104,7 @@ export class CommandError {
      * @param _options This exists so that the method is extensible by subclasses. Otherwise they wouldn't be able to pass other constructor arguments through this method.
      * @returns A CommandResult with a CommandError nested within.
      */
-    @traceSync('CommandError.Result')
+    @trace
     public static Result<Ok>(message: string, _options = {}): CommandResult<Ok> {
         return CommandResult.Err(new CommandError(message));
     }

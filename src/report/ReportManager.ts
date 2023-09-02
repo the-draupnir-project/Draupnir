@@ -122,7 +122,7 @@ export class ReportManager extends EventEmitter {
      * @param event The event being reported.
      * @param reason A reason provided by the reporter.
      */
-    @trace('ReportManager.handleServerAbuseReport')
+    @trace
     public async handleServerAbuseReport({ roomId, reporterId, event, reason }: { roomId: string, reporterId: string, event: any, reason?: string }) {
         this.emit("report.new", { roomId: roomId, reporterId: reporterId, event: event, reason: reason });
         if (this.mjolnir.config.displayReports) {
@@ -136,7 +136,7 @@ export class ReportManager extends EventEmitter {
      * @param roomId The room in which the reaction took place.
      * @param event The reaction.
      */
-    @trace('ReportManager.handleReaction')
+    @trace
     public async handleReaction({ roomId, event }: { roomId: string, event: any }) {
         if (event.sender === await this.mjolnir.client.getUserId()) {
             // Let's not react to our own reactions.
@@ -298,7 +298,7 @@ export class ReportManager extends EventEmitter {
         * @param failureEventId The event to annotate with a "FAIL" in case of failure.
         * @param onSuccessRemoveEventId Optionally, an event to remove in case of success (e.g. the confirmation dialog).
         */
-    @trace('ReportManager.executeAction')
+    @trace
     private async executeAction({ label, report, successEventId, failureEventId, onSuccessRemoveEventId, moderationRoomId }: { label: string, report: IReportWithAction, successEventId: string, failureEventId: string, onSuccessRemoveEventId?: string, moderationRoomId: string }) {
         let action: IUIAction | undefined = ACTIONS.get(label);
         if (!action) {

@@ -29,7 +29,7 @@ import { Protection } from "./Protection";
 import { Mjolnir } from "../Mjolnir";
 import { NumberProtectionSetting } from "./ProtectionSettings";
 import { LogLevel } from "matrix-bot-sdk";
-import { trace, traceSync } from "../utils";
+import { trace } from "../utils";
 
 const DEFAULT_MAX_PER_TIMESCALE = 50;
 const DEFAULT_TIMESCALE_MINUTES = 60;
@@ -62,7 +62,7 @@ export class JoinWaveShortCircuit extends Protection {
         return "If X amount of users join in Y time, set the room to invite-only."
     }
 
-    @trace("JoinWaveShortCircuit.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any) {
         if (event['type'] !== 'm.room.member') {
             // Not a join/leave event.
@@ -109,17 +109,17 @@ export class JoinWaveShortCircuit extends Protection {
         }
     }
 
-    @traceSync("JoinWaveShortCircuit.hasExpired")
+    @trace
     private hasExpired(at: Date): boolean {
         return ((new Date()).getTime() - at.getTime()) > this.timescaleMilliseconds()
     }
 
-    @traceSync("JoinWaveShortCircuit.timescaleMilliseconds")
+    @trace
     private timescaleMilliseconds(): number {
         return (this.settings.timescaleMinutes.value * ONE_MINUTE)
     }
 
-    @trace("JoinWaveShortCircuit.statusCommand")
+    @trace
     public async statusCommand(mjolnir: Mjolnir, subcommand: string[]): Promise<{ html: string, text: string }> {
         const withExpired = subcommand.includes("withExpired");
         const withStart = subcommand.includes("withStart");

@@ -52,7 +52,7 @@ export class BasicFlooding extends Protection {
             "banned for spam. This does not publish the ban to any of your ban lists.";
     }
 
-    @trace("BasicFlooding.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (!this.lastEvents[roomId]) this.lastEvents[roomId] = {};
 

@@ -101,7 +101,7 @@ export class BanPropagation extends Protection {
         This will then allow the bot to ban the user from all of your rooms.";
     }
 
-    @trace("BanPropagation.registerProtection")
+    @trace
     public async registerProtection(mjolnir: Mjolnir): Promise<void> {
         const listener: ReactionListener = async (key, item, context: BanPropagationMessageContext) => {
             try {
@@ -124,7 +124,7 @@ export class BanPropagation extends Protection {
         mjolnir.reactionHandler.on(PROPAGATION_PROMPT_LISTENER, listener);
     }
 
-    @trace("BanPropagation.handleEvent")
+    @trace
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         if (event['type'] !== 'm.room.member' || event['content']?.['membership'] !== 'ban') {
             return;

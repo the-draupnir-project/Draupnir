@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { trace, traceSync } from "../../utils";
+import { trace } from "../../utils";
 import { ReadItem } from "./CommandReader";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
@@ -37,17 +37,17 @@ export class PromptableArgumentStream extends ArgumentStream {
         super([...source], start);
     }
 
-    @traceSync('PromptableArgumentStream.rest')
+    @trace
     public rest() {
         return this.source.slice(this.position);
     }
 
-    @traceSync('PromptableArgumentStream.isPromptable')
+    @trace
     public isPromptable(): boolean {
         return this.interfaceAcceptor.isPromptable
     }
 
-    @trace('PromptableArgumentStream.prompt')
+    @trace
     public async prompt<T = ReadItem>(parameterDescription: ParameterDescription): Promise<CommandResult<T>> {
         const result = await this.interfaceAcceptor.promptForAccept(
             parameterDescription,

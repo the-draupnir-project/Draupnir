@@ -24,7 +24,7 @@ import '../../commands/interface-manager/MatrixPresentations';
 import './ListCommand';
 import './AccessCommands';
 import { AppserviceBotEmitter } from './AppserviceBotEmitter';
-import { traceSync } from '../../utils';
+import { trace } from '../../utils';
 
 
 defineInterfaceCommand({
@@ -49,7 +49,7 @@ export class AppserviceCommandHandler {
 
     }
 
-    @traceSync('AppserviceCommandHandler.handleEvent')
+    @trace
     public handleEvent(mxEvent: WeakEvent): void {
         if (mxEvent.type !== 'm.room.message' && mxEvent.room_id !== this.appservice.config.adminRoom) {
             return;

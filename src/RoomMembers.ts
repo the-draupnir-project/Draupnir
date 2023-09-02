@@ -1,5 +1,5 @@
 import { MatrixEmitter } from "./MatrixEmitter";
-import { trace, traceSync } from "./utils";
+import { trace } from "./utils";
 
 enum Action {
     Join,
@@ -54,7 +54,7 @@ class RoomMembers {
     /**
      * Record a join.
      */
-    @traceSync("RoomMembers.join")
+    @trace
     public join(userId: string, timestamp: number) {
         this._joinsByTimestamp.push(new Join(userId, timestamp));
         this._joinsByUser.set(userId, timestamp);
@@ -63,7 +63,7 @@ class RoomMembers {
     /**
      * Record a leave.
      */
-    @traceSync("RoomMembers.join")
+    @trace
     public leave(userId: string, timestamp: number) {
         if (!this._joinsByUser.has(userId)) {
             // No need to record a leave for a user we didn't see joining.
@@ -76,7 +76,7 @@ class RoomMembers {
     /**
      * Run a cleanup on the data structure.
      */
-    @traceSync("RoomMembers.cleanup")
+    @trace
     public cleanup() {
         if (this._leaves.size === 0) {
             // Nothing to do.
@@ -91,7 +91,7 @@ class RoomMembers {
      *
      * @returns true if the `join` is still valid.
      */
-    @traceSync("RoomMembers.isStillValid")
+    @trace
     private isStillValid(join: Join): boolean {
         const leaveTS = this._leaves.get(join.userId);
         if (!leaveTS) {
@@ -115,7 +115,7 @@ class RoomMembers {
      * @returns A list of up to `max` members joined since `since`, ranked
      * from most recent join to oldest join.
      */
-    @traceSync("RoomMembers.members")
+    @trace
     public members(since: Date, max: number): Join[] {
         const result = [];
         const ts = since.getTime();
@@ -148,7 +148,7 @@ class RoomMembers {
      * @returns a `Date` if the user is currently in the room and has joined
      * since the start of Mjölnir, `null` otherwise.
      */
-    @traceSync("RoomMembers.get")
+    @trace
     public get(userId: string): Date | null {
         let ts = this._joinsByUser.get(userId);
         if (!ts) {
@@ -170,7 +170,7 @@ export class RoomMemberManager {
     /**
      * Start listening to join/leave events in a room.
      */
-    @traceSync('RoomMemberManager.addRoom')
+    @trace
     public addRoom(roomId: string) {
         if (this.perRoom.has(roomId)) {
             // Nothing to do.
@@ -184,12 +184,12 @@ export class RoomMemberManager {
      *
      * Cleanup any remaining data on join/leave events.
      */
-    @traceSync('RoomMemberManager.removeRoom')
+    @trace
     public removeRoom(roomId: string) {
         this.perRoom.delete(roomId);
     }
 
-    @traceSync('RoomMemberManager.cleanup')
+    @trace
     public cleanup(roomId: string) {
         this.perRoom.get(roomId)?.cleanup();
     }
@@ -197,7 +197,7 @@ export class RoomMemberManager {
     /**
      * Dispose of this object.
      */
-    @traceSync('RoomMemberManager.dispose')
+    @trace
     public dispose() {
         this.client.off("room.event", this.cbHandleEvent);
     }
@@ -212,7 +212,7 @@ export class RoomMemberManager {
      * `null` otherwise. The latter may happen either if the user has joined
      * the room before Mjölnir or if the user is not currently in the room.
      */
-    @traceSync('RoomMemberManager.getUserJoin')
+    @trace
     public getUserJoin(user: { roomId: string, userId: string }): Date | null {
         const { roomId, userId } = user;
         const ts = this.perRoom.get(roomId)?.get(userId) || null;
@@ -227,7 +227,7 @@ export class RoomMemberManager {
      *
      * Only the users who have joined since the start of Mjölnir are returned.
      */
-    @traceSync('RoomMemberManager.getUsersInRoom')
+    @trace
     public getUsersInRoom(roomId: string, since: Date, max = 100): Join[] {
         const inRoom = this.perRoom.get(roomId);
         if (!inRoom) {
@@ -239,7 +239,7 @@ export class RoomMemberManager {
     /**
      * Record join/leave events.
      */
-    @trace('RoomMemberManager.handleEvent')
+    @trace
     public async handleEvent(roomId: string, event: any, now?: Date) {
         if (event['type'] !== 'm.room.member') {
             // Not a join/leave event.

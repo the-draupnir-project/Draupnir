@@ -64,7 +64,7 @@ export default class ManagementRoomOutput {
      * @param msgtype The desired message type of the returned TextualMessageEventContent
      * @returns A TextualMessageEventContent with replaced room IDs
      */
-    @trace('ManagementRoomOutput.replaceRoomIdsWithPills')
+    @trace
     private async replaceRoomIdsWithPills(text: string, roomIds: Set<string>, msgtype: MessageType = "m.text"): Promise<TextualMessageEventContent> {
         const content: TextualMessageEventContent = {
             body: text,

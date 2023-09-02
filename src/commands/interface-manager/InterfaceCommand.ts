@@ -29,7 +29,7 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { trace, traceSync } from "../../utils";
+import { trace } from "../../utils";
 import { ParameterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, ArgumentStream } from "./ParameterParsing";
 import { CommandResult } from "./Validation";
 
@@ -60,7 +60,7 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
      * Used to render the help command.
      * @returns All of the commands in this table.
      */
-    @traceSync('CommandTable.getAllCommands')
+    @trace
     public getAllCommands(): InterfaceCommand[] {
         const importedCommands = [...this.importedTables].reduce((acc, t) => [...acc, ...t.getAllCommands()], []);
         return [...this.getExportedCommands(), ...importedCommands]
@@ -69,18 +69,18 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
     /**
      * @returns Only the commands interned in this table, excludes imported commands.
      */
-    @traceSync('CommandTable.getExportedCommands')
+    @trace
     public getExportedCommands(): InterfaceCommand[] {
         return [...this.flattenedCommands.values()];
     }
 
-    @traceSync('CommandTable.getImportedTables')
+    @trace
     public getImportedTables(): CommandTable[] {
         return [...this.importedTables];
     }
 
     // We use the argument stream so that they can use stream.rest() to get the unconsumed arguments.
-    @traceSync('CommandTable.findAnExportedMatchingCommand')
+    @trace
     public findAnExportedMatchingCommand(stream: IArgumentStream) {
         const tableHelper = (table: CommandLookupEntry<ExecutorType>, argumentStream: IArgumentStream): undefined | InterfaceCommand<ExecutorType> => {
             if (argumentStream.peekItem() === undefined || typeof argumentStream.peekItem() !== 'string') {
@@ -98,7 +98,7 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
         return tableHelper(this.commands, stream);
     }
 
-    @traceSync('CommandTable.findAMatchingCommand')
+    @trace
     public findAMatchingCommand(stream: IArgumentStream): InterfaceCommand | undefined {
         const possibleExportedCommand = stream.savingPositionIf({
             body: (s: IArgumentStream) => this.findAnExportedMatchingCommand(s),
@@ -141,7 +141,7 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
         internCommandHelper(this.commands, [...command.designator]);
     }
 
-    @traceSync('CommandTable.importTable')
+    @trace
     public importTable(table: CommandTable): void {
         for (const command of table.getAllCommands()) {
             if (this.findAMatchingCommand(new ArgumentStream(command.designator))) {
@@ -197,17 +197,17 @@ export class InterfaceCommand<ExecutorType extends BaseFunction = BaseFunction> 
     // Really, surely this should be part of invoke?
     // probably... it's just that means that invoke has to return the validation result lol.
     // Though this makes no sense if parsing is part of finding a matching command.
-    @trace('CommandTable.parseArguments')
+    @trace
     public async parseArguments(stream: IArgumentStream): ReturnType<ParameterParser> {
         return await this.argumentListParser.parse(stream);
     }
 
-    @traceSync('CommandTable.invoke')
+    @trace
     public invoke(context: ThisParameterType<ExecutorType>, ...args: Parameters<ExecutorType>): ReturnType<ExecutorType> {
         return this.command.apply(context, args);
     }
 
-    @trace('CommandTable.parseThenInvoke')
+    @trace
     public async parseThenInvoke(context: ThisParameterType<ExecutorType>, stream: IArgumentStream): Promise<ReturnType<ExecutorType>> {
         const parameterDescription = await this.parseArguments(stream);
         if (parameterDescription.isErr()) {

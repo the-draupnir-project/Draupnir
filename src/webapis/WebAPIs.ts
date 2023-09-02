@@ -31,7 +31,7 @@ import { LogService, MatrixClient } from "matrix-bot-sdk";
 import RuleServer from "../models/RuleServer";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
-import { trace, traceSync } from "../utils";
+import { trace } from "../utils";
 
 
 /**
@@ -53,7 +53,7 @@ export class WebAPIs {
     /**
      * Start accepting requests to the Web API.
      */
-    @trace('WebAPIs.start')
+    @trace
     public async start() {
         if (!this.config.web.enabled) {
             return;
@@ -99,7 +99,7 @@ export class WebAPIs {
         }
     }
 
-    @traceSync('WebAPIs.stop')
+    @trace
     public stop() {
         if (this.httpServer) {
             console.log("Stopping WebAPIs.");
@@ -118,7 +118,7 @@ export class WebAPIs {
      * @param request The request. Its body SHOULD hold an object `{reason?: string}`
      * @param response The response. Used to propagate HTTP success/error.
      */
-    @trace('WebAPIs.handleReport')
+    @trace
     async handleReport({ roomId, eventId, request, response }: { roomId: string, eventId: string, request: express.Request, response: express.Response }) {
         // To display any kind of useful information, we need
         //
@@ -210,7 +210,7 @@ export class WebAPIs {
         }
     }
 
-    @trace('WebAPIs.handleRuleServerUpdate')
+    @trace
     async handleRuleServerUpdate(ruleServer: RuleServer, { since, request, response }: { since: string, request: express.Request, response: express.Response }) {
         // FIXME Have to do this because express sends keep alive by default and during tests.
         // The server will never be able to close because express never closes the sockets, only stops accepting new connections.
