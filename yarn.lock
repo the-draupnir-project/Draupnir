@@ -3388,9 +3388,9 @@ matrix-appservice-bridge@8.1.2:
     winston "^3.3.3"
     winston-daily-rotate-file "^4.5.1"
 
-matrix-appservice@^1.1.0, "matrix-appservice@https://github.com/MTRNord/matrix-appservice-node.git#13430a57da67ee708b050a42458b93fa9cd3b136":
+matrix-appservice@^1.1.0, "matrix-appservice@https://github.com/MTRNord/matrix-appservice-node.git#9238cb310b47d985aab22730f11e22ea3750010e":
   version "2.0.0"
-  resolved "https://github.com/MTRNord/matrix-appservice-node.git#13430a57da67ee708b050a42458b93fa9cd3b136"
+  resolved "https://github.com/MTRNord/matrix-appservice-node.git#9238cb310b47d985aab22730f11e22ea3750010e"
   dependencies:
     "@opentelemetry/api" "^1.4.1"
     "@opentelemetry/shim-opentracing" "^1.15.2"
