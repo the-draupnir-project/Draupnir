@@ -73,11 +73,11 @@
     },
     "overrides": {
         "matrix-appservice-bridge": {
-            "matrix-appservice": "MTRNord/matrix-appservice-node#78e0cf8f025cea22236c6c12553794bc6dd1bb07"
+            "matrix-appservice": "MTRNord/matrix-appservice-node#1289b9ffdf785a9899d2db1d64ad35144e12ca2c"
         }
     },
     "resolutions": {
-        "matrix-appservice": "https://github.com/MTRNord/matrix-appservice-node.git#78e0cf8f025cea22236c6c12553794bc6dd1bb07"
+        "matrix-appservice": "https://github.com/MTRNord/matrix-appservice-node.git#1289b9ffdf785a9899d2db1d64ad35144e12ca2c"
     },
     "engines": {
         "node": ">=18.0.0"
