@@ -71,6 +71,14 @@
     "ulidx": "^0.3.0",
     "yaml": "^2.2.2"
   },
+  "overrides": {
+    "matrix-appservice-bridge": {
+      "matrix-appservice": "MTRNord/matrix-appservice-node#MTRNord\/draupnir4all"
+    }
+  },
+  "resolutions": {
+    "matrix-appservice": "https://github.com/MTRNord/matrix-appservice-node.git#MTRNord\/draupnir4all"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
