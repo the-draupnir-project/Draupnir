@@ -5,6 +5,7 @@ import { findCommandTable } from "../../../src/commands/interface-manager/Interf
 import { ArgumentStream } from "../../../src/commands/interface-manager/ParameterParsing";
 import { CommandResult } from "../../../src/commands/interface-manager/Validation";
 import { trace } from "../../../src/utils";
+import { DRAUPNIR_SYSTEM_TYPES, DRAUPNIR_TRACING_ATTRIBUTES } from "../../../src/tracer";
 
 export class AppservideBotCommandClient {
     constructor(private readonly appservice: MjolnirAppService) {
@@ -15,7 +16,7 @@ export class AppservideBotCommandClient {
     public async sendCommand<CommandReturnType extends CommandResult<any>>(...items: ReadItem[]): Promise<CommandReturnType> {
         // The span is always the last element due to order of args. And since we try to hide it we dont have it in the type and need to go via unknown here.
         const parentSpan: Span = items.pop() as unknown as Span;
-        parentSpan.setAttribute("draupnir.system", "appservice");
+        parentSpan.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.SYSTEM, DRAUPNIR_SYSTEM_TYPES.APPSERVICE);
         const stream = new ArgumentStream(items);
         const matchingCommand = findCommandTable("appservice bot").findAMatchingCommand(stream);
         if (!matchingCommand) {

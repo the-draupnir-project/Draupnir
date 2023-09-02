@@ -6,6 +6,21 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
+export enum DRAUPNIR_SYSTEM_TYPES {
+    APPSERVICE = "appservice",
+    BOT = "bot"
+}
+
+export enum DRAUPNIR_RESULT {
+    SUCCESS = "success",
+    FAILURE = "failure"
+}
+
+export enum DRAUPNIR_TRACING_ATTRIBUTES {
+    SYSTEM = "draupnir.system",
+    PROVISION_OUTCOME = "draupnir.provision.outcome"
+}
+
 export default function initTracer(serviceName: string) {
     /**
      * This starts instrumentation for the app

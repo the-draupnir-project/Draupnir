@@ -36,6 +36,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { independentTrace, trace } from "../utils";
 import { Span } from "@opentelemetry/api";
+import { DRAUPNIR_RESULT, DRAUPNIR_TRACING_ATTRIBUTES } from "../tracer";
 
 const log = new Logger("AppService");
 
@@ -153,12 +154,12 @@ export class MjolnirAppService {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
                 try {
                     await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
-                    parentSpan?.setAttribute("provision.outcome", "success");
+                    parentSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS);
                     // Send a notive that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please accept the invites to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future.");
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
-                    parentSpan?.setAttribute("provision.outcome", "failed");
+                    parentSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.FAILURE);
                     // continue, we still want to reject this invitation.
                     // Send a notive that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please make sure you are allowed to provision a bot. Otherwise notify the admin please. The provisioning request was rejected.");
