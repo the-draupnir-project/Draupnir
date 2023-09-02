@@ -28,7 +28,7 @@ if (process.env.TRACING_ENABLED) {
     function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
         return {
             shouldSample(ctx, tid, spanName, spanKind, attr, links) {
-                if (!filterFn(spanName, spanKind, attr)) {
+                if (filterFn(spanName, spanKind, attr)) {
                     return { decision: SamplingDecision.NOT_RECORD };
                 }
                 return parent.shouldSample(ctx, tid, spanName, spanKind, attr, links);
@@ -40,7 +40,7 @@ if (process.env.TRACING_ENABLED) {
     }
 
     function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: Attributes) {
-        return attributes[SemanticAttributes.HTTP_ROUTE] !== "/healthz" || attributes[SemanticAttributes.HTTP_ROUTE] !== "/metrics";
+        return attributes[SemanticAttributes.HTTP_ROUTE] === "/healthz" || attributes[SemanticAttributes.HTTP_ROUTE] === "/metrics";
     }
 
     if (process.env.TRACING_TRACE_URL === undefined || process.env.TRACING_TRACE_URL === "") {
