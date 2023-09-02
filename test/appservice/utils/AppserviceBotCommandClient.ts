@@ -14,7 +14,8 @@ export class AppservideBotCommandClient {
     @trace
     public async sendCommand<CommandReturnType extends CommandResult<any>>(...items: ReadItem[]): Promise<CommandReturnType> {
         // The span is always the last element due to order of args. And since we try to hide it we dont have it in the type and need to go via unknown here.
-        const _parentSpan: Span = items.pop() as unknown as Span;
+        const parentSpan: Span = items.pop() as unknown as Span;
+        parentSpan.setAttribute("draupnir.system", "appservice");
         const stream = new ArgumentStream(items);
         const matchingCommand = findCommandTable("appservice bot").findAMatchingCommand(stream);
         if (!matchingCommand) {
