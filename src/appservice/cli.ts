@@ -40,7 +40,7 @@ if (process.env.TRACING_ENABLED) {
     }
 
     function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: Attributes) {
-        return spanKind === SpanKind.SERVER && (attributes[SemanticAttributes.HTTP_ROUTE] !== "/healthz" || attributes[SemanticAttributes.HTTP_ROUTE] !== "/metrics");
+        return attributes[SemanticAttributes.HTTP_ROUTE] !== "/healthz" || attributes[SemanticAttributes.HTTP_ROUTE] !== "/metrics";
     }
 
     if (process.env.TRACING_TRACE_URL === undefined || process.env.TRACING_TRACE_URL === "") {
