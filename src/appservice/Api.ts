@@ -5,6 +5,7 @@ import * as bodyParser from "body-parser";
 import { MjolnirManager } from "./MjolnirManager";
 import * as http from "http";
 import { Logger } from "matrix-appservice-bridge";
+import * as api from '@opentelemetry/api';
 
 const log = new Logger("Api");
 /**
@@ -26,13 +27,14 @@ export class Api {
      */
     @trace
     private resolveAccessToken(accessToken: string): Promise<string | null> {
+        const activeSpan = api.trace.getSpan(api.context.active())
         return new Promise((resolve, reject) => {
             request({
                 url: `${this.homeserver}/_matrix/federation/v1/openid/userinfo`,
                 qs: { access_token: accessToken },
             }, (err, homeserver_response, body) => {
                 if (err) {
-                    log.error(`Error resolving openID token from ${this.homeserver}`, err);
+                    log.error(`Error resolving openID token from ${this.homeserver}`, err, { traceId: activeSpan?.spanContext().traceId });
                     reject(null);
                 }
 
@@ -40,7 +42,7 @@ export class Api {
                 try {
                     response = JSON.parse(body);
                 } catch (e) {
-                    log.error(`Received ill formed response from ${this.homeserver} when resolving an openID token`, e);
+                    log.error(`Received ill formed response from ${this.homeserver} when resolving an openID token`, e, { traceId: activeSpan?.spanContext().traceId });
                     reject(null);
                     return;
                 }

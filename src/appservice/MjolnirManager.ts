@@ -13,6 +13,7 @@ import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { Gauge } from "prom-client";
 import { trace } from "../utils";
+import * as api from '@opentelemetry/api';
 
 const log = new Logger('MjolnirManager');
 
@@ -235,7 +236,8 @@ export class MjolnirManager {
                 mjolnirRecord.management_room,
                 mjIntent.matrixClient,
             ).catch((e: any) => {
-                log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e);
+                const activeSpan = api.trace.getSpan(api.context.active())
+                log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e, { traceId: activeSpan?.spanContext().traceId });
                 // Don't await, we don't want to clobber initialization if this fails.
                 mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your mjolnir could not be started. Please alert the administrator`);
                 this.reportUnstartedMjolnir(UnstartedMjolnir.FailCode.StartError, e, mjolnirRecord, mjIntent.userId);

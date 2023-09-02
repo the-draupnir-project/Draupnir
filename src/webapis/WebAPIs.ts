@@ -32,6 +32,7 @@ import RuleServer from "../models/RuleServer";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
 import { trace } from "../utils";
+import * as api from '@opentelemetry/api';
 
 
 /**
@@ -205,7 +206,8 @@ export class WebAPIs {
             // Match the spec behavior of `/report`: return 200 and an empty JSON.
             response.status(200).json({});
         } catch (ex) {
-            console.warn("Error responding to an abuse report", roomId, eventId, ex);
+            const activeSpan = api.trace.getSpan(api.context.active())
+            console.warn("Error responding to an abuse report", roomId, eventId, ex, { traceId: activeSpan?.spanContext().traceId });
             response.status(503);
         }
     }
