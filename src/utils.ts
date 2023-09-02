@@ -512,21 +512,14 @@ let sentryInitialized = false;
  * @param context The content of the function
  * @returns The result of the function
  */
-export function trace(originalMethod: any, context: ClassMethodDecoratorContext) {
-    if (context.kind !== "method") {
-        console.error("Used trace decorator on wrong kind");
-    }
-    let spanName = String(context.name);
+export function trace(originalMethod: any, { name }: ClassMethodDecoratorContext) {
+    let spanName = String(name);
 
     if (originalMethod && typeof originalMethod.then === 'function' && originalMethod[Symbol.toStringTag] === "Promise") {
         return async function replacementMethod(this: any, ...args: any[]) {
             const tracer = opentelemetry.trace.getTracer(
                 'draupnir-appservice-tracer'
             );
-
-            if (this.constructor.name) {
-                spanName = `${this.constructor.name}.${spanName}`
-            }
 
             return tracer.startActiveSpan(spanName, async (parentSpan: Span) => {
                 const result = await originalMethod.call(this, ...args);
@@ -539,10 +532,6 @@ export function trace(originalMethod: any, context: ClassMethodDecoratorContext)
             const tracer = opentelemetry.trace.getTracer(
                 'draupnir-appservice-tracer'
             );
-
-            if (this.constructor.name) {
-                spanName = `${this.constructor.name}.${spanName}`
-            }
 
             return tracer.startActiveSpan(spanName, (parentSpan: Span) => {
                 const result = originalMethod.call(this, ...args);
@@ -569,10 +558,6 @@ export function independentTrace(originalMethod: any, { name }: ClassMethodDecor
                 'draupnir-appservice-tracer'
             );
 
-            if (this.constructor.name) {
-                spanName = `${this.constructor.name}.${spanName}`
-            }
-
             const span = tracer.startSpan(spanName);
             const result = await originalMethod.call(this, ...args);
             span.end();
@@ -583,10 +568,6 @@ export function independentTrace(originalMethod: any, { name }: ClassMethodDecor
             const tracer = opentelemetry.trace.getTracer(
                 'draupnir-appservice-tracer'
             );
-
-            if (this.constructor.name) {
-                spanName = `${this.constructor.name}.${spanName}`
-            }
 
             const span = tracer.startSpan(spanName);
             const result = originalMethod.call(this, ...args);
