@@ -1,5 +1,9 @@
 # We can't use alpine anymore because crypto has rust deps.
 FROM node:18-slim
+# install git
+RUN apt-get update && \
+    apt-get install -y git\
+    &&  rm -rf /var/lib/apt/lists/*
 COPY . /tmp/src
 RUN cd /tmp/src \
     && yarn install --network-timeout 100000 \
