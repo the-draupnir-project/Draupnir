@@ -27,6 +27,10 @@ limitations under the License.
 
 import * as path from "path";
 
+// Order of imports matter!!!
+import initTracer from "./tracer";
+initTracer("Draupnir-Bot");
+
 import { Healthz } from "./health/healthz";
 
 import {
