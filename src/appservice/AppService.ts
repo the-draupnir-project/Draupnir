@@ -107,12 +107,21 @@ export class MjolnirAppService {
             dataStore,
             prometheus
         );
-        const ownProfile = await appService.bridge.getBot().getClient().getUserProfile(await appService.bridge.getBot().getClient().getUserId()) as {
-            avatar_url?: string,
-            displayname?: string
-        } | undefined;
-        if (ownProfile && ownProfile.displayname !== "Draupnir Admin Bot") {
-            appService.bridge.getBot().getClient().setDisplayName("Draupnir Admin Bot");
+        try {
+            const ownProfile = await appService.bridge.getBot().getClient().getUserProfile(await appService.bridge.getBot().getClient().getUserId()) as {
+                avatar_url?: string,
+                displayname?: string
+            } | undefined;
+            if (ownProfile && ownProfile.displayname !== "Draupnir Admin Bot") {
+                try {
+                    await appService.bridge.getBot().getClient().setDisplayName("Draupnir Admin Bot");
+                } catch (e: any) {
+                    log.error("Failed to set Displayname for Bot user");
+                }
+            }
+        } catch (e: any) {
+            log.info("No Profile found. Setting the defaults");
+            await appService.bridge.getBot().getClient().setDisplayName("Draupnir Admin Bot");
         }
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
