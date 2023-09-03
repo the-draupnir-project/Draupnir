@@ -21,7 +21,7 @@ defineInterfaceCommand({
 })
 
 // !draupnir displayname <displayname>
-export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords: ParsedKeywords, displaynameParts: string[]): Promise<CommandResult<any>> {
+export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords: ParsedKeywords, ...displaynameParts: string[]): Promise<CommandResult<any>> {
     const displayname = displaynameParts.join(' ');
     try {
         await this.client.setDisplayName(displayname);
