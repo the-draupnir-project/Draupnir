@@ -55,7 +55,7 @@ export class PgDataStore extends PostgresStore implements DataStore {
 
     @trace
     public async store(mjolnirRecord: MjolnirRecord): Promise<void> {
-        await this.sql`INSERT INTO mjolnir (local_part, owner, management_room)
+        await this.sql`INSERT INTO draupnir (local_part, owner, management_room)
         VALUES (${mjolnirRecord.local_part}, ${mjolnirRecord.owner}, ${mjolnirRecord.management_room})`;
     }
 
