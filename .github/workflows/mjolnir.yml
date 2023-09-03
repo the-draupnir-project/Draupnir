@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ MTRNord/draupnir4all ]
   pull_request:
-    branches: [ main ]
+    branches: [ MTRNord/draupnir4all ]
   schedule:
     - cron: '20 20 * * *'
 env:
