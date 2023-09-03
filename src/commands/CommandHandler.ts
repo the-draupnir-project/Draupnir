@@ -72,6 +72,7 @@ import "./Rooms";
 import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
+import "./SetDisplayNameCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
