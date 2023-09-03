@@ -1,7 +1,6 @@
-import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import { defineInterfaceCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
+import { ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { MjolnirContext } from "./CommandHandler";
 import { CommandResult } from "./interface-manager/Validation";
 
@@ -21,7 +20,7 @@ defineInterfaceCommand({
 })
 
 // !draupnir displayname <displayname>
-export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords, displayname: string): Promise<CommandResult<any>> {
+export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords: ParsedKeywords, displayname: string): Promise<CommandResult<any>> {
     let targetRooms = this.mjolnir.protectedRoomsTracker.getProtectedRooms();
 
     for (const targetRoomId of targetRooms) {
