@@ -97,7 +97,7 @@ defineMatrixInterfaceAdaptor({
     renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<StatusInfo>): Promise<void> {
         const renderState = (state: StatusInfo['state']) => {
             const notRunning = (text: string) => {
-                return <fragment><b>Running: </b>❌ (${text})<br/></fragment>
+                return <fragment><b>Running: </b>❌ (${text})<br /></fragment>
             };
             switch (state) {
                 case STATE_NOT_STARTED:
@@ -107,7 +107,7 @@ defineMatrixInterfaceAdaptor({
                 case STATE_SYNCING:
                     return notRunning('syncing lists');
                 case STATE_RUNNING:
-                    return <fragment><b>Running: </b>✅<br/></fragment>
+                    return <fragment><b>Running: </b>✅<br /></fragment>
                 default:
                     return notRunning('unknown state');
             }
@@ -120,7 +120,7 @@ defineMatrixInterfaceAdaptor({
                 </li>
             });
             return <fragment>
-                <b>{header}</b><br/>
+                <b>{header}</b><br />
                 <ul>
                     {listInfo.length === 0 ? <li><i>None</i></li> : listInfo}
                 </ul>
@@ -130,15 +130,16 @@ defineMatrixInterfaceAdaptor({
 
         await renderMatrixAndSend(<root>
             {renderState(info.state)}
-            <b>Protected Rooms: </b>{info.numberOfProtectedRooms}<br/>
+            <b>Protected Rooms: </b>{info.numberOfProtectedRooms}<br />
             {renderPolicyLists('Subscribed policy lists', info.subscribedLists)}
             {renderPolicyLists('Subscribed and protected policy lists', info.subscribedAndProtectedLists)}
-            <b>Version: </b><code>{info.version}</code><br/>
-            <b>Repository: </b><code>{info.repository}</code><br/>
+            <b>Version: </b><code>{info.version}</code><br />
+            <b>Repository: </b><code>{info.repository}</code><br />
+            <b>Draupnir project: </b><code>https://github.com/Gnuxie/Draupnir</code><br />
         </root>,
-        commandRoomId,
-        event,
-        client);
+            commandRoomId,
+            event,
+            client);
     }
 });
 
@@ -151,10 +152,10 @@ defineInterfaceCommand({
             acceptor: findPresentationType("string")
         },
     ],
-    new RestDescription<MjolnirContext>(
-        "subcommand",
-        findPresentationType("any")
-    )),
+        new RestDescription<MjolnirContext>(
+            "subcommand",
+            findPresentationType("any")
+        )),
     command: async function (
         this: MjolnirContext, _keywords, protectionName: string, ...subcommands: string[]
     ): Promise<CommandResult<Awaited<ReturnType<Protection['statusCommand']>>>> {
@@ -169,7 +170,7 @@ defineInterfaceCommand({
 
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "status", "protection"),
-    renderer: async function(client, commandRoomId, event, result) {
+    renderer: async function (client, commandRoomId, event, result) {
         tickCrossRenderer.call(this, ...arguments);
         if (result.isErr()) {
             return; // tickCrossRenderer will handle it.
