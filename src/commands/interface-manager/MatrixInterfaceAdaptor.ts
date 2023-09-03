@@ -78,7 +78,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
         // The span is always the last element due to order of args. And since we try to hide it we dont have it in the type and need to go via unknown here.
         const activeSpan = api.trace.getSpan(api.context.active())
-        activeSpan.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.SYSTEM, DRAUPNIR_SYSTEM_TYPES.BOT);
+        activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.SYSTEM, DRAUPNIR_SYSTEM_TYPES.BOT);
         const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
         const stream = new PromptableArgumentStream(args, this, invocationRecord);
         const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);

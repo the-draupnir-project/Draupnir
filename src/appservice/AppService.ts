@@ -35,7 +35,6 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { independentTrace, trace } from "../utils";
-import { Span } from "@opentelemetry/api";
 import { DRAUPNIR_RESULT, DRAUPNIR_TRACING_ATTRIBUTES } from "../tracer";
 import * as api from '@opentelemetry/api'
 
