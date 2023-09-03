@@ -202,7 +202,6 @@ export class InterfaceCommand<ExecutorType extends BaseFunction = BaseFunction> 
         return await this.argumentListParser.parse(stream);
     }
 
-    @trace
     public invoke(context: ThisParameterType<ExecutorType>, ...args: Parameters<ExecutorType>): ReturnType<ExecutorType> {
         return this.command.apply(context, args);
     }

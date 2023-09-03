@@ -118,6 +118,7 @@ export default class ManagementRoomOutput {
         if (this.config.verboseLogging || LogLevel.INFO.includes(level)) {
             let clientMessage = message;
             if (level === LogLevel.WARN) clientMessage = `⚠ | ${message}`;
+            // TODO: Add traceID here somehow but make sure we get it from upstream if it is critical
             if (level === LogLevel.ERROR) clientMessage = `‼ | ${message}`;
 
             const client = this.client;
