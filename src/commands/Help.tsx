@@ -56,7 +56,6 @@ const oldHelpMenu = "" +
     "!mjolnir resolve <room alias>                                       - Resolves a room alias to a room ID\n" +
     "!mjolnir since <date>/<duration> <action> <limit> [rooms...] [reason] - Apply an action ('kick', 'ban', 'mute', 'unmute' or 'show') to all users who joined a room since <date>/<duration> (up to <limit> users)\n" +
     "!mjolnir powerlevel <user ID> <power level> [room alias/ID]         - Sets the power level of the user in the specified room (or all protected rooms)\n" +
-    "!mjolnir displayname <displayname>                                  - Sets the displayname of the draupnir instance to the specified value in all rooms.\n" +
     "!mjolnir help                                                       - This menu\n";
 
 function renderTableHelp(table: CommandTable): DocumentNode {
