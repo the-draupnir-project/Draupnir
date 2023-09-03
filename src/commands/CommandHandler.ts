@@ -72,6 +72,7 @@ import "./Rooms";
 import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
+import "./SetDisplayNameCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -124,7 +125,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
             const command = commandTable.findAMatchingCommand(stream)
-            ?? findTableCommand("mjolnir", "help");
+                ?? findTableCommand("mjolnir", "help");
             const adaptor = findMatrixInterfaceAdaptor(command);
             const mjolnirContext: MjolnirContext = {
                 mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
