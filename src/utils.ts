@@ -522,7 +522,7 @@ export function trace(originalMethod: any, { name }: ClassMethodDecoratorContext
             );
 
             return tracer.startActiveSpan(spanName, async (parentSpan: Span) => {
-                const result = await originalMethod.call(this, ...args, parentSpan);
+                const result = await originalMethod.call(this, ...args);
                 parentSpan.end();
                 return result;
             });
@@ -534,7 +534,7 @@ export function trace(originalMethod: any, { name }: ClassMethodDecoratorContext
             );
 
             return tracer.startActiveSpan(spanName, (parentSpan: Span) => {
-                const result = originalMethod.call(this, ...args, parentSpan);
+                const result = originalMethod.call(this, ...args);
                 parentSpan.end();
                 return result;
             });
@@ -570,7 +570,7 @@ export function independentTrace(originalMethod: any, { name }: ClassMethodDecor
             );
 
             const span = tracer.startSpan(spanName);
-            const result = originalMethod.call(this, ...args, span);
+            const result = originalMethod.call(this, ...args);
             span.end();
             return result;
         };

@@ -146,7 +146,7 @@ export class MjolnirAppService {
      * @param context Additional context for the Matrix event.
      */
     @trace
-    public async onEvent(request: Request<WeakEvent>, context: BridgeContext, parentSpan: Span | undefined) {
+    public async onEvent(request: Request<WeakEvent>, context: BridgeContext) {
         const activeSpan = api.trace.getSpan(api.context.active())
         const mxEvent = request.getData();
         // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
@@ -156,12 +156,12 @@ export class MjolnirAppService {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
                 try {
                     await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
-                    parentSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS);
+                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS);
                     // Send a notive that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please accept the invites to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future.");
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e, { traceId: activeSpan?.spanContext().traceId });
-                    parentSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.FAILURE);
+                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.FAILURE);
                     // continue, we still want to reject this invitation.
                     // Send a notive that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please make sure you are allowed to provision a bot. Otherwise notify the admin please. The provisioning request was rejected.");
