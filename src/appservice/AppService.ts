@@ -146,7 +146,6 @@ export class MjolnirAppService {
      */
     @trace
     public async onEvent(request: Request<WeakEvent>, context: BridgeContext) {
-        const activeSpan = api.trace.getSpan(api.context.active())
         const mxEvent = request.getData();
         // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
         // Acts as an alternative to the web api provided for the widget.
@@ -157,12 +156,14 @@ export class MjolnirAppService {
                 await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Your Draupnir is currently being provisioned. Please wait while we set up the rooms.");
                 try {
                     await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
-                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS)
+                    log.debug("Setting attribute on span 1")
+                    api.trace.getSpan(api.context.active())?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS)
                     // Send a notice that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please accept the invites to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future.");
                 } catch (e: any) {
-                    log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e, { traceId: activeSpan?.spanContext().traceId });
-                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.FAILURE);
+                    log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e, { traceId: api.trace.getSpan(api.context.active())?.spanContext().traceId });
+                    log.debug("Setting attribute on span 2")
+                    api.trace.getSpan(api.context.active())?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.FAILURE);
                     // continue, we still want to reject this invitation.
                     // Send a notive that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please make sure you are allowed to provision a bot. Otherwise notify the admin please. The provisioning request was rejected.");
@@ -171,7 +172,7 @@ export class MjolnirAppService {
                     // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their mjolnir.
                     await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
                 } catch (e: any) {
-                    log.warn("Unable to reject an invite to a room", e, { traceId: activeSpan?.spanContext().traceId });
+                    log.warn("Unable to reject an invite to a room", e, { traceId: api.trace.getSpan(api.context.active())?.spanContext().traceId });
                 }
             }
         }
