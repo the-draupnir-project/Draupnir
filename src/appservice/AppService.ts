@@ -153,10 +153,12 @@ export class MjolnirAppService {
         if ('m.room.member' === mxEvent.type) {
             if ('invite' === mxEvent.content['membership'] && mxEvent.state_key === this.bridge.botUserId) {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
+                await this.bridge.getBot().getClient().joinRoom(mxEvent.room_id);
+                await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Your Draupnir is currently being provisioned. Please wait while we set up the rooms.");
                 try {
                     await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
-                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS);
-                    // Send a notive that the invite must be accepted
+                    activeSpan?.setAttribute(DRAUPNIR_TRACING_ATTRIBUTES.PROVISION_OUTCOME, DRAUPNIR_RESULT.SUCCESS)
+                    // Send a notice that the invite must be accepted
                     await this.bridge.getBot().getClient().sendText(mxEvent.room_id, "Please accept the invites to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future.");
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e, { traceId: activeSpan?.spanContext().traceId });
