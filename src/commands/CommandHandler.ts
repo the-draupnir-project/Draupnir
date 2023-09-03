@@ -39,6 +39,7 @@ import {
     execConfigSetProtection, execConfigAddProtection, execConfigRemoveProtection
 } from "./ProtectionsCommands";
 import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
+import { execSetDisplayNameCommand } from "./SetDisplayNameCommand";
 import { execResolveCommand } from "./ResolveAlias";
 import { execKickCommand } from "./KickCommand";
 import { parse as tokenize } from "shell-quote";
@@ -120,11 +121,13 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             return await execSinceCommand(roomId, event, mjolnir, tokens);
         } else if (parts[1] === 'kick' && parts.length > 2) {
             return await execKickCommand(roomId, event, mjolnir, parts);
+        } else if (parts[1] === 'displayname' && parts.length > 2) {
+            return await execSetDisplayNameCommand(roomId, event, mjolnir, parts);
         } else {
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
             const command = commandTable.findAMatchingCommand(stream)
-            ?? findTableCommand("mjolnir", "help");
+                ?? findTableCommand("mjolnir", "help");
             const adaptor = findMatrixInterfaceAdaptor(command);
             const mjolnirContext: MjolnirContext = {
                 mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
