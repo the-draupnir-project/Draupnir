@@ -107,6 +107,13 @@ export class MjolnirAppService {
             dataStore,
             prometheus
         );
+        const ownProfile = await appService.bridge.getBot().getClient().getUserProfile(await appService.bridge.getBot().getClient().getUserId()) as {
+            avatar_url?: string,
+            displayname?: string
+        } | undefined;
+        if (ownProfile && ownProfile.displayname !== "Draupnir Admin Bot") {
+            appService.bridge.getBot().getClient().setDisplayName("Draupnir Admin Bot");
+        }
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
             onEvent: appService.onEvent.bind(appService),
