@@ -21,16 +21,12 @@ defineInterfaceCommand({
 
 // !draupnir displayname <displayname>
 export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords: ParsedKeywords, displayname: string): Promise<CommandResult<any>> {
-    let targetRooms = this.mjolnir.protectedRoomsTracker.getProtectedRooms();
-
-    for (const targetRoomId of targetRooms) {
-        try {
-            await this.client.setDisplayName(displayname);
-        } catch (e) {
-            const message = e.message || (e.body ? e.body.error : '<no message>');
-            LogService.error("SetDisplayNameCommand", e);
-            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "SetDisplayNameCommand", `Failed to set displayname to ${displayname} in ${targetRoomId}: ${message}`, targetRoomId);
-        }
+    try {
+        await this.client.setDisplayName(displayname);
+    } catch (e) {
+        const message = e.message || (e.body ? e.body.error : '<no message>');
+        LogService.error("SetDisplayNameCommand", e);
+        await this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "SetDisplayNameCommand", `Failed to set displayname to ${displayname}: ${message}`);
     }
 
     return CommandResult.Ok(undefined);
