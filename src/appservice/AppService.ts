@@ -37,6 +37,7 @@ import { SOFTWARE_VERSION } from "../config";
 import { independentTrace, trace } from "../utils";
 import { DRAUPNIR_RESULT, DRAUPNIR_TRACING_ATTRIBUTES } from "../tracer";
 import * as api from '@opentelemetry/api'
+import { Registry } from 'prom-client';
 
 const log = new Logger("AppService");
 
@@ -91,8 +92,12 @@ export class MjolnirAppService {
         const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
         const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
         // Activate /metrics endpoint for Prometheus
+
+        // This should happen automatically but in testing this didn't happen in the docker image
         setBridgeVersion(SOFTWARE_VERSION);
-        const prometheus = bridge.getPrometheusMetrics(false);
+
+        // Due to the way the tests and this prom library works we need to explicitly create a new one each time.
+        const prometheus = bridge.getPrometheusMetrics(true, new Registry());
         const instanceCountGauge = prometheus.addGauge({
             name: "draupnir_instances",
             help: "Count of Draupnir Instances",

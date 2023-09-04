@@ -42,6 +42,7 @@ import * as _ from '@sentry/tracing'; // Performing the import activates tracing
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { IConfig } from "./config";
 import { MatrixSendClient } from "./MatrixEmitter";
+import { Gauge } from "prom-client";
 
 // Define a few aliases to simplify parsing durations.
 
@@ -69,6 +70,42 @@ export function setToArray<T>(set: Set<T>): T[] {
         arr.push(v);
     }
     return arr;
+}
+
+/**
+ * This increments a prometheus gauge. Used in the Appservice MjolnirManager.
+ *
+ * The ts-ignore is mandatory since we access a private method due to lack of a public one.
+ *
+ * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
+ *
+ * @param gauge The Gauge to be modified
+ * @param status The status value that should be modified
+ * @param uuid The UUID of the instance. (Usually the localPart)
+ */
+export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+    // @ts-ignore
+    if (!gauge._getValue({ status: status, uuid: uuid })) {
+        gauge.inc({ status: status, uuid: uuid });
+    }
+}
+
+/**
+ * This decrements a prometheus gauge. Used in the Appservice MjolnirManager.
+ *
+ * The ts-ignore is mandatory since we access a private method due to lack of a public one.
+ *
+ * See https://github.com/Gnuxie/Draupnir/pull/70#discussion_r1299188922
+ *
+ * @param gauge The Gauge to be modified
+ * @param status The status value that should be modified
+ * @param uuid The UUID of the instance. (Usually the localPart)
+ */
+export function decrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
+    // @ts-ignore
+    if (gauge._getValue({ status: status, uuid: uuid })) {
+        gauge.dec({ status: status, uuid: uuid });
+    }
 }
 
 export function isTrueJoinEvent(event: any): boolean {
