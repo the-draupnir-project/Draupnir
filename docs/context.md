@@ -1,9 +1,9 @@
 ## Context for developing Draupnir
 
-#### And also context that is essential if you are developing anything
-that uses Policy Lists.
+alternatively context that is essential for developing
+anything that uses Policy Lists.
 
-### Sync loop
+### The synchronisation loop
 
 In order to understand how Draupnir works you have to first understand
 the sync loop of Matrix Clients. All Matrix clients have a sync loop.
@@ -122,6 +122,34 @@ begin synchronising policies with with the protected rooms.
 Draupnir starts synchronising rooms by visiting the most recently
 active room first.
 
+### A history of moderation projects
+
+Mjolnir was originally created by
+[Travis Ralston](https://github.com/turt2live) as a good enough
+solution temprarily made permanent.
+The abstract architecture of Mjolnir remains today and we are
+thankful for good foundations, and significantly
+[policies](https://spec.matrix.org/latest/client-server-api/#moderation-policy-lists)
+that were
+[proposed](https://github.com/matrix-org/matrix-spec-proposals/pull/2313)
+by [Matthew Hodgson](https://github.com/ara4n).
+
+There were several other similar solutions known to us that were
+developed and deployed at the same time as Mjolnir in the earlier days
+and either directly or indirectly had influence on things to come.
+Notably [Fly Swatter](https://github.com/serra-allgood/matrix-fly-swatter)
+and [Luna](https://gitlab.com/Gnuxie/luna).
+
+After a period of maintenance, Mjolnir was then developed by other
+contributors from Element who restructured the project, tackled
+usability concerns and would go on to produce a multi-tenancy
+appservice mode of deployment called "Mjolnir for all".
+With the eventual aim of integrating the functions of Mjolnir
+transparently with both homeservers and clients.
+
+This effort is now continued by the Matrix community in the form
+of Draupnir and [MTRNord](https://github.com/MTRNord)'s
+[Draupnir4all deployment](https://docs.draupnir.midnightthoughts.space/).
 
 [^full-state]: matrix-bot-sdk could be modified to sync with
 `full_state` set to true. This has been
