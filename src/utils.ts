@@ -40,14 +40,6 @@ export function htmlEscape(input: string): string {
     })[char.charCodeAt(0)]);
 }
 
-export function setToArray<T>(set: Set<T>): T[] {
-    const arr: T[] = [];
-    for (const v of set) {
-        arr.push(v);
-    }
-    return arr;
-}
-
 export function isTrueJoinEvent(event: any): boolean {
     const membership = event['content']['membership'] || 'join';
     let prevMembership = "leave";
