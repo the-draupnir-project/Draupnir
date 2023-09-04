@@ -5,34 +5,57 @@ for more information.
 
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
-This is a hard fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
+This is a continuation and fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
 with an entirely new framework for interacting with Matrix written to
 overcome some of the burdens there were holding development of mjolnir.
 
 ## Status
 
-The command handler is currently being refactored and the syntax will become
-incompatible with legacy Mjolnir commands. The UX will be overhauled
-as such and we will consider the launch of Draupnir a 2.0.0 release.
+The command handler is currently being refactored and some command syntax will become
+incompatible with legacy Mjolnir commands.
+The UX is being overhauled and Draupnir is slowly moving towards a 2.0.0 release.
 
-As Draupnir heads towards `v2.0.0` releases will appear [here](https://github.com/Gnuxie/Draupnir/releases).
-Until `v2.0.0` there will be frequent changes to commands.
+As Draupnir heads towards `v2.0.0`, releases will appear [here](https://github.com/Gnuxie/Draupnir/releases).
+Until `v2.0.0` there will be frequent changes to commands but all of these
+will be noted in the changes for that release.
 
-Migrating from Mjolnir is straightforward, and Draupnir remains backwards compatible.
-So it is possible to try Draupnir and still have the option to switch back to Mjolnir.
+Migrating from Mjolnir is straightforward and requires no manual steps,
+migration for your setup is likely as simple as changing your server config to
+pull the latest Draupnir docker image instead of a mjolnir one.
+Draupnir remains backwards compatible so that it is possible to try Draupnir
+and still have the option to switch back to Mjolnir.
+
+Any problems with migration should be reported to our [support room](https://matrix.to/#/#draupnir:matrix.org).
 
 ## Features
 
-As an all-in-one moderation tool, it can protect your server from malicious invites, spam
-messages, and whatever else you don't want. In addition to server-level protection, Draupnir
-is great for communities wanting to protect their rooms without having to use their personal
-accounts for moderation.
+As an all-in-one moderation tool, Draupnir can protect your community by
+applying policies from both your own and community curated policy lists.
 
 The bot by default includes support for bans, redactions, anti-spam, server ACLs, room
-directory changes, room alias transfers, account deactivation, room shutdown, and more.
+directory changes and room alias transfers.
 
-A Synapse module is also available to apply the same rulesets the bot uses across an entire
-homeserver.
+Support is also provided for some Synapse admin functions such as account
+deactivation and room shutdown.
+
+A Synapse module is also available to apply the same rulesets the bot is watching
+across an entire homeserver.
+
+### Differences from Mjolnir
+
+The main difference from Mjolnir is that it is no longer necessary to use
+commands for some functions. Banning a user in a protected room from your
+Matrix client will cause Draupnir to show a prompt in the management room,
+which will offer to add the ban to a policy list.
+
+If you do still wish to use the ban command, please note that users
+and other entities that are being banned are now the first argument
+to the ban command. It is now also possible to provide only the entity to
+Draupnir and have Draupnir prompt you for the policy list and the ban reason.
+
+In general, any command that has been migrated to the new interface will
+feature better error messages for common problems and allow admins
+to trace the cause of unexpected errors much more easily.
 
 ## Setting up
 
@@ -88,7 +111,12 @@ server can only receive requests from your reverse proxy (e.g. `localhost`).
 
 ## Development
 
-TODO. It's a TypeScript project with a linter.
+Draupnir is a TypeScript project that depends on the labour of a handful of
+developers, testers and users. The code base is in relatively good shape,
+and if you would like to contribute or gain an understanding of the workings
+of Draupnir, please read our [context document](./docs/context.md).
+
+Once you have done that, go ahead and read our [contributing document](./CONTRIBUTING.md)
 
 ### Development and testing with mx-tester
 
