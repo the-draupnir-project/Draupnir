@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import { MatrixGlob } from "matrix-bot-sdk";
-import { setToArray } from "../utils";
 
 export interface ServerAclContent {
     allow: string[];
@@ -93,15 +92,15 @@ export class ServerAcl {
 
     public literalAclContent(): ServerAclContent {
         return {
-            allow: setToArray(this.allowedServers),
-            deny: setToArray(this.deniedServers),
+            allow: [...this.allowedServers],
+            deny: [...this.deniedServers],
             allow_ip_literals: this.allowIps,
         };
     }
 
     public safeAclContent(): ServerAclContent {
-        const allowed = setToArray(this.allowedServers);
-        if (!allowed || allowed.length === 0) {
+        const allowed = [...this.allowedServers];
+        if (allowed.length === 0) {
             allowed.push("*"); // allow everything
         }
         if (!allowed.some(server => new MatrixGlob(server).test(this.homeserver))) {
@@ -125,7 +124,7 @@ export class ServerAcl {
         let denyMatches = true; // until proven false
         let ipsMatch = ips === this.allowIps;
 
-        const currentAllowed = setToArray(this.allowedServers);
+        const currentAllowed = [...this.allowedServers];
         if (allow.length === currentAllowed.length) {
             for (const s of allow) {
                 if (!currentAllowed.includes(s)) {
@@ -135,7 +134,7 @@ export class ServerAcl {
             }
         } else allowMatches = false;
 
-        const currentDenied = setToArray(this.deniedServers);
+        const currentDenied = [...this.deniedServers];
         if (deny.length === currentDenied.length) {
             for (const s of deny) {
                 if (!currentDenied.includes(s)) {
