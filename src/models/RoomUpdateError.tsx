@@ -71,11 +71,17 @@ export async function renderActionResult(
     return <fragment>
         <font color="#ff0000">
             {title}<br/>
-            <b>{errors.length} errors updating protected rooms!</b><br/>
         </font>
-        <ul>
-            {errors.map(error => renderErrorItem(error, viaServers))}
-        </ul>
+        <details>
+            <summary>
+                <font color="#ff0000">
+                    <b>{errors.length} errors updating protected rooms!</b><br/>
+                </font>
+            </summary>
+            <ul>
+                {errors.map(error => renderErrorItem(error, viaServers))}
+            </ul>
+        </details>
     </fragment>
 }
 
