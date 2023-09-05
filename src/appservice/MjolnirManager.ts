@@ -241,9 +241,32 @@ export class MjolnirManager {
      */
     @trace
     public async startMjolnirs(mjolnirRecords: MjolnirRecord[]): Promise<void> {
-        for (const mjolnirRecord of mjolnirRecords) {
-            await this.startMjolnir(mjolnirRecord);
-        }
+        // Start the bots in small parrallel batches instead of sequentially.
+        // This is to avoid a thundering herd of bots all starting at once.
+        // It also is to avoid that others have to wait for a single bot to start.
+
+        const batchSize = 5;
+
+        // Split the mjolnirRecords array into batches of batchSize.
+        const numBatches = Math.ceil(mjolnirRecords.length / batchSize);
+
+        const batches: MjolnirRecord[][] = new Array(numBatches);
+
+        mjolnirRecords.forEach((cur, idx) => {
+            const batchIdx = Math.floor(idx / batchSize);
+            if (!batches[batchIdx]) {
+                batches[batchIdx] = [];
+            }
+            batches[batchIdx].push(cur);
+        });
+
+        // Start each batch in parallel.
+        await Promise.allSettled(batches.map(async (batch) => {
+            // Start each mjolnir in the batch in parallel.
+            Promise.allSettled(batch.map(async (mjolnirRecord) => {
+                await this.startMjolnir(mjolnirRecord);
+            }));
+        }));
     }
 }
 
