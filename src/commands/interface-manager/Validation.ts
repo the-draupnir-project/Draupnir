@@ -24,6 +24,7 @@ limitations under the License.
  * However, this file is modified and the modifications in this file
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
+import { LogService } from "matrix-bot-sdk";
 
 type ValidationMatchExpression<Ok, Err> = { ok?: (ok: Ok) => any, err?: (err: Err) => any};
 
@@ -89,7 +90,7 @@ export class CommandError {
     public constructor(
         public readonly message: string,
     ) {
-
+        this.log();
     }
 
     /**
@@ -100,5 +101,9 @@ export class CommandError {
      */
     public static Result<Ok>(message: string, _options = {}): CommandResult<Ok> {
         return CommandResult.Err(new CommandError(message));
+    }
+
+    protected log(): void {
+        LogService.info("CommandError", this.message);
     }
 }
