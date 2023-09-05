@@ -25,11 +25,11 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 import { LogLevel, MatrixClient } from "matrix-bot-sdk"
-import { ERROR_KIND_FATAL } from "../models/RoomUpdateError";
-import { RoomUpdateError } from "../models/RoomUpdateError";
+import { IRoomUpdateError, RoomUpdateException } from "../models/RoomUpdateError";
 import { redactUserMessagesIn } from "../utils";
 import ManagementRoomOutput from "../ManagementRoomOutput";
 import { MatrixSendClient } from "../MatrixEmitter";
+import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
 
 export interface QueuedRedaction {
     /** The room which the redaction will take place in. */
@@ -119,25 +119,21 @@ export class EventRedactionQueue {
      * @param limitToRoomId If the roomId is provided, only redactions for that room will be processed.
      * @returns A description of any errors encountered by each QueuedRedaction that was processed.
      */
-    public async process(client: MatrixSendClient, managementRoom: ManagementRoomOutput, limitToRoomId?: string): Promise<RoomUpdateError[]> {
-        const errors: RoomUpdateError[] = [];
+    public async process(client: MatrixSendClient, managementRoom: ManagementRoomOutput, limitToRoomId?: string): Promise<IRoomUpdateError[]> {
+        const errors: IRoomUpdateError[] = [];
         const redact = async (currentBatch: QueuedRedaction[]) => {
             for (const redaction of currentBatch) {
                 try {
                     await redaction.redact(client, managementRoom);
                 } catch (e) {
-                    let roomError: RoomUpdateError;
-                    if (e.roomId && e.errorMessage && e.errorKind) {
-                        roomError = e;
-                    } else {
-                        const message = e.message || (e.body ? e.body.error : '<no message>');
-                        roomError = {
-                            roomId: redaction.roomId,
-                            errorMessage: message,
-                            errorKind: ERROR_KIND_FATAL,
-                        };
-                    }
-                    errors.push(roomError);
+                    const message = e.message || (e.body ? e.body.error : '<no message>');
+                    const error = new RoomUpdateException(
+                        redaction.roomId,
+                        CommandExceptionKind.Unknown,
+                        e,
+                        message
+                    );
+                    errors.push(error);
                 }
             }
         }
