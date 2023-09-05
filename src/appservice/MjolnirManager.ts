@@ -263,7 +263,7 @@ export class MjolnirManager {
         // Start each batch in parallel.
         await Promise.allSettled(batches.map(async (batch) => {
             // Start each mjolnir in the batch in parallel.
-            Promise.allSettled(batch.map(async (mjolnirRecord) => {
+            await Promise.allSettled(batch.map(async (mjolnirRecord) => {
                 await this.startMjolnir(mjolnirRecord);
             }));
         }));
