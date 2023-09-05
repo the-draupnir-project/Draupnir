@@ -40,7 +40,8 @@ import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomRef
 import { findPolicyListFromRoomReference } from "../commands/Ban";
 import PolicyList from "../models/PolicyList";
 import { renderListRules } from "../commands/Rules";
-import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION, printActionResult, RoomUpdateError } from "../models/RoomUpdateError";
+import { printActionResult, IRoomUpdateError, RoomUpdateException } from "../models/RoomUpdateError";
+import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
 
 const BAN_PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.ban_propagation';
 const UNBAN_PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.unban_propagation';
@@ -157,19 +158,20 @@ async function banReactionListener(this: ListenerContext, key: string, item: unk
     }
 }
 
-async function unbanFromAllLists(mjolnir: Mjolnir, user: string): Promise<RoomUpdateError[]> {
-    const errors: RoomUpdateError[] = [];
+async function unbanFromAllLists(mjolnir: Mjolnir, user: string): Promise<IRoomUpdateError[]> {
+    const errors: IRoomUpdateError[] = [];
     for (const list of mjolnir.policyListManager.lists) {
         try {
             await list.unbanEntity(RULE_USER, user);
         } catch (e) {
             LogService.info('BanPropagation', `Could not unban ${user} from ${list.roomRef}`, e);
             const message = e.message || (e.body ? e.body.error : '<no message>');
-            errors.push({
-                roomId: list.roomId,
-                errorMessage: message,
-                errorKind: message.includes("You don't have permission") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL
-            })
+            errors.push(new RoomUpdateException(
+                list.roomId,
+                message.includes("You don't have permission") ? CommandExceptionKind.Known : CommandExceptionKind.Unknown,
+                e,
+                message
+            ));
         }
     }
     return errors;

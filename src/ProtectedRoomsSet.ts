@@ -25,14 +25,15 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { LogLevel, LogService, MatrixGlob, UserID } from "matrix-bot-sdk";
+import { LogLevel, MatrixGlob, UserID } from "matrix-bot-sdk";
+import { CommandExceptionKind } from "./commands/interface-manager/CommandException";
 import { IConfig } from "./config";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { MatrixSendClient } from "./MatrixEmitter";
 import AccessControlUnit, { Access } from "./models/AccessControlUnit";
 import { RULE_ROOM, RULE_SERVER, RULE_USER } from "./models/ListRule";
 import PolicyList, { ListRuleChange, Revision } from "./models/PolicyList";
-import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION, printActionResult, RoomUpdateError } from "./models/RoomUpdateError";
+import { printActionResult, IRoomUpdateError, RoomUpdateException } from "./models/RoomUpdateError";
 import { ProtectionManager } from "./protections/ProtectionManager";
 import { EventRedactionQueue, RedactUserInRoom } from "./queues/EventRedactionQueue";
 import { ProtectedRoomActivityTracker } from "./queues/ProtectedRoomActivityTracker";
@@ -181,7 +182,7 @@ export class ProtectedRoomsSet {
      * @param roomId Limit processing to one room only, otherwise process redactions for all rooms.
      * @returns The list of errors encountered, for reporting to the management room.
      */
-    public async processRedactionQueue(roomId?: string): Promise<RoomUpdateError[]> {
+    public async processRedactionQueue(roomId?: string): Promise<IRoomUpdateError[]> {
         return await this.eventRedactionQueue.process(this.client, this.managementRoomOutput, roomId);
     }
 
@@ -290,7 +291,7 @@ export class ProtectedRoomsSet {
      * @param {string[]} roomIds The room IDs to apply the ACLs in.
      * @param {Mjolnir} mjolnir The Mjolnir client to apply the ACLs with.
      */
-    private async applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<RoomUpdateError[]> {
+    private async applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<IRoomUpdateError[]> {
         // we need to provide mutual exclusion so that we do not have requests updating the m.room.server_acl event
         // finish out of order and therefore leave the room out of sync with the policy lists.
         if (this.config.disableServerACL) {
@@ -303,7 +304,7 @@ export class ProtectedRoomsSet {
         });
     }
 
-    private async _applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<RoomUpdateError[]> {
+    private async _applyServerAcls(lists: PolicyList[], roomIds: string[]): Promise<IRoomUpdateError[]> {
         const serverName: string = new UserID(await this.client.getUserId()).domain;
 
         // Construct a server ACL first
@@ -315,7 +316,7 @@ export class ProtectedRoomsSet {
             await this.client.sendNotice(this.managementRoomId, `Constructed server ACL:\n${JSON.stringify(finalAcl, null, 2)}`);
         }
 
-        const errors: RoomUpdateError[] = [];
+        const errors: IRoomUpdateError[] = [];
         for (const roomId of roomIds) {
             try {
                 await this.managementRoomOutput.logMessage(LogLevel.DEBUG, "ApplyAcl", `Checking ACLs for ${roomId}`, roomId);
@@ -340,8 +341,8 @@ export class ProtectedRoomsSet {
                 }
             } catch (e) {
                 const message = e.message || (e.body ? e.body.error : '<no message>');
-                const kind = message && message.includes("You don't have permission to post that to the room") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL;
-                errors.push({ roomId, errorMessage: message, errorKind: kind });
+                const kind = message && message.includes("You don't have permission to post that to the room") ? CommandExceptionKind.Known : CommandExceptionKind.Unknown;
+                errors.push(new RoomUpdateException(roomId, kind, e, message))
             }
         }
         return errors;
@@ -353,17 +354,18 @@ export class ProtectedRoomsSet {
      * @param {string[]} roomIds The room IDs to apply the bans in.
      * @param {Mjolnir} mjolnir The Mjolnir client to apply the bans with.
      */
-    private async applyUserBans(roomIds: string[]): Promise<RoomUpdateError[]> {
+    private async applyUserBans(roomIds: string[]): Promise<IRoomUpdateError[]> {
         // We can only ban people who are not already banned, and who match the rules.
-        const errors: RoomUpdateError[] = [];
+        const errors: IRoomUpdateError[] = [];
 
         const addErrorToReport = (roomId: string, e: any) => {
             const message = e.message || (e.body ? e.body.error : '<no message>');
-            errors.push({
+            errors.push(new RoomUpdateException(
                 roomId,
-                errorMessage: message,
-                errorKind: message && message.includes("You don't have permission to ban") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL,
-            });
+                message && message.includes("You don't have permission to ban") ? CommandExceptionKind.Known : CommandExceptionKind.Unknown,
+                e,
+                message
+            ));
         };
 
         for (const roomId of roomIds) {
@@ -461,28 +463,25 @@ export class ProtectedRoomsSet {
     }
 
     private async printActionResult(
-        errors: RoomUpdateError[],
+        errors: IRoomUpdateError[],
         renderOptions: { title?: string, noErrorsText?: string }
     ): Promise<void> {
         printActionResult(this.client, this.managementRoomId, errors, renderOptions);
     }
 
-    public async unbanUser(user: string): Promise<RoomUpdateError[]> {
-        const errors: RoomUpdateError[] = [];
+    public async unbanUser(user: string): Promise<IRoomUpdateError[]> {
+        const errors: IRoomUpdateError[] = [];
         for (const room of this.protectedRoomActivityTracker.protectedRoomsByActivity()) {
             try {
                 await this.client.unbanUser(user, room);
             } catch (e) {
-                // FIXME: We need to know if `info` is acceptable or not.
-                // Technically these kinds of errors are expected to occur,
-                // so not sure if it warrants reporting as ERROR.
-                LogService.info('ProtectedRoomSet', `Unable to unban a user ${user} from ${room}`, e);
                 const message = e.message || (e.body ? e.body.error : '<no message>');
-                errors.push({
-                    roomId: room,
-                    errorMessage: message,
-                    errorKind: message && message.includes("You don't have permission to ban") ? ERROR_KIND_PERMISSION : ERROR_KIND_FATAL,
-                });
+                errors.push(new RoomUpdateException(
+                    room,
+                    message && message.includes("You don't have permission to ban") ? CommandExceptionKind.Known : CommandExceptionKind.Unknown,
+                    e,
+                    message
+                ));
             }
         }
         return errors;
@@ -493,7 +492,7 @@ export class ProtectedRoomsSet {
     }
 
     public async verifyPermissions() {
-        const errors: RoomUpdateError[] = [];
+        const errors: IRoomUpdateError[] = [];
         for (const roomId of this.protectedRooms) {
             errors.push(...(await this.protectionManager.verifyPermissionsIn(roomId)));
         }

@@ -26,24 +26,48 @@ limitations under the License.
  */
 
 import { UserID } from "matrix-bot-sdk";
+import { CommandException, CommandExceptionKind } from "../commands/interface-manager/CommandException";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { CommandError, CommandResult } from "../commands/interface-manager/Validation";
 import { MatrixSendClient } from "../MatrixEmitter";
 
-export const ERROR_KIND_PERMISSION = "permission";
-export const ERROR_KIND_FATAL = "fatal";
-
-export interface RoomUpdateError {
-    roomId: string;
-    errorMessage: string;
-    errorKind: string;
+export interface IRoomUpdateError extends CommandError {
+    readonly roomId: string,
 }
 
-function renderErrorItem(error: RoomUpdateError, viaServers: string[]): DocumentNode {
+export class PermissionError extends CommandError implements IRoomUpdateError  {
+    constructor(
+        public readonly roomId: string,
+        message: string
+    ) {
+        super(message);
+    }
+}
+
+export class RoomUpdateException extends CommandException implements IRoomUpdateError {
+    roomId: string;
+
+    constructor(public readonly: string, ...args: ConstructorParameters<typeof CommandException>) {
+        super(...args);
+    }
+
+    public static Result<Ok>(
+        message: string,
+        options: {
+            exception: Error,
+            exceptionKind: CommandExceptionKind,
+            roomId: string
+        }): CommandResult<Ok, RoomUpdateException> {
+        return CommandResult.Err(new RoomUpdateException(options.roomId, options.exceptionKind, options.exception, message));
+    }
+}
+
+function renderErrorItem(error: IRoomUpdateError, viaServers: string[]): DocumentNode {
     return <li>
-        <a href={Permalinks.forRoom(error.roomId, viaServers)}>{error.roomId}</a> - {error.errorMessage}
+        <a href={Permalinks.forRoom(error.roomId, viaServers)}>{error.roomId}</a> - {error.message}
     </li>
 }
 
@@ -58,7 +82,7 @@ function renderErrorItem(error: RoomUpdateError, viaServers: string[]): Document
  */
 export async function renderActionResult(
     client: MatrixSendClient,
-    errors: RoomUpdateError[],
+    errors: IRoomUpdateError[],
     { title = 'There were errors updating protected rooms.', noErrorsText = 'Done updating rooms - no errors.'}: { title?: string, noErrorsText?: string } = {}
 ): Promise<DocumentNode> {
     if (errors.length === 0) {
@@ -97,7 +121,7 @@ export async function renderActionResult(
 export async function printActionResult(
     client: MatrixSendClient,
     roomId: string,
-    errors: RoomUpdateError[],
+    errors: IRoomUpdateError[],
     renderOptions: { title?: string, noErrorsText?: string } = {}
 ): Promise<void> {
     await renderMatrixAndSend(
