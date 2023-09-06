@@ -234,6 +234,24 @@ export class MjolnirManager {
         }
     }
 
+    /**
+     * Makes chunks for the startup of the bot
+     * @param chunk_size The size each chunk will be
+     * @param iter The data that should be split into chunks
+     */
+    private *chunked(chunk_size: number, iter: MjolnirRecord[]) {
+        let r = [];
+        for (const x of iter) {
+            r.push(x);
+            if (r.length === chunk_size) {
+                yield r;
+                r = [];
+            }
+        }
+        if (r.length) yield r;
+    }
+
+
     // TODO: We need to check that an owner still has access to the appservice each time they send a command to the mjolnir or use the web api.
     // https://github.com/matrix-org/mjolnir/issues/410
     /**
@@ -246,19 +264,7 @@ export class MjolnirManager {
         // It also is to avoid that others have to wait for a single bot to start.
 
         const batchSize = 5;
-
-        // Split the mjolnirRecords array into batches of batchSize.
-        const numBatches = Math.ceil(mjolnirRecords.length / batchSize);
-
-        const batches: MjolnirRecord[][] = new Array(numBatches);
-
-        mjolnirRecords.forEach((cur, idx) => {
-            const batchIdx = Math.floor(idx / batchSize);
-            if (!batches[batchIdx]) {
-                batches[batchIdx] = [];
-            }
-            batches[batchIdx].push(cur);
-        });
+        const batches: MjolnirRecord[][] = [...this.chunked(batchSize, mjolnirRecords)];
 
         // Start each batch in parallel.
         await Promise.allSettled(batches.map(async (batch) => {
