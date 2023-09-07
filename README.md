@@ -48,16 +48,23 @@ across an entire homeserver.
 The main difference from Mjolnir is that it is no longer necessary to use
 commands for some functions. Banning a user in a protected room from your
 Matrix client will cause Draupnir to show a prompt in the management room,
-which will offer to add the ban to a policy list.
+which will offer to add the ban to a policy list[^the-gif-width].
+
+![A demo showing a propagation prompt](docs/ban-propagation-prompt.gif)
 
 If you do still wish to use the ban command, please note that users
 and other entities that are being banned are now the first argument
 to the ban command. It is now also possible to provide only the entity to
 Draupnir and have Draupnir prompt you for the policy list and the ban reason.
 
+![A demo showing the ban command](docs/ban-command-prompt.gif)
+
 In general, any command that has been migrated to the new interface will
 feature better error messages for common problems and allow admins
 to trace the cause of unexpected errors much more easily.
+
+[^the-gif-width]: Yes, i know they don't align horizontally,
+you are welcome to suggest how this should be fixed.
 
 ## Setting up
 
