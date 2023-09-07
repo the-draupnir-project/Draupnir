@@ -1,6 +1,6 @@
 {
   "name": "draupnir",
-  "version": "1.84.0",
+  "version": "1.85.0",
   "description": "A moderation tool for Matrix",
   "main": "lib/index.js",
   "repository": "https://github.com/Gnuxie/Draupnir.git",
