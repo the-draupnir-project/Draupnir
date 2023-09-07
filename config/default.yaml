@@ -51,9 +51,11 @@ recordIgnoredInvites: false
 # (see verboseLogging to adjust this a bit.)
 managementRoom: "#moderators:example.org"
 
+# Deprecated and will be removed in a future version.
+# Running with verboseLogging is unsupported.
 # Whether Draupnir should log a lot more messages in the room,
 # mainly involves "all-OK" messages, and debugging messages for when draupnir checks bans in a room.
-verboseLogging: true
+verboseLogging: false
 
 # The log level of terminal (or container) output,
 # can be one of DEBUG, INFO, WARN and ERROR, in increasing order of importance and severity.
