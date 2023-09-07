@@ -32,6 +32,7 @@ export class CommandException extends CommandError {
         public readonly exception: Error|unknown,
         message: string) {
         super(message)
+        this.log();
     }
 
     public static Result<Ok>(message: string, options: { exception: Error, exceptionKind: CommandExceptionKind }): CommandResult<Ok, CommandException> {
