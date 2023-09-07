@@ -19,6 +19,8 @@ As Draupnir heads towards `v2.0.0`, releases will appear [here](https://github.c
 Until `v2.0.0` there will be frequent changes to commands but all of these
 will be noted in the changes for that release.
 
+### Migration
+
 Migrating from Mjolnir is straightforward and requires no manual steps,
 migration for your setup is likely as simple as changing your server config to
 pull the latest Draupnir docker image instead of a mjolnir one.

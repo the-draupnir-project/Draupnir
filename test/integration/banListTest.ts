@@ -597,7 +597,7 @@ describe('Test: Creating policy lists.', function() {
     })
 })
 
-describe.only('Test: Continue to ban other marked members when one member cannot be banned', function() {
+describe('Test: Continue to ban other marked members when one member cannot be banned', function() {
     it('Failing to ban a moderator should not stop other members being banned.', async function(this: MjolnirTestContext) {
         if (this.mjolnir === undefined) {
             throw new TypeError("Mjolnir was never created.")
