@@ -71,7 +71,7 @@ export class AppserviceCommandHandler {
                     client: this.appservice.bridge.getBot().getClient(),
                     emitter: new AppserviceBotEmitter(),
                 };
-                adaptor.invoke(context, context, ...argumentStream.rest());
+                await adaptor.invoke(context, context, ...argumentStream.rest());
                 return;
             }
         }
