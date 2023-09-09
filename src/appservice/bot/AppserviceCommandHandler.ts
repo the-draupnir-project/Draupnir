@@ -66,7 +66,7 @@ export class AppserviceCommandHandler {
         ];
         if (ownProfile) {
             prefixes.push(...[
-                ownProfile['displayname'] + ".",
+                ownProfile['displayname'] + ":",
                 ownProfile['displayname'] + " "
             ])
         }
