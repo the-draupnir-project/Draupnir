@@ -199,7 +199,7 @@ export class MjolnirAppService {
         }
         this.accessControl.handleEvent(mxEvent['room_id'], mxEvent);
         this.mjolnirManager.onEvent(request, context);
-        this.commands.handleEvent(mxEvent);
+        await this.commands.handleEvent(mxEvent);
     }
 
     /**

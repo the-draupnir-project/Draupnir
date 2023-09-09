@@ -50,12 +50,14 @@ export class AppserviceCommandHandler {
     }
 
     @trace
-    public handleEvent(mxEvent: WeakEvent): void {
+    public async handleEvent(mxEvent: WeakEvent): Promise<void> {
         if (mxEvent.type !== 'm.room.message' && mxEvent.room_id !== this.appservice.config.adminRoom) {
             return;
         }
         const body = typeof mxEvent.content['body'] === 'string' ? mxEvent.content['body'] : '';
-        if (body.startsWith(this.appservice.bridge.getBot().getUserId())) {
+        const ownUserId = this.appservice.bridge.getBot().getUserId();
+        const ownProfile = await this.appservice.bridge.getBot().getClient().getUserProfile(ownUserId);
+        if (body.startsWith(ownUserId) || (ownProfile && body.startsWith(ownProfile['displayname']))) {
             const readItems = readCommand(body).slice(1); // remove "!mjolnir"
             const argumentStream = new ArgumentStream(readItems);
             const command = this.commandTable.findAMatchingCommand(argumentStream);
