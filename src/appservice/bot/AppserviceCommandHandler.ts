@@ -56,24 +56,42 @@ export class AppserviceCommandHandler {
         }
         const body = typeof mxEvent.content['body'] === 'string' ? mxEvent.content['body'] : '';
         const ownUserId = this.appservice.bridge.getBot().getUserId();
+        const localpart = ownUserId.split(":")[0].substring(1);
         const ownProfile = await this.appservice.bridge.getBot().getClient().getUserProfile(ownUserId);
-        if (body.startsWith(ownUserId) || (ownProfile && body.startsWith(ownProfile['displayname']))) {
-            console.log("Got admin command");
-            const readItems = readCommand(body).slice(1); // remove "!mjolnir"
-            const argumentStream = new ArgumentStream(readItems);
-            const command = this.commandTable.findAMatchingCommand(argumentStream);
-            if (command) {
-                const adaptor = findMatrixInterfaceAdaptor(command);
-                const context: AppserviceContext = {
-                    appservice: this.appservice,
-                    roomId: mxEvent.room_id,
-                    event: mxEvent,
-                    client: this.appservice.bridge.getBot().getClient(),
-                    emitter: new AppserviceBotEmitter(),
-                };
-                await adaptor.invoke(context, context, ...argumentStream.rest());
-                return;
-            }
+        const prefixes = [
+            localpart + ":",
+            ownUserId + ":",
+            localpart + " ",
+            ownUserId + " "
+        ];
+        if (ownProfile) {
+            prefixes.push(...[
+                ownProfile['displayname'] + ".",
+                ownProfile['displayname'] + " "
+            ])
         }
+
+
+        const prefixUsed = prefixes.find(p => body.toLowerCase().startsWith(p.toLowerCase()));
+        if (!prefixUsed) return;
+
+        console.log("Got admin command");
+        let restOfBody = body.substring(prefixUsed.length);
+        const readItems = readCommand(restOfBody)
+        const argumentStream = new ArgumentStream(readItems);
+        const command = this.commandTable.findAMatchingCommand(argumentStream);
+        if (command) {
+            const adaptor = findMatrixInterfaceAdaptor(command);
+            const context: AppserviceContext = {
+                appservice: this.appservice,
+                roomId: mxEvent.room_id,
+                event: mxEvent,
+                client: this.appservice.bridge.getBot().getClient(),
+                emitter: new AppserviceBotEmitter(),
+            };
+            await adaptor.invoke(context, context, ...argumentStream.rest());
+            return;
+        }
+
     }
 }
