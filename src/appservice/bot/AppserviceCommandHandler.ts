@@ -58,6 +58,7 @@ export class AppserviceCommandHandler {
         const ownUserId = this.appservice.bridge.getBot().getUserId();
         const ownProfile = await this.appservice.bridge.getBot().getClient().getUserProfile(ownUserId);
         if (body.startsWith(ownUserId) || (ownProfile && body.startsWith(ownProfile['displayname']))) {
+            console.log("Got admin command");
             const readItems = readCommand(body).slice(1); // remove "!mjolnir"
             const argumentStream = new ArgumentStream(readItems);
             const command = this.commandTable.findAMatchingCommand(argumentStream);
