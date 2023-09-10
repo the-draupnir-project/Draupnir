@@ -42,6 +42,7 @@ defineMatrixInterfaceAdaptor({
 
 export class AppserviceCommandHandler {
     private readonly commandTable = findCommandTable("appservice bot");
+    private ownProfile?: any;
 
     constructor(
         private readonly appservice: MjolnirAppService
@@ -57,17 +58,19 @@ export class AppserviceCommandHandler {
         const body = typeof mxEvent.content['body'] === 'string' ? mxEvent.content['body'] : '';
         const ownUserId = this.appservice.bridge.getBot().getUserId();
         const localpart = ownUserId.split(":")[0].substring(1);
-        const ownProfile = await this.appservice.bridge.getBot().getClient().getUserProfile(ownUserId);
+        if (!this.ownProfile) {
+            this.ownProfile = await this.appservice.bridge.getBot().getClient().getUserProfile(ownUserId);
+        }
         const prefixes = [
             localpart + ":",
             ownUserId + ":",
             localpart + " ",
             ownUserId + " "
         ];
-        if (ownProfile) {
+        if (this.ownProfile) {
             prefixes.push(...[
-                ownProfile['displayname'] + ":",
-                ownProfile['displayname'] + " "
+                this.ownProfile['displayname'] + ":",
+                this.ownProfile['displayname'] + " "
             ])
         }
 
