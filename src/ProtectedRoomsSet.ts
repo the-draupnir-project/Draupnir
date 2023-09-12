@@ -466,7 +466,7 @@ export class ProtectedRoomsSet {
         errors: IRoomUpdateError[],
         renderOptions: { title?: string, noErrorsText?: string }
     ): Promise<void> {
-        printActionResult(this.client, this.managementRoomId, errors, renderOptions);
+        await printActionResult(this.client, this.managementRoomId, errors, renderOptions);
     }
 
     public async unbanUser(user: string): Promise<IRoomUpdateError[]> {
