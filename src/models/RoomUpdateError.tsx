@@ -48,9 +48,7 @@ export class PermissionError extends CommandError implements IRoomUpdateError  {
 }
 
 export class RoomUpdateException extends CommandException implements IRoomUpdateError {
-    roomId: string;
-
-    constructor(public readonly: string, ...args: ConstructorParameters<typeof CommandException>) {
+    constructor(public readonly roomId: string, ...args: ConstructorParameters<typeof CommandException>) {
         super(...args);
     }
 
