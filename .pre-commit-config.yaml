@@ -13,7 +13,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: "v8.48.0"
+    rev: "v8.49.0"
     hooks:
       - id: eslint
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
@@ -21,13 +21,13 @@ repos:
         args: [--no-eslintrc, --config, .eslintrc.js, --fix]
         additional_dependencies: [
             # https://www.npmjs.com/package/eslint
-            "eslint@v8.48.0",
+            "eslint@v8.49.0",
             # https://www.npmjs.com/package/eslint-plugin-editorconfig
             "eslint-plugin-editorconfig@4.0.3",
             # https://www.npmjs.com/package/@typescript-eslint/eslint-plugin
-            "@typescript-eslint/eslint-plugin@6.5.0",
+            "@typescript-eslint/eslint-plugin@6.7.0",
             # https://www.npmjs.com/package/@typescript-eslint/parser
-            "@typescript-eslint/parser@6.5.0"
+            "@typescript-eslint/parser@6.7.0"
           ]
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: "2.7.2"
