@@ -38,7 +38,7 @@ import { IConfig } from "../config";
  */
 const API_PREFIX = "/api/1";
 
-const AUTHORIZATION: RegExp = new RegExp("Bearer (.*)");
+const AUTHORIZATION = new RegExp("Bearer (.*)");
 
 export class WebAPIs {
     private webController: express.Express = express();
