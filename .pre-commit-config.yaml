@@ -19,7 +19,7 @@ repos:
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
         types: [file]
         exclude: ^.eslintrc.js|test\/.*$$
-        args: [--no-eslintrc, --config, .eslintrc.js, --fix]
+        args: [--no-eslintrc, --config, .eslintrc.js]
         additional_dependencies: [
             # https://www.npmjs.com/package/eslint
             "eslint@v8.49.0",
