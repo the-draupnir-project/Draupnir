@@ -303,9 +303,7 @@ describe('Test: ACL updates will batch when rules are added in succession.', fun
 })
 
 describe('Test: unbaning entities via the PolicyList.', function() {
-    afterEach(function() {
- this.moderator?.stop();
-});
+    afterEach(function() { this.moderator?.stop(); });
     it('Will remove rules that have legacy types', async function() {
         const mjolnir: Mjolnir = this.mjolnir!
         const serverName: string = new UserID(await mjolnir.client.getUserId()).domain
