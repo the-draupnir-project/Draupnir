@@ -18,7 +18,7 @@ repos:
       - id: eslint
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
         types: [file]
-        args: [--fix]
+        args: [--no-eslintrc, --config, .eslintrc.js, --fix]
         additional_dependencies: [
             # https://www.npmjs.com/package/eslint
             "eslint@v8.48.0",
