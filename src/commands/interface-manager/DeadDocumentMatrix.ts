@@ -31,6 +31,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
         context.output.commit(commitNode);
     };
     if (node.tag !== NodeTag.Root) {
+        // rendering has to start (and end) with a committable node.
         throw new TypeError("Tried to render a node without a root, this will not be committable");
     }
     const markdownOutput = new PagedDuplexStream();

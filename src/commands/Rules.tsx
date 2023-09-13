@@ -60,7 +60,7 @@ async function renderListMatches(
     )
 }
 
-function renderListRules(list: ListMatches) {
+export function renderListRules(list: ListMatches) {
     const renderRuleSummary = (rule: ListRule, entityDescription: string) => {
         return <li>
             {entityDescription} (<code>{rule.recommendation}</code>): <code>{rule.entity}</code> ({rule.reason})

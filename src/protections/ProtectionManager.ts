@@ -39,11 +39,11 @@ import { LogLevel, LogService } from "matrix-bot-sdk";
 import { ProtectionSettingValidationError } from "./ProtectionSettings";
 import { Consequence } from "./consequence";
 import { htmlEscape, trace } from "../utils";
-import { ERROR_KIND_FATAL, ERROR_KIND_PERMISSION } from "../ErrorCache";
-import { RoomUpdateError } from "../models/RoomUpdateError";
+import { IRoomUpdateError, PermissionError, RoomUpdateException } from "../models/RoomUpdateError";
 import { BanPropagation } from "./BanPropagation";
 import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
@@ -403,8 +403,8 @@ export class ProtectionManager {
     }
 
     @trace
-    public async verifyPermissionsIn(roomId: string): Promise<RoomUpdateError[]> {
-        const errors: RoomUpdateError[] = [];
+    public async verifyPermissionsIn(roomId: string): Promise<IRoomUpdateError[]> {
+        const errors: IRoomUpdateError[] = [];
         const additionalPermissions = this.requiredProtectionPermissions();
 
         try {
@@ -432,35 +432,21 @@ export class ProtectionManager {
             const userLevel = plDefault(users[ownUserId], usersDefault);
             const aclLevel = plDefault(events["m.room.server_acl"], stateDefault);
 
-            // Wants: ban, kick, redact, m.room.server_acl
+            const addErrorToReport = (message: string) => {
+                errors.push(new PermissionError(roomId, message))
+            }
 
             if (userLevel < ban) {
-                errors.push({
-                    roomId,
-                    errorMessage: `Missing power level for bans: ${userLevel} < ${ban}`,
-                    errorKind: ERROR_KIND_PERMISSION,
-                });
+                addErrorToReport(`Missing power level for bans: ${userLevel} < ${ban}`);
             }
             if (userLevel < kick) {
-                errors.push({
-                    roomId,
-                    errorMessage: `Missing power level for kicks: ${userLevel} < ${kick}`,
-                    errorKind: ERROR_KIND_PERMISSION,
-                });
+                addErrorToReport(`Missing power level for kicks: ${userLevel} < ${kick}`);
             }
             if (userLevel < redact) {
-                errors.push({
-                    roomId,
-                    errorMessage: `Missing power level for redactions: ${userLevel} < ${redact}`,
-                    errorKind: ERROR_KIND_PERMISSION,
-                });
+                addErrorToReport(`Missing power level for redactions: ${userLevel} < ${redact}`);
             }
-            if (userLevel < aclLevel) {
-                errors.push({
-                    roomId,
-                    errorMessage: `Missing power level for server ACLs: ${userLevel} < ${aclLevel}`,
-                    errorKind: ERROR_KIND_PERMISSION,
-                });
+            if (!this.mjolnir.config.disableServerACL && userLevel < aclLevel) {
+                addErrorToReport(`Missing power level for server ACLs: ${userLevel} < ${aclLevel}`);
             }
 
             // Wants: Additional permissions
@@ -469,24 +455,15 @@ export class ProtectionManager {
                 const permLevel = plDefault(events[additionalPermission], stateDefault);
 
                 if (userLevel < permLevel) {
-                    errors.push({
-                        roomId,
-                        errorMessage: `Missing power level for "${additionalPermission}" state events: ${userLevel} < ${permLevel}`,
-                        errorKind: ERROR_KIND_PERMISSION,
-                    });
+                    addErrorToReport(`Missing power level for "${additionalPermission}" state events: ${userLevel} < ${permLevel}`);
                 }
             }
 
             // Otherwise OK
         } catch (e) {
-            LogService.error("Mjolnir", e);
-            errors.push({
-                roomId,
-                errorMessage: e.message || (e.body ? e.body.error : '<no message>'),
-                errorKind: ERROR_KIND_FATAL,
-            });
+            const message = `Unexpected error when attempting to verify the permissions in ${roomId}`;
+            errors.push(new RoomUpdateException(roomId, CommandExceptionKind.Unknown, e, message));
         }
-
         return errors;
     }
 

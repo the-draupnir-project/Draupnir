@@ -339,6 +339,9 @@ export class Mjolnir {
 
             this.currentState = STATE_RUNNING;
             await this.managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "Startup complete. Now monitoring rooms.");
+            if (this.config.verboseLogging) {
+                await this.managementRoomOutput.logMessage(LogLevel.WARN, "Mjolnir@startup", "The use of verbose logging is deprecated and will be removed in a future version, check your config.");
+            }
         } catch (err) {
             try {
                 LogService.error("Mjolnir", "Error during startup:", err);
