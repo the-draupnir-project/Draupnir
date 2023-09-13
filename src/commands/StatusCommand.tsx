@@ -44,7 +44,9 @@ defineInterfaceCommand({
     designator: ["status"],
     table: "mjolnir",
     parameters: parameters([]),
-    command: async function () { return CommandResult.Ok(mjolnirStatusInfo.call(this)) },
+    command: async function () {
+ return CommandResult.Ok(mjolnirStatusInfo.call(this))
+},
     summary: "Show the status of the bot."
 })
 

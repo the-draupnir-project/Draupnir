@@ -82,7 +82,9 @@ function renderMjolnirHelp(mjolnirTable: CommandTable): DocumentNode {
 defineInterfaceCommand({
     parameters: parameters([], new RestDescription('command parts', findPresentationType("any"))),
     table: "mjolnir",
-    command: async function() { return CommandResult.Ok(findCommandTable("mjolnir")) },
+    command: async function() {
+ return CommandResult.Ok(findCommandTable("mjolnir"))
+},
     designator: ["help"],
     summary: "Display this message"
 })
