@@ -30,7 +30,7 @@ import { findPresentationType, parameters } from "./interface-manager/ParameterP
 import { MjolnirContext } from "./CommandHandler";
 import { MatrixRoomID, MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { CommandResult } from "./interface-manager/Validation";
-import { CommandException } from "./interface-manager/CommandException";
+import { CommandException, CommandExceptionKind } from "./interface-manager/CommandException";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { DocumentNode } from "./interface-manager/DeadDocument";
@@ -92,7 +92,7 @@ defineInterfaceCommand({
                 return CommandException.Result<MatrixRoomID>(
                     `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
                     Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
-                    { exception: e }
+                    { exception: e, exceptionKind: CommandExceptionKind.Unknown }
                 );
             }
         })();
@@ -121,7 +121,10 @@ defineInterfaceCommand({
         try {
             await this.mjolnir.client.leaveRoom(roomID.toRoomIdOrAlias());
         } catch (exception) {
-            return CommandException.Result(`Failed to leave ${roomRef.toPermalink()} - the room is no longer being protected, but the bot could not leave.`, { exception });
+            return CommandException.Result(
+                `Failed to leave ${roomRef.toPermalink()} - the room is no longer being protected, but the bot could not leave.`,
+                { exceptionKind: CommandExceptionKind.Unknown, exception }
+            );
         }
         return CommandResult.Ok(undefined);
     },

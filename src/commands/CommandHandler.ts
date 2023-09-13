@@ -48,7 +48,7 @@ import { BaseFunction, CommandTable, defineCommandTable, findCommandTable, findT
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParameterParsing";
 import { CommandResult } from "./interface-manager/Validation";
-import { CommandException } from "./interface-manager/CommandException";
+import { CommandException, CommandExceptionKind } from "./interface-manager/CommandException";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import "./interface-manager/MatrixPresentations";
 
@@ -72,6 +72,7 @@ import "./Rooms";
 import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
+import "./SetDisplayNameCommand";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
@@ -124,7 +125,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             const readItems = readCommand(cmd).slice(1); // remove "!mjolnir"
             const stream = new ArgumentStream(readItems);
             const command = commandTable.findAMatchingCommand(stream)
-            ?? findTableCommand("mjolnir", "help");
+                ?? findTableCommand("mjolnir", "help");
             const adaptor = findMatrixInterfaceAdaptor(command);
             const mjolnirContext: MjolnirContext = {
                 mjolnir, roomId, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
@@ -132,7 +133,7 @@ export async function handleCommand(roomId: string, event: { content: { body: st
             try {
                 return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
             } catch (e) {
-                const commandError = new CommandException(e, 'Unknown Unexpected Error');
+                const commandError = new CommandException(CommandExceptionKind.Unknown, e, 'Unknown Unexpected Error');
                 await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomId, event, CommandResult.Err(commandError));
             }
         }

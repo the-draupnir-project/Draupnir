@@ -4,8 +4,25 @@
  */
 
 import { htmlEscape } from "../../utils";
-import { FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer } from "./DeadDocument";
+import { DocumentNode, FringeLeafRenderFunction, FringeType, LeafNode, NodeTag, SimpleFringeRenderer, TagDynamicEnvironment } from "./DeadDocument";
 import { blank, staticString, TransactionalOutputContext } from "./DeadDocumentMarkdown";
+
+function writeAttributableNode(tagName: string, _fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, _environment: TagDynamicEnvironment) {
+    context.output.writeString(`<${tagName}`);
+    if (node.attributeMap.size > 0) {
+        for (const [key, value] of node.attributeMap.entries()) {
+            context.output.writeString(` ${htmlEscape(key)}="${htmlEscape(value)}"`);
+        }
+    }
+    context.output.writeString('>')
+}
+
+function attributableNode(tagName: string) {
+    return function(fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        writeAttributableNode(tagName, fringe, node, context, environment);
+    }
+}
+
 
 export const HTML_RENDERER = new SimpleFringeRenderer<TransactionalOutputContext>();
 
@@ -52,16 +69,11 @@ HTML_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputConte
     staticString('<i>'),
     staticString('</i>')
 ).registerInnerNode(NodeTag.Anchor,
-    function(_fringe, node, context, _environment) {
-        context.output.writeString('<a');
-        if (node.attributeMap.size > 0) {
-            for (const [key, value] of node.attributeMap.entries()) {
-                context.output.writeString(` ${htmlEscape(key)}="${htmlEscape(value)}"`);
-            }
-        }
-        context.output.writeString('>')
-    },
+    attributableNode('a'),
     staticString('</a>')
+).registerInnerNode(NodeTag.Font,
+    attributableNode('font'),
+    staticString('</font>')
 ).registerInnerNode(NodeTag.Root,
     blank,
     blank

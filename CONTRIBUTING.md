@@ -4,13 +4,15 @@ Draupnir is licensed under the Cooperative Software License.
 The reason for the license is simply because this project
 was something that I was previously employed to work on.
 
-I have not decided whether I will accept contributions under the same license
-or another license or a CLA yet.
-I will welcome advice, but I will not welcome attempts to parsuade me to re-adopt
-and relicense under Apache-2.0 unless being offered compensation.
+I have not decided whether I will accept contributions under the
+same license or another license or a CLA yet.
+I will welcome advice, but I will not welcome attempts to parsuade
+me to re-adopt and relicense under Apache-2.0 unless being offered
+compensation.
 
-The easiest way forwards would be for me to accept individual contributions under
-Apache-2.0.
+As of now, I am accepting contributions under the Apache-2.0 license
+in the same way as Mjolnir. This allows me the option to relicense
+Draupnir under Apache-2.0 without needing to chase up all contributors.
 
 ## How to contribute
 
@@ -185,3 +187,58 @@ matrix together all the fragmented communication technologies out there we are
 reliant on contributions and collaboration from the community to do so. So
 please get involved - and we hope you have as much fun hacking on Matrix as we
 do!
+
+## Further notes on license and its relation to business in general
+
+Ultimately most open source software contributions start by gifting
+labour without any obligation or transaction.
+
+There is no ethical way to directly sell this labour.
+
+Many so called post open source[^post-open-source] ideas fixate on
+finding a way to conduct business in an ethical way,
+and this is problematic.
+
+Once you start working within capitalism with capitalism, and exchange
+your power and influence over a work to monitize the work itself,
+the work will gain inertia and a power of its own that you cannot control.
+You will work for the work, for external interests, and these won't
+be the interests of your powerless users who you were among to begin with.
+
+It would be extreme, but I am tempted to suggest that by performing a
+buisness this way, you are part of an effort
+which not only reinforces capitalism but works to make it more
+efficient. Effectively working to make capitalism more powerful.
+Congratulations.
+
+Another point that is often brought up in these discussions is how
+software licensing relies on an appeal to state power, the power of
+the law.
+
+Therefore I propose a new licensing model, one which appeals
+to the power of public pressure rather than the law.
+
+Such a license would be liberal, allowing incorperation into
+proprietary works provided it retained a notice.
+However, any work which is used in any way to conduct business must
+report all software being used by the buisness with this license,
+all turnover made by the buisness, all profit made by the buisness
+and an estimation of both profit and turnover made by the buisness in
+relation to the collection of software reported. 
+
+It is not clear to me how often these figures should be reported
+and when, or even where they should be reported to (ideally they could
+be found centrally). It is also unclear how to create the legalise
+required.
+
+With the information these licenses would provide, public pressure
+could then be used to demand reperations for the profits made by
+pillaging and destructive businesses.
+It is not clear yet how any reperations would be distributed,
+probably through some system of
+[venture communes](https://wiki.p2pfoundation.net/Venture_Commune).
+The idea is to ensure that the developers and users of projects
+would not be distracted from providing each other mutual
+support and to give them a hope of escaping.
+
+[^post-open-source] https://applied-langua.ge/posts/the-poverty-of-post-open-source.html.

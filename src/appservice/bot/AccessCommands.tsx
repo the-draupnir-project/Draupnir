@@ -18,6 +18,7 @@ defineInterfaceCommand({
         {
             name: 'user',
             acceptor: findPresentationType('UserID'),
+            description: 'The user that should be allowed to provision a bot'
         }
     ]),
     command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<CommandResult<void>> {
@@ -39,6 +40,7 @@ defineInterfaceCommand({
         {
             name: 'user',
             acceptor: findPresentationType('UserID'),
+            description: 'The user which shall not be allowed to provision bots anymore'
         }
     ]),
     command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<CommandResult<void>> {

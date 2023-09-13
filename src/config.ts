@@ -63,6 +63,7 @@ export interface IConfig {
     logMutedModules: string[],
     syncOnStartup: boolean;
     verifyPermissionsOnStartup: boolean;
+    disableServerACL: boolean;
     noop: boolean;
     protectedRooms: string[]; // matrix.to urls
     fasterMembershipChecks: boolean;
@@ -158,6 +159,7 @@ const defaultConfig: IConfig = {
     syncOnStartup: true,
     verifyPermissionsOnStartup: true,
     noop: false,
+    disableServerACL: false,
     protectedRooms: [],
     fasterMembershipChecks: false,
     automaticallyRedactForReasons: ["spam", "advertising"],

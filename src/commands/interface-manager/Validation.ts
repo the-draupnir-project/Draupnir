@@ -89,7 +89,7 @@ export class CommandError {
     public constructor(
         public readonly message: string,
     ) {
-
+        // nothing to do.
     }
 
     /**
