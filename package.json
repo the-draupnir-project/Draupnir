@@ -3,7 +3,7 @@
   "version": "1.85.1",
   "description": "A moderation tool for Matrix",
   "main": "lib/index.js",
-  "repository": "https://github.com/MTRNord/Draupnir.git",
+  "repository": "https://github.com/the-draupnir-project/Draupnir.git",
   "author": "Gnuxie",
   "license": "SEE LICENSE IN LICENSE",
   "private": true,

@@ -135,7 +135,6 @@ defineMatrixInterfaceAdaptor({
             {renderPolicyLists('Subscribed and protected policy lists', info.subscribedAndProtectedLists)}
             <b>Version: </b><code>{info.version}</code><br />
             <b>Repository: </b><code>{info.repository}</code><br />
-            <b>Draupnir project: </b><code>https://github.com/Gnuxie/Draupnir</code><br />
         </root>,
             commandRoomId,
             event,
