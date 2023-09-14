@@ -1,5 +1,5 @@
 # We can't use alpine anymore because crypto has rust deps.
-FROM --platform=$BUILDPLATFORM node:18-slim AS build
+FROM --platform=$BUILDPLATFORM node:20-slim AS build
 # install git
 RUN apt-get update && \
     apt-get install -y git\
@@ -8,12 +8,13 @@ COPY . .
 RUN yarn install --network-timeout 100000 \
     && yarn build
 
-FROM node:18-slim
+FROM node:20-slim
 
 COPY --from=build /lib /mjolnir
 COPY --from=build /node_modules /node_modules
 COPY --from=build mjolnir-entrypoint.sh .
 COPY --from=build version.txt .
+COPY --from=build package.json .
 
 ENV NODE_ENV=production
 ENV NODE_CONFIG_DIR=/data/config
