@@ -4,6 +4,7 @@ import { CompileRulesError, createScanner, initializeAsync } from "yara";
 import { access, constants } from "fs/promises";
 import { glob } from "glob";
 import { LogLevel } from "matrix-bot-sdk";
+import { Permalinks } from "../commands/interface-manager/Permalinks";
 
 type Rule = {
     // The rule file location
@@ -100,7 +101,8 @@ export class YaraDetection extends Protection {
 
         if (result?.rules?.length > 0) {
             for (const rule of result.rules) {
-                mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, this.name, `Yara matched:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
+                const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+                mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
             }
         }
     }
