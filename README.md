@@ -51,6 +51,8 @@ Matrix client will cause Draupnir to show a prompt in the management room,
 which will offer to add the ban to a policy list[^the-gif-width].
 
 ![A demo showing a propagation prompt](docs/ban-propagation-prompt.gif)
+![webp](docs/ban3-edit-WIP3.webp)
+![webp256](docs/ban3-edit-WIP3.256colors.webp)
 
 If you do still wish to use the ban command, please note that users
 and other entities that are being banned are now the first argument
