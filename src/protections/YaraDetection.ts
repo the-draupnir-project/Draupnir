@@ -5,6 +5,7 @@ import { access, constants } from "fs/promises";
 import { glob } from "glob";
 import { LogLevel } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
+import fetch from "node-fetch";
 
 type Rule = {
     // The rule file location
@@ -92,8 +93,41 @@ export class YaraDetection extends Protection {
             }
         }
 
-        // TODO: get media and also test the files
+        if (event['type'] === 'm.room.message') {
+            const content = event['content'] || {};
+            const msgtype = content['msgtype'] || 'm.text';
+            const formattedBody = content['formatted_body'] || '';
+            const isMedia = (msgtype !== 'm.text' && (content["url"] || content["info"]?.["thumbnail_url"])) || formattedBody.toLowerCase().includes('<img');
+            if (isMedia) {
+                // TODO: Decrypt files
+                const file_url = content["url"];
+                if (file_url) {
+                    const media_url = mjolnir.client.mxcToHttp(file_url)
+                    const response = await fetch(media_url);
+                    const body = await response.buffer();
+                    const result = await this.scanner.scanAsync({ buffer: body });
+                    this.handleScanResult(mjolnir, roomId, event, result);
+                }
+
+                if (content["info"]) {
+                    const thumbnail_file_url = content["info"]["thumbnail_url"];
+                    if (thumbnail_file_url) {
+                        const media_url = mjolnir.client.mxcToHttp(thumbnail_file_url)
+                        const response = await fetch(media_url);
+                        const body = await response.buffer();
+                        const result = await this.scanner.scanAsync({ buffer: body });
+                        this.handleScanResult(mjolnir, roomId, event, result);
+                    }
+
+                }
+            }
+        }
+        // Scan message itself
         const result = await this.scanner.scanAsync({ buffer: Buffer.from(JSON.stringify(event), 'utf8') });
+        this.handleScanResult(mjolnir, roomId, event, result);
+    }
+
+    private handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, result: any) {
         // FIXME: Untested
         if (result?.error) {
             //mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed:\nScan ${path} failed: ${error.message}`);
@@ -101,6 +135,8 @@ export class YaraDetection extends Protection {
 
         if (result?.rules?.length > 0) {
             for (const rule of result.rules) {
+                console.log(JSON.stringify(rule.tags))
+                console.log(JSON.stringify(rule.metas))
                 const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
                 mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
             }
