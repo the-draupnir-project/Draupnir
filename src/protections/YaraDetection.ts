@@ -93,6 +93,7 @@ export class YaraDetection extends Protection {
             }
         }
 
+        // Check for media and download + scan it
         if (event['type'] === 'm.room.message') {
             const content = event['content'] || {};
             const msgtype = content['msgtype'] || 'm.text';
@@ -124,10 +125,10 @@ export class YaraDetection extends Protection {
         }
         // Scan message itself
         const result = await this.scanner.scanAsync({ buffer: Buffer.from(JSON.stringify(event), 'utf8') });
-        this.handleScanResult(mjolnir, roomId, event, result);
+        await this.handleScanResult(mjolnir, roomId, event, result);
     }
 
-    private handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, result: any) {
+    private async handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, result: any) {
         // FIXME: Untested
         if (result?.error) {
             //mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed:\nScan ${path} failed: ${error.message}`);
@@ -137,9 +138,32 @@ export class YaraDetection extends Protection {
             for (const rule of result.rules) {
                 console.log(JSON.stringify(rule.tags))
                 console.log(JSON.stringify(rule.metas))
-                const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
-                mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
+                const action = rule.metas.filter((meta_object: any) => meta_object.id === "Action").map((meta_object: any) =>
+                    meta_object.value
+                )[0]
+                const notification_text = rule.metas.filter((meta_object: any) => meta_object.id === "NotifcationText").map((meta_object: any) =>
+                    meta_object.value
+                )[0]
+
+                if (action === "Notify") {
+                    await this.actionNotify(mjolnir, roomId, event, rule, notification_text);
+                } else if (action === "RedactAndNotify") {
+                    await mjolnir.client.redactEvent(roomId, event["event_id"]);
+                    this.actionNotify(mjolnir, roomId, event, rule, notification_text)
+                }
             }
+        }
+    }
+
+    /**
+     * This method does issue a notification inside of the admin room that the specific rule was matched
+     */
+    private async actionNotify(mjolnir: Mjolnir, roomId: string, event: any, rule: any, notificationText?: string) {
+        const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
+        if (notificationText) {
+            const userPermalink = Permalinks.forUser(event['sender']);
+            await mjolnir.client.sendNotice(roomId, `${userPermalink}: ${notificationText}`);
         }
     }
 }
