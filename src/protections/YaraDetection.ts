@@ -1,22 +1,14 @@
 import { Protection } from "./Protection";
 import { Mjolnir } from "../Mjolnir";
-import { CompileRulesError, createScanner, initializeAsync } from "yara";
 import { access, constants } from "fs/promises";
 import { glob } from "glob";
 import { LogLevel } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import fetch from "node-fetch";
-
-type Rule = {
-    // The rule file location
-    filename?: string;
-    // The rule in string form
-    string?: string;
-}
+import { YaraCompiler, YaraRule, YaraRuleMetadata, YaraRuleResult } from "@node_yara_rs/node-yara-rs";
 
 export class YaraDetection extends Protection {
-    private scanner = createScanner();
-    private static isInitialized = false;
+    private compiler: YaraCompiler;
 
     settings = {};
 
@@ -30,7 +22,7 @@ export class YaraDetection extends Protection {
             .catch(() => false)
     }
 
-    private async getRules(mjolnir: Mjolnir): Promise<Rule[]> {
+    private async getRules(mjolnir: Mjolnir): Promise<YaraRule[]> {
         const argv = process.argv;
         const configOptionIndex = argv.findIndex(arg => arg === "--yara-rules");
         if (configOptionIndex > 0) {
@@ -67,31 +59,20 @@ export class YaraDetection extends Protection {
 
     public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
         // We take the longer time on first startup to have a little cleaner setup.
-        if (!YaraDetection.isInitialized) {
+        if (!this.compiler) {
             console.log("Starting yara");
-            const error = await initializeAsync();
-            if (error) {
-                console.error(error.message);
-                return;
-            } else {
-                const rules = await this.getRules(mjolnir);
-                console.log(`Loading rules: ${JSON.stringify(rules)}`)
-                const { error, warnings } = await this.scanner.configureAsync({ rules: await this.getRules(mjolnir) });
+            try {
+                this.compiler = new YaraCompiler(await this.getRules(mjolnir), []);
+                console.log("Started yara");
+            } catch (error) {
                 if (error) {
-                    if (error instanceof CompileRulesError) {
-                        // @ts-ignore The typings are sadly incorrect. See https://github.com/Automattic/node-yara/issues/33
-                        mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed to compile some rules:\n${error.message}: ${JSON.stringify(error.errors)}`);
-                    } else {
-                        mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed:\n${error}`);
-                    }
+                    mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed to compile some rules:\n${error}`);
                     return;
                 }
-                if (warnings) {
-                    mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara warned:\n${warnings}`);
-                }
-                YaraDetection.isInitialized = true;
             }
         }
+        console.log("Loading yara scanner");
+        const scanner = this.compiler.newScanner();
 
         // Check for media and download + scan it
         if (event['type'] === 'm.room.message') {
@@ -106,7 +87,7 @@ export class YaraDetection extends Protection {
                     const media_url = mjolnir.client.mxcToHttp(file_url)
                     const response = await fetch(media_url);
                     const body = await response.buffer();
-                    const result = await this.scanner.scanAsync({ buffer: body });
+                    const result = scanner.scanBuffer(body);
                     this.handleScanResult(mjolnir, roomId, event, result);
                 }
 
@@ -116,7 +97,7 @@ export class YaraDetection extends Protection {
                         const media_url = mjolnir.client.mxcToHttp(thumbnail_file_url)
                         const response = await fetch(media_url);
                         const body = await response.buffer();
-                        const result = await this.scanner.scanAsync({ buffer: body });
+                        const result = scanner.scanBuffer(body);
                         this.handleScanResult(mjolnir, roomId, event, result);
                     }
 
@@ -124,43 +105,41 @@ export class YaraDetection extends Protection {
             }
         }
         // Scan message itself
-        const result = await this.scanner.scanAsync({ buffer: Buffer.from(JSON.stringify(event), 'utf8') });
-        await this.handleScanResult(mjolnir, roomId, event, result);
+        try {
+            const result = scanner.scanString(JSON.stringify(event));
+            await this.handleScanResult(mjolnir, roomId, event, result);
+        } catch (error) {
+            const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+            mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed:\nScan ${eventPermalink} failed: ${error.message}`);
+        }
     }
 
-    private async handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, result: any) {
-        // FIXME: Untested
-        if (result?.error) {
-            //mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, this.name, `Yara failed:\nScan ${path} failed: ${error.message}`);
-        }
+    private async handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, results: YaraRuleResult[]) {
+        for (const result of results) {
+            console.log(result)
+            const action = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "Action").map((meta_object: any) =>
+                meta_object.value
+            )[0]
+            const notification_text = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "NotifcationText").map((meta_object: any) =>
+                meta_object.value
+            )[0]
 
-        if (result?.rules?.length > 0) {
-            for (const rule of result.rules) {
-                console.log(JSON.stringify(rule.tags))
-                console.log(JSON.stringify(rule.metas))
-                const action = rule.metas.filter((meta_object: any) => meta_object.id === "Action").map((meta_object: any) =>
-                    meta_object.value
-                )[0]
-                const notification_text = rule.metas.filter((meta_object: any) => meta_object.id === "NotifcationText").map((meta_object: any) =>
-                    meta_object.value
-                )[0]
-
-                if (action === "Notify") {
-                    await this.actionNotify(mjolnir, roomId, event, rule, notification_text);
-                } else if (action === "RedactAndNotify") {
-                    await mjolnir.client.redactEvent(roomId, event["event_id"]);
-                    this.actionNotify(mjolnir, roomId, event, rule, notification_text)
-                }
+            if (action === "Notify") {
+                await this.actionNotify(mjolnir, roomId, event, result, notification_text);
+            } else if (action === "RedactAndNotify") {
+                await mjolnir.client.redactEvent(roomId, event["event_id"]);
+                this.actionNotify(mjolnir, roomId, event, result, notification_text)
             }
         }
+
     }
 
     /**
      * This method does issue a notification inside of the admin room that the specific rule was matched
      */
-    private async actionNotify(mjolnir: Mjolnir, roomId: string, event: any, rule: any, notificationText?: string) {
+    private async actionNotify(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, notificationText?: string) {
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${rule.id} found match: ${JSON.stringify(rule.matches)}`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
         if (notificationText) {
             const userPermalink = Permalinks.forUser(event['sender']);
             await mjolnir.client.sendNotice(roomId, `${userPermalink}: ${notificationText}`);
