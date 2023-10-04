@@ -6,6 +6,8 @@ import { LogLevel } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import fetch from "node-fetch";
 import { YaraCompiler, YaraRule, YaraRuleMetadata, YaraRuleResult } from "@node_yara_rs/node-yara-rs";
+import { ActionType, StringMapProtectionSetting } from "./ProtectionSettings";
+import { EntityType } from "../models/ListRule";
 
 export class YaraDetection extends Protection {
     private compiler?: YaraCompiler;
@@ -15,7 +17,9 @@ export class YaraDetection extends Protection {
         return;
     }
 
-    settings = {};
+    settings = {
+        policy_lists: new RoomIDSetProtectionSetting()
+    };
 
     private static checkFileExists(folder: string) {
         return access(folder, constants.F_OK)
@@ -116,16 +120,69 @@ export class YaraDetection extends Protection {
             const notification_text = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "NotifcationText").map((meta_object: YaraRuleMetadata) =>
                 meta_object.stringValue
             )[0]
+            const reason_text = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "Reason").map((meta_object: YaraRuleMetadata) =>
+                meta_object.stringValue
+            )[0]
 
             if (action === "Notify") {
                 await this.actionNotify(mjolnir, roomId, event, result, notification_text);
             } else if (action === "RedactAndNotify") {
                 await mjolnir.client.redactEvent(roomId, event["event_id"]);
-                this.actionNotify(mjolnir, roomId, event, result, notification_text)
+                this.actionNotify(mjolnir, roomId, event, result, notification_text);
+            } else if (action === "Kick") {
+                await this.actionKick(mjolnir, roomId, event, result, reason_text);
+            } else if (action === "Silence") {
+                await this.actionSilence(mjolnir, roomId, event, result)
+            } else if (action === "Ban") {
+                await this.actionBan(mjolnir, roomId, event, result, reason_text);
             }
         }
 
     }
+
+    private async actionKick(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, kickReason?: string) {
+        await mjolnir.client.redactEvent(roomId, event["event_id"]);
+        await mjolnir.client.kickUser(event["sender"], roomId, kickReason);
+        const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and kicked the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+    }
+
+    private async actionBan(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, ban_reason?: string) {
+        const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+
+        if (!this.settings.policy_lists.value.has(ActionType.Ban)) {
+            await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} but was unable to ban the user since there is no policy list for bans configured:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+        }
+
+        await mjolnir.client.redactEvent(roomId, event["event_id"]);
+        await mjolnir.policyListManager.lists.find(list => list.roomId == this.settings.policy_lists.value.get(ActionType.Ban))?.banEntity(EntityType.RULE_USER, event["sender"], ban_reason ?? "Automatic ban using Yara Rule");
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and banned the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+    }
+
+    private async actionSilence(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult) {
+        await mjolnir.client.redactEvent(roomId, event["event_id"]);
+        const power_levels = await mjolnir.client.getRoomStateEvent(roomId, "m.room.power_levels", "");
+        if (power_levels) {
+            const events_default = power_levels["events_default"];
+            const events = power_levels["events"];
+            if (events) {
+                const message_level = events["m.room.message"];
+                if (message_level) {
+                    await mjolnir.client.setUserPowerLevel(event["sender"], roomId, message_level - 1);
+                } else {
+                    await mjolnir.client.setUserPowerLevel(event["sender"], roomId, message_level - 1);
+                }
+            } else {
+                await mjolnir.client.setUserPowerLevel(event["sender"], roomId, events_default - 1);
+            }
+        } else {
+            await mjolnir.client.setUserPowerLevel(event["sender"], roomId, -1);
+        }
+
+        const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and silenced the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+    }
+
 
     /**
      * This method does issue a notification inside of the admin room that the specific rule was matched
@@ -138,4 +195,10 @@ export class YaraDetection extends Protection {
             await mjolnir.client.sendNotice(roomId, `${userPermalink}: ${notificationText}`);
         }
     }
+}
+
+// A list of strings that match the glob pattern !*:*
+export class RoomIDSetProtectionSetting extends StringMapProtectionSetting {
+    // validate an individual piece of data for this setting - namely a single mxid
+    validate = (data: [ActionType, string]) => /^!\S+:\S+$/.test(data[1]);
 }
