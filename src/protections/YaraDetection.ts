@@ -115,13 +115,13 @@ export class YaraDetection extends Protection {
         for (const result of results) {
             console.log(result)
             const action = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "Action").map((meta_object: YaraRuleMetadata) =>
-                meta_object.stringValue
+                meta_object.value as string
             )[0]
             const notification_text = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "NotifcationText").map((meta_object: YaraRuleMetadata) =>
-                meta_object.stringValue
+                meta_object.value as string
             )[0]
             const reason_text = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "Reason").map((meta_object: YaraRuleMetadata) =>
-                meta_object.stringValue
+                meta_object.value as string
             )[0]
 
             if (action === "Notify") {
