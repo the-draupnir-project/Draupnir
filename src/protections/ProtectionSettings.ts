@@ -36,7 +36,7 @@ parseDuration["weeks"] = parseDuration["week"] = parseDuration["wk"];
 parseDuration["months"] = parseDuration["month"];
 parseDuration["years"] = parseDuration["year"];
 
-export class ProtectionSettingValidationError extends Error { };
+export class ProtectionSettingValidationError extends Error {};
 
 /*
  * @param TChange Type for individual pieces of data (e.g. `string`)
@@ -117,7 +117,7 @@ export class StringListProtectionSetting extends AbstractProtectionListSetting<s
     }
     removeValue(data: string): string[] {
         this.emit("remove", data);
-        this.value = this.value.filter(i => i !== data);
+        this.value =  this.value.filter(i => i !== data);
         return this.value;
     }
 }
@@ -138,25 +138,6 @@ export class StringSetProtectionSetting extends AbstractProtectionListSetting<st
     }
 }
 
-export enum ActionType {
-    "Ban",
-}
-
-export class StringMapProtectionSetting extends AbstractProtectionListSetting<[ActionType, string], Map<ActionType, string>> {
-    value: Map<ActionType, string> = new Map();
-    validate = (data: [ActionType, string]): boolean => true;
-    addValue(data: [ActionType, string]): Map<ActionType, string> {
-        this.emit("add", data);
-        this.value.set(data[0], data[1]);
-        return this.value;
-    }
-    removeValue(data: [ActionType, string]): Map<ActionType, string> {
-        this.emit("remove", data);
-        this.value.delete(data[0]);
-        return this.value;
-    }
-}
-
 // A list of strings that match the glob pattern @*:*
 export class MXIDListProtectionSetting extends StringListProtectionSetting {
     // validate an individual piece of data for this setting - namely a single mxid
@@ -164,13 +145,13 @@ export class MXIDListProtectionSetting extends StringListProtectionSetting {
 }
 
 export class NumberProtectionSetting extends AbstractProtectionSetting<number, number> {
-    min: number | undefined;
-    max: number | undefined;
+    min: number|undefined;
+    max: number|undefined;
 
     constructor(
-        defaultValue: number,
-        min: number | undefined = undefined,
-        max: number | undefined = undefined
+            defaultValue: number,
+            min: number|undefined = undefined,
+            max: number|undefined = undefined
     ) {
         super();
         this.setValue(defaultValue);
@@ -196,9 +177,9 @@ export class NumberProtectionSetting extends AbstractProtectionSetting<number, n
  */
 export class DurationMSProtectionSetting extends AbstractProtectionSetting<number, number> {
     constructor(
-        defaultValue: number,
-        public readonly minMS: number | undefined = undefined,
-        public readonly maxMS: number | undefined = undefined
+            defaultValue: number,
+            public readonly minMS: number|undefined = undefined,
+            public readonly maxMS: number|undefined = undefined
     ) {
         super();
         this.setValue(defaultValue);

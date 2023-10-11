@@ -6,7 +6,7 @@ import { LogLevel } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import fetch from "node-fetch";
 import { YaraCompiler, YaraRule, YaraRuleMetadata, YaraRuleResult } from "@node_yara_rs/node-yara-rs";
-import { ActionType, StringMapProtectionSetting } from "./ProtectionSettings";
+import { StringProtectionSetting } from "./ProtectionSettings";
 import { EntityType } from "../models/ListRule";
 
 export class YaraDetection extends Protection {
@@ -18,7 +18,7 @@ export class YaraDetection extends Protection {
     }
 
     settings = {
-        policy_lists: new RoomIDSetProtectionSetting()
+        banPolicyList: new RoomIDSetProtectionSetting()
     };
 
     constructor() {
@@ -154,12 +154,12 @@ export class YaraDetection extends Protection {
     private async actionBan(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, ban_reason?: string) {
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
 
-        if (!this.settings.policy_lists.value.has(ActionType.Ban)) {
+        if (!this.settings.banPolicyList.value) {
             await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} but was unable to ban the user since there is no policy list for bans configured:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
         }
 
         await mjolnir.client.redactEvent(roomId, event["event_id"]);
-        await mjolnir.policyListManager.lists.find(list => list.roomId == this.settings.policy_lists.value.get(ActionType.Ban))?.banEntity(EntityType.RULE_USER, event["sender"], ban_reason ?? "Automatic ban using Yara Rule");
+        await mjolnir.policyListManager.lists.find(list => list.roomId == this.settings.banPolicyList.value)?.banEntity(EntityType.RULE_USER, event["sender"], ban_reason ?? "Automatic ban using Yara Rule");
         await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and banned the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
     }
 
@@ -202,7 +202,7 @@ export class YaraDetection extends Protection {
 }
 
 // A list of strings that match the glob pattern !*:*
-export class RoomIDSetProtectionSetting extends StringMapProtectionSetting {
+export class RoomIDSetProtectionSetting extends StringProtectionSetting {
     // validate an individual piece of data for this setting - namely a single mxid
-    validate = (data: [ActionType, string]) => /^!\S+:\S+$/.test(data[1]);
+    validate = (data: string) => /^!\S+:\S+$/.test(data);
 }
