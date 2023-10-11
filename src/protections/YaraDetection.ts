@@ -6,7 +6,7 @@ import { LogLevel } from "matrix-bot-sdk";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import fetch from "node-fetch";
 import { YaraCompiler, YaraRule, YaraRuleMetadata, YaraRuleResult } from "@node_yara_rs/node-yara-rs";
-import { StringProtectionSetting } from "./ProtectionSettings";
+import { StringListProtectionSetting, StringProtectionSetting } from "./ProtectionSettings";
 import { EntityType } from "../models/ListRule";
 
 export class YaraDetection extends Protection {
@@ -18,7 +18,8 @@ export class YaraDetection extends Protection {
     }
 
     settings = {
-        banPolicyList: new RoomIDSetProtectionSetting()
+        banPolicyList: new RoomIDSetProtectionSetting(),
+        disabledTags: new StringListProtectionSetting()
     };
 
     constructor() {
@@ -117,7 +118,10 @@ export class YaraDetection extends Protection {
 
     private async handleScanResult(mjolnir: Mjolnir, roomId: string, event: any, results: YaraRuleResult[]) {
         for (const result of results) {
-            console.log(result)
+            if (result.tags.some(tag => this.settings.disabledTags.value.includes(tag))) {
+                continue;
+            }
+
             const action = result.metadatas.filter((meta_object: YaraRuleMetadata) => meta_object.identifier === "Action").map((meta_object: YaraRuleMetadata) =>
                 meta_object.value as string
             )[0]
