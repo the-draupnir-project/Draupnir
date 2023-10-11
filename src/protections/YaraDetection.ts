@@ -21,6 +21,10 @@ export class YaraDetection extends Protection {
         policy_lists: new RoomIDSetProtectionSetting()
     };
 
+    constructor() {
+        super();
+    }
+
     private static checkFileExists(folder: string) {
         return access(folder, constants.F_OK)
             .then(() => true)
