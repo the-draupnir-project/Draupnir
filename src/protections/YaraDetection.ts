@@ -152,19 +152,19 @@ export class YaraDetection extends Protection {
         await mjolnir.client.redactEvent(roomId, event["event_id"]);
         await mjolnir.client.kickUser(event["sender"], roomId, kickReason);
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and kicked the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `YARA rule matched for event ${eventPermalink} and kicked the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
     }
 
     private async actionBan(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, ban_reason?: string) {
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
 
         if (!this.settings.banPolicyList.value) {
-            await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} but was unable to ban the user since there is no policy list for bans configured:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+            await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `YARA rule matched for event ${eventPermalink} but was unable to ban the user since there is no policy list for bans configured:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
         }
 
         await mjolnir.client.redactEvent(roomId, event["event_id"]);
         await mjolnir.policyListManager.lists.find(list => list.roomId == this.settings.banPolicyList.value)?.banEntity(EntityType.RULE_USER, event["sender"], ban_reason ?? "Automatic ban using Yara Rule");
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and banned the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `YARA rule matched for event ${eventPermalink} and banned the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
     }
 
     private async actionSilence(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult) {
@@ -188,7 +188,7 @@ export class YaraDetection extends Protection {
         }
 
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink} and silenced the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `YARA rule matched for event ${eventPermalink} and silenced the User:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
     }
 
 
@@ -197,7 +197,7 @@ export class YaraDetection extends Protection {
      */
     private async actionNotify(mjolnir: Mjolnir, roomId: string, event: any, result: YaraRuleResult, notificationText?: string) {
         const eventPermalink = Permalinks.forEvent(roomId, event['event_id']);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `Yara matched for event ${eventPermalink}:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
+        await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, this.name, `YARA rule matched for event ${eventPermalink}:\nScan ${result.identifier} found match: ${JSON.stringify(result.strings)}`);
         if (notificationText) {
             const userPermalink = Permalinks.forUser(event['sender']);
             await mjolnir.client.sendNotice(roomId, `${userPermalink}: ${notificationText}`);

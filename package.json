@@ -15,7 +15,7 @@
     "lint": "eslint ./**/*.ts",
     "start:dev": "yarn build && node --async-stack-traces lib/index.js",
     "test": "ts-mocha --project ./tsconfig.json test/commands/**/*.ts",
-    "test:integration": "NODE_ENV=harness ts-mocha --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\"",
+    "test:integration": "NODE_ENV=harness ts-mocha --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\" -- --yara-rules ./test/integration/yara_rules",
     "test:integration:single": "NODE_ENV=harness npx ts-mocha --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json",
     "test:appservice:integration": "NODE_ENV=harness ts-mocha --async-stack-traces --forbid-only --timeout 300000 --project ./tsconfig.json \"test/appservice/integration/**/*Test.ts\"",
     "test:appservice:integration:single": "NODE_ENV=harness npx ts-mocha --timeout 300000 --project ./tsconfig.json",
@@ -48,7 +48,7 @@
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
-    "@node_yara_rs/node-yara-rs": "^0.5.1",
+    "@node_yara_rs/node-yara-rs": "^0.6.1",
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "await-lock": "^2.2.2",
