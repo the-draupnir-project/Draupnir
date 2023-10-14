@@ -33,5 +33,6 @@
         "./test/integration/protectionSettingsTest.ts",
         "./test/integration/banPropagationTest.ts",
         "./test/integration/protectedRoomsConfigTest.ts",
+        "./test/integration/yaraRuleTest.ts",
     ]
 }
