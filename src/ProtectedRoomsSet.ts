@@ -152,7 +152,7 @@ export class ProtectedRoomsSet {
         return this.automaticRedactionReasons;
     }
 
-    public getProtectedRooms () {
+    public getProtectedRooms() {
         return [...this.protectedRooms.keys()]
     }
 
@@ -193,7 +193,7 @@ export class ProtectedRoomsSet {
         return this.protectedRoomActivityTracker.protectedRoomsByActivity();
     }
 
-    public async handleEvent(roomId: string, event: any) {
+    public async handleEvent(roomId: string, event: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) {
         if (event['sender'] === this.clientUserId) {
             throw new TypeError("`ProtectedRooms::handleEvent` should not be used to inform about events sent by mjolnir.");
         }
@@ -204,7 +204,7 @@ export class ProtectedRoomsSet {
         if (event['type'] === 'm.room.power_levels' && event['state_key'] === '') {
             await this.managementRoomOutput.logMessage(LogLevel.DEBUG, "Mjolnir", `Power levels changed in ${roomId} - checking permissions...`, roomId);
             const errors = await this.protectionManager.verifyPermissionsIn(roomId);
-            await this.printActionResult(errors, { title: "There were errors verifying permissions.", noErrorsText: "All permissions look OK."});
+            await this.printActionResult(errors, { title: "There were errors verifying permissions.", noErrorsText: "All permissions look OK." });
             return;
         } else if (event['type'] === "m.room.member") {
             // The reason we have to apply bans on each member change is because
@@ -358,7 +358,7 @@ export class ProtectedRoomsSet {
         // We can only ban people who are not already banned, and who match the rules.
         const errors: IRoomUpdateError[] = [];
 
-        const addErrorToReport = (roomId: string, e: any) => {
+        const addErrorToReport = (roomId: string, e: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
             const message = e.message || (e.body ? e.body.error : '<no message>');
             errors.push(new RoomUpdateException(
                 roomId,

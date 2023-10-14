@@ -225,7 +225,7 @@ export function getDefaultConfig(): IConfig {
  * @param argv An arguments vector sourced from `process.argv`.
  * @returns The path if one was provided or undefined.
  */
-function configPathFromArguments(argv: string[]): undefined|string {
+function configPathFromArguments(argv: string[]): undefined | string {
     const configOptionIndex = argv.findIndex(arg => arg === "--draupnir-config");
     if (configOptionIndex > 0) {
         const configOptionPath = argv.at(configOptionIndex + 1);
@@ -277,7 +277,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     }
     const config = Config.util.extendDeep(
         getDefaultConfig(),
-        allowedKeys.reduce((existingConfig: any, key: string) => {
+        allowedKeys.reduce((existingConfig: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to how reduce works. We deal with unknown content before this is finished. */any/* eslint-enable @typescript-eslint/no-explicit-any */, key: string) => {
             return { ...existingConfig, [key]: configTemplate[key as keyof IConfig] }
         }, {})
     );

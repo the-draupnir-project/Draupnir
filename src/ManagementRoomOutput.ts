@@ -107,7 +107,7 @@ export default class ManagementRoomOutput {
      * @param additionalRoomIds The roomIds in the message that we want to be replaced by room pills.
      * @param isRecursive Whether logMessage is being called from logMessage.
      */
-    public async logMessage(level: LogLevel, module: string, message: string | any, additionalRoomIds: string[] | string | null = null, isRecursive = false): Promise<any> {
+    public async logMessage(level: LogLevel, module: string, message: string, additionalRoomIds: string[] | string | null = null, isRecursive = false): Promise<void> {
         if (level === LogLevel.ERROR) {
             Sentry.captureMessage(`${module}: ${message}`, 'error');
         }

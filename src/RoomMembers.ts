@@ -226,7 +226,7 @@ export class RoomMemberManager {
     /**
      * Record join/leave events.
      */
-    public async handleEvent(roomId: string, event: any, now?: Date) {
+    public async handleEvent(roomId: string, event: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */, now?: Date) {
         if (event['type'] !== 'm.room.member') {
             // Not a join/leave event.
             return;

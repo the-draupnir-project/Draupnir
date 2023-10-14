@@ -44,6 +44,7 @@ module.exports = {
         "no-trailing-spaces": "error",
         "no-unused-labels": "error",
         "no-var": "error",
-        "radix": "error"
+        "radix": "error",
+        "@typescript-eslint/no-explicit-any": ["error"]
     }
 };
