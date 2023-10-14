@@ -35,7 +35,8 @@ import {
     MatrixClient,
     PantalaimonClient,
     RichConsoleLogger,
-    SimpleFsStorageProvider
+    SimpleFsStorageProvider,
+    RustSdkCryptoStorageProvider
 } from "matrix-bot-sdk";
 
 import { read as configRead } from "./config";
@@ -69,9 +70,17 @@ import { initializeSentry, patchMatrixClient } from "./utils";
         const storage = new SimpleFsStorageProvider(path.join(storagePath, "bot.json"));
 
         let client: MatrixClient;
-        if (config.pantalaimon.use) {
+        if (config.pantalaimon.use && !config.experimentalRustCrypto) {
             const pantalaimon = new PantalaimonClient(config.homeserverUrl, storage);
             client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
+        } else if (config.experimentalRustCrypto) {
+            if (config.pantalaimon.use) {
+                console.warn("You have a pantalaimon config activated and experimentalRustCrypto. Make sure the accessToken is set and pantalaimon is disabled!");
+            }
+            // 0 means sqlite. It comes from "@matrix-org/matrix-sdk-crypto-nodejs" and is ensured to be 0 by https://github.com/matrix-org/matrix-rust-sdk-crypto-nodejs/blob/8cfee331a7fbfb00625bd3b86a78686a0f954534/tests/machine.test.js#L27-L31
+            const cryptoStorage = new RustSdkCryptoStorageProvider(path.join(storagePath, "crypto"), 0);
+
+            client = new MatrixClient(config.homeserverUrl, config.accessToken, storage, cryptoStorage);
         } else {
             client = new MatrixClient(config.homeserverUrl, config.accessToken, storage);
         }

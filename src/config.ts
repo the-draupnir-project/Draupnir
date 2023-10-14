@@ -129,6 +129,9 @@ export interface IConfig {
             enabled: boolean;
         }
     }
+    // Experimental usage of the matrix-bot-sdk rust crypto.
+    // This can not be used with Pantalaimon.
+    experimentalRustCrypto: boolean;
 
     /**
      * Config options only set at runtime. Try to avoid using the objects
@@ -210,6 +213,7 @@ const defaultConfig: IConfig = {
             enabled: false,
         },
     },
+    experimentalRustCrypto: false,
 
     // Needed to make the interface happy.
     RUNTIME: {
@@ -225,7 +229,7 @@ export function getDefaultConfig(): IConfig {
  * @param argv An arguments vector sourced from `process.argv`.
  * @returns The path if one was provided or undefined.
  */
-function configPathFromArguments(argv: string[]): undefined|string {
+function configPathFromArguments(argv: string[]): undefined | string {
     const configOptionIndex = argv.findIndex(arg => arg === "--draupnir-config");
     if (configOptionIndex > 0) {
         const configOptionPath = argv.at(configOptionIndex + 1);
