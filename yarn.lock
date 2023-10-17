@@ -144,41 +144,41 @@
     https-proxy-agent "^5.0.1"
     node-downloader-helper "^2.1.5"
 
-"@node_yara_rs/node-yara-rs-darwin-arm64@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-darwin-arm64/-/node-yara-rs-darwin-arm64-0.6.1.tgz#27501dd5c4ced762fdc46a86f59966d23c4e5e38"
-  integrity sha512-w9kFH+S0YY3Z4moCbVUGnOEGXLwR3fOSsAmVibw2bB3W8E36fBJtFwmlxgGb8p+o3BSYQDUXKDUhF3OkmAu3sg==
+"@node_yara_rs/node-yara-rs-darwin-arm64@0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-darwin-arm64/-/node-yara-rs-darwin-arm64-0.6.2.tgz#354e5be5bdec601ff093d79c9c3088529ce2cf6d"
+  integrity sha512-0g1kPbMbVML/fG5kFF9oiEM8DN+oES8sxqW2qUxB8Kz2VMnL1FxXkneyzcR01LdHUYaRJtoxwMq42mvBIdDLSQ==
 
-"@node_yara_rs/node-yara-rs-darwin-x64@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-darwin-x64/-/node-yara-rs-darwin-x64-0.6.1.tgz#81d9d65200f04f0107266ee197422ebb9bba4d34"
-  integrity sha512-IL6fglNWD683KNHLhQAQj4VdoPdUVIMG2OQwzPZUGmnC82YnZIXLKBF4dU2PgM6cROrsjoHXtfr/foCZdYXy2g==
+"@node_yara_rs/node-yara-rs-darwin-x64@0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-darwin-x64/-/node-yara-rs-darwin-x64-0.6.2.tgz#8bf7e40ddc3ccf9dc6b60f3ba135eca892a500e3"
+  integrity sha512-42eHt0nXtyJ7ojpmux3otBjidq2O/5xcthPmhXMArQpcYrIACt61z8RmCUF4QbkKvRhhAwiBZ6k3vt8TPlFnBQ==
 
-"@node_yara_rs/node-yara-rs-linux-arm64-gnu@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-linux-arm64-gnu/-/node-yara-rs-linux-arm64-gnu-0.6.1.tgz#b7cd10de624271bc6cabb8a98079065fd0d5c713"
-  integrity sha512-xoFjYId4TlGpEWV43N2uisLn9uEl91yPDySJRWgurtuCyw/LaXrLE2PKas2nx/9QeTqkWE2l5E0zzt3A/CzVaw==
+"@node_yara_rs/node-yara-rs-linux-arm64-gnu@0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-linux-arm64-gnu/-/node-yara-rs-linux-arm64-gnu-0.6.2.tgz#abb0a188adc4a93977089bf7ad3a999dbbeaf294"
+  integrity sha512-GixD1rnNuezCVpRFJBYnlHltnktZ9gC4QPV7T4NbSxczfJ2rq5MR7VewErSMsBWbXGkZBJB+SMcd1wv7GRrvwQ==
 
-"@node_yara_rs/node-yara-rs-linux-x64-gnu@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-linux-x64-gnu/-/node-yara-rs-linux-x64-gnu-0.6.1.tgz#1a4f1613114aed5ab83d4431f2a0189081ff92c5"
-  integrity sha512-Xcd6CElcAGYS6MYINIuBBrSZSg3UrBc2qHg8AccnT0Y6LQCNB8OFJSfKNmPQMzZr+27Uyv08DxwFje4I9YHgyg==
+"@node_yara_rs/node-yara-rs-linux-x64-gnu@0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-linux-x64-gnu/-/node-yara-rs-linux-x64-gnu-0.6.2.tgz#aa91919f70c955e47a529e0251287e1516188ba6"
+  integrity sha512-DOmoesCYEwG/VGfgFl21tCK37AR1UzWulIOjtaXKqZ7D7ilU63/mCXYg5IkHS7FsNxI2+gz4Kh2uTWfkY0nxkw==
 
-"@node_yara_rs/node-yara-rs-win32-x64-msvc@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-win32-x64-msvc/-/node-yara-rs-win32-x64-msvc-0.6.1.tgz#fdc175100e51c8d5df8ec50bfd02d382d1cf0d97"
-  integrity sha512-Belq2c9/FBln7ubNhGXxiYJ83vhTVhSv1ET7ijpPGvd/3y2sHwSpcqZFmFPCneHpzszLJtcH4sUUP/Ka5zzqsg==
+"@node_yara_rs/node-yara-rs-win32-x64-msvc@0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs-win32-x64-msvc/-/node-yara-rs-win32-x64-msvc-0.6.2.tgz#5c6f60e9a61a1ef2a57a06b99c75398518fed6cd"
+  integrity sha512-jyYmQ+hX1+P8BnMQI0v6+fItN79mk7MjU+OE68hUpfQ116IWp+NY5OdpVr21qa54a9SzXWDYdTULgpx4YkkCvA==
 
-"@node_yara_rs/node-yara-rs@^0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs/-/node-yara-rs-0.6.1.tgz#99e7fed297595ecc7a1cb4a12aaed36b03a2491a"
-  integrity sha512-B7EyoXlEAfc4dun9oRiZxX7t4NbYUF1kIjNrNUiG0xANdAH34yX1Qx8xSKrKa4h0FHo//UnURCsFsNHiQ5pwRA==
+"@node_yara_rs/node-yara-rs@^0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@node_yara_rs/node-yara-rs/-/node-yara-rs-0.6.2.tgz#55bdf53ee28aa23634817c83955fe1265b5497a6"
+  integrity sha512-srjYnxTBeFEXQ+ctFpsWHR719zwvlX83ZdDONzPvmxU00CWqqfa2bNdNw3plWITccy6X/tR5osAzRHco2p+13Q==
   optionalDependencies:
-    "@node_yara_rs/node-yara-rs-darwin-arm64" "0.6.1"
-    "@node_yara_rs/node-yara-rs-darwin-x64" "0.6.1"
-    "@node_yara_rs/node-yara-rs-linux-arm64-gnu" "0.6.1"
-    "@node_yara_rs/node-yara-rs-linux-x64-gnu" "0.6.1"
-    "@node_yara_rs/node-yara-rs-win32-x64-msvc" "0.6.1"
+    "@node_yara_rs/node-yara-rs-darwin-arm64" "0.6.2"
+    "@node_yara_rs/node-yara-rs-darwin-x64" "0.6.2"
+    "@node_yara_rs/node-yara-rs-linux-arm64-gnu" "0.6.2"
+    "@node_yara_rs/node-yara-rs-linux-x64-gnu" "0.6.2"
+    "@node_yara_rs/node-yara-rs-win32-x64-msvc" "0.6.2"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"

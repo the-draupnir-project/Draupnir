@@ -48,7 +48,7 @@
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
-    "@node_yara_rs/node-yara-rs": "^0.6.1",
+    "@node_yara_rs/node-yara-rs": "^0.6.2",
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "await-lock": "^2.2.2",
