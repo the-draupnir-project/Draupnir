@@ -8,7 +8,8 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
-        exclude_types: [markdown]
+        args: ["--markdown-linebreak-ext", "md"]
+        exclude_types: [svg]
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
