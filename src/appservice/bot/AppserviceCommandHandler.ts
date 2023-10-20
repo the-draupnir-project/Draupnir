@@ -78,12 +78,13 @@ export class AppserviceCommandHandler {
         const prefixUsed = prefixes.find(p => body.toLowerCase().startsWith(p.toLowerCase()));
         if (!prefixUsed) return;
 
-        console.log("Got admin command:", prefixUsed);
         let restOfBody = body.substring(prefixUsed.length);
         const readItems = readCommand(restOfBody)
+        console.log("Got admin command:", restOfBody);
         const argumentStream = new ArgumentStream(readItems);
         const command = this.commandTable.findAMatchingCommand(argumentStream);
         if (command) {
+            console.log("command:", command);
             const adaptor = findMatrixInterfaceAdaptor(command);
             const context: AppserviceContext = {
                 appservice: this.appservice,
