@@ -78,7 +78,7 @@ export class AppserviceCommandHandler {
         const prefixUsed = prefixes.find(p => body.toLowerCase().startsWith(p.toLowerCase()));
         if (!prefixUsed) return;
 
-        console.log("Got admin command");
+        console.log("Got admin command:", prefixUsed);
         let restOfBody = body.substring(prefixUsed.length);
         const readItems = readCommand(restOfBody)
         const argumentStream = new ArgumentStream(readItems);
