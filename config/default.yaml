@@ -28,6 +28,13 @@ pantalaimon:
   # After successfully logging in once, this will be ignored, so this value can be blanked after first startup.
   password: your_password
 
+# Experimental usage of the matrix-bot-sdk rust crypto.
+# This can not be used with Pantalaimon.
+# Make sure to setup the bot as if you are not using pantalaimon for this.
+#
+# Warning: At this time this is not considered production safe.
+experimentalRustCrypto: false
+
 # The path Draupnir will store its state/data in, leave default ("/data/storage") when using containers.
 dataPath: "/data/storage"
 
