@@ -224,7 +224,7 @@ However, any work which is used in any way to conduct business must
 report all software being used by the buisness with this license,
 all turnover made by the buisness, all profit made by the buisness
 and an estimation of both profit and turnover made by the buisness in
-relation to the collection of software reported. 
+relation to the collection of software reported.
 
 It is not clear to me how often these figures should be reported
 and when, or even where they should be reported to (ideally they could
