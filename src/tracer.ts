@@ -70,19 +70,22 @@ class SynapseTracePropargator implements TextMapPropagator {
             return context;
         }
         const trace_data = header.split(':');
-        const traceId = trace_data[0];
-        const spanId = trace_data[1];
-        let parentId: string | null = trace_data[2];
-        if (parentId === "0") {
+        let traceId = parseInt(trace_data[0], 16);
+        const spanId = parseInt(trace_data[1], 16);
+        let parentId: number | null = parseInt(trace_data[2], 16);
+        if (parentId === 0) {
             parentId = null;
         }
-        const traceFlags = Number(trace_data[3]);
+        const traceFlags = parseInt(trace_data[3], 16);
+        if (isNaN(traceId) || isNaN(spanId) || (parentId !== null && isNaN(parentId)) || isNaN(traceFlags)) {
+            return context;
+        }
 
         context = api.trace.setSpan(
             context,
             api.trace.wrapSpanContext({
-                traceId,
-                spanId,
+                traceId: traceId.toString(16),
+                spanId: spanId.toString(16),
                 isRemote: true,
                 traceFlags,
             })
