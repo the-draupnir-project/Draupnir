@@ -5,6 +5,7 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag, } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { JaegerPropagator } from "@opentelemetry/propagator-jaeger";
 
 export enum DRAUPNIR_SYSTEM_TYPES {
     APPSERVICE = "appservice",
