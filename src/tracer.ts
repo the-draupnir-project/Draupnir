@@ -3,9 +3,8 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import { AlwaysOnSampler, Sampler, SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag, TextMapPropagator, Context, TextMapGetter, TextMapSetter } from '@opentelemetry/api';
+import { DiagConsoleLogger, DiagLogLevel, Attributes, SpanKind, diag, } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import * as api from '@opentelemetry/api';
 
 export enum DRAUPNIR_SYSTEM_TYPES {
     APPSERVICE = "appservice",
@@ -20,103 +19,6 @@ export enum DRAUPNIR_RESULT {
 export enum DRAUPNIR_TRACING_ATTRIBUTES {
     SYSTEM = "draupnir.system",
     PROVISION_OUTCOME = "draupnir.provision.outcome"
-}
-
-// Value is expected to be of form: `{trace_id}:{span_id}:{parent_id}:{flags}`
-const SYNAPSE_TRACE_HEADER = "uber-trace-id";
-
-const SYNAPSE_BAGGAGE_HEADER_PREFIX = "uberctx-";
-
-const FIELDS = [SYNAPSE_TRACE_HEADER];
-
-function readHeader(
-    carrier: unknown,
-    getter: TextMapGetter,
-    key: string
-): string {
-    let header = getter.get(carrier, key);
-    if (Array.isArray(header)) [header] = header;
-    return header || '';
-}
-
-const VALID_HEADER_NAME_CHARS = /^[\^_`a-zA-Z\-0-9!#$%&'*+.|~]+$/;
-
-function isValidHeaderName(name: string): boolean {
-    return VALID_HEADER_NAME_CHARS.test(name);
-}
-
-const INVALID_HEADER_VALUE_CHARS = /[^\t\x20-\x7e\x80-\xff]/;
-
-function isValidHeaderValue(value: string): boolean {
-    return !INVALID_HEADER_VALUE_CHARS.test(value);
-}
-
-class SynapseTracePropargator implements TextMapPropagator {
-    inject(context: Context, carrier: any, setter: TextMapSetter<any>): void {
-        const spanContext = api.trace.getSpan(context)?.spanContext();
-        if (!spanContext || !api.isSpanContextValid(spanContext)) return;
-
-        setter.set(carrier, SYNAPSE_TRACE_HEADER, `${spanContext.traceId}:${spanContext.spanId}:0:${spanContext.traceFlags}`);
-        const baggage = api.propagation.getBaggage(context);
-        if (!baggage) return;
-        baggage.getAllEntries().forEach(([k, v]) => {
-            if (!isValidHeaderName(k) || !isValidHeaderValue(v.value)) return;
-            setter.set(carrier, `${SYNAPSE_BAGGAGE_HEADER_PREFIX}${k}`, v.value);
-        });
-    }
-    extract(context: Context, carrier: any, getter: TextMapGetter<any>): Context {
-        const header = readHeader(carrier, getter, SYNAPSE_TRACE_HEADER);
-        if (header.split(':').length - 1 !== 3) {
-            return context;
-        }
-        const trace_data = header.split(':');
-        let traceId = parseInt(trace_data[0], 16);
-        const spanId = parseInt(trace_data[1], 16);
-        let parentId: number | null = parseInt(trace_data[2], 16);
-        if (parentId === 0) {
-            parentId = null;
-        }
-        const traceFlags = parseInt(trace_data[3], 16);
-        if (isNaN(traceId) || isNaN(spanId) || (parentId !== null && isNaN(parentId)) || isNaN(traceFlags)) {
-            return context;
-        }
-
-        context = api.trace.setSpan(
-            context,
-            api.trace.wrapSpanContext({
-                traceId: traceId.toString(16),
-                spanId: spanId.toString(16),
-                isRemote: true,
-                traceFlags,
-            })
-        );
-
-        let baggage: api.Baggage =
-            api.propagation.getBaggage(context) || api.propagation.createBaggage();
-
-        getter.keys(carrier).forEach(k => {
-            if (!k.startsWith(SYNAPSE_BAGGAGE_HEADER_PREFIX)) return;
-            const value = readHeader(carrier, getter, k);
-            baggage = baggage.setEntry(k.substr(SYNAPSE_BAGGAGE_HEADER_PREFIX.length), {
-                value,
-            });
-        });
-
-        if (baggage.getAllEntries().length > 0) {
-            context = api.propagation.setBaggage(context, baggage);
-        }
-
-
-        return context;
-    }
-    /**
-     * Note: fields does not include baggage headers as they are dependent on
-     * carrier instance. Attempting to reuse a carrier by clearing fields could
-     * result in a memory leak.
-     */
-    fields(): string[] {
-        return FIELDS.slice();
-    }
 }
 
 export default function initTracer(serviceName: string) {
@@ -182,7 +84,7 @@ export default function initTracer(serviceName: string) {
             //     exporter: metrics_exporter
             // }),
             serviceName: serviceName,
-            textMapPropagator: new SynapseTracePropargator(),
+            textMapPropagator: new JaegerPropagator(),
             instrumentations: [getNodeAutoInstrumentations({
                 // This just prints an error
                 '@opentelemetry/instrumentation-grpc': {
