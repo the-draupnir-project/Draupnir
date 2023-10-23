@@ -66,10 +66,10 @@ class SynapseTracePropargator implements TextMapPropagator {
     }
     extract(context: Context, carrier: any, getter: TextMapGetter<any>): Context {
         const header = readHeader(carrier, getter, SYNAPSE_TRACE_HEADER);
-        if (header.split(':').length - 1 !== 4) {
+        if (header.split(':').length - 1 !== 3) {
             return context;
         }
-        const trace_data = readHeader(carrier, getter, SYNAPSE_TRACE_HEADER).split(':');
+        const trace_data = header.split(':');
         const traceId = trace_data[0];
         const spanId = trace_data[1];
         let parentId: string | null = trace_data[1];
