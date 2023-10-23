@@ -179,6 +179,7 @@ export default function initTracer(serviceName: string) {
             //     exporter: metrics_exporter
             // }),
             serviceName: serviceName,
+            textMapPropagator: new SynapseTracePropargator(),
             instrumentations: [getNodeAutoInstrumentations({
                 // This just prints an error
                 '@opentelemetry/instrumentation-grpc': {
@@ -200,7 +201,6 @@ export default function initTracer(serviceName: string) {
                 }
             })]
         });
-        api.propagation.setGlobalPropagator(new SynapseTracePropargator());
 
         sdk.start();
 
