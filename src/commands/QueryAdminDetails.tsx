@@ -2,14 +2,21 @@ import { Permalinks, UserID, getRequestFn } from "matrix-bot-sdk";
 import { MjolnirContext } from "./CommandHandler";
 import { CommandError, CommandResult } from "./interface-manager/Validation";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, parameters, ParsedKeywords, union } from "./interface-manager/ParameterParsing";
+import { findPresentationType, makePresentationType, parameters, ParsedKeywords, simpleTypeValidator, union } from "./interface-manager/ParameterParsing";
 import "./interface-manager/MatrixPresentations";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { DocumentNode } from "./interface-manager/DeadDocument";
+import { ReadItem } from "./interface-manager/CommandReader";
 
 export type MatrixHomeserver = string;
+
+makePresentationType({
+    name: "MatrixHomeserver",
+    // This is a very very crude way to detect a url.
+    validator: simpleTypeValidator("MatrixHomeserver", (readItem: ReadItem) => (readItem instanceof String) && (!readItem.includes('#') || !readItem.includes('!')) && !readItem.includes('.'))
+})
 
 interface SupportJson {
     contacts?: {
