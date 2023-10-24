@@ -15,7 +15,7 @@ export type MatrixHomeserver = string;
 makePresentationType({
     name: "MatrixHomeserver",
     // This is a very very crude way to detect a url.
-    validator: simpleTypeValidator("MatrixHomeserver", (readItem: ReadItem) => (readItem instanceof String) && (!readItem.includes('#') || !readItem.includes('!')) && !readItem.includes('.'))
+    validator: simpleTypeValidator("MatrixHomeserver", (readItem: ReadItem) => (readItem instanceof String) && (!readItem.includes('#') || !readItem.includes('!')))
 })
 
 interface SupportJson {
