@@ -1,6 +1,7 @@
 import { strict as assert } from "assert";
 
-import { newTestUser, noticeListener } from "../clientHelper";
+import { newTestUser } from "../clientHelper";
+import { getFirstReply } from "./commandUtils";
 
 describe("Test: The queryAdmin command", function () {
     // If a test has a timeout while awaitng on a promise then we never get given control back.
@@ -11,19 +12,10 @@ describe("Test: The queryAdmin command", function () {
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
 
-        // listener for getting the event reply
-        const reply = new Promise<any>((resolve, reject) => {
-            moderator.on('room.message', noticeListener(this.mjolnir.managementRoomId, (event) => {
-                resolve(event);
-            }))
+        const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:8081` });
         });
-
-        await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text.', body: `!mjolnir queryAdmin http://localhost:8081` });
-
-
-        const reply_event = await reply;
-
-        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`)
+        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`);
     })
 
     it('Mjölnir can query and display the query results for a partial contacts-only json.', async function () {
@@ -31,18 +23,10 @@ describe("Test: The queryAdmin command", function () {
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
 
-        // listener for getting the event reply
-        const reply = new Promise<any>((resolve, reject) => {
-            moderator.on('room.message', noticeListener(this.mjolnir.managementRoomId, (event) => {
-                resolve(event);
-            }))
+        const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7072` });
         });
-
-        await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text.', body: `!mjolnir queryAdmin http://localhost:7072` });
-
-        const reply_event = await reply;
-
-        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`)
+        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`);
     })
 
     it('Mjölnir can query and display the query results for a partial support_page-only json.', async function () {
@@ -50,18 +34,10 @@ describe("Test: The queryAdmin command", function () {
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
 
-        // listener for getting the event reply
-        const reply = new Promise<any>((resolve, reject) => {
-            moderator.on('room.message', noticeListener(this.mjolnir.managementRoomId, (event) => {
-                resolve(event);
-            }))
+        const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7071` });
         });
-
-        await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text.', body: `!mjolnir queryAdmin http://localhost:7071` });
-
-        const reply_event = await reply;
-
-        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`)
+        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`);
     })
 
     it('Mjölnir can query and display an error for a non well-formed json.', async function () {
@@ -69,17 +45,9 @@ describe("Test: The queryAdmin command", function () {
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
 
-        // listener for getting the event reply
-        const reply = new Promise<any>((resolve, reject) => {
-            moderator.on('room.message', noticeListener(this.mjolnir.managementRoomId, (event) => {
-                resolve(event);
-            }))
+        const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7070` });
         });
-
-        moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text.', body: `!mjolnir queryAdmin http://localhost:7070` });
-
-        const reply_event = await reply;
-
-        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`)
+        assert.equal(reply_event.content.body, "", `Draupnir did not parse the json as expected: ${reply_event.content.body}.`);
     })
 });
