@@ -47,13 +47,13 @@ async function queryAdminDetails(
 
     try {
         const resp: SupportJson = await new Promise((resolve, reject) => {
-            getRequestFn()(`${domain}/.well-known/matrix/support`, (error: any, response: any, resBody: string) => {
+            getRequestFn()(`${domain}/.well-known/matrix/support`, (error: any, response: any, resBody: unknown) => {
                 if (error) {
                     reject(new CommandError(`The request failed with an error: ${error}.`));
                 } else if (response.statusCode !== 200) {
                     reject(new CommandError(`The server didn't reply with a valid response code: ${response.statusCode}.`));
-                } else if (resBody !== null && (resBody.includes('contacts') || resBody.includes('support_page'))) {
-                    resolve(JSON.parse(resBody) as SupportJson)
+                } else if (typeof resBody === 'object' && resBody !== null && ('contacts' in resBody || 'support_page' in resBody)) {
+                    resolve(resBody as SupportJson)
                 } else if (resBody === null) {
                     reject(new CommandError(`The response was empty.`));
                 } else {
