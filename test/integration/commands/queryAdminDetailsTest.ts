@@ -21,7 +21,7 @@ describe("Test: The queryAdmin command", function () {
         await getMessagesByUserIn(moderator, draupnirUserId, this.mjolnir.managementRoomId, 1000, function (events) {
             events.map(e => {
                 if (e.type === 'm.room.message') {
-                    assert.equal(e.content.body, "", `Draipnir did not parse the json as expected: ${e.content.body}.`)
+                    assert.equal(e.content.body, "", `Draupnir did not parse the json as expected: ${e.content.body}.`)
                 }
             })
         });
@@ -41,7 +41,7 @@ describe("Test: The queryAdmin command", function () {
         await getMessagesByUserIn(moderator, draupnirUserId, this.mjolnir.managementRoomId, 1000, function (events) {
             events.map(e => {
                 if (e.type === 'm.room.message') {
-                    assert.equal(e.content.body, "", `Draipnir did not parse the json as expected: ${e.content.body}.`)
+                    assert.equal(e.content.body, "", `Draupnir did not parse the json as expected: ${e.content.body}.`)
                 }
             })
         });
@@ -61,7 +61,7 @@ describe("Test: The queryAdmin command", function () {
         await getMessagesByUserIn(moderator, draupnirUserId, this.mjolnir.managementRoomId, 1000, function (events) {
             events.map(e => {
                 if (e.type === 'm.room.message') {
-                    assert.equal(e.content.body, "", `Draipnir did not parse the json as expected: ${e.content.body}.`)
+                    assert.equal(e.content.body, "", `Draupnir did not parse the json as expected: ${e.content.body}.`)
                 }
             })
         });
@@ -81,7 +81,7 @@ describe("Test: The queryAdmin command", function () {
         await getMessagesByUserIn(moderator, draupnirUserId, this.mjolnir.managementRoomId, 1000, function (events) {
             events.map(e => {
                 if (e.type === 'm.room.message') {
-                    assert.equal(e.content.body, "", `Draipnir did not parse the json as expected: ${e.content.body}.`)
+                    assert.equal(e.content.body, "", `Draupnir did not parse the json as expected: ${e.content.body}.`)
                 }
             })
         });
