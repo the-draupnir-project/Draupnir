@@ -87,26 +87,26 @@ defineInterfaceCommand({
 function renderSupportJson([entity, support_json]: [UserID | MatrixHomeserver | string, SupportJson],): DocumentNode {
     if (!support_json.support_page) {
         return <root>
-            <b>Support infos for ({entity}):</b>
+            <b>Support infos for ({entity}):</b><br />
             <ul>
-                {support_json.contacts!.map(r => <li><b>{r.role}</b> - {r.matrix_id ? <a href={Permalinks.forUser(r.matrix_id)}>{r.matrix_id}</a> : <a href="mailto:{r.email_address}">{r.email_address}</a>}</li>)}
+                {support_json.contacts!.map(r => <li><b>{r.role}</b> - {r.matrix_id ? <a href={Permalinks.forUser(r.matrix_id)}>{r.matrix_id}</a> : <a href="mailto:{r.email_address}">{r.email_address}</a>}<br /></li>)}
             </ul>
         </root>
     } else if (!support_json.contacts) {
         return <root>
-            <b>Support Page for ({entity}):</b>
+            <b>Support Page for ({entity}):</b><br />
             <p>
                 Support Page: {support_json.support_page}
             </p>
         </root>
     } else {
         return <root>
-            <b>Support info for ({entity}):</b>
+            <b>Support info for ({entity}):</b><br />
             <p>
                 Support Page: {support_json.support_page}
-            </p>
+            </p><br />
             <ul>
-                {support_json.contacts!.map(r => <li><b>{r.role}</b> - {r.matrix_id ? <a href={Permalinks.forUser(r.matrix_id)}>{r.matrix_id}</a> : <a href="mailto:{r.email_address}">{r.email_address}</a>}</li>)}
+                {support_json.contacts!.map(r => <li><b>{r.role}</b> - {r.matrix_id ? <a href={Permalinks.forUser(r.matrix_id)}>{r.matrix_id}</a> : <a href="mailto:{r.email_address}">{r.email_address}</a>}<br /></li>)}
             </ul>
         </root>
     }
