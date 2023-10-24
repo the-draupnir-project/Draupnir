@@ -45,19 +45,26 @@ async function queryAdminDetails(
     }
 
 
-    const resp: SupportJson = await new Promise((resolve, reject) => {
-        getRequestFn()(`${domain}/.well-known/matrix/support`, (error: any, response: any, resBody: unknown) => {
-            if (error || response.statusCode !== 200) {
-                reject(error);
-            } else if (typeof resBody === 'object' && resBody !== null && ('contacts' in resBody || 'support_page' in resBody)) {
-                resolve(resBody as SupportJson)
-            } else {
-                reject(new TypeError(`Don't know what to do with response body ${JSON.stringify(resBody)}. Assuming its not a json`));
-            }
+    try {
+        const resp: SupportJson = await new Promise((resolve, reject) => {
+            getRequestFn()(`${domain}/.well-known/matrix/support`, (error: any, response: any, resBody: string) => {
+                if (error) {
+                    reject(new CommandError(`The request failed with an error: ${error}.`));
+                } else if (response.statusCode !== 200) {
+                    reject(new CommandError(`The server didn't reply with a valid response code: ${response.statusCode}.`));
+                } else if (resBody !== null && (resBody.includes('contacts') || resBody.includes('support_page'))) {
+                    resolve(JSON.parse(resBody) as SupportJson)
+                } else if (resBody === null) {
+                    reject(new CommandError(`The response was empty.`));
+                } else {
+                    reject(new CommandError(`Don't know what to do with response body ${resBody}. Assuming its not a json`));
+                }
+            });
         });
-    });
-
-    return CommandResult.Ok([entity, resp]);
+        return CommandResult.Ok([entity, resp]);
+    } catch (error: any) {
+        return CommandResult.Err(error);
+    }
 }
 
 defineInterfaceCommand({
