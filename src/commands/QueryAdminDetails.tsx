@@ -39,8 +39,6 @@ async function queryAdminDetails(
         // Doing some cleanup on the url
         if (!entity.startsWith("https://") && !entity.startsWith("http://")) {
             domain = `https://${entity}`;
-        } else if (entity.startsWith("http://")) {
-            domain = entity.replace("http://", "https://");
         } else {
             domain = entity;
         }
