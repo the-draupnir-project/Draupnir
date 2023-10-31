@@ -10,12 +10,17 @@ import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { ReadItem } from "./interface-manager/CommandReader";
 
-export type MatrixHomeserver = string;
+const MatrixHomeserverSecret = Symbol("MatrixHomeserverSecret");
+export type MatrixHomeserver = string & { [MatrixHomeserverSecret]: true };
+
+function isMatrixHomeserver(string: string): string is MatrixHomeserver {
+    return !string.includes('#') && !string.includes('!')
+}
 
 makePresentationType({
     name: "MatrixHomeserver",
     // This is a very very crude way to detect a url.
-    validator: simpleTypeValidator("MatrixHomeserver", (readItem: ReadItem) => (readItem instanceof String) && (!readItem.includes('#') || !readItem.includes('!')))
+    validator: simpleTypeValidator("MatrixHomeserver", (readItem: ReadItem) => (typeof readItem === 'string') && isMatrixHomeserver(readItem))
 })
 
 interface SupportJson {
@@ -68,7 +73,7 @@ async function queryAdminDetails(
 }
 
 defineInterfaceCommand({
-    designator: ["queryAdmin"],
+    designator: ["query", "admin"],
     table: "mjolnir",
     parameters: parameters([
         {
@@ -87,7 +92,7 @@ defineInterfaceCommand({
 function renderSupportJson([entity, support_json]: [UserID | MatrixHomeserver | string, SupportJson],): DocumentNode {
     if (!support_json.support_page) {
         return <root>
-            <b>Support infos for ({entity}):</b><br />
+            <b>Support info for ({entity}):</b><br />
             <ul>
                 {support_json.contacts!.map(r => <li><b>{r.role}</b> - {r.matrix_id ? <a href={Permalinks.forUser(r.matrix_id)}>{r.matrix_id}</a> : <a href="mailto:{r.email_address}">{r.email_address}</a>}<br /></li>)}
             </ul>
@@ -113,7 +118,7 @@ function renderSupportJson([entity, support_json]: [UserID | MatrixHomeserver | 
 }
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "queryAdmin"),
+    interfaceCommand: findTableCommand("mjolnir", "query", "admin"),
     renderer: async function (client, commandRoomId, event, result) {
         await renderMatrixAndSend(
             renderSupportJson(result.ok),

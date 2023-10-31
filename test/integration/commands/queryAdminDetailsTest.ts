@@ -13,7 +13,7 @@ describe("Test: The queryAdmin command", function () {
         await moderator.joinRoom(this.config.managementRoom);
 
         const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
-            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:8081` });
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir query admin http://localhost:8081` });
         });
         assert.equal(reply_event.content.body, "**Support info for (http://localhost:8081):**\nSupport Page: http://localhost\n\n\n\n * **admin** - [@admin:localhost](https://matrix.to/#/@admin:localhost)\n\n", `Draupnir did not parse the json as expected.`);
     })
@@ -24,7 +24,7 @@ describe("Test: The queryAdmin command", function () {
         await moderator.joinRoom(this.config.managementRoom);
 
         const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
-            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7072` });
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir query admin http://localhost:7072` });
         });
         assert.equal(reply_event.content.body, "**Support infos for (http://localhost:7072):**\n\n * **admin** - [@admin:localhost](https://matrix.to/#/@admin:localhost)\n\n", `Draupnir did not parse the json as expected.`);
     })
@@ -35,7 +35,7 @@ describe("Test: The queryAdmin command", function () {
         await moderator.joinRoom(this.config.managementRoom);
 
         const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
-            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7071` });
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir query admin http://localhost:7071` });
         });
         assert.equal(reply_event.content.body, "**Support Page for (http://localhost:7071):**\nSupport Page: http://localhost\n\n", `Draupnir did not parse the json as expected.`);
     })
@@ -46,7 +46,7 @@ describe("Test: The queryAdmin command", function () {
         await moderator.joinRoom(this.config.managementRoom);
 
         const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
-            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir queryAdmin http://localhost:7070` });
+            return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir query admin http://localhost:7070` });
         });
         assert.equal(reply_event.content.body.includes("The request failed with an error: Error: Error during MatrixClient request GET /.well-known/matrix/support:"), true, `Draupnir did not print an error as.`);
     })
