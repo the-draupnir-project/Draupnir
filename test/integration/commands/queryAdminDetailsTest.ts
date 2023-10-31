@@ -26,7 +26,7 @@ describe("Test: The queryAdmin command", function () {
         const reply_event = await getFirstReply(this.mjolnir.matrixEmitter, this.mjolnir.managementRoomId, async () => {
             return await moderator.sendMessage(this.mjolnir.managementRoomId, { msgtype: 'm.text', body: `!mjolnir query admin http://localhost:7072` });
         });
-        assert.equal(reply_event.content.body, "**Support infos for (http://localhost:7072):**\n\n * **admin** - [@admin:localhost](https://matrix.to/#/@admin:localhost)\n\n", `Draupnir did not parse the json as expected.`);
+        assert.equal(reply_event.content.body, "**Support info for (http://localhost:7072):**\n\n * **admin** - [@admin:localhost](https://matrix.to/#/@admin:localhost)\n\n", `Draupnir did not parse the json as expected.`);
     })
 
     it('Mjölnir can query and display the query results for a partial support_page-only json.', async function () {
