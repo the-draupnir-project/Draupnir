@@ -44,6 +44,7 @@ import { BanPropagation } from "./BanPropagation";
 import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY } from "../models/MatrixDataManager";
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
+import { YaraDetection } from "./YaraDetection";
 
 const PROTECTIONS: Protection[] = [
     new FirstMessageIsImage(),
@@ -55,6 +56,7 @@ const PROTECTIONS: Protection[] = [
     new TrustedReporters(),
     new DetectFederationLag(),
     new JoinWaveShortCircuit(),
+    new YaraDetection(),
 ];
 
 const ENABLED_PROTECTIONS_EVENT_TYPE = "org.matrix.mjolnir.enabled_protections";
