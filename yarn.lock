@@ -211,6 +211,11 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
+"@sinclair/typebox@^0.31.15":
+  version "0.31.21"
+  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.31.21.tgz#d52d8e35f71e5651042aa0237e918e4b21fbbbf8"
+  integrity sha512-Wtq/K44EMkREaXytK+2c5DrygtYsH7ZxT0StQL8HMJz2BoOM7NZ/xfrUFBVuZxDrhJCoXf5Im282P2CCz5DHwQ==
+
 "@types/body-parser@*":
   version "1.19.2"
   resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.2.tgz#aea2059e28b7658639081347ac4fab3de166e6f0"
@@ -976,7 +981,7 @@ cross-spawn@^7.0.2:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
-crypto-js@^4.2.0:
+crypto-js@^4.1.1, crypto-js@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
   integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
@@ -1841,6 +1846,11 @@ immediate@~3.0.5:
   resolved "https://registry.npmjs.org/immediate/-/immediate-3.0.6.tgz"
   integrity sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==
 
+immutable@^5.0.0-beta.4:
+  version "5.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/immutable/-/immutable-5.0.0-beta.4.tgz#6c12ac4ad8b16aeec4d064c9d2f4024bb270b7ca"
+  integrity sha512-sl9RE3lqd2LoQSESc8VV0k8qE9y57iT7dinq3Q+8mR2dqReHDZlgUrudzmFfZhDXBLXlNJMVWv3SG1YpQIokig==
+
 import-fresh@^3.2.1:
   version "3.3.0"
   resolved "https://registry.npmjs.org/import-fresh/-/import-fresh-3.3.0.tgz"
@@ -2308,6 +2318,16 @@ matrix-appservice@^2.0.0:
     request "^2.88.2"
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
+
+"matrix-protection-suite@git+https://github.com/Gnuxie/matrix-protection-suite.git":
+  version "0.4.0"
+  resolved "git+https://github.com/Gnuxie/matrix-protection-suite.git#172058d9129d703e1ef4e43770fc6302e4555d06"
+  dependencies:
+    "@sinclair/typebox" "^0.31.15"
+    crypto-js "^4.1.1"
+    glob-to-regexp "^0.4.1"
+    immutable "^5.0.0-beta.4"
+    ulidx "^2.1.0"
 
 media-typer@0.3.0:
   version "0.3.0"
@@ -3452,7 +3472,7 @@ typescript@^5.3.3:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.3.3.tgz#b3ce6ba258e72e6305ba66f5c9b452aaee3ffe37"
   integrity sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==
 
-ulidx@^2.2.1:
+ulidx@^2.1.0, ulidx@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/ulidx/-/ulidx-2.2.1.tgz#9dd6e48630f7a4ba612461523bc86d9101038996"
   integrity sha512-DU9F5t1tihdafuNyW3fIrXUFHHiHxmwuQSGVGIbSpqkc93IH4P0dU8nPhk0gOW7ARxaFu4+P/9cxVwn6PdnIaQ==
