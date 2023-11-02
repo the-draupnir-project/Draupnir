@@ -2319,15 +2319,13 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
 
-"matrix-protection-suite@git+https://github.com/Gnuxie/matrix-protection-suite.git":
-  version "0.4.0"
-  resolved "git+https://github.com/Gnuxie/matrix-protection-suite.git#172058d9129d703e1ef4e43770fc6302e4555d06"
-  dependencies:
-    "@sinclair/typebox" "^0.31.15"
-    crypto-js "^4.1.1"
-    glob-to-regexp "^0.4.1"
-    immutable "^5.0.0-beta.4"
-    ulidx "^2.1.0"
+"matrix-protection-suite-for-matrix-bot-sdk@link:/home/user/experiments/matrix-protection-suite-for-matrix-bot-sdk":
+  version "0.0.0"
+  uid ""
+
+"matrix-protection-suite@link:../../experiments/matrix-protection-suite":
+  version "0.0.0"
+  uid ""
 
 media-typer@0.3.0:
   version "0.3.0"
