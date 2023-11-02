@@ -31,7 +31,6 @@ import {
     MembershipEvent,
 } from "matrix-bot-sdk";
 
-import { ALL_RULE_TYPES as ALL_BAN_LIST_RULE_TYPES } from "./models/ListRule";
 import { COMMAND_PREFIX, handleCommand } from "./commands/CommandHandler";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { htmlEscape } from "./utils";
@@ -41,15 +40,11 @@ import { WebAPIs } from "./webapis/WebAPIs";
 import RuleServer from "./models/RuleServer";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import { getDefaultConfig, IConfig } from "./config";
-import { PolicyListManager } from "./models/PolicyListManager";
-import { ProtectedRoomsSet } from "./ProtectedRoomsSet";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ProtectionManager } from "./protections/ProtectionManager";
-import { RoomMemberManager } from "./RoomMembers";
-import ProtectedRoomsConfig from "./ProtectedRoomsConfig";
-import { MatrixEmitter, MatrixSendClient } from "./MatrixEmitter";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
+import { ProtectedRoomsSet } from "matrix-protection-suite";
 
 export const STATE_NOT_STARTED = "not_started";
 export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
@@ -66,15 +61,12 @@ export class Mjolnir {
     private displayName: string;
     private localpart: string;
     private currentState: string = STATE_NOT_STARTED;
-    public readonly roomJoins: RoomMemberManager;
     /**
      * This is for users who are not listed on a watchlist,
      * but have been flagged by the automatic spam detection as suispicous
      */
     private unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
-    private protectedRoomsConfig: ProtectedRoomsConfig;
-    public readonly protectedRoomsTracker: ProtectedRoomsSet;
     private webapis: WebAPIs;
     public taskQueue: ThrottlingQueue;
     /**
@@ -95,7 +87,6 @@ export class Mjolnir {
     public readonly reportManager: ReportManager;
 
     private readonly commandTable = findCommandTable("mjolnir");
-    public readonly policyListManager: PolicyListManager;
 
     public readonly reactionHandler: MatrixReactionHandler;
 
@@ -178,6 +169,7 @@ export class Mjolnir {
         public readonly matrixEmitter: MatrixEmitter,
         public readonly managementRoomId: string,
         public readonly config: IConfig,
+        private readonly protectedRoomsSet: ProtectedRoomsSet,
         // Combines the rules from ban lists so they can be served to a homeserver module or another consumer.
         public readonly ruleServer: RuleServer | null,
     ) {
