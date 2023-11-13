@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Logger, Ok, ProtectedRoomsSet, Task, TextMessageContent, Value } from "matrix-protection-suite";
+import { Logger, Ok, ProtectedRoomsSet, StringRoomID, Task, TextMessageContent, Value } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { WebAPIs } from "./webapis/WebAPIs";
@@ -83,12 +83,35 @@ export class Draupnir {
         this.setupMatrixEmitterListeners();
     }
 
+    private handleEvent(roomID: StringRoomID, event: RoomEvent): void {
+
+        // Check for updated ban lists before checking protected rooms - the ban lists might be protected
+        // themselves.
+        const policyList = this.policyListManager.lists.find(list => list.roomId === roomId);
+        if (policyList !== undefined) {
+            if (ALL_BAN_LIST_RULE_TYPES.includes(event['type']) || event['type'] === 'm.room.redaction') {
+                policyList.updateForEvent(event.event_id)
+            }
+        }
+
+        if (event.sender !== this.clientUserId) {
+            this.protectedRoomsTracker.handleEvent(roomId, event);
+        }
+    }
+
     private setupMatrixEmitterListeners(): void {
         this.matrixEmitter.on("room.message", (roomID, event) => {
             if (roomID !== this.managementRoomId) {
                 return;
             }
             if (Value.Check(TextMessageContent, event.content)) {
+                if (event.content.body === "** Unable to decrypt: The sender's device has not sent us the keys for this message. **") {
+                    log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoomId}.`);
+                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
+                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
+                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
+                    return;
+                }
                 const commandBeingRun = extractCommandFromMessageBody(
                     event.content.body,
                     {
