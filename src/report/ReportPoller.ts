@@ -25,11 +25,15 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { Mjolnir, REPORT_POLL_EVENT_TYPE } from "../Mjolnir";
 import { ReportManager } from './ReportManager';
 import { LogLevel } from "matrix-bot-sdk";
+import ManagementRoomOutput from "../ManagementRoomOutput";
 
 class InvalidStateError extends Error { }
+
+export type ReportPollSetting = { from: number };
 
 /**
  * A class to poll synapse's report endpoint, so we can act on new reports
@@ -141,7 +145,20 @@ export class ReportPoller {
 
         this.schedulePoll();
     }
-    public start(startFrom: number) {
+    public static async getReportPollSetting(client: MatrixSendClient, managementRoomOutput: ManagementRoomOutput): Promise<ReportPollSetting> {
+        let reportPollSetting: ReportPollSetting = { from: 0 };
+        try {
+            reportPollSetting = await client.getAccountData(REPORT_POLL_EVENT_TYPE);
+        } catch (err) {
+            if (err.body?.errcode !== "M_NOT_FOUND") {
+                throw err;
+            } else {
+                managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "report poll setting does not exist yet");
+            }
+        }
+        return reportPollSetting;
+    }
+    public start({from: startFrom }: ReportPollSetting) {
         if (this.timeout === null) {
             this.from = startFrom;
             this.schedulePoll();
