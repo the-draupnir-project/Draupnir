@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Logger, Ok, ProtectedRoomsSet, StringRoomID, Task, TextMessageContent, Value } from "matrix-protection-suite";
+import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { WebAPIs } from "./webapis/WebAPIs";
@@ -35,9 +35,10 @@ import { ReportPoller } from "./report/ReportPoller";
 import { ProtectionManager } from "./protections/ProtectionManager";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
-import { MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultStateTrackingMeta, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
+import { makeProtectedRoomsSet } from "./DraupnirBotMode";
 
 const log = new Logger('Draupnir');
 
@@ -48,7 +49,7 @@ export class Draupnir {
      * This is for users who are not listed on a watchlist,
      * but have been flagged by the automatic spam detection as suispicous
      */
-    private unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
+    public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
     private webapis: WebAPIs;
     private readonly commandTable = findCommandTable("mjolnir");
@@ -73,40 +74,57 @@ export class Draupnir {
     public readonly reactionHandler: MatrixReactionHandler;
     private constructor(
         public readonly client: MatrixSendClient,
-        private readonly clientUserId: string,
+        private readonly clientUserID: StringUserID,
         public readonly matrixEmitter: SafeMatrixEmitter,
-        public readonly managementRoomId: string,
+        public readonly managementRoom: MatrixRoomID,
         public readonly config: IConfig,
         public readonly protectedRoomsSet: ProtectedRoomsSet
     ) {
-        this.reactionHandler = new MatrixReactionHandler(this.managementRoomId, client, clientUserId);
+        this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIdOrAlias(), client, clientUserID);
         this.setupMatrixEmitterListeners();
     }
 
+    public static async makeDraupnirBot(
+        client: MatrixSendClient,
+        matrixEmitter: SafeMatrixEmitter,
+        clientUserID: StringUserID,
+        managementRoom: MatrixRoomID,
+        config: IConfig
+    ): Promise<Draupnir> {
+        const managerManager = new ManagerManagerForMatrixEmitter(
+            matrixEmitter,
+            DefaultStateTrackingMeta,
+            DefaultEventDecoder,
+            client
+        );
+        const protectedRoomsSet = await makeProtectedRoomsSet(
+            managementRoom,
+            managerManager,
+            client,
+            clientUserID
+        )
+        return new Draupnir(
+            client,
+            clientUserID,
+            matrixEmitter,
+            managementRoom,
+            config,
+            protectedRoomsSet
+        )
+    }
+
     private handleEvent(roomID: StringRoomID, event: RoomEvent): void {
-
-        // Check for updated ban lists before checking protected rooms - the ban lists might be protected
-        // themselves.
-        const policyList = this.policyListManager.lists.find(list => list.roomId === roomId);
-        if (policyList !== undefined) {
-            if (ALL_BAN_LIST_RULE_TYPES.includes(event['type']) || event['type'] === 'm.room.redaction') {
-                policyList.updateForEvent(event.event_id)
-            }
-        }
-
-        if (event.sender !== this.clientUserId) {
-            this.protectedRoomsTracker.handleEvent(roomId, event);
-        }
+        this.protectedRoomsSet.handleTimelineEvent(roomID, event);
     }
 
     private setupMatrixEmitterListeners(): void {
         this.matrixEmitter.on("room.message", (roomID, event) => {
-            if (roomID !== this.managementRoomId) {
+            if (roomID !== this.managementRoom.toRoomIdOrAlias()) {
                 return;
             }
             if (Value.Check(TextMessageContent, event.content)) {
                 if (event.content.body === "** Unable to decrypt: The sender's device has not sent us the keys for this message. **") {
-                    log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoomId}.`);
+                    log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom}.`);
                     Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
                     Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
                     Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
@@ -118,7 +136,7 @@ export class Draupnir {
                         prefix: COMMAND_PREFIX,
                         localpart: this.localpart,
                         displayName: this.displayName,
-                        userId: this.clientUserId,
+                        userId: this.clientUserID,
                         additionalPrefixes: this.config.commands.additionalPrefixes,
                         allowNoPrefix: this.config.commands.allowNoPrefix,
                     }
