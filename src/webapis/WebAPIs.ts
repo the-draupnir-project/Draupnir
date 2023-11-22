@@ -27,8 +27,7 @@ limitations under the License.
 
 import { Server } from "http";
 import express from "express";
-import { LogService, MatrixClient } from "matrix-bot-sdk";
-import RuleServer from "../models/RuleServer";
+import { MatrixClient } from "matrix-bot-sdk";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
 
@@ -38,13 +37,13 @@ import { IConfig } from "../config";
  */
 const API_PREFIX = "/api/1";
 
-const AUTHORIZATION: RegExp = new RegExp("Bearer (.*)");
+const AUTHORIZATION = new RegExp("Bearer (.*)");
 
 export class WebAPIs {
     private webController: express.Express = express();
     private httpServer?: Server;
 
-    constructor(private reportManager: ReportManager, private readonly config: IConfig, private readonly ruleServer: RuleServer|null) {
+    constructor(private reportManager: ReportManager, private readonly config: IConfig) {
         // Setup JSON parsing.
         this.webController.use(express.json());
     }
@@ -78,22 +77,6 @@ export class WebAPIs {
                 await this.handleReport({ request, response, roomId: request.params.room_id, eventId: request.params.event_id })
             });
             console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
-        }
-
-        // configure ruleServer API.
-        // FIXME: Doesn't this need some kind of access control?
-        // See https://github.com/matrix-org/mjolnir/issues/139#issuecomment-1012221479.
-        if (this.config.web.ruleServer?.enabled) {
-            const updatesUrl = `${API_PREFIX}/ruleserver/updates`;
-            LogService.info("WebAPIs", `configuring ${updatesUrl}...`);
-            if (!this.ruleServer) {
-                throw new Error("The rule server to use has not been configured for the WebAPIs.");
-            }
-            const ruleServer: RuleServer = this.ruleServer;
-            this.webController.get(updatesUrl, async (request, response) => {
-                await this.handleRuleServerUpdate(ruleServer, { request, response, since: request.query.since as string});
-            });
-            LogService.info("WebAPIs", `configuring ${updatesUrl}... DONE`);
         }
     }
 
@@ -203,18 +186,6 @@ export class WebAPIs {
         } catch (ex) {
             console.warn("Error responding to an abuse report", roomId, eventId, ex);
             response.status(503);
-        }
-    }
-
-    async handleRuleServerUpdate(ruleServer: RuleServer, { since, request, response }: { since: string, request: express.Request, response: express.Response }) {
-        // FIXME Have to do this because express sends keep alive by default and during tests.
-        // The server will never be able to close because express never closes the sockets, only stops accepting new connections.
-        // See https://github.com/matrix-org/mjolnir/issues/139#issuecomment-1012221479.
-        response.set("Connection", "close");
-        try {
-            response.json(ruleServer.getUpdates(since)).status(200);
-        } catch (ex) {
-            LogService.error("WebAPIs", `Error responding to a rule server updates request`, since, ex);
         }
     }
 }

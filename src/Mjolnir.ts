@@ -37,7 +37,6 @@ import { htmlEscape } from "./utils";
 import { ReportManager } from "./report/ReportManager";
 import { ReportPoller } from "./report/ReportPoller";
 import { WebAPIs } from "./webapis/WebAPIs";
-import RuleServer from "./models/RuleServer";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import { getDefaultConfig, IConfig } from "./config";
 import ManagementRoomOutput from "./ManagementRoomOutput";
@@ -156,8 +155,7 @@ export class Mjolnir {
             await client.joinRoom(config.managementRoom);
         }
 
-        const ruleServer = config.web.ruleServer ? new RuleServer() : null;
-        const mjolnir = new Mjolnir(client, await client.getUserId(), matrixEmitter, managementRoomId, config, ruleServer);
+        const mjolnir = new Mjolnir(client, await client.getUserId(), matrixEmitter, managementRoomId, config);
         await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "index", "Mjolnir is starting up. Use !mjolnir to query status.");
         Mjolnir.addJoinOnInviteListener(mjolnir, client, config);
         return mjolnir;
@@ -170,8 +168,6 @@ export class Mjolnir {
         public readonly managementRoomId: string,
         public readonly config: IConfig,
         private readonly protectedRoomsSet: ProtectedRoomsSet,
-        // Combines the rules from ban lists so they can be served to a homeserver module or another consumer.
-        public readonly ruleServer: RuleServer | null,
     ) {
         this.protectedRoomsConfig = new ProtectedRoomsConfig(client);
         this.policyListManager = new PolicyListManager(this);
@@ -247,7 +243,7 @@ export class Mjolnir {
         // Setup Web APIs
         console.log("Creating Web APIs");
         this.reportManager = new ReportManager(this);
-        this.webapis = new WebAPIs(this.reportManager, this.config, this.ruleServer);
+        this.webapis = new WebAPIs(this.reportManager, this.config);
         if (config.pollReports) {
             this.reportPoller = new ReportPoller(this, this.reportManager);
         }

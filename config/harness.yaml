@@ -34,7 +34,7 @@ autojoinOnlyIfManager: true
 
 # If `autojoinOnlyIfManager` is false, only the members in this space can invite
 # the bot to new rooms.
-acceptInvitesFromSpace: '!example:example.org'
+acceptInvitesFromSpace: "!example:example.org"
 
 # If the bot is invited to a room and it won't accept the invite (due to the
 # conditions above), report it to the management room. Defaults to disabled (no
@@ -52,7 +52,6 @@ managementRoom: "#moderators:localhost:9999"
 # Whether Draupnir should log a lot more messages in the room,
 # mainly involves "all-OK" messages, and debugging messages for when draupnir checks bans in a room.
 verboseLogging: false
-
 
 # The log level for the logs themselves. One of DEBUG, INFO, WARN, and ERROR.
 # This should be at INFO or DEBUG in order to get support for Mjolnir problems.
@@ -201,7 +200,3 @@ web:
   abuseReporting:
     # Whether to enable this feature.
     enabled: true
-  # A web API for a description of all the combined rules from watched banlists.
-  # GET /api/1/ruleserver/updates
-  ruleServer:
-    enabled: false
