@@ -42,6 +42,12 @@ import { makeProtectedRoomsSet } from "./DraupnirBotMode";
 
 const log = new Logger('Draupnir');
 
+// webAPIS should not be included on the Draupnir class.
+// That should be managed elsewhere.
+// It's not actually relevant to the Draupnir instance and it only was connected
+// to Mjolnir because it needs to be started after Mjolnir started and not before.
+// And giving it to the class was a dumb easy way of doing that.
+
 export class Draupnir {
     private displayName: string;
     private localpart: string;
@@ -51,7 +57,6 @@ export class Draupnir {
      */
     public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
-    private webapis: WebAPIs;
     private readonly commandTable = findCommandTable("mjolnir");
     public taskQueue: ThrottlingQueue;
     /**
@@ -68,6 +73,7 @@ export class Draupnir {
     public readonly legacyProtectionManager: ProtectionManager;
     /**
      * Handle user reports from the homeserver.
+     * FIXME: ReportManager should be a protection.
      */
     public readonly reportManager: ReportManager;
 
@@ -82,6 +88,10 @@ export class Draupnir {
     ) {
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIdOrAlias(), client, clientUserID);
         this.setupMatrixEmitterListeners();
+        this.reportManager = new ReportManager(this);
+        if (config.pollReports) {
+            this.reportPoller = new ReportPoller(this, this.reportManager);
+        }
     }
 
     public static async makeDraupnirBot(
@@ -149,5 +159,15 @@ export class Draupnir {
                 Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
             }
         });
+    }
+
+    public async start(): Promise<void> {
+        if (this.reportPoller) {
+            const reportPollSetting = await ReportPoller.getReportPollSetting(
+                this.client,
+                this.managementRoomOutput
+            );
+            this.reportPoller.start(reportPollSetting);
+        }
     }
 }
