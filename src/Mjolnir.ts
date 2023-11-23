@@ -50,12 +50,6 @@ export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
 export const STATE_SYNCING = "syncing";
 export const STATE_RUNNING = "running";
 
-/**
- * Synapse will tell us where we last got to on polling reports, so we need
- * to store that for pagination on further polls
- */
-export const REPORT_POLL_EVENT_TYPE = "org.matrix.mjolnir.report_poll";
-
 export class Mjolnir {
     private displayName: string;
     private localpart: string;
