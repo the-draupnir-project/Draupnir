@@ -25,10 +25,9 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value } from "matrix-protection-suite";
+import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
-import { WebAPIs } from "./webapis/WebAPIs";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
@@ -49,8 +48,7 @@ const log = new Logger('Draupnir');
 // And giving it to the class was a dumb easy way of doing that.
 
 export class Draupnir {
-    private displayName: string;
-    private localpart: string;
+    private readonly displayName: string;
     /**
      * This is for users who are not listed on a watchlist,
      * but have been flagged by the automatic spam detection as suispicous
@@ -63,6 +61,7 @@ export class Draupnir {
      * Reporting back to the management room.
      */
     public readonly managementRoomOutput: ManagementRoomOutput;
+    public readonly managementRoomID: StringRoomID;
     /*
      * Config-enabled polling of reports in Synapse, so Mjolnir can react to reports
      */
@@ -80,12 +79,13 @@ export class Draupnir {
     public readonly reactionHandler: MatrixReactionHandler;
     private constructor(
         public readonly client: MatrixSendClient,
-        private readonly clientUserID: StringUserID,
+        public readonly clientUserID: StringUserID,
         public readonly matrixEmitter: SafeMatrixEmitter,
         public readonly managementRoom: MatrixRoomID,
         public readonly config: IConfig,
         public readonly protectedRoomsSet: ProtectedRoomsSet
     ) {
+        this.managementRoomID = this.managementRoom.toRoomIdOrAlias();
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIdOrAlias(), client, clientUserID);
         this.setupMatrixEmitterListeners();
         this.reportManager = new ReportManager(this);
@@ -144,7 +144,7 @@ export class Draupnir {
                     event.content.body,
                     {
                         prefix: COMMAND_PREFIX,
-                        localpart: this.localpart,
+                        localpart: userLocalpart(this.clientUserID),
                         displayName: this.displayName,
                         userId: this.clientUserID,
                         additionalPrefixes: this.config.commands.additionalPrefixes,
