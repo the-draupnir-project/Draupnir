@@ -161,17 +161,6 @@ export async function makeProtectedRoomsSet(
         membershipSet,
         userID,
     );
-    // FIXME: this should be in the factory method of StandardProtectedRoomsSet.
-    const loadResult = await protectedRoomsSet.protections.loadProtections(
-        makeStandardConsequenceProvider(client, managementRoom.toRoomIdOrAlias()),
-        protectedRoomsSet,
-        (error, description) => renderProtectionFailedToStart(
-            client, managementRoom.toRoomIdOrAlias(), error, description
-        )
-    );
-    if (isError(loadResult)) {
-        throw loadResult.error;
-    }
     return protectedRoomsSet;
 }
 
