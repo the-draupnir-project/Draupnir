@@ -25,19 +25,19 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, userLocalpart } from "matrix-protection-suite";
+import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
-import { ProtectionManager } from "./protections/ProtectionManager";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
 import { DefaultStateTrackingMeta, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
 import { makeProtectedRoomsSet } from "./DraupnirBotMode";
+import { makeStandardConsequenceProvider, renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 
 const log = new Logger('Draupnir');
 
@@ -66,10 +66,6 @@ export class Draupnir {
      * Config-enabled polling of reports in Synapse, so Mjolnir can react to reports
      */
     private reportPoller?: ReportPoller;
-    /**
-     * Store the protections being used by Mjolnir.
-     */
-    public readonly legacyProtectionManager: ProtectionManager;
     /**
      * Handle user reports from the homeserver.
      * FIXME: ReportManager should be a protection.
@@ -113,14 +109,26 @@ export class Draupnir {
             client,
             clientUserID
         )
-        return new Draupnir(
+        const draupnir = new Draupnir(
             client,
             clientUserID,
             matrixEmitter,
             managementRoom,
             config,
             protectedRoomsSet
-        )
+        );
+        const loadResult = await protectedRoomsSet.protections.loadProtections(
+            makeStandardConsequenceProvider(client, draupnir.managementRoomID),
+            protectedRoomsSet,
+            draupnir,
+            (error, description) => renderProtectionFailedToStart(
+                client, managementRoom.toRoomIdOrAlias(), error, description
+            )
+        );
+        if (isError(loadResult)) {
+            throw loadResult.error;
+        }
+        return draupnir;
     }
 
     private handleEvent(roomID: StringRoomID, event: RoomEvent): void {
