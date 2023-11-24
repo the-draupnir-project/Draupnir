@@ -30,7 +30,7 @@ import { ReportManager } from './ReportManager';
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import ManagementRoomOutput from "../ManagementRoomOutput";
 import { Draupnir } from "../Draupnir";
-import { isStringRoomID } from "matrix-protection-suite";
+import { ActionException, ActionExceptionKind, Ok, SynapseReport, Value, isError } from "matrix-protection-suite";
 
 /**
  * Synapse will tell us where we last got to on polling reports, so we need
@@ -83,7 +83,7 @@ export class ReportPoller {
 
     private async getAbuseReports() {
         let response_: {
-            event_reports: { room_id: string, event_id: string, sender: string, reason: string }[],
+            event_reports: unknown[],
             next_token: number | undefined
         } | undefined;
         try {
@@ -102,31 +102,37 @@ export class ReportPoller {
         }
 
         const response = response_!;
-        for (let report of response.event_reports) {
-            if (!isStringRoomID(report.room_id)) {
-                LogService.error(`ReportPoller`, `Malformed room ID, skipping report ${report.room_id}`);
+        for (const rawReport of response.event_reports) {
+            const reportResult = Value.Decode(SynapseReport, rawReport);
+            if (isError(reportResult)) {
+                LogService.error('ReportPoller', `Failed to decode a synapse report ${reportResult.error.uuid}`, rawReport);
                 continue;
             }
+            const report = reportResult.ok;
             if (!this.draupnir.protectedRoomsSet.isProtectedRoom(report.room_id)) {
                 continue;
             }
-
-            let event: any; // `any` because `handleServerAbuseReport` uses `any`
-            try {
-                event = (await this.draupnir.client.doRequest(
-                    "GET",
-                    `/_synapse/admin/v1/rooms/${report.room_id}/context/${report.event_id}?limit=1`
-                )).event;
-            } catch (ex) {
-                this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${ex}`);
+            // FIXME: shouldn't we have a SafeMatrixSendClient in the BotSDKMPS that gives us ActionResult's with
+            // Decoded events.
+            // Problem is that our current event model isn't going to match up with extensible events.
+            const eventContext = await this.draupnir.client.doRequest(
+                "GET",
+                `/_synapse/admin/v1/rooms/${report.room_id}/context/${report.event_id}?limit=1`
+            ).then(
+                (value) => Ok(value),
+                (exception) => ActionException.Result(`Failed to retrieve the context for an event ${report.event_id}`, { exception, exceptionKind: ActionExceptionKind.Unknown })
+            )
+            if (isError(eventContext)) {
+                this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${eventContext.error.uuid}`);
                 continue;
             }
+            const event = eventContext.ok.event;
 
             await this.manager.handleServerAbuseReport({
-                roomId: report.room_id,
+                roomID: report.room_id,
                 reporterId: report.sender,
                 event: event,
-                reason: report.reason,
+                reason: report.reason ?? undefined,
             });
         }
 
