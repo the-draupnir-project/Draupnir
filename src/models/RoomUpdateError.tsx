@@ -25,47 +25,15 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { UserID } from "matrix-bot-sdk";
-import { CommandException, CommandExceptionKind } from "../commands/interface-manager/CommandException";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
-import { CommandError, CommandResult } from "../commands/interface-manager/Validation";
-import { MatrixSendClient } from "../MatrixEmitter";
+import { ActionException, ActionExceptionKind, ActionResult, Ok, RoomUpdateError, StringRoomID } from "matrix-protection-suite";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 
-export interface IRoomUpdateError extends CommandError {
-    readonly roomId: string,
-}
-
-export class PermissionError extends CommandError implements IRoomUpdateError  {
-    constructor(
-        public readonly roomId: string,
-        message: string
-    ) {
-        super(message);
-    }
-}
-
-export class RoomUpdateException extends CommandException implements IRoomUpdateError {
-    constructor(public readonly roomId: string, ...args: ConstructorParameters<typeof CommandException>) {
-        super(...args);
-    }
-
-    public static Result<Ok>(
-        message: string,
-        options: {
-            exception: Error,
-            exceptionKind: CommandExceptionKind,
-            roomId: string
-        }): CommandResult<Ok, RoomUpdateException> {
-        return CommandResult.Err(new RoomUpdateException(options.roomId, options.exceptionKind, options.exception, message));
-    }
-}
-
-function renderErrorItem(error: IRoomUpdateError, viaServers: string[]): DocumentNode {
+function renderErrorItem(error: RoomUpdateError): DocumentNode {
     return <li>
-        <a href={Permalinks.forRoom(error.roomId, viaServers)}>{error.roomId}</a> - {error.message}
+        <a href={error.room.toPermalink()}>{error.room.toRoomIDOrAlias}</a> - {error.message}
     </li>
 }
 
@@ -79,17 +47,12 @@ function renderErrorItem(error: IRoomUpdateError, viaServers: string[]): Documen
  * @returns A `DocumentNode` fragment that can be sent to Matrix or incorperated into another message.
  */
 export async function renderActionResult(
-    client: MatrixSendClient,
-    errors: IRoomUpdateError[],
+    errors: RoomUpdateError[],
     { title = 'There were errors updating protected rooms.', noErrorsText = 'Done updating rooms - no errors.'}: { title?: string, noErrorsText?: string } = {}
 ): Promise<DocumentNode> {
     if (errors.length === 0) {
         return <fragment><font color="#00cc00">{noErrorsText}</font></fragment>
     }
-    // This is a little unfortunate because for some reason we don't have a way to keep
-    // room references around that have vias and are meaningful
-    // there isn't really any easy way to do this :(
-    const viaServers = [(new UserID(await client.getUserId())).domain];
     return <fragment>
         <font color="#ff0000">
             {title}<br/>
@@ -101,7 +64,7 @@ export async function renderActionResult(
                 </font>
             </summary>
             <ul>
-                {errors.map(error => renderErrorItem(error, viaServers))}
+                {errors.map(error => renderErrorItem(error))}
             </ul>
         </details>
     </fragment>
@@ -110,7 +73,7 @@ export async function renderActionResult(
 /**
  * Render a message to represent the outcome of an action in an update.
  * @param client A matrix client to send a notice with.
- * @param roomId The room to send the notice to.
+ * @param roomID The room to send the notice to.
  * @param errors Any errors that are a result of the action.
  * @param options.title To give context about what the action was, shown when there are errors.
  * @param options.noErrorsText To show when there are no errors.
@@ -118,14 +81,22 @@ export async function renderActionResult(
  */
 export async function printActionResult(
     client: MatrixSendClient,
-    roomId: string,
-    errors: IRoomUpdateError[],
+    roomID: StringRoomID,
+    errors: RoomUpdateError[],
     renderOptions: { title?: string, noErrorsText?: string } = {}
-): Promise<void> {
-    await renderMatrixAndSend(
-        <root>{await renderActionResult(client, errors, renderOptions)}</root>,
-        roomId,
+): Promise<ActionResult<void>> {
+    return await renderMatrixAndSend(
+        <root>{await renderActionResult(errors, renderOptions)}</root>,
+        roomID,
         undefined,
         client,
+    ).then(
+        (_) => Ok(undefined),
+        (exception) => ActionException.Result(
+            `Could not printActionResult to the management room.`,
+            {
+                exception, exceptionKind: ActionExceptionKind.Unknown
+            }
+        )
     )
 }
