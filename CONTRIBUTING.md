@@ -1,19 +1,5 @@
 # Contributing code to Draupnir
 
-Draupnir is licensed under the Cooperative Software License.
-The reason for the license is simply because this project
-was something that I was previously employed to work on.
-
-I have not decided whether I will accept contributions under the
-same license or another license or a CLA yet.
-I will welcome advice, but I will not welcome attempts to parsuade
-me to re-adopt and relicense under Apache-2.0 unless being offered
-compensation.
-
-As of now, I am accepting contributions under the Apache-2.0 license
-in the same way as Mjolnir. This allows me the option to relicense
-Draupnir under Apache-2.0 without needing to chase up all contributors.
-
 ## How to contribute
 
 The preferred and easiest way to contribute changes to Matrix is to fork the
