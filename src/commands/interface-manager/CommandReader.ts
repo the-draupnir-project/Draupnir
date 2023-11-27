@@ -3,9 +3,7 @@
  * All rights reserved.
  */
 
-import { UserID } from "matrix-bot-sdk";
-import { MatrixRoomReference } from "./MatrixRoomReference";
-import { Permalinks } from "./Permalinks";
+import { MatrixRoomReference, Permalinks, UserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 
 export interface ISuperCoolStream<T> {
     readonly source: T
@@ -211,7 +209,11 @@ function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
         return word.join('');
     }
     readUntil(/\s/, stream, word);
-    return MatrixRoomReference.fromRoomIdOrAlias(word.join(''));
+    const wholeWord = word.join('');
+    if (!isStringRoomID(wholeWord) || !isStringRoomAlias(wholeWord)) {
+        return wholeWord;
+    }
+    return MatrixRoomReference.fromRoomIDOrAlias(wholeWord);
 }
 
 /**
@@ -267,11 +269,23 @@ defineReadItem('-', readKeyword);
 defineReadItem(':', readKeyword);
 
 definePostReadReplace(/^https:\/\/matrix\.to/, input => {
-    const url = Permalinks.parseUrl(input);
-    if (url.eventId !== undefined) {
+    const parseResult = Permalinks.parseUrl(input);
+    if (isError(parseResult)) {
+        // it's an invalid URI.
+        return input;
+    }
+    const url = parseResult.ok;
+    if (url.eventID !== undefined) {
         // don't know what to turn event references into yet.
         return input;
+    } else if (url.userID !== undefined) {
+        return new UserID(url.userID);
     } else {
-        return MatrixRoomReference.fromPermalink(input);
+        const roomResult = MatrixRoomReference.fromPermalink(input);
+        if (isError(roomResult)) {
+            return input;
+        } else {
+            return roomResult.ok;
+        }
     }
 })
