@@ -25,11 +25,12 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionException, ActionExceptionKind, ActionResult, ConsequenceProvider, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionExceptionKind, ActionResult, ConsequenceProvider, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, RoomUpdateError, RoomUpdateException, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership, isError } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "./commands/interface-manager/JSXFactory";
 import { DocumentNode } from "./commands/interface-manager/DeadDocument";
+import { printActionResult } from "./models/RoomUpdateError";
 
 interface ProviderContext {
     client: MatrixSendClient;
@@ -153,6 +154,33 @@ const consequenceForServerInRoom: ConsequenceProvider['consequenceForServerInRoo
     return Ok(undefined);
 }
 
+const unbanUserFromRoomsInSet: ConsequenceProvider['unbanUserFromRoomsInSet'] = async function(
+    this: ProviderContext, _protection, userID, protectedRoomsSet
+): Promise<ActionResult<void>> {
+    const errors: RoomUpdateError[] = [];
+    for (const room of protectedRoomsSet.protectedRoomsConfig.allRooms) {
+        const unbanResult = await this.client.unbanUser(userID, room.toRoomIDOrAlias())
+            .then(
+                (_) => Ok(undefined),
+                (exception) => RoomUpdateException.Result(
+                    `Unable to ban the user ${userID} from the room ${room.toPermalink()}`, {
+                        exception,
+                        exceptionKind: ActionExceptionKind.Unknown,
+                        room,
+                    }
+                )
+            );
+        if (isError(unbanResult)) {
+            errors.push(unbanResult.error);
+        }
+    }
+    Task(printActionResult(this.client, this.managementRoomID, errors, {
+        title: `There were errors unbanning ${userID} from protected rooms.`,
+        noErrorsText: `Done unbanning ${userID} from protected rooms - no errors.`
+    }));
+    return Ok(undefined);
+}
+
 export function makeStandardConsequenceProvider(
     client: MatrixSendClient,
     managementRoomID: StringRoomID
@@ -164,6 +192,7 @@ export function makeStandardConsequenceProvider(
         consequenceForServerACLInRoom,
         consequenceForServerInRoom,
         consequenceForUsersInRevision,
+        unbanUserFromRoomsInSet,
         client,
         managementRoomID
     } as unknown as ConsequenceProvider;
