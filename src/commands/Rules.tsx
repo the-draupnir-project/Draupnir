@@ -37,6 +37,7 @@ import { CommandResult } from "./interface-manager/Validation";
 import { UserID } from "matrix-bot-sdk";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { ListRule } from "../models/ListRule";
+import { PolicyRule } from "matrix-protection-suite";
 
 async function renderListMatches(
     this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<ListMatches[]>
@@ -67,8 +68,7 @@ export function renderListRules(list: ListMatches) {
         </li>
     };
     return <fragment>
-        <a href={list.roomRef}>{list.roomId}</a>
-        {list.shortcode ? `(shortcode: ${list.shortcode})` : ''}:<br/>
+        <a href={list.roomRef}>{list.roomId}</a><br/>
         <ul>
             {list.matches.length === 0
                 ? <li><i>No rules</i></li>
@@ -78,10 +78,9 @@ export function renderListRules(list: ListMatches) {
 }
 
 interface ListMatches {
-    shortcode: string,
     roomRef: string,
     roomId: string,
-    matches: ListRule[]
+    matches: PolicyRule[]
 }
 
 defineInterfaceCommand({

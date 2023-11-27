@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, userLocalpart } from "matrix-protection-suite";
+import { DefaultEventDecoder, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -33,7 +33,7 @@ import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
-import { DefaultStateTrackingMeta, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultStateTrackingMeta, ManagerManager, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
 import { makeProtectedRoomsSet } from "./DraupnirBotMode";
@@ -79,10 +79,11 @@ export class Draupnir {
         public readonly matrixEmitter: SafeMatrixEmitter,
         public readonly managementRoom: MatrixRoomID,
         public readonly config: IConfig,
-        public readonly protectedRoomsSet: ProtectedRoomsSet
+        public readonly protectedRoomsSet: ProtectedRoomsSet,
+        public readonly managerManager: ManagerManager
     ) {
-        this.managementRoomID = this.managementRoom.toRoomIdOrAlias();
-        this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIdOrAlias(), client, clientUserID);
+        this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
+        this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID);
         this.setupMatrixEmitterListeners();
         this.reportManager = new ReportManager(this);
         if (config.pollReports) {
@@ -115,14 +116,15 @@ export class Draupnir {
             matrixEmitter,
             managementRoom,
             config,
-            protectedRoomsSet
+            protectedRoomsSet,
+            managerManager
         );
         const loadResult = await protectedRoomsSet.protections.loadProtections(
             makeStandardConsequenceProvider(client, draupnir.managementRoomID),
             protectedRoomsSet,
             draupnir,
             (error, description) => renderProtectionFailedToStart(
-                client, managementRoom.toRoomIdOrAlias(), error, description
+                client, managementRoom.toRoomIDOrAlias(), error, description
             )
         );
         if (isError(loadResult)) {
@@ -137,7 +139,7 @@ export class Draupnir {
 
     private setupMatrixEmitterListeners(): void {
         this.matrixEmitter.on("room.message", (roomID, event) => {
-            if (roomID !== this.managementRoom.toRoomIdOrAlias()) {
+            if (roomID !== this.managementRoom.toRoomIDOrAlias()) {
                 return;
             }
             if (Value.Check(TextMessageContent, event.content)) {
@@ -177,5 +179,12 @@ export class Draupnir {
             );
             this.reportPoller.start(reportPollSetting);
         }
+    }
+
+    public createRoomReference(roomID: StringRoomID): MatrixRoomID {
+        return new MatrixRoomID(
+            roomID,
+            [serverName(this.clientUserID)]
+        );
     }
 }

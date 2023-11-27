@@ -28,26 +28,24 @@ limitations under the License.
  * a Mjolnir PR that was originally created by Gergő Fándly https://github.com/matrix-org/mjolnir/pull/223
  */
 
-import { Protection } from "./Protection";
-import { Mjolnir } from "../Mjolnir";
-import { LogService } from "matrix-bot-sdk";
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
-import { RULE_USER, ListRule } from "../models/ListRule";
 import { UserID } from "matrix-bot-sdk";
-import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
-import { findPolicyListFromRoomReference } from "../commands/Ban";
-import PolicyList from "../models/PolicyList";
 import { renderListRules } from "../commands/Rules";
-import { printActionResult, IRoomUpdateError, RoomUpdateException } from "../models/RoomUpdateError";
-import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
+import { printActionResult } from "../models/RoomUpdateError";
+import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, Protection, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+
+const log = new Logger('BanPropagationProtection');
 
 const BAN_PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.ban_propagation';
 const UNBAN_PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.unban_propagation';
 
-function makePolicyListShortcodeReferenceMap(lists: PolicyList[]): Map<string, string> {
-    return lists.reduce((map, list, index) => (map.set(`${index + 1}.`, list.roomRef), map), new Map())
+// FIXME: https://github.com/the-draupnir-project/Draupnir/issues/160
+function makePolicyRoomReactionReferenceMap(rooms: MatrixRoomID[]): Map<string, string> {
+    return rooms.reduce((map, room, index) => (map.set(`${index + 1}.`, room.toPermalink()), map), new Map())
 }
 
 // would be nice to be able to use presentation types here idk.
@@ -64,41 +62,43 @@ interface BanPropagationMessageContext {
  * @returns An event id which can be used by the `PromptResponseListener`.
  */
 async function promptBanPropagation(
-    mjolnir: Mjolnir,
-    event: any,
-    roomId: string
-): Promise</*event id*/string> {
-    const reactionMap = makePolicyListShortcodeReferenceMap(mjolnir.policyListManager.lists);
+    draupnir: Draupnir,
+    change: MembershipChange,
+): Promise<void> {
+    const editablePolicyRoomIDs = draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(
+        draupnir.clientUserID,
+        PolicyRuleType.User
+    );
+    const reactionMap = makePolicyRoomReactionReferenceMap(editablePolicyRoomIDs);
     const promptEventId = (await renderMatrixAndSend(
-        <root>The user {renderMentionPill(event["state_key"], event["content"]?.["displayname"] ?? event["state_key"])} was banned
-                in <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> by {new UserID(event["sender"])} for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br/>
+        <root>The user {renderMentionPill(change.userID, change.content.displayname ?? change.userID)} was banned
+                in <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by {new UserID(change.sender)} for <code>{change.content.reason ?? '<no reason supplied>'}</code>.<br/>
                 Would you like to add the ban to a policy list?
             <ol>
-                {mjolnir.policyListManager.lists.map(list => <li>{list}</li>)}
+                {editablePolicyRoomIDs}
             </ol>
         </root>,
-        mjolnir.managementRoomId,
+        draupnir.managementRoomID,
         undefined,
-        mjolnir.client,
-        mjolnir.reactionHandler.createAnnotation(
+        draupnir.client,
+        draupnir.reactionHandler.createAnnotation(
             BAN_PROPAGATION_PROMPT_LISTENER,
             reactionMap,
             {
-                target: event["state_key"],
-                reason: event["content"]?.["reason"],
+                target: change.userID,
+                reason: change.content.reason,
             }
         )
     )).at(0) as string;
-    await mjolnir.reactionHandler.addReactionsToEvent(mjolnir.client, mjolnir.managementRoomId, promptEventId, reactionMap);
-    return promptEventId;
+    await draupnir.reactionHandler.addReactionsToEvent(draupnir.client, draupnir.managementRoomID, promptEventId, reactionMap);
 }
 
 async function promptUnbanPropagation(
-    mjolnir: Mjolnir,
+    draupnir: Draupnir,
     event: any,
     roomId: string,
-    rulesMatchingUser: Map<PolicyList, ListRule[]>
-): Promise</*event id*/string> {
+    rulesMatchingUser: Map<StringRoomID, PolicyRule[]>
+): Promise<void> {
     const reactionMap = new Map<string, string>(Object.entries({ 'unban from all': 'unban from all'}));
     // shouldn't we warn them that the unban will be futile?
     const promptEventId = (await renderMatrixAndSend(
@@ -110,19 +110,18 @@ async function promptUnbanPropagation(
             {
             [...rulesMatchingUser.entries()]
                 .map(([list, rules]) => <li>{renderListRules({
-                    shortcode: list.listShortcode,
-                    roomRef: list.roomRef,
-                    roomId: list.roomId,
+                    roomRef: draupnir.createRoomReference(list).toPermalink(),
+                    roomId: list,
                     matches: rules
                 })}</li>)
             }
             </ul>
             Would you like to remove these rules and unban the user from all protected rooms?
         </root>,
-        mjolnir.managementRoomId,
+        draupnir.managementRoomID,
         undefined,
-        mjolnir.client,
-        mjolnir.reactionHandler.createAnnotation(
+        draupnir.client,
+        draupnir.reactionHandler.createAnnotation(
             UNBAN_PROPAGATION_PROMPT_LISTENER,
             reactionMap,
             {
@@ -131,124 +130,152 @@ async function promptUnbanPropagation(
             }
         )
     )).at(0) as string;
-    await mjolnir.reactionHandler.addReactionsToEvent(mjolnir.client, mjolnir.managementRoomId, promptEventId, reactionMap);
-    return promptEventId;
+    await draupnir.reactionHandler.addReactionsToEvent(draupnir.client, draupnir.managementRoomID, promptEventId, reactionMap);
 }
 
-interface ListenerContext {
-    mjolnir: Mjolnir,
-}
+export class BanPropagationProtection extends AbstractProtection implements Protection {
 
-async function banReactionListener(this: ListenerContext, key: string, item: unknown, context: BanPropagationMessageContext) {
-    try {
+    constructor(
+        description: ProtectionDescription,
+        consequenceProvider: ConsequenceProvider,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+      ) {
+        super(description, consequenceProvider, protectedRoomsSet, [], []);
+        // FIXME: These listeners are gonna leak all over if we don't have a
+        // hook for stopping protections.
+        this.draupnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, this.banReactionListener.bind(this));
+        this.draupnir.reactionHandler.on(UNBAN_PROPAGATION_PROMPT_LISTENER, this.unbanUserReactionListener.bind(this));
+    }
+
+    public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
+        const bans = changes.filter(change => change.membershipChangeType === MembershipChangeType.Banned && change.sender !== this.protectedRoomsSet.userID);
+        const unbans = changes.filter(change => change.membershipChangeType === MembershipChangeType.Unbanned && change.sender !== this.protectedRoomsSet.userID);
+        for (const ban of bans) {
+            this.handleBan(ban);
+        }
+        for (const unban of unbans) {
+            this.handleUnban(unban);
+        }
+        return Ok(undefined);
+    }
+
+    private handleBan(change: MembershipChange): void {
+        const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
+        const rulesMatchingUser = policyRevision.allRulesMatchingEntity(change.userID, PolicyRuleType.User, Recommendation.Ban);
+        if (rulesMatchingUser.length > 0) {
+            return; // user is already banned.
+        }
+        Task(promptBanPropagation(this.draupnir, change));
+    }
+
+    private handleUnban(change: MembershipChange): void {
+        const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
+        const rulesMatchingUser = policyRevision.allRulesMatchingEntity(change.userID, PolicyRuleType.User, Recommendation.Ban);
+        if (rulesMatchingUser.length === 0) {
+            return; // user is already unbanned.
+        }
+        const addRule = (map: Map<StringRoomID, PolicyRule[]>, rule: PolicyRule) => {
+            const listRoomID = rule.sourceEvent.room_id;
+            const entry = map.get(listRoomID) ?? ((newEntry) => (map.set(listRoomID, newEntry), newEntry))([]);
+            entry.push(rule);
+            return map;
+        }
+        Task(promptUnbanPropagation(
+            this.draupnir,
+            change,
+            change.roomID,
+            rulesMatchingUser.reduce((map, rule) => addRule(map, rule), new Map<StringRoomID, PolicyRule[]>())
+        ));
+    }
+
+    private async banReactionListener(key: string, item: unknown, context: BanPropagationMessageContext) {
         if (typeof item === 'string') {
-            const listRef = MatrixRoomReference.fromPermalink(item);
-            const listResult = await findPolicyListFromRoomReference(this.mjolnir, listRef);
-            if (listResult.isOk()) {
-                return await listResult.ok.banEntity(RULE_USER, context.target, context.reason);
-            } else {
-                LogService.warn("BanPropagation", "Timed out waiting for a response to a room level ban", listResult.err);
+            const policyRoomRef = MatrixRoomReference.fromPermalink(item);
+            if (isError(policyRoomRef)) {
+                log.error(`Could not parse the room reference for the policy list to ban a user within ${item}`, policyRoomRef.error, context);
                 return;
             }
+            const roomID = await resolveRoomReferenceSafe(this.draupnir.client, policyRoomRef.ok);
+            if (isError(roomID)) {
+                log.error(`Could not resolve the room reference for the policy list to ban a user within ${policyRoomRef.ok.toPermalink()}`, roomID.error);
+                return;
+            }
+            const listResult = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(roomID.ok)
+            if (isError(listResult)) {
+                log.error(`Could not find a policy list for the policy room ${policyRoomRef.ok.toPermalink()}`, listResult.error);
+                return;
+            }
+            const banResult = await listResult.ok.banEntity(PolicyRuleType.User, context.target, context.reason);
+            if (isError(banResult)) {
+                log.error(`Could not ban a user ${context.target} from the list ${policyRoomRef.ok.toPermalink()}`, banResult.error);
+            }
         } else {
-            throw new TypeError("The ban prompt event's reaction map is malformed.")
-        }
-    } catch (e) {
-        LogService.error('BanPropagation', "Encountered an error while prompting the user for instructions to propagate a room level ban", e);
-    }
-}
-
-async function unbanFromAllLists(mjolnir: Mjolnir, user: string): Promise<IRoomUpdateError[]> {
-    const errors: IRoomUpdateError[] = [];
-    for (const list of mjolnir.policyListManager.lists) {
-        try {
-            await list.unbanEntity(RULE_USER, user);
-        } catch (e) {
-            LogService.info('BanPropagation', `Could not unban ${user} from ${list.roomRef}`, e);
-            const message = e.message || (e.body ? e.body.error : '<no message>');
-            errors.push(new RoomUpdateException(
-                list.roomId,
-                message.includes("You don't have permission") ? CommandExceptionKind.Known : CommandExceptionKind.Unknown,
-                e,
-                message
-            ));
+            log.error(`The Ban Result map has been malformed somehow item:`, item);
         }
     }
-    return errors;
-}
 
-async function unbanUserReactionListener(this: ListenerContext, _key: string, item: unknown, context: BanPropagationMessageContext): Promise<void> {
-    try {
+    private async unbanUserReactionListener(key: string, item: unknown, context: BanPropagationMessageContext): Promise<void> {
         if (item === 'unban from all') {
-            const listErrors = await unbanFromAllLists(this.mjolnir, context.target);
-            if (listErrors.length > 0) {
-                await printActionResult(
-                    this.mjolnir.client,
-                    this.mjolnir.managementRoomId,
-                    listErrors,
+            // FIXME:
+            // the unban from lists code should be moved to a standard consequence.
+            const errors: RoomUpdateError[] = [];
+            const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
+            const rulesMatchingUser = policyRevision.allRulesMatchingEntity(context.target, PolicyRuleType.User, Recommendation.Ban);
+            const listsWithRules = new Set<StringRoomID>(rulesMatchingUser.map((rule) => rule.sourceEvent.room_id));
+            const editablePolicyRooms = this.draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(this.draupnir.clientUserID, PolicyRuleType.User);
+            for (const roomIDWithPolicy of listsWithRules) {
+                const editablePolicyRoom = editablePolicyRooms.find((room) => room.toRoomIDOrAlias() === roomIDWithPolicy);
+                if (editablePolicyRoom === undefined) {
+                    const roomID = MatrixRoomReference.fromRoomID(roomIDWithPolicy, [serverName(this.draupnir.clientUserID)]);
+                    errors.push(new PermissionError(roomID, `${this.draupnir.clientUserID} doesn't have the power level to remove the policy banning ${context.target} within ${roomID.toPermalink()}`));
+                    continue;
+                }
+                const editorResult = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(editablePolicyRoom);
+                if (isError(editorResult)) {
+                    errors.push(RoomActionError.fromActionError(editablePolicyRoom, editorResult.error));
+                    continue;
+                }
+                const editor = editorResult.ok;
+                const unbanResult = await editor.unbanEntity(PolicyRuleType.User, context.target);
+                if (isError(unbanResult)) {
+                    errors.push(RoomActionError.fromActionError(editablePolicyRoom, unbanResult.error));
+                    continue;
+                }
+            }
+            if (errors.length > 0) {
+                Task(printActionResult(
+                    this.draupnir.client,
+                    this.draupnir.managementRoomID,
+                    errors,
                     { title: `There were errors unbanning ${context.target} from all lists.`}
-                );
+                ));
             } else {
-                const unbanErrors = await this.mjolnir.protectedRoomsTracker.unbanUser(context.target);
-                await printActionResult(
-                    this.mjolnir.client,
-                    this.mjolnir.managementRoomId,
-                    unbanErrors,
-                    {
-                        title: `There were errors unbanning ${context.target} from protected rooms.`,
-                        noErrorsText: `Done unbanning ${context.target} from protected rooms - no errors.`
-                    }
-                );
+                this.consequenceProvider.unbanUserFromRoomsInSet(
+                    this.description,
+                    context.target as StringUserID,
+                    this.protectedRoomsSet
+                )
             }
+        } else {
+            log.error(`unban reaction map is malformed got item ${item} for key ${key}`);
         }
-    } catch (e) {
-        LogService.error(`BanPropagationProtection`, "Unexpected error unbanning a user", e);
     }
 }
 
-export class BanPropagation extends Protection {
-
-    settings = {};
-
-    public get name(): string {
-        return 'BanPropagationProtection';
-    }
-    public get description(): string {
-        return "When you ban a user in any protected room with a client, this protection\
-        will turn the room level ban into a policy for a policy list of your choice.\
-        This will then allow the bot to ban the user from all of your rooms.";
-    }
-
-    public async registerProtection(mjolnir: Mjolnir): Promise<void> {
-        mjolnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, banReactionListener.bind({ mjolnir }));
-        mjolnir.reactionHandler.on(UNBAN_PROPAGATION_PROMPT_LISTENER, unbanUserReactionListener.bind({ mjolnir }));
-    }
-
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (event['type'] !== 'm.room.member'
-            || !(event['content']?.['membership'] === 'ban' || event['content']?.['membership'] === 'leave')) {
-            return;
-        }
-        const rulesMatchingUser = mjolnir.policyListManager.lists.reduce(
-            (listMap, list) => {
-                const rules = list.rulesMatchingEntity(event['state_key'], RULE_USER);
-                if (rules.length > 0) {
-                    listMap.set(list, rules)
-                };
-                return listMap
-            }, new Map<PolicyList, ListRule[]>()
-        );
-        const userMembership = event['content']?.['membership'];
-        if (userMembership === 'ban') {
-            if (rulesMatchingUser.size > 0) {
-                return; // The user is already banned.
-            }
-            // do not await, we don't want to block the protection manager
-            promptBanPropagation(mjolnir, event, roomId)
-        } else if (userMembership === 'leave' && rulesMatchingUser.size > 0) {
-            // Then this is a banned user being unbanned.
-            // do not await, we don't want to block the protection manager
-            promptUnbanPropagation(mjolnir, event, roomId, rulesMatchingUser);
-        }
-    }
-}
+describeProtection<Draupnir>({
+    name: 'BanPropagationProtection',
+    description:
+    "When you ban a user in any protected room with a client, this protection\
+    will turn the room level ban into a policy for a policy list of your choice.\
+    This will then allow the bot to ban the user from all of your rooms.",
+    factory: (decription, consequenceProvider, protectedRoomsSet, draupnir, _settings) =>
+      Ok(
+        new BanPropagationProtection(
+          decription,
+          consequenceProvider,
+          protectedRoomsSet,
+          draupnir
+        )
+      ),
+  });
