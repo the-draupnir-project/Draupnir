@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from "stream";
-import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { LogService } from "matrix-bot-sdk";
+import { MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
@@ -92,14 +92,14 @@ export class MatrixReactionHandler extends EventEmitter {
      * Start listening for reactions to events.
      * Called normally by an associated mjolnir instance when it is started.
      */
-    public start(emitter: MatrixEmitter): void {
+    public start(emitter: SafeMatrixEmitter): void {
         emitter.on('room.event', this.listener);
     }
 
     /**
      * Stop listening for reactions to events.
      */
-    public stop(emitter: MatrixEmitter): void {
+    public stop(emitter: SafeMatrixEmitter): void {
         emitter.off('room.event', this.listener);
     }
 

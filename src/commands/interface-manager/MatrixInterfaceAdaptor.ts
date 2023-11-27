@@ -29,28 +29,28 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { CommandError, CommandResult } from "./Validation";
 import { LogService, MatrixClient } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
-import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
 import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
 import { ParameterDescription } from "./ParameterParsing";
 import { matrixPromptForAccept } from "./MatrixPromptForAccept";
+import { MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ActionError, ActionResult, ResultError, RoomEvent, RoomMessage, StringRoomID, isError } from "matrix-protection-suite";
 
 export interface MatrixContext {
     client: MatrixSendClient,
-    emitter: MatrixEmitter,
-    roomId: string,
-    event: any,
+    emitter: SafeMatrixEmitter,
+    roomID: StringRoomID,
+    event: RoomMessage,
 }
 
 type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
     this: MatrixInterfaceAdaptor<C, ExecutorType>,
     client: MatrixClient,
     commandRoomId: string,
-    event: any,
+    event: RoomEvent,
     result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
 
 export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction = BaseFunction> implements InterfaceAcceptor {
@@ -58,7 +58,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
         private readonly renderer: RendererSignature<C, ExecutorType>,
-        private readonly validationErrorHandler?: (client: MatrixClient, roomId: string, event: any, validationError: CommandError) => Promise<void>
+        private readonly validationErrorHandler?: (client: MatrixClient, roomID: StringRoomID, event: RoomEvent, validationError: ActionError) => Promise<void>
     ) {
 
     }
@@ -75,13 +75,13 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
         const stream = new PromptableArgumentStream(args, this, invocationRecord);
         const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
-        if (executorResult.isErr()) {
-            this.reportValidationError(matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult.err);
+        if (isError(executorResult)) {
+            this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error);
             return;
         }
         // just give the renderer the MatrixContext.
         // we need to give the renderer the command itself!
-        await this.renderer.apply(this, [matrixContext.client, matrixContext.roomId, matrixContext.event, executorResult]);
+        await this.renderer.apply(this, [matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult]);
     }
 
     // is this still necessary, surely this should be handled entirely by the renderer?
@@ -89,16 +89,16 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     // and an error discovered because their is a fault or an error running the command. Though i don't think this is correct
     // since any CommandError recieved is an expected error. It means there is no fault. An exception on the other hand does
     // so this suggests we should just remove this.
-    private async reportValidationError(client: MatrixSendClient, roomId: string, event: any, validationError: CommandError): Promise<void> {
+    private async reportValidationError(client: MatrixSendClient, roomID: StringRoomID, event: RoomMessage, validationError: ActionError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
             await this.validationErrorHandler.apply(this, arguments);
             return;
         }
-        await tickCrossRenderer.call(this, client, roomId, event, CommandResult.Err(validationError));
+        await tickCrossRenderer.call(this, client, roomID, event, ResultError(validationError));
     }
 
-    public async promptForAccept<PresentationType = unknown>(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<CommandResult<PresentationType>> {
+    public async promptForAccept<PresentationType = unknown>(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<ActionResult<PresentationType>> {
         if (!(invocationRecord instanceof MatrixInvocationRecord)) {
             throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
         }

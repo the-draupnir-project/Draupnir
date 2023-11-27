@@ -3,9 +3,9 @@
  * All rights reserved.
  */
 
-import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
-import { CommandError, CommandResult } from "./Validation";
 import { LogService } from "matrix-bot-sdk";
+import { ActionError, ActionResult, Ok, StringUserID } from "matrix-protection-suite";
+import { MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 type PresentationByReactionKey = Map<string/*reaction key*/, any/*presentation*/>;
 
@@ -29,8 +29,8 @@ class ReactionHandler {
     private readonly promptRecordByEvent: Map<string/*event id*/, Set<ReactionPromptRecord>> = new Map();
 
     constructor(
-        matrixEmitter: MatrixEmitter,
-        private readonly userId: string,
+        matrixEmitter: SafeMatrixEmitter,
+        private readonly userID: StringUserID,
         private readonly client: MatrixSendClient,
     ) {
         matrixEmitter.on('room.event', this.handleEvent.bind(this))
@@ -83,7 +83,7 @@ class ReactionHandler {
         if (!(typeof relatedEventId === 'string' && typeof reactionKey === 'string')) {
             return;
         }
-        if (event['sender'] === this.userId) {
+        if (event['sender'] === this.userID) {
             return;
         }
         const entry = this.promptRecordByEvent.get(relatedEventId);
@@ -104,7 +104,7 @@ class ReactionHandler {
 
     public async waitForReactionToPrompt<T>(
         roomId: string, eventId: string, presentationByReaction: PresentationByReactionKey, timeout = 600_000 // ten minutes
-    ): Promise<CommandResult<T, CommandError>> {
+    ): Promise<ActionResult<T>> {
         let record;
         let timeoutId;
         const presentationOrTimeout = await Promise.race([
@@ -120,9 +120,9 @@ class ReactionHandler {
             if (record !== undefined) {
                 this.removePromptRecordForEvent(eventId, record);
             }
-            return CommandError.Result(`Timed out while waiting for a response to the prompt`);
+            return ActionError.Result(`Timed out while waiting for a response to the prompt`);
         } else {
-            return CommandResult.Ok(presentationOrTimeout as T);
+            return Ok(presentationOrTimeout as T);
         }
     }
 }
@@ -154,11 +154,11 @@ export class PromptResponseListener {
     private readonly reactionHandler: ReactionHandler;
 
     constructor(
-        matrixEmitter: MatrixEmitter,
-        userId: string,
+        matrixEmitter: SafeMatrixEmitter,
+        userID: StringUserID,
         client: MatrixSendClient,
     ) {
-        this.reactionHandler = new ReactionHandler(matrixEmitter, userId, client);
+        this.reactionHandler = new ReactionHandler(matrixEmitter, userID, client);
     }
 
     private indexToReactionKey(index: number): string {
@@ -168,7 +168,7 @@ export class PromptResponseListener {
     // This won't work, we have to have a special key in the original event
     // that means we should be waiting for it, that can't be abused/forged.
     // As we can't have the event id AOT.
-    public async waitForPresentationList<T>(presentations: T[], roomId: string, eventPromise: Promise<string>): Promise<CommandResult<T>> {
+    public async waitForPresentationList<T>(presentations: T[], roomId: string, eventPromise: Promise<string>): Promise<ActionResult<T>> {
         const presentationByReactionKey = presentations.reduce(
             (map: PresentationByReactionKey, presentation: T, index: number) => {
                 return map.set(this.indexToReactionKey(index), presentation);
