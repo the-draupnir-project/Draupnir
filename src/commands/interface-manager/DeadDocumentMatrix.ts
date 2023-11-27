@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { MatrixSendClient } from "../../MatrixEmitter";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { AbstractNode, DocumentNode, FringeWalker, NodeTag } from "./DeadDocument";
 import { HTML_RENDERER } from "./DeadDocumentHtml";
 import { MARKDOWN_RENDERER } from "./DeadDocumentMarkdown";

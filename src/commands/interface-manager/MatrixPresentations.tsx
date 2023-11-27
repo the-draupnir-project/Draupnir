@@ -6,10 +6,10 @@
 import { ReadItem } from "./CommandReader";
 import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParameterParsing";
 import { UserID } from "matrix-bot-sdk";
-import { MatrixRoomAlias, MatrixRoomID, MatrixRoomReference } from "./MatrixRoomReference";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
+import { MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
 
 
 makePresentationType({
@@ -19,7 +19,7 @@ makePresentationType({
 
 makePresentationType({
     name: 'MatrixRoomReference',
-    validator: simpleTypeValidator('MatrixRoomReference', (item: ReadItem) => item instanceof MatrixRoomReference),
+    validator: simpleTypeValidator('MatrixRoomReference', (item: ReadItem) => item instanceof MatrixRoomID || item instanceof MatrixRoomAlias),
 })
 
 makePresentationType({

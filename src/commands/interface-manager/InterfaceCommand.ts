@@ -29,8 +29,8 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
+import { ActionResult, isError } from "matrix-protection-suite";
 import { ParameterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, ArgumentStream } from "./ParameterParsing";
-import { CommandResult } from "./Validation";
 
 /**
  * 💀 . o O ( at least I don't have to remember the types )
@@ -38,7 +38,7 @@ import { CommandResult } from "./Validation";
  * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
  */
 
-export type BaseFunction = (keywords: ParsedKeywords, ...args: any) => Promise<CommandResult<any>>;
+export type BaseFunction = (keywords: ParsedKeywords, ...args: any) => Promise<ActionResult<any>>;
 
 type CommandLookupEntry<ExecutorType extends BaseFunction> = {
     next?: Map<string, CommandLookupEntry<ExecutorType>>,
@@ -200,7 +200,7 @@ export class InterfaceCommand<ExecutorType extends BaseFunction = BaseFunction> 
 
     public async parseThenInvoke(context: ThisParameterType<ExecutorType>, stream: IArgumentStream): Promise<ReturnType<ExecutorType>> {
         const parameterDescription = await this.parseArguments(stream);
-        if (parameterDescription.isErr()) {
+        if (isError(parameterDescription)) {
             // The inner type is irrelevant when it is Err, i don't know how to encode this in TS's type system but whatever.
             return parameterDescription as ReturnType<Awaited<ExecutorType>>;
         }

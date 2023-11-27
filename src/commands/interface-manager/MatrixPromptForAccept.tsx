@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+import { ActionResult, StringUserID } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { JSXFactory } from "./JSXFactory";
@@ -10,7 +11,6 @@ import { MatrixContext } from "./MatrixInterfaceAdaptor";
 import { PromptResponseListener } from "./MatrixPromptUX";
 import { ParameterDescription } from "./ParameterParsing";
 import { PromptOptions } from "./PromptForAccept";
-import { CommandResult } from "./Validation";
 
 async function promptDefault<PresentationType>(this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, defaultPrompt: PresentationType) {
     await renderMatrixAndSend(
@@ -18,7 +18,7 @@ async function promptDefault<PresentationType>(this: MatrixContext, parameter: P
             No argument was provided for the parameter {parameter.name}, would you like to accept the default?<br/>
             {defaultPrompt}
         </root>,
-        this.roomId, this.event, this.client
+        this.roomID, this.event, this.client
     )
 }
 
@@ -38,22 +38,23 @@ async function promptSuggestions<PresentationType>(
                 })}
             </ol>
         </root>,
-        this.roomId, this.event, this.client
+        this.roomID, this.event, this.client
     )).at(0) as string;
 
 }
 
 export async function matrixPromptForAccept<PresentationType = any> (
     this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
-): Promise<CommandResult<PresentationType>> {
-    const promptHelper = new PromptResponseListener(this.emitter, await this.client.getUserId(), this.client);
+): Promise<ActionResult<PresentationType>> {
+    // FIXME: is there a better way to get the clinet ID? why isn't Draupnir in the command context?
+    const promptHelper = new PromptResponseListener(this.emitter, await this.client.getUserId() as StringUserID, this.client);
     if (promptOptions.default) {
         await promptDefault.call(this, parameter, command, promptOptions.default);
         throw new TypeError("default prompts are not implemented yet.");
     }
     return await promptHelper.waitForPresentationList<PresentationType>(
         promptOptions.suggestions,
-        this.roomId,
+        this.roomID,
         promptSuggestions.call(this, parameter, command, promptOptions.suggestions)
     );
 }
