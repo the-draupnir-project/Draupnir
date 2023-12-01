@@ -33,7 +33,7 @@ import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
-import { DefaultStateTrackingMeta, ManagerManager, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultStateTrackingMeta, ManagerManager, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter, SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
 import { makeProtectedRoomsSet } from "./DraupnirBotMode";
@@ -80,7 +80,8 @@ export class Draupnir {
         public readonly managementRoom: MatrixRoomID,
         public readonly config: IConfig,
         public readonly protectedRoomsSet: ProtectedRoomsSet,
-        public readonly managerManager: ManagerManager
+        public readonly managerManager: ManagerManager,
+        public readonly synapseAdminClient?: SynapseAdminClient
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID);
@@ -117,7 +118,11 @@ export class Draupnir {
             managementRoom,
             config,
             protectedRoomsSet,
-            managerManager
+            managerManager,
+            new SynapseAdminClient(
+                client,
+                clientUserID
+            )
         );
         const loadResult = await protectedRoomsSet.protections.loadProtections(
             makeStandardConsequenceProvider(client, draupnir.managementRoomID),
