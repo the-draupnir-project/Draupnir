@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { MatrixRoomReference, Permalinks, UserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { MatrixEventReference, MatrixRoomReference, Permalinks, UserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 
 export interface ISuperCoolStream<T> {
     readonly source: T
@@ -136,7 +136,7 @@ function readItem(stream: StringStream): ReadItem {
 type ReadMacro = (stream: StringStream) => ReadItem;
 
 const WORD_DISPATCH_CHARACTERS = new Map<string, ReadMacro>();
-export type ReadItem = string | MatrixRoomReference | UserID | Keyword;
+export type ReadItem = string | MatrixRoomReference | UserID | Keyword | MatrixEventReference;
 
 /**
  * Defines a read macro to produce a read item.
@@ -276,8 +276,12 @@ definePostReadReplace(/^https:\/\/matrix\.to/, input => {
     }
     const url = parseResult.ok;
     if (url.eventID !== undefined) {
-        // don't know what to turn event references into yet.
-        return input;
+        const eventResult = MatrixEventReference.fromPermalink(input);
+        if (isError(eventResult)) {
+            return input;
+        } else {
+            return eventResult.ok;
+        }
     } else if (url.userID !== undefined) {
         return new UserID(url.userID);
     } else {

@@ -9,7 +9,7 @@ import { UserID } from "matrix-bot-sdk";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
-import { MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
+import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
 
 
 makePresentationType({
@@ -37,4 +37,9 @@ definePresentationRenderer(findPresentationType('UserID'), function (presentatio
     return <a href={`https://matrix.to/#/${presentation.toString()}`}>
         {presentation.toString()}
     </a>
+})
+
+makePresentationType({
+    name: 'MatrixEventReference',
+    validator: simpleTypeValidator('MatrixEventReference', (item) => item instanceof MatrixEventViaAlias || item instanceof MatrixEventViaRoomID)
 })
