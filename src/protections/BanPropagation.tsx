@@ -34,9 +34,10 @@ import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRende
 import { UserID } from "matrix-bot-sdk";
 import { renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, Protection, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DraupnirProtection } from "./Protection";
 
 const log = new Logger('BanPropagationProtection');
 
@@ -133,7 +134,7 @@ async function promptUnbanPropagation(
     await draupnir.reactionHandler.addReactionsToEvent(draupnir.client, draupnir.managementRoomID, promptEventId, reactionMap);
 }
 
-export class BanPropagationProtection extends AbstractProtection implements Protection {
+export class BanPropagationProtection extends AbstractProtection implements DraupnirProtection {
 
     constructor(
         description: ProtectionDescription,

@@ -25,41 +25,59 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { Mjolnir } from "../Mjolnir";
-import { LogLevel, UserID } from "matrix-bot-sdk";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { LogLevel } from "matrix-bot-sdk";
+import { AbstractProtection, ActionResult, ConsequenceProvider, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
-export class MessageIsMedia extends Protection {
+type MessageIsMediaProtectionSettings = {};
 
-    settings = {};
+describeProtection<Draupnir, MessageIsMediaProtectionSettings>({
+    name: 'MessageIsMediaProtection',
+    description: "If a user posts an image or video, that message will be redacted. No bans are issued.",
+    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+        return Ok(
+            new MessageIsMediaProtection(
+                description,
+                consequenceProvider,
+                protectedRoomsSet,
+                draupnir
+            )
+        )
+    }
+})
 
-    constructor() {
-        super();
+export class MessageIsMediaProtection extends AbstractProtection implements Protection {
+    constructor(
+        description: ProtectionDescription<Draupnir, MessageIsMediaProtectionSettings>,
+        consequenceProvider: ConsequenceProvider,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir
+    ) {
+        super(
+            description,
+            consequenceProvider,
+            protectedRoomsSet,
+            [],
+            []
+        );
     }
 
-    public get name(): string {
-        return 'MessageIsMediaProtection';
-    }
-    public get description(): string {
-        return "If a user posts an image or video, that message will be redacted. No bans are issued.";
-    }
-
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (event['type'] === 'm.room.message') {
-            const content = event['content'] || {};
-            const msgtype = content['msgtype'] || 'm.text';
-            const formattedBody = content['formatted_body'] || '';
+    public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
+        if (Value.Check(RoomMessage, event)) {
+            const msgtype = event.content?.['msgtype'] || 'm.text';
+            const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
             if (isMedia) {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Redacting event from ${event['sender']} for posting an image/video. ${Permalinks.forEvent(roomId, event['event_id'], [new UserID(await mjolnir.client.getUserId()).domain])}`);
+                const roomID = room.toRoomIDOrAlias();
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Redacting event from ${event['sender']} for posting an image/video. ${Permalinks.forEvent(roomID, event['event_id'], [serverName(this.draupnir.clientUserID)])}`);
                 // Redact the event
-                if (!mjolnir.config.noop) {
-                    await mjolnir.client.redactEvent(roomId, event['event_id'], "Images/videos are not permitted here");
+                if (this.draupnir.config.noop) {
+                    await this.draupnir.client.redactEvent(roomID, event['event_id'], "Images/videos are not permitted here");
                 } else {
-                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Tried to redact ${event['event_id']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                    await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }
             }
         }
+        return Ok(undefined);
     }
 }
