@@ -46,19 +46,19 @@ export interface MatrixContext {
     event: RoomMessage,
 }
 
-type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
+export type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
     this: MatrixInterfaceAdaptor<C, ExecutorType>,
-    client: MatrixClient,
-    commandRoomId: string,
+    client: MatrixSendClient,
+    commandRoomID: StringRoomID,
     event: RoomEvent,
-    result: Awaited<ReturnType<ExecutorType>>) => Promise<void>;
+    result: ActionResult<unknown>) => Promise<void>;
 
 export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extends BaseFunction = BaseFunction> implements InterfaceAcceptor {
     public readonly isPromptable = true;
     constructor(
         public readonly interfaceCommand: InterfaceCommand<ExecutorType>,
         private readonly renderer: RendererSignature<C, ExecutorType>,
-        private readonly validationErrorHandler?: (client: MatrixClient, roomID: StringRoomID, event: RoomEvent, validationError: ActionError) => Promise<void>
+        private readonly validationErrorHandler?: (client: MatrixSendClient, roomID: StringRoomID, event: RoomEvent, validationError: ActionError) => Promise<void>
     ) {
 
     }

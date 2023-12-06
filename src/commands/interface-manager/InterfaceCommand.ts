@@ -38,7 +38,7 @@ import { ParameterParser, IArgumentStream, IArgumentListParser, ParsedKeywords, 
  * Probably am "doing something wrong", and no, trying to make this protocol isn't it.
  */
 
-export type BaseFunction = (keywords: ParsedKeywords, ...args: any) => Promise<ActionResult<any>>;
+export type BaseFunction = (keywords: ParsedKeywords, ...args: unknown[]) => Promise<ActionResult<unknown>>;
 
 type CommandLookupEntry<ExecutorType extends BaseFunction> = {
     next?: Map<string, CommandLookupEntry<ExecutorType>>,
