@@ -27,7 +27,7 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { MatrixRoomID, MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { CommandResult } from "./interface-manager/Validation";
 import { CommandException, CommandExceptionKind } from "./interface-manager/CommandException";
@@ -43,7 +43,7 @@ defineInterfaceCommand({
     designator: ["rooms"],
     summary: "List all of the protected rooms.",
     parameters: parameters([]),
-    command: async function (this: MjolnirContext, _keywrods): Promise<CommandResult<string[]>> {
+    command: async function (this: DraupnirContext, _keywrods): Promise<CommandResult<string[]>> {
         return CommandResult.Ok(this.mjolnir.protectedRoomsTracker.getProtectedRooms());
     }
 })
@@ -84,7 +84,7 @@ defineInterfaceCommand({
             description: 'The room to protect.'
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
+    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
         const roomIDOrError = await (async () => {
             try {
                 return CommandResult.Ok(await roomRef.joinClient(this.mjolnir.client));
@@ -115,7 +115,7 @@ defineInterfaceCommand({
             description: 'The room to stop protecting.'
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
+    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
         const roomID = await roomRef.resolve(this.mjolnir.client);
         await this.mjolnir.removeProtectedRoom(roomID.toRoomIdOrAlias());
         try {

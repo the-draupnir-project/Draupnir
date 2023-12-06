@@ -25,31 +25,55 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import PolicyList from "../models/PolicyList";
-import { RichReply } from "matrix-bot-sdk";
-import { Permalinks } from "./interface-manager/Permalinks";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { ActionResult, MatrixRoomAlias, MatrixRoomID, PropagationType, isError } from "matrix-protection-suite";
+import { DraupnirContext } from "./CommandHandler";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
-// !mjolnir list create <shortcode> <alias localpart>
-export async function execCreateListCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const shortcode = parts[3];
-    const aliasLocalpart = parts[4];
-
-    const listRoomId = await PolicyList.createList(
-        mjolnir.client,
+export async function createList(
+    this: DraupnirContext,
+    _keywords: ParsedKeywords,
+    shortcode: string,
+    alias: MatrixRoomAlias,
+    ...reasonParts: string[]
+): Promise<ActionResult<MatrixRoomID>> {
+    const newList = await this.draupnir.managerManager.policyRoomManager.createPolicyRoom(
         shortcode,
-        [event['sender']],
-        { room_alias_name: aliasLocalpart }
+        [this.event.sender],
+        {
+            room_alias_name: alias.toRoomIDOrAlias()
+        }
     );
-
-    const roomRef = MatrixRoomReference.fromPermalink(Permalinks.forRoom(listRoomId));
-    await mjolnir.policyListManager.watchList(roomRef);
-    await mjolnir.addProtectedRoom(listRoomId);
-
-    const html = `Created new list (<a href="${roomRef}">${listRoomId}</a>). This list is now being watched.`;
-    const text = `Created new list (${roomRef}). This list is now being watched.`;
-    const reply = RichReply.createFor(roomId, event, text, html);
-    reply["msgtype"] = "m.notice";
-    await mjolnir.client.sendMessage(roomId, reply);
+    if (isError(newList)) {
+        return newList;
+    }
+    const watchResult = await this.draupnir.protectedRoomsSet.issuerManager.watchList(PropagationType.Direct, newList.ok, {});
+    if (isError(watchResult)) {
+        return watchResult;
+    }
+    return newList;
 }
+
+defineInterfaceCommand({
+    designator: ["list", "create"],
+    table: "mjolnir",
+    parameters: parameters([
+        {
+            name: "shortcode",
+            acceptor: findPresentationType("string"),
+        },
+        {
+            name: "alias",
+            acceptor: findPresentationType("MatrixRoomAlias"),
+        },
+    ]),
+    command: createList,
+    summary: "Create a new Policy Room which can be used to ban users, rooms and servers from your protected rooms"
+})
+
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("mjolnir", "list", "create"),
+    renderer: tickCrossRenderer
+})

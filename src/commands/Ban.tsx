@@ -25,88 +25,57 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { UserID } from "matrix-bot-sdk";
-import { MjolnirContext } from "./CommandHandler";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
-import { Mjolnir } from "../Mjolnir";
-import { RULE_ROOM, RULE_SERVER, RULE_USER } from "../models/ListRule";
-import PolicyList from "../models/PolicyList";
-import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, makePresentationType, ParameterDescription, parameters, ParsedKeywords, RestDescription, simpleTypeValidator, union } from "./interface-manager/ParameterParsing";
+import { DraupnirContext } from "./CommandHandler";
+import { defineInterfaceCommand,findTableCommand } from "./interface-manager/InterfaceCommand";
+import { findPresentationType, ParameterDescription, parameters, ParsedKeywords, RestDescription, union } from "./interface-manager/ParameterParsing";
 import "./interface-manager/MatrixPresentations";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { PromptOptions } from "./interface-manager/PromptForAccept";
-import { definePresentationRenderer } from "./interface-manager/DeadDocumentPresentation";
-import { DocumentNode } from "./interface-manager/DeadDocument";
-import { JSXFactory } from "./interface-manager/JSXFactory";
-
-makePresentationType({
-    name: "PolicyList",
-    validator: simpleTypeValidator("PolicyList", (readItem: unknown) => readItem instanceof PolicyList)
-})
-
-definePresentationRenderer(findPresentationType("PolicyList"), function(list: PolicyList): DocumentNode {
-    return <p>
-        {list.listShortcode} <a href={list.roomRef}>{list.roomId}</a>
-    </p>
-})
+import { Draupnir } from "../Draupnir";
+import { ActionResult, MatrixRoomReference, PolicyRoomEditor, PolicyRuleType, isError } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 
-export async function findPolicyListFromRoomReference(mjolnir: Mjolnir, policyListReference: MatrixRoomReference): Promise<CommandResult<PolicyList, CommandError>> {
-    const policyListRoomId = (await policyListReference.resolve(mjolnir.client)).toRoomIdOrAlias();
-    const policyList = mjolnir.policyListManager.lists.find(list => list.roomId === policyListRoomId);
-    if (policyList !== undefined) {
-        return CommandResult.Ok(policyList);
-    } else {
-        // Would it be acceptable to create an anonymous policy list that is not being watched
-        // by mjolnir for the purposes of banning / unbanning? unbanning requires loading the rules
-        // but banning doesn't.. so this means you'd want two types of lists
-        // one of which can only be made by a factory which watches them via sync
-        // and makes sure mjolnir is joined.
-        // This refactor would be important for previewing lists regardless.
-        return CommandError.Result(`There is no policy list that Mjolnir is watching for ${policyListReference.toPermalink()}`);
+export async function findPolicyRoomEditorFromRoomReference(draupnir: Draupnir, policyRoomReference: MatrixRoomReference): Promise<ActionResult<PolicyRoomEditor>> {
+    const policyRoomID = await resolveRoomReferenceSafe(draupnir.client, policyRoomReference);
+    if (isError(policyRoomID)) {
+        return policyRoomID;
     }
-}
-
-export async function findPolicyListFromShortcode(mjolnir: Mjolnir, designator: string): Promise<CommandResult<PolicyList, CommandError>> {
-    const list = mjolnir.policyListManager.resolveListShortcode(designator);
-    if (list !== undefined) {
-        return CommandResult.Ok(list);
-    } else {
-        return CommandError.Result(`There is no policy list with the shortcode ${designator} and a default list couldn't be found`);
-    }
+    return await draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
 }
 
 async function ban(
-    this: MjolnirContext,
+    this: DraupnirContext,
     _keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
-    policyListReference: MatrixRoomReference|string|PolicyList,
+    policyRoomReference: MatrixRoomReference,
     ...reasonParts: string[]
-    ): Promise<CommandResult<any, CommandError>> {
-        // first step is to resolve the policy list
-        const policyListResult = typeof policyListReference === 'string'
-            ? await findPolicyListFromShortcode(this.mjolnir, policyListReference)
-            : policyListReference instanceof PolicyList
-            ? CommandResult.Ok(policyListReference)
-            : await findPolicyListFromRoomReference(this.mjolnir, policyListReference);
-        if (policyListResult.isErr()) {
-            return policyListResult;
+    ): Promise<ActionResult<string>> {
+        const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
+            this.draupnir,
+            policyRoomReference
+        );
+        if (isError(policyListEditorResult)) {
+            return policyListEditorResult;
         }
-        const policyList = policyListResult.ok;
-
+        const policyListEditor = policyListEditorResult.ok;
         const reason = reasonParts.join(' ');
-
         if (entity instanceof UserID) {
-            await policyList.banEntity(RULE_USER, entity.toString(), reason);
-        } else if (entity instanceof MatrixRoomReference) {
-            await policyList.banEntity(RULE_ROOM, entity.toRoomIdOrAlias(), reason);
+            return await policyListEditor.banEntity(PolicyRuleType.User, entity.toString(), reason);
+        } else if (typeof entity === 'string') {
+            return await policyListEditor.banEntity(PolicyRuleType.Server,entity, reason);
         } else {
-            await policyList.banEntity(RULE_SERVER, entity, reason);
+            const resolvedRoomReference = await resolveRoomReferenceSafe(
+                this.draupnir.client,
+                entity
+            );
+            if (isError(resolvedRoomReference)) {
+                return resolvedRoomReference;
+            }
+            return await policyListEditor.banEntity(PolicyRuleType.Server, resolvedRoomReference.ok.toRoomIDOrAlias(), reason);
         }
-        return CommandResult.Ok(undefined);
     }
 
 defineInterfaceCommand({
@@ -124,23 +93,24 @@ defineInterfaceCommand({
         {
             name: "list",
             acceptor: union(
-                findPresentationType("MatrixRoomReference"),
-                findPresentationType("string"),
-                findPresentationType("PolicyList"),
+                findPresentationType("MatrixRoomReference")
             ),
-            prompt: async function (this: MjolnirContext, parameter: ParameterDescription): Promise<PromptOptions> {
+            prompt: async function (this: DraupnirContext, _parameter: ParameterDescription): Promise<PromptOptions> {
                 return {
-                    suggestions: this.mjolnir.policyListManager.lists
+                    suggestions: this.draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(
+                        this.draupnir.clientUserID,
+                        PolicyRuleType.User
+                    )
                 };
             }
         },
     ],
-    new RestDescription<MjolnirContext>(
+    new RestDescription<DraupnirContext>(
         "reason",
         findPresentationType("string"),
         async function(_parameter) {
             return {
-                suggestions: this.mjolnir.config.commands.ban.defaultReasons
+                suggestions: this.draupnir.config.commands.ban.defaultReasons
             }
         }),
     ),
