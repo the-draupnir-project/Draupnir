@@ -25,45 +25,86 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { NumberProtectionSetting } from "./ProtectionSettings";
-import { Mjolnir } from "../Mjolnir";
-import { LogLevel, LogService } from "matrix-bot-sdk";
+import { Draupnir } from "../Draupnir";
+import { DraupnirProtection } from "./Protection";
+import { LogLevel } from "matrix-bot-sdk";
+import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, ProtectionDescription, RoomEvent, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringRoomID, StringUserID, describeProtection, isError } from "matrix-protection-suite";
+
+const log = new Logger('BasicFloodingProtection');
+
+type BasicFloodingProtectionSettings = {
+    maxPerMinute: number,
+}
 
 // if this is exceeded, we'll ban the user for spam and redact their messages
 export const DEFAULT_MAX_PER_MINUTE = 10;
 const TIMESTAMP_THRESHOLD = 30000; // 30s out of phase
 
-export class BasicFlooding extends Protection {
+describeProtection<Draupnir, BasicFloodingProtectionSettings>({
+    name: 'BasicFloodingProtection',
+    description:
+    "If a user posts more than " + DEFAULT_MAX_PER_MINUTE + " messages in 60s they'll be \
+    banned for spam. This does not publish the ban to any of your ban lists.\
+    This is a legacy protection from Mjolnir and contains bugs.",
+    factory: (description, consequenceProvider, protectedRoomsSet, draupnir, rawSettings) => {
+        const parsedSettings = description.protectionSettings.parseSettings(rawSettings);
+        if (isError(parsedSettings)) {
+            return parsedSettings;
+        }
+        return Ok(
+            new BasicFloodingProtection(
+              description,
+              consequenceProvider,
+              protectedRoomsSet,
+              draupnir,
+              parsedSettings.ok
+            )
+          )
+    },
+    protectionSettings: new StandardProtectionSettings<BasicFloodingProtectionSettings>({
+        maxPerMinute: new SafeIntegerProtectionSetting<BasicFloodingProtectionSettings>(
+            'maxPerMinute'
+        )},
+        {
+            maxPerMinute: DEFAULT_MAX_PER_MINUTE
+        })
+  });
 
-    private lastEvents: { [roomId: string]: { [userId: string]: { originServerTs: number, eventId: string }[] } } = {};
+
+export class BasicFloodingProtection extends AbstractProtection implements DraupnirProtection {
+
+    private lastEvents: { [roomID: StringRoomID]: { [userID: StringUserID]: { originServerTs: number, eventID: StringEventID }[] } } = {};
     private recentlyBanned: string[] = [];
 
-    settings = {
-        maxPerMinute: new NumberProtectionSetting(DEFAULT_MAX_PER_MINUTE)
-    };
-
-    public get name(): string {
-        return 'BasicFloodingProtection';
+    public constructor(
+        description: ProtectionDescription,
+        consequenceProvider: ConsequenceProvider,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+        private readonly settings: BasicFloodingProtectionSettings,
+    ) {
+        super(
+            description,
+            consequenceProvider,
+            protectedRoomsSet,
+            [],
+            []
+        )
     }
-    public get description(): string {
-        return "If a user posts more than " + DEFAULT_MAX_PER_MINUTE + " messages in 60s they'll be " +
-            "banned for spam. This does not publish the ban to any of your ban lists.";
-    }
 
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (!this.lastEvents[roomId]) this.lastEvents[roomId] = {};
+    public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
+        if (!this.lastEvents[room.toRoomIDOrAlias()]) this.lastEvents[room.toRoomIDOrAlias()] = {};
 
-        const forRoom = this.lastEvents[roomId];
+        const forRoom = this.lastEvents[room.toRoomIDOrAlias()];
         if (!forRoom[event['sender']]) forRoom[event['sender']] = [];
         let forUser = forRoom[event['sender']];
 
         if ((new Date()).getTime() - event['origin_server_ts'] > TIMESTAMP_THRESHOLD) {
-            LogService.warn("BasicFlooding", `${event['event_id']} is more than ${TIMESTAMP_THRESHOLD}ms out of phase - rewriting event time to be 'now'`);
+            log.warn("BasicFlooding", `${event['event_id']} is more than ${TIMESTAMP_THRESHOLD}ms out of phase - rewriting event time to be 'now'`);
             event['origin_server_ts'] = (new Date()).getTime();
         }
 
-        forUser.push({originServerTs: event['origin_server_ts'], eventId: event['event_id']});
+        forUser.push({originServerTs: event['origin_server_ts'], eventID: event['event_id']});
 
         // Do some math to see if the user is spamming
         let messageCount = 0;
@@ -72,25 +113,27 @@ export class BasicFlooding extends Protection {
             messageCount++;
         }
 
-        if (messageCount >= this.settings.maxPerMinute.value) {
-            await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Banning ${event['sender']} in ${roomId} for flooding (${messageCount} messages in the last minute)`, roomId);
-            if (!mjolnir.config.noop) {
-                await mjolnir.client.banUser(event['sender'], roomId, "spam");
+        if (messageCount >= this.settings.maxPerMinute) {
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Banning ${event['sender']} in ${room.toRoomIDOrAlias()} for flooding (${messageCount} messages in the last minute)`, room.toRoomIDOrAlias());
+            if (!this.draupnir.config.noop) {
+                await this.consequenceProvider.consequenceForUserInRoom(this.description, room.toRoomIDOrAlias(), event['sender'], 'spam');
             } else {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to ban ${event['sender']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to ban ${event['sender']} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`, room.toRoomIDOrAlias());
             }
 
-            if (this.recentlyBanned.includes(event['sender'])) return; // already handled (will be redacted)
-            mjolnir.unlistedUserRedactionHandler.addUser(event['sender']);
+            if (this.recentlyBanned.includes(event['sender'])) {
+                return Ok(undefined);
+            } // already handled (will be redacted)
+            this.draupnir.unlistedUserRedactionQueue.addUser(event['sender']);
             this.recentlyBanned.push(event['sender']); // flag to reduce spam
 
             // Redact all the things the user said too
-            if (!mjolnir.config.noop) {
-                for (const eventId of forUser.map(e => e.eventId)) {
-                    await mjolnir.client.redactEvent(roomId, eventId, "spam");
+            if (!this.draupnir.config.noop) {
+                for (const eventID of forUser.map(e => e.eventID)) {
+                    await this.consequenceProvider.consequenceForEvent(this.description, room.toRoomIDOrAlias(), eventID, 'spam');
                 }
             } else {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to redact messages for ${event['sender']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to redact messages for ${event['sender']} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`, room.toRoomIDOrAlias());
             }
 
             // Free up some memory now that we're ready to handle it elsewhere
@@ -98,8 +141,9 @@ export class BasicFlooding extends Protection {
         }
 
         // Trim the oldest messages off the user's history if it's getting large
-        if (forUser.length > this.settings.maxPerMinute.value * 2) {
-            forUser.splice(0, forUser.length - (this.settings.maxPerMinute.value * 2) - 1);
+        if (forUser.length > this.settings.maxPerMinute * 2) {
+            forUser.splice(0, forUser.length - (this.settings.maxPerMinute * 2) - 1);
         }
+        return Ok(undefined);
     }
 }

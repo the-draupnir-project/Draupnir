@@ -25,52 +25,13 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { AbstractProtectionSetting } from "./ProtectionSettings";
-import { Consequence } from "./consequence";
+import { Protection } from "matrix-protection-suite";
+import { DocumentNode } from "../commands/interface-manager/DeadDocument";
+import { ParsedKeywords } from "../commands/interface-manager/ParameterParsing";
 import { ReadItem } from "../commands/interface-manager/CommandReader";
 
-/**
- * Represents a protection mechanism of sorts. Protections are intended to be
- * event-based (ie: X messages in a period of time, or posting X events).
- *
- * Protections are guaranteed to be run before redaction handlers.
- */
-export abstract class Protection {
-    abstract readonly name: string
-    abstract readonly description: string;
-    enabled = false;
-    readonly requiredStatePermissions: string[] = [];
-    abstract settings: { [setting: string]: AbstractProtectionSetting<any, any> };
-
-    /*
-     * Handle a single event from a protected room, to decide if we need to
-     * respond to it
-     */
-    async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<Consequence[] | any> {
-    }
-
-    /*
-     * Handle a single reported event from a protecte room, to decide if we
-     * need to respond to it
-     */
-    async handleReport(mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string): Promise<any> {
-    }
-
-    /**
-     * Return status information for `!mjolnir status ${protectionName}`.
-     * FIXME: protections need their own tables https://github.com/Gnuxie/Draupnir/issues/21
-     */
-    async statusCommand(mjolnir: Mjolnir, subcommand: ReadItem[]): Promise<{html: string, text: string} | null> {
-        // By default, protections don't have any status to show.
-        return null;
-    }
-
-    /**
-     * Allows protections to setup listeners when Mjolnir starts up.
-     * @param mjolnir The mjolnir instance associated with a given protection manager.
-     */
-    public async registerProtection(mjolnir: Mjolnir): Promise<void> {
-        return;
-    }
+export interface DraupnirProtection extends Protection {
+    // FIXME: Protections need their own command tables
+    // https://github.com/Gnuxie/Draupnir/issues/21/
+    status?(keywords: ParsedKeywords, ...items: ReadItem[]): Promise<DocumentNode>
 }

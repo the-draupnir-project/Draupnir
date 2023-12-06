@@ -25,77 +25,92 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { ConsequenceBan, ConsequenceRedact } from "./consequence";
-import { Mjolnir } from "../Mjolnir";
-import { LogLevel, LogService } from "matrix-bot-sdk";
-import { isTrueJoinEvent } from "../utils";
+import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
-export class WordList extends Protection {
+const log = new Logger('WordList');
 
-    settings = {};
+describeProtection<Draupnir>({
+    name: 'WordListProteciton',
+    description: "If a user posts a monitored word a set amount of time after joining, they\
+    will be banned from that room.  This will not publish the ban to a ban list.",
+    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+        return Ok(
+            new WordListProtection(
+                description,
+                consequenceProvider,
+                protectedRoomsSet,
+                draupnir
+            )
+        );
+    }
+});
 
-    private justJoined: { [roomId: string]: { [username: string]: Date} } = {};
+export class WordListProtection extends AbstractProtection implements Protection {
+    private justJoined: { [roomID: StringRoomID]: { [username: StringUserID]: Date} } = {};
     private badWords?: RegExp;
 
-    constructor() {
-        super();
+    constructor(
+        description: ProtectionDescription<Draupnir>,
+        consequenceProvider: ConsequenceProvider,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+    ) {
+        super(
+            description,
+            consequenceProvider,
+            protectedRoomsSet,
+            [],
+            []
+        );
     }
-
-    public get name(): string {
-        return 'WordList';
-    }
-    public get description(): string {
-        return "If a user posts a monitored word a set amount of time after joining, they " +
-            "will be banned from that room.  This will not publish the ban to a ban list.";
-    }
-
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-
-        const content = event['content'] || {};
-        const minsBeforeTrusting = mjolnir.config.protections.wordlist.minutesBeforeTrusting;
-
+    public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
+        const roomID = revision.room.toRoomIDOrAlias();
+        const minsBeforeTrusting = this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
         if (minsBeforeTrusting > 0) {
-            if (!this.justJoined[roomId]) this.justJoined[roomId] = {};
+            for (const change of changes) {
+                if (!this.justJoined[roomID]) this.justJoined[roomID] = {};
 
-            // When a new member logs in, store the time they joined.  This will be useful
-            // when we need to check if a message was sent within 20 minutes of joining
-            if (event['type'] === 'm.room.member') {
-                if (isTrueJoinEvent(event)) {
+                // When a new member logs in, store the time they joined.  This will be useful
+                // when we need to check if a message was sent within 20 minutes of joining
+                if (change.membershipChangeType === MembershipChangeType.Joined) {
                     const now = new Date();
-                    this.justJoined[roomId][event['state_key']] = now;
-                    LogService.info("WordList", `${event['state_key']} joined ${roomId} at ${now.toDateString()}`);
-                } else if (content['membership'] === 'leave' || content['membership'] === 'ban') {
-                    delete this.justJoined[roomId][event['sender']]
+                    this.justJoined[roomID][change.userID] = now;
+                    log.debug(`${change.userID} joined ${roomID} at ${now.toDateString()}`);
+                } else if (change.membershipChangeType === MembershipChangeType.Left || change.membershipChangeType === MembershipChangeType.Banned || change.membershipChangeType === MembershipChangeType.Kicked) {
+                    delete this.justJoined[roomID][change.userID]
                 }
-
-                return;
             }
         }
+        return Ok(undefined);
+    }
 
-        if (event['type'] === 'm.room.message') {
-            const message = content['formatted_body'] || content['body'] || null;
-            if (!message) {
-                return;
+    public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
+        const minsBeforeTrusting = this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
+        if (Value.Check(RoomMessage, event)) {
+            const message = (event.content !== undefined && 'formatted_body' in event.content && event.content?.['formatted_body']) || event.content?.['body'];
+            if (!message === undefined) {
+                return Ok(undefined);
             }
+            const roomID = room.toRoomIDOrAlias();
 
             // Check conditions first
             if (minsBeforeTrusting > 0) {
-                const joinTime = this.justJoined[roomId][event['sender']]
+                const joinTime = this.justJoined[roomID][event['sender']]
                 if (joinTime) { // Disregard if the user isn't recently joined
 
                     // Check if they did join recently, was it within the timeframe
                     const now = new Date();
                     if (now.valueOf() - joinTime.valueOf() > minsBeforeTrusting * 60 * 1000) {
-                        delete this.justJoined[roomId][event['sender']] // Remove the user
-                        LogService.info("WordList", `${event['sender']} is no longer considered suspect`);
-                        return
+                        delete this.justJoined[roomID][event['sender']] // Remove the user
+                        log.info(`${event['sender']} is no longer considered suspect`);
+                        return Ok(undefined);
                     }
 
                 } else {
                     // The user isn't in the recently joined users list, no need to keep
                     // looking
-                    return
+                    return Ok(undefined);
                 }
             }
             if (!this.badWords) {
@@ -105,20 +120,17 @@ export class WordList extends Protection {
                 };
 
                 // Create a mega-regex from all the tiny words.
-                const words = mjolnir.config.protections.wordlist.words.filter(word => word.length !== 0).map(escapeRegExp);
-                if (words.length === 0) {
-                    mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "WordList", `Someone turned on the word list protection without configuring any words. Disabling.`);
-                    this.enabled = false;
-                    return;
-                }
+                const words = this.draupnir.config.protections.wordlist.words.filter(word => word.length !== 0).map(escapeRegExp);
                 this.badWords = new RegExp(words.join("|"), "i");
             }
 
-            const match = this.badWords!.exec(message);
+            const match = this.badWords!.exec(message ?? '');
             if (match) {
                 const reason = `bad word: ${match[0]}`;
-                return [new ConsequenceBan(reason), new ConsequenceRedact(reason)];
+                await this.consequenceProvider.consequenceForUserInRoom(this.description, roomID, event.sender, reason);
+                await this.consequenceProvider.consequenceForEvent(this.description, roomID, event.event_id, reason);
             }
         }
+        return Ok(undefined);
     }
 }
