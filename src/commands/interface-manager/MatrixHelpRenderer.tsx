@@ -3,14 +3,14 @@
  */
 
 import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
-import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
+import { MatrixContext, MatrixInterfaceAdaptor, RendererSignature } from "./MatrixInterfaceAdaptor";
 import { ArgumentParseError, ParameterDescription, RestDescription } from "./ParameterParsing";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionException, ActionResult, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionException, ActionResult, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -88,7 +88,7 @@ export async function renderHelp(client: MatrixSendClient, commandRoomID: String
     );
 }
 
-export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: any, result: ActionResult<unknown>): Promise<void> {
+export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
     const react = async (emote: string) => {
         try {
             await client.unstableApis.addReactionToEvent(commandRoomID, event['event_id'], emote);
