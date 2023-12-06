@@ -27,7 +27,7 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { CommandError, CommandResult } from "./interface-manager/Validation";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
@@ -43,7 +43,7 @@ defineInterfaceCommand({
             acceptor: findPresentationType("MatrixRoomReference"),
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
         await this.mjolnir.policyListManager.watchList(list);
         return CommandResult.Ok(undefined);
     },
@@ -64,7 +64,7 @@ defineInterfaceCommand({
             acceptor: findPresentationType("MatrixRoomReference"),
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
         await this.mjolnir.policyListManager.unwatchList(list);
         return CommandResult.Ok(undefined);
     },

@@ -1,9 +1,9 @@
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { ParsedKeywords, RestDescription, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { DraupnirContext } from "./CommandHandler";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { ActionError, ActionResult, Ok } from "matrix-protection-suite";
 
 
 defineInterfaceCommand({
@@ -12,7 +12,7 @@ defineInterfaceCommand({
     summary: "Sets the displayname of the draupnir instance to the specified value in all rooms.",
     parameters: parameters(
         [],
-        new RestDescription<MjolnirContext>(
+        new RestDescription<DraupnirContext>(
             "displayname",
             findPresentationType("string"),
         ),
@@ -21,16 +21,16 @@ defineInterfaceCommand({
 })
 
 // !draupnir displayname <displayname>
-export async function execSetDisplayNameCommand(this: MjolnirContext, _keywords: ParsedKeywords, ...displaynameParts: string[]): Promise<CommandResult<any>> {
+export async function execSetDisplayNameCommand(this: DraupnirContext, _keywords: ParsedKeywords, ...displaynameParts: string[]): Promise<ActionResult<void>> {
     const displayname = displaynameParts.join(' ');
     try {
         await this.client.setDisplayName(displayname);
     } catch (e) {
         const message = e.message || (e.body ? e.body.error : '<no message>');
-        return CommandError.Result(`Failed to set displayname to ${displayname}: ${message}`)
+        return ActionError.Result(`Failed to set displayname to ${displayname}: ${message}`)
     }
 
-    return CommandResult.Ok(undefined);
+    return Ok(undefined);
 }
 
 defineMatrixInterfaceAdaptor({

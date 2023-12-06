@@ -25,40 +25,34 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { STATE_CHECKING_PERMISSIONS, STATE_NOT_STARTED, STATE_RUNNING, STATE_SYNCING } from "../Mjolnir";
-import { RichReply } from "matrix-bot-sdk";
-import PolicyList from "../models/PolicyList";
 import { PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, RestDescription } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { MatrixSendClient } from "../MatrixEmitter";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 import { Protection } from "../protections/Protection";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
+import { ActionResult, Ok, PolicyRoomRevision, PolicyRoomWatchProfile, PolicyRuleType, isError } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
 defineInterfaceCommand({
     designator: ["status"],
     table: "mjolnir",
     parameters: parameters([]),
-    command: async function () { return CommandResult.Ok(mjolnirStatusInfo.call(this)) },
+    command: async function (this: DraupnirContext) {
+         return Ok(draupnirStatusInfo(this.draupnir))
+    },
     summary: "Show the status of the bot."
 })
 
 export interface ListInfo {
-    shortcode: string,
-    roomRef: string,
-    roomId: string,
-    serverRules: number,
-    userRules: number,
-    roomRules: number,
+    watchedListProfile: PolicyRoomWatchProfile,
+    revision: PolicyRoomRevision
 }
 
 export interface StatusInfo {
-    state: string, // a small description of the state of Mjolnir
     numberOfProtectedRooms: number,
     subscribedLists: ListInfo[],
     subscribedAndProtectedLists: ListInfo[],
@@ -66,27 +60,36 @@ export interface StatusInfo {
     repository: string
 }
 
-
-function mjolnirStatusInfo(this: MjolnirContext): StatusInfo {
-    const listInfo = (list: PolicyList): ListInfo => {
-        return {
-            shortcode: list.listShortcode,
-            roomRef: list.roomRef,
-            roomId: list.roomId,
-            serverRules: list.serverRules.length,
-            userRules: list.userRules.length,
-            roomRules: list.roomRules.length,
+async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
+    const watchedListProfiles = draupnir.protectedRoomsSet.issuerManager.allWatchedLists;
+    const issuerResults = await Promise.all(watchedListProfiles.map((profile) =>
+        draupnir.managerManager.policyRoomManager.getPolicyRoomRevisionIssuer(profile.room)
+    ));
+    return issuerResults.map((result) => {
+        if (isError(result)) {
+            throw result.error;
         }
-    }
+        const revision = result.ok.currentRevision;
+        const associatedProfile = watchedListProfiles.find((profile) => profile.room.toRoomIDOrAlias() === revision.room.toRoomIDOrAlias())
+        if (associatedProfile === undefined) {
+            throw new TypeError(`Shouldn't be possible to have got a result for a list profile we don't have`)
+        }
+        return {
+            watchedListProfile: associatedProfile,
+            revision: revision
+        }
+    })
+}
+
+// FIXME: need a shoutout to dependencies in here and NOTICE info.
+async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo> {
+    const watchedListInfo = await listInfo(draupnir);
+    const protectedWatchedLists = watchedListInfo.filter((info) => draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
+    const unprotectedListProfiles = watchedListInfo.filter((info) => !draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
     return {
-        state: this.mjolnir.state,
-        numberOfProtectedRooms: this.mjolnir.protectedRoomsTracker.getProtectedRooms().length,
-        subscribedLists: this.mjolnir.policyListManager.lists
-            .filter(list => !this.mjolnir.explicitlyProtectedRooms.includes(list.roomId))
-            .map(listInfo),
-        subscribedAndProtectedLists: this.mjolnir.policyListManager.lists
-            .filter(list => this.mjolnir.explicitlyProtectedRooms.includes(list.roomId))
-            .map(listInfo),
+        numberOfProtectedRooms: draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms.length,
+        subscribedLists: unprotectedListProfiles,
+        subscribedAndProtectedLists: protectedWatchedLists,
         version: SOFTWARE_VERSION,
         repository: PACKAGE_JSON['repository'] ?? 'Unknown'
     }
@@ -94,49 +97,35 @@ function mjolnirStatusInfo(this: MjolnirContext): StatusInfo {
 
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "status"),
-    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<StatusInfo>): Promise<void> {
-        const renderState = (state: StatusInfo['state']) => {
-            const notRunning = (text: string) => {
-                return <fragment><b>Running: </b>❌ (${text})<br/></fragment>
-            };
-            switch (state) {
-                case STATE_NOT_STARTED:
-                    return notRunning('not started');
-                case STATE_CHECKING_PERMISSIONS:
-                    return notRunning('checking own permission');
-                case STATE_SYNCING:
-                    return notRunning('syncing lists');
-                case STATE_RUNNING:
-                    return <fragment><b>Running: </b>✅<br/></fragment>
-                default:
-                    return notRunning('unknown state');
-            }
-        };
+    renderer: async function (this, client, commandRoomID, event, result: ActionResult<StatusInfo>): Promise<void> {
         const renderPolicyLists = (header: string, lists: ListInfo[]) => {
-            const listInfo = lists.map(list => {
+            const renderedLists = lists.map(list => {
                 return <li>
-                    {list.shortcode} @ <a href={list.roomRef}>{list.roomId}</a>
-                    (rules: {list.serverRules} servers, {list.userRules} users, {list.roomRules} rooms)
+                    <a href={list.revision.room.toPermalink()}>{list.revision.room.toRoomIDOrAlias()}</a> propagation: {list.watchedListProfile.propagation}
+                    (rules: {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers, {list.revision.allRulesOfType(PolicyRuleType.User)} users, {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms)
                 </li>
             });
             return <fragment>
                 <b>{header}</b><br/>
                 <ul>
-                    {listInfo.length === 0 ? <li><i>None</i></li> : listInfo}
+                    {renderedLists.length === 0 ? <li><i>None</i></li> : renderedLists}
                 </ul>
             </fragment>
         };
+        if (isError(result)) {
+            await tickCrossRenderer.call(this, client, commandRoomID, event, result);
+            return;
+        }
         const info = result.ok;
 
         await renderMatrixAndSend(<root>
-            {renderState(info.state)}
             <b>Protected Rooms: </b>{info.numberOfProtectedRooms}<br/>
-            {renderPolicyLists('Subscribed policy lists', info.subscribedLists)}
-            {renderPolicyLists('Subscribed and protected policy lists', info.subscribedAndProtectedLists)}
+            {renderPolicyLists('Subscribed policy rooms', info.subscribedLists)}
+            {renderPolicyLists('Subscribed and protected policy rooms', info.subscribedAndProtectedLists)}
             <b>Version: </b><code>{info.version}</code><br/>
             <b>Repository: </b><code>{info.repository}</code><br/>
         </root>,
-        commandRoomId,
+        commandRoomID,
         event,
         client);
     }
@@ -151,12 +140,12 @@ defineInterfaceCommand({
             acceptor: findPresentationType("string")
         },
     ],
-    new RestDescription<MjolnirContext>(
+    new RestDescription<DraupnirContext>(
         "subcommand",
         findPresentationType("any")
     )),
     command: async function (
-        this: MjolnirContext, _keywords, protectionName: string, ...subcommands: string[]
+        this: DraupnirContext, _keywords, protectionName: string, ...subcommands: string[]
     ): Promise<CommandResult<Awaited<ReturnType<Protection['statusCommand']>>>> {
         const protection = this.mjolnir.protectionManager.getProtection(protectionName);
         if (!protection) {

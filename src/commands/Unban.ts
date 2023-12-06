@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
 import { findPresentationType, KeywordsDescription, parameters, ParsedKeywords, union } from "./interface-manager/ParameterParsing";
 import { UserID, MatrixGlob, LogLevel } from "matrix-bot-sdk";
@@ -68,7 +68,7 @@ async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
 }
 
 async function unban(
-    this: MjolnirContext,
+    this: DraupnirContext,
     keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
     policyListReference: MatrixRoomReference|string,
@@ -126,7 +126,7 @@ defineInterfaceCommand({
                 findPresentationType("string"),
                 findPresentationType("PolicyList"),
             ),
-            prompt: async function (this: MjolnirContext) {
+            prompt: async function (this: DraupnirContext) {
                 return {
                     suggestions: this.mjolnir.policyListManager.lists
                 };

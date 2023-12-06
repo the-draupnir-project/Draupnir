@@ -25,13 +25,12 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { UserID } from "matrix-bot-sdk";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { CommandResult, CommandError } from "./interface-manager/Validation";
+import { ActionError, ActionResult, Ok, UserID, isError } from "matrix-protection-suite";
 
 defineInterfaceCommand({
     table: "synapse admin",
@@ -43,13 +42,16 @@ defineInterfaceCommand({
             acceptor: findPresentationType("UserID"),
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetUser: UserID): Promise<CommandResult<void, CommandError>> {
-        const isAdmin = await this.mjolnir.isSynapseAdmin();
-        if (!isAdmin) {
-            return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, targetUser: UserID): Promise<ActionResult<void>> {
+        const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+        if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
+            return ActionError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
         }
-        await this.mjolnir.deactivateSynapseUser(targetUser.toString());
-        return CommandResult.Ok(undefined);
+        if (this.draupnir.synapseAdminClient === undefined) {
+            throw new TypeError("Shouldn't be happening at this point");
+        }
+        await this.draupnir.synapseAdminClient.deactivateUser(targetUser.toString());
+        return Ok(undefined);
     },
 })
 

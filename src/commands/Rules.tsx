@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { JSXFactory } from "./interface-manager/JSXFactory";
@@ -87,7 +87,7 @@ defineInterfaceCommand({
     designator: ["rules"],
     table: "mjolnir",
     parameters: parameters([]),
-    command: async function (this: MjolnirContext) {
+    command: async function (this: DraupnirContext) {
         return CommandResult.Ok(
             this.mjolnir.policyListManager.lists
                 .map(list => {
@@ -122,7 +122,7 @@ defineInterfaceCommand({
         }
     ]),
     command: async function (
-        this: MjolnirContext, _keywords, entity: string|UserID|MatrixRoomReference
+        this: DraupnirContext, _keywords, entity: string|UserID|MatrixRoomReference
     ): Promise<CommandResult<ListMatches[]>> {
         return CommandResult.Ok(
             this.mjolnir.policyListManager.lists
