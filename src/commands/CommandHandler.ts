@@ -25,38 +25,22 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { showJoinsStatus } from "./JoinsCommand";
 import { LogService, RichReply } from "matrix-bot-sdk";
-import { execSyncCommand } from "./SyncCommand";
-import { execPermissionCheckCommand } from "./PermissionCheckCommand";
-import { execCreateListCommand } from "./CreateBanListCommand";
-import { execRedactCommand } from "./RedactCommand";
-import { execImportCommand } from "./ImportCommand";
-import { execSetDefaultListCommand } from "./SetDefaultBanListCommand";
-import {
-    execDisableProtection, execEnableProtection, execListProtections, execConfigGetProtection,
-    execConfigSetProtection, execConfigAddProtection, execConfigRemoveProtection
-} from "./ProtectionsCommands";
-import { execSetPowerLevelCommand } from "./SetPowerLevelCommand";
-import { execResolveCommand } from "./ResolveAlias";
-import { execKickCommand } from "./KickCommand";
 import { parse as tokenize } from "shell-quote";
-import { execSinceCommand } from "./SinceCommand";
 import { readCommand } from "./interface-manager/CommandReader";
 import { BaseFunction, CommandTable, defineCommandTable, findCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParameterParsing";
-import { CommandResult } from "./interface-manager/Validation";
-import { CommandException, CommandExceptionKind } from "./interface-manager/CommandException";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import "./interface-manager/MatrixPresentations";
+import { ActionException, ActionExceptionKind, ActionResult, ResultError, RoomMessage, StringRoomID } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
-export interface MjolnirContext extends MatrixContext {
-    mjolnir: Mjolnir,
+export interface DraupnirContext extends MatrixContext {
+    draupnir: Draupnir,
 }
 
-export type MjolnirBaseExecutor = (this: MjolnirContext, ...args: any[]) => Promise<CommandResult<any>>;
+export type DraupnirBaseExecutor = (this: DraupnirContext, ...args: any[]) => Promise<ActionResult<unknown>>;
 
 defineCommandTable("synapse admin");
 import "./HijackRoomCommand";
@@ -73,26 +57,22 @@ import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
 import "./SetDisplayNameCommand";
-import { RoomMessage, StringRoomID } from "matrix-protection-suite";
 
-export const COMMAND_PREFIX = "!mjolnir";
+export const COMMAND_PREFIX = "!draupnir";
 
 export async function handleCommand(
     roomID: StringRoomID,
     event: RoomMessage,
     normalisedCommand: string,
-    mjolnir: Mjolnir,
+    draupnir: Draupnir,
     commandTable: CommandTable<BaseFunction>
 ) {
-    const parts = normalisedCommand.trim().split(' ').filter(p => p.trim().length > 0);
-
-    // A shell-style parser that can parse `"a b c"` (with quotes) as a single argument.
-    // We do **not** want to parse `#` as a comment start, though.
-    const tokens = tokenize(normalisedCommand.replace("#", "\\#")).slice(/* get rid of ["!mjolnir", command] */ 2);
-
     try {
+        /**
+         * TODO Delete these:
+
         if (parts[1] === 'joins') {
-            return await showJoinsStatus(roomID, event, mjolnir, parts.slice(/* ["joins"] */ 2));
+            return await showJoinsStatus(roomID, event, mjolnir, parts.slice(2)); // joins
         } else if (parts[1] === 'sync') {
             return await execSyncCommand(roomID, event, mjolnir);
         } else if (parts[1] === 'verify') {
@@ -127,28 +107,27 @@ export async function handleCommand(
             return await execSinceCommand(roomID, event, mjolnir, tokens);
         } else if (parts[1] === 'kick' && parts.length > 2) {
             return await execKickCommand(roomID, event, mjolnir, parts);
-        } else {
-            const readItems = readCommand(normalisedCommand).slice(1); // remove "!mjolnir"
-            const stream = new ArgumentStream(readItems);
-            const command = commandTable.findAMatchingCommand(stream)
-                ?? findTableCommand("mjolnir", "help");
-            const adaptor = findMatrixInterfaceAdaptor(command);
-            const mjolnirContext: MjolnirContext = {
-                mjolnir, roomId: roomID, event, client: mjolnir.client, emitter: mjolnir.matrixEmitter,
-            };
-            try {
-                return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
-            } catch (e) {
-                const commandError = new CommandException(CommandExceptionKind.Unknown, e, 'Unknown Unexpected Error');
-                await tickCrossRenderer.call(mjolnirContext, mjolnir.client, roomID, event, CommandResult.Err(commandError));
-            }
+            */
+        const readItems = readCommand(normalisedCommand).slice(1); // remove "!mjolnir"
+        const stream = new ArgumentStream(readItems);
+        const command = commandTable.findAMatchingCommand(stream)
+            ?? findTableCommand("mjolnir", "help");
+        const adaptor = findMatrixInterfaceAdaptor(command);
+        const mjolnirContext: DraupnirContext = {
+            draupnir, roomID: roomID, event, client: draupnir.client, emitter: draupnir.matrixEmitter,
+        };
+        try {
+            return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+        } catch (e) {
+            const commandError = new ActionException(ActionExceptionKind.Unknown, e, 'Unknown Unexpected Error');
+            await tickCrossRenderer.call(mjolnirContext, draupnir.client, roomID, event, ResultError(commandError));
         }
     } catch (e) {
         LogService.error("CommandHandler", e);
         const text = "There was an error processing your command - see console/log for details";
         const reply = RichReply.createFor(roomID, event, text, text);
         reply["msgtype"] = "m.notice";
-        return await mjolnir.client.sendMessage(roomID, reply);
+        return await draupnir.client.sendMessage(roomID, reply);
     }
 }
 
