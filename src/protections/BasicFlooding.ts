@@ -62,7 +62,7 @@ describeProtection<Draupnir, BasicFloodingProtectionSettings>({
           )
     },
     protectionSettings: new StandardProtectionSettings<BasicFloodingProtectionSettings>({
-        maxPerMinute: new SafeIntegerProtectionSetting<BasicFloodingProtectionSettings>(
+        maxPerMinute: new SafeIntegerProtectionSetting(
             'maxPerMinute'
         )},
         {
