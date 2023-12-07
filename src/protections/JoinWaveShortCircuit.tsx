@@ -25,11 +25,10 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
 import {LogLevel} from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 
 const log = new Logger('JoinWaveShortCircuitProtection');
 
@@ -139,6 +138,11 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection implement
         return (this.settings.timescaleMinutes * ONE_MINUTE)
     }
 
+    /**
+     * Yeah i know this is evil but
+     * We need to figure this out once we allow protections to have their own
+     * command tables somehow.
+     * which will probably entail doing the symbol case hacks from Utena for camel case etc.
     public async status(keywords, subcommands): Promise<DocumentNode> {
         const withExpired = subcommand.includes("withExpired");
         const withStart = subcommand.includes("withStart");
@@ -168,4 +172,5 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection implement
             text,
         }
     }
+    */
 }
