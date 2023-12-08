@@ -47,6 +47,8 @@ import {
     ProtectedRoomsSet,
     MatrixRoomReference,
     isStringUserID,
+    isStringRoomAlias,
+    isStringRoomID,
 } from "matrix-protection-suite";
 import {
     BotSDKMatrixAccountData,
@@ -55,9 +57,9 @@ import {
     BotSDKMjolnirWatchedPolicyRoomsStore,
     ManagerManager,
     MatrixSendClient,
-    SafeMatrixEmitter
+    SafeMatrixEmitter,
+    resolveRoomReferenceSafe
 } from 'matrix-protection-suite-for-matrix-bot-sdk';
-import { makeStandardConsequenceProvider, renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
 
@@ -173,12 +175,19 @@ export async function makeDraupnirBotModeFromConfig(
     if (!isStringUserID(clientUserId)) {
         throw new TypeError(`${clientUserId} is not a valid mxid`);
     }
-    const managementRoom = await MatrixRoomReference.fromRoomIdOrAlias(config.managementRoom).resolve(client as unknown as { resolveRoom: ResolveRoom });
+    if (!isStringRoomAlias(config.managementRoom) || !isStringRoomID(config.managementRoom)) {
+        throw new TypeError(`${config.managementRoom} is not a valid room id or alias`);
+    }
+    const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(config.managementRoom);
+    const managementRoom = await resolveRoomReferenceSafe(client, configManagementRoomReference);
+    if (isError(managementRoom)) {
+        throw managementRoom.error;
+    }
     return await Draupnir.makeDraupnirBot(
         client,
         matrixEmitter,
         clientUserId,
-        managementRoom,
+        managementRoom.ok,
         config
     );
 }
