@@ -28,32 +28,30 @@ limitations under the License.
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { DraupnirContext } from "./CommandHandler";
-import { MatrixRoomID, MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { CommandResult } from "./interface-manager/Validation";
-import { CommandException, CommandExceptionKind } from "./interface-manager/CommandException";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { Permalinks } from "./interface-manager/Permalinks";
+import { ActionException, ActionExceptionKind, ActionResult, MatrixRoomID, MatrixRoomReference, Ok, isError } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 defineInterfaceCommand({
     table: "mjolnir",
     designator: ["rooms"],
     summary: "List all of the protected rooms.",
     parameters: parameters([]),
-    command: async function (this: DraupnirContext, _keywrods): Promise<CommandResult<string[]>> {
-        return CommandResult.Ok(this.mjolnir.protectedRoomsTracker.getProtectedRooms());
+    command: async function (this: DraupnirContext, _keywrods): Promise<ActionResult<MatrixRoomID[]>> {
+        return Ok(this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms);
     }
 })
 
-function renderProtectedRooms(rooms: string[]): DocumentNode {
+function renderProtectedRooms(rooms: MatrixRoomID[]): DocumentNode {
     return <root>
         <details>
             <summary><b>Protected Rooms ({rooms.length}):</b></summary>
             <ul>
-                {rooms.map(r => <li><a href={Permalinks.forRoom(r)}>{r}</a></li>)}
+                {rooms.map(r => <li><a href={r.toPermalink()}>{r.toRoomIDOrAlias()}</a></li>)}
             </ul>
         </details>
     </root>
@@ -61,9 +59,9 @@ function renderProtectedRooms(rooms: string[]): DocumentNode {
 
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "rooms"),
-    renderer: async function (client, commandRoomId, event, result) {
+    renderer: async function (client, commandRoomId, event, result: ActionResult<MatrixRoomID[]>) {
         tickCrossRenderer.call(this, ...arguments);
-        if (result.isErr()) {
+        if (isError(result)) {
             return; // tickCrossRenderer will handle it.
         }
         await renderMatrixAndSend(
@@ -84,23 +82,15 @@ defineInterfaceCommand({
             description: 'The room to protect.'
         }
     ]),
-    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
-        const roomIDOrError = await (async () => {
-            try {
-                return CommandResult.Ok(await roomRef.joinClient(this.mjolnir.client));
-            } catch (e) {
-                return CommandException.Result<MatrixRoomID>(
-                    `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
-                    Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
-                    { exception: e, exceptionKind: CommandExceptionKind.Unknown }
-                );
-            }
-        })();
-        if (roomIDOrError.isErr()) {
-            return CommandResult.Err(roomIDOrError.err);
+    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<ActionResult<void>> {
+        const room = await resolveRoomReferenceSafe(this.client, roomRef);
+        if (isError(room)) {
+            return room.addContext(
+                `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
+                Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
+            );
         }
-        await this.mjolnir.addProtectedRoom(roomIDOrError.ok.toRoomIdOrAlias());
-        return CommandResult.Ok(undefined);
+        return await this.draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(room.ok);
     },
 })
 
@@ -115,18 +105,27 @@ defineInterfaceCommand({
             description: 'The room to stop protecting.'
         }
     ]),
-    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<CommandResult<void>> {
-        const roomID = await roomRef.resolve(this.mjolnir.client);
-        await this.mjolnir.removeProtectedRoom(roomID.toRoomIdOrAlias());
+    command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<ActionResult<void>> {
+        const room = await resolveRoomReferenceSafe(this.client, roomRef);
+        if (isError(room)) {
+            return room.addContext(
+                `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
+                Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
+            );
+        };
+        const removeResult = await this.draupnir.protectedRoomsSet.protectedRoomsConfig.removeRoom(room.ok);
+        if (isError(removeResult)) {
+            return removeResult;
+        }
         try {
-            await this.mjolnir.client.leaveRoom(roomID.toRoomIdOrAlias());
+            await this.client.leaveRoom(room.ok.toRoomIDOrAlias());
         } catch (exception) {
-            return CommandException.Result(
+            return ActionException.Result(
                 `Failed to leave ${roomRef.toPermalink()} - the room is no longer being protected, but the bot could not leave.`,
-                { exceptionKind: CommandExceptionKind.Unknown, exception }
+                { exceptionKind: ActionExceptionKind.Unknown, exception }
             );
         }
-        return CommandResult.Ok(undefined);
+        return Ok(undefined);
     },
 })
 
