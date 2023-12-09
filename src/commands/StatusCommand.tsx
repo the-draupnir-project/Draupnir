@@ -60,7 +60,7 @@ export interface StatusInfo {
     repository: string
 }
 
-async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
+export async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
     const watchedListProfiles = draupnir.protectedRoomsSet.issuerManager.allWatchedLists;
     const issuerResults = await Promise.all(watchedListProfiles.map((profile) =>
         draupnir.managerManager.policyRoomManager.getPolicyRoomRevisionIssuer(profile.room)
