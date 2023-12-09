@@ -86,6 +86,9 @@ export class Draupnir {
         public readonly synapseAdminClient?: SynapseAdminClient
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
+        this.managementRoomOutput = new ManagementRoomOutput(
+            this.managementRoomID, this.clientUserID, this.client, this.config
+        );
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID);
         this.setupMatrixEmitterListeners();
         this.reportManager = new ReportManager(this);
