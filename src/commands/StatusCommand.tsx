@@ -27,11 +27,10 @@ limitations under the License.
 
 import { PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, parameters, RestDescription } from "./interface-manager/ParameterParsing";
+import { parameters } from "./interface-manager/ParameterParsing";
 import { DraupnirContext } from "./CommandHandler";
-import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { JSXFactory } from "./interface-manager/JSXFactory";
-import { Protection } from "../protections/Protection";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { ActionResult, Ok, PolicyRoomRevision, PolicyRoomWatchProfile, PolicyRuleType, isError } from "matrix-protection-suite";
@@ -130,47 +129,3 @@ defineMatrixInterfaceAdaptor({
         client);
     }
 });
-
-defineInterfaceCommand({
-    designator: ["status", "protection"],
-    table: "mjolnir",
-    parameters: parameters([
-        {
-            name: "protection name",
-            acceptor: findPresentationType("string")
-        },
-    ],
-    new RestDescription<DraupnirContext>(
-        "subcommand",
-        findPresentationType("any")
-    )),
-    command: async function (
-        this: DraupnirContext, _keywords, protectionName: string, ...subcommands: string[]
-    ): Promise<CommandResult<Awaited<ReturnType<Protection['statusCommand']>>>> {
-        const protection = this.mjolnir.protectionManager.getProtection(protectionName);
-        if (!protection) {
-            return CommandError.Result(`Unknown protection ${protectionName}`);
-        }
-        return CommandResult.Ok(await protection.statusCommand(this.mjolnir, subcommands))
-    },
-    summary: "Show the status of a protection."
-})
-
-defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "status", "protection"),
-    renderer: async function(client, commandRoomId, event, result) {
-        tickCrossRenderer.call(this, ...arguments);
-        if (result.isErr()) {
-            return; // tickCrossRenderer will handle it.
-        }
-        const status = result.ok;
-        const reply = RichReply.createFor(
-            commandRoomId,
-            event,
-            status?.text ?? "<no status>",
-            status?.html ?? "&lt;no status&gt;"
-        );
-        reply["msgtype"] = "m.notice";
-        await client.sendMessage(commandRoomId, reply);
-    }
-})
