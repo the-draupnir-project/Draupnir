@@ -49,6 +49,7 @@
   "dependencies": {
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
+    "@sinclair/typebox": "~0.31.15",
     "await-lock": "^2.2.2",
     "body-parser": "^1.20.2",
     "config": "^3.3.9",
@@ -59,13 +60,17 @@
     "js-yaml": "^4.1.0",
     "jsdom": "^24.0.0",
     "matrix-appservice-bridge": "^9.0.1",
-    "matrix-protection-suite": "link:/home/user/experiments/matrix-protection-suite",
-    "matrix-protection-suite-for-matrix-bot-sdk": "link:/home/user/experiments/matrix-protection-suite-for-matrix-bot-sdk",
+    "matrix-protection-suite": "git+https://github.com/Gnuxie/matrix-protection-suite.git#0.8.0",
+    "matrix-protection-suite-for-matrix-bot-sdk": "git+https://github.com/Gnuxie/matrix-protection-suite-for-matrix-bot-sdk.git#2df8b462442a42c975f7932d17a08c3aea23604b",
     "parse-duration": "^1.0.2",
     "pg": "^8.8.0",
     "shell-quote": "^1.7.3",
     "ulidx": "^2.2.1",
     "yaml": "^2.3.2"
+  },
+  "overrides": {
+    "matrix-bot-sdk": "$@vector-im/matrix-bot-sdk",
+    "@vector-im/matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.6.6-element.1"
   },
   "engines": {
     "node": ">=18.0.0"

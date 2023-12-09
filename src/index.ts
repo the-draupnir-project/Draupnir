@@ -40,8 +40,11 @@ import {
 } from "matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { read as configRead } from "./config";
-import { Mjolnir } from "./Mjolnir";
 import { initializeSentry, patchMatrixClient } from "./utils";
+import { makeDraupnirBotModeFromConfig } from "./DraupnirBotMode";
+import { Draupnir } from "./Draupnir";
+import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder } from "matrix-protection-suite";
 
 
 (async function () {
@@ -64,7 +67,7 @@ import { initializeSentry, patchMatrixClient } from "./utils";
         healthz.listen();
     }
 
-    let bot: Mjolnir | null = null;
+    let bot: Draupnir | null = null;
     try {
         const storagePath = path.isAbsolute(config.dataPath) ? config.dataPath : path.join(__dirname, '../', config.dataPath);
         const storage = new SimpleFsStorageProvider(path.join(storagePath, "bot.json"));
@@ -86,7 +89,7 @@ import { initializeSentry, patchMatrixClient } from "./utils";
         patchMatrixClient();
         config.RUNTIME.client = client;
 
-        bot = await Mjolnir.setupMjolnirFromConfig(client, client, config);
+        bot = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
     } catch (err) {
         console.error(`Failed to setup mjolnir from the config ${config.dataPath}: ${err}`);
         throw err;
