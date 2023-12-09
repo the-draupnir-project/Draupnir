@@ -26,11 +26,11 @@ limitations under the License.
  */
 
 import * as Sentry from "@sentry/node";
-import { LogLevel, LogService, MessageType, TextualMessageEventContent, UserID } from "matrix-bot-sdk";
-import { Permalinks } from "./commands/interface-manager/Permalinks";
+import { LogLevel, LogService, MessageType, TextualMessageEventContent } from "matrix-bot-sdk";
 import { IConfig } from "./config";
-import { MatrixSendClient } from "./MatrixEmitter";
 import { htmlEscape } from "./utils";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { Permalinks, StringRoomAlias, StringRoomID, StringUserID, serverName } from "matrix-protection-suite";
 
 const levelToFn = {
     [LogLevel.DEBUG.toString()]: LogService.debug,
@@ -45,7 +45,8 @@ const levelToFn = {
 export default class ManagementRoomOutput {
 
     constructor(
-        private readonly managementRoomId: string,
+        private readonly managementRoomID: StringRoomID,
+        private readonly clientUserID: StringUserID,
         private readonly client: MatrixSendClient,
         private readonly config: IConfig,
     ) {
@@ -77,7 +78,7 @@ export default class ManagementRoomOutput {
             return v.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         };
 
-        const viaServers = [(new UserID(await this.client.getUserId())).domain];
+        const viaServers = [serverName(this.clientUserID)];
         for (const roomId of roomIds) {
             let alias = roomId;
             try {
@@ -90,7 +91,7 @@ export default class ManagementRoomOutput {
             const regexRoomId = new RegExp(escapeRegex(roomId), "g");
             content.body = content.body.replace(regexRoomId, alias);
             if (content.formatted_body) {
-                const permalink = Permalinks.forRoom(alias, alias !== roomId ? [] : viaServers);
+                const permalink = Permalinks.forRoom(alias as StringRoomAlias, alias !== roomId ? [] : viaServers);
                 content.formatted_body = content.formatted_body.replace(regexRoomId, `<a href="${permalink}">${htmlEscape(alias)}</a>`);
             }
         }
@@ -120,7 +121,7 @@ export default class ManagementRoomOutput {
             if (level === LogLevel.ERROR) clientMessage = `‼ | ${message}`;
 
             const client = this.client;
-            const roomIds = [this.managementRoomId, ...additionalRoomIds];
+            const roomIds = [this.managementRoomID, ...additionalRoomIds];
 
             let evContent: TextualMessageEventContent = {
                 body: message,
@@ -133,7 +134,7 @@ export default class ManagementRoomOutput {
             }
 
             try {
-                await client.sendMessage(this.managementRoomId, evContent);
+                await client.sendMessage(this.managementRoomID, evContent);
             } catch (ex) {
                 // We want to be informed if we cannot log a message.
                 Sentry.captureException(ex);
