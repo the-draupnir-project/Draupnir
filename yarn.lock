@@ -211,10 +211,10 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@sinclair/typebox@^0.31.15":
-  version "0.31.21"
-  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.31.21.tgz#d52d8e35f71e5651042aa0237e918e4b21fbbbf8"
-  integrity sha512-Wtq/K44EMkREaXytK+2c5DrygtYsH7ZxT0StQL8HMJz2BoOM7NZ/xfrUFBVuZxDrhJCoXf5Im282P2CCz5DHwQ==
+"@sinclair/typebox@~0.31.15":
+  version "0.31.28"
+  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.31.28.tgz#b68831e7bc7d09daac26968ea32f42bedc968ede"
+  integrity sha512-/s55Jujywdw/Jpan+vsy6JZs1z2ZTGxTmbZTPiuSL2wz9mfzA2gN1zzaqmvfi4pq+uOt7Du85fkiwv5ymW84aQ==
 
 "@types/body-parser@*":
   version "1.19.2"
@@ -2319,13 +2319,19 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@link:/home/user/experiments/matrix-protection-suite-for-matrix-bot-sdk":
-  version "0.0.0"
-  uid ""
+"matrix-protection-suite-for-matrix-bot-sdk@git+https://github.com/Gnuxie/matrix-protection-suite-for-matrix-bot-sdk.git#2df8b462442a42c975f7932d17a08c3aea23604b":
+  version "0.8.0"
+  resolved "git+https://github.com/Gnuxie/matrix-protection-suite-for-matrix-bot-sdk.git#2df8b462442a42c975f7932d17a08c3aea23604b"
 
-"matrix-protection-suite@link:../../experiments/matrix-protection-suite":
-  version "0.0.0"
-  uid ""
+"matrix-protection-suite@git+https://github.com/Gnuxie/matrix-protection-suite.git#0.8.0":
+  version "0.8.0"
+  resolved "git+https://github.com/Gnuxie/matrix-protection-suite.git#e67a5fcbba9565acad7da43fb84c4a4c0f321466"
+  dependencies:
+    await-lock "^2.2.2"
+    crypto-js "^4.1.1"
+    glob-to-regexp "^0.4.1"
+    immutable "^5.0.0-beta.4"
+    ulidx "^2.1.0"
 
 media-typer@0.3.0:
   version "0.3.0"
