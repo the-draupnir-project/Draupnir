@@ -34,7 +34,7 @@ import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRende
 import { UserID } from "matrix-bot-sdk";
 import { renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
@@ -138,7 +138,7 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
 
     constructor(
         description: ProtectionDescription,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
       ) {

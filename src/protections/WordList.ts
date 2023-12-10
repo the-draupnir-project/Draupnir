@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 const log = new Logger('WordList');
@@ -52,7 +52,7 @@ export class WordListProtection extends AbstractProtection implements Protection
 
     constructor(
         description: ProtectionDescription<Draupnir>,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {

@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, ConsequenceProvider, EventReport, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringUserID, StringUserIDSetProtectionSettings, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, EventReport, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringUserID, StringUserIDSetProtectionSettings, describeProtection, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
@@ -81,7 +81,7 @@ export class TrustedReporters extends AbstractProtection implements Protection  
 
     public constructor(
         description: ProtectionDescription<Draupnir, TrustedReportersProtectionSettings>,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         public readonly settings: TrustedReportersProtectionSettings
