@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { LogLevel } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, ConsequenceProvider, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 type MessageIsMediaProtectionSettings = {};
@@ -49,7 +49,7 @@ describeProtection<Draupnir, MessageIsMediaProtectionSettings>({
 export class MessageIsMediaProtection extends AbstractProtection implements Protection {
     constructor(
         description: ProtectionDescription<Draupnir, MessageIsMediaProtectionSettings>,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir
     ) {

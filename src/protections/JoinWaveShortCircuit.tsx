@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
 import {LogLevel} from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
@@ -85,7 +85,7 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection implement
 
     constructor(
         description: ProtectionDescription<Draupnir, JoinWaveShortCircuitProtectionSettings>,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         public readonly settings: JoinWaveShortCircuitProtectionSettings

@@ -25,12 +25,13 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionException, ActionExceptionKind, ActionResult, ConsequenceProvider, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, RoomUpdateError, RoomUpdateException, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership, isError } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionExceptionKind, ActionResult, BasicConsequenceProvider, DEFAULT_CONSEQUENCE_PROVIDER, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, RoomUpdateError, RoomUpdateException, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership, describeConsequenceProvider, isError } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "./commands/interface-manager/JSXFactory";
 import { DocumentNode } from "./commands/interface-manager/DeadDocument";
 import { printActionResult } from "./models/RoomUpdateError";
+import { Draupnir } from "./Draupnir";
 
 interface ProviderContext {
     client: MatrixSendClient;
@@ -49,7 +50,7 @@ async function renderConsequenceForEvent(client: MatrixSendClient, managementRoo
     return Ok(undefined);
 }
 
-const consequenceForEvent: ConsequenceProvider['consequenceForEvent'] = async function(
+const consequenceForEvent: BasicConsequenceProvider['consequenceForEvent'] = async function(
     this: ProviderContext, protection, roomID, eventID, reason
 ): Promise<ActionResult<void>> {
     Task(renderConsequenceForEvent(this.client, this.managementRoomID, protection, roomID, eventID, reason))
@@ -86,7 +87,7 @@ function banUser(client: MatrixSendClient, protection: ProtectionDescriptionInfo
     )
 }
 
-const consequenceForUserInRoom: ConsequenceProvider['consequenceForUserInRoom'] = async function(
+const consequenceForUserInRoom: BasicConsequenceProvider['consequenceForUserInRoom'] = async function(
     this: ProviderContext, protection, roomID, userID, reason
 ): Promise<ActionResult<void>> {
     Task(renderConsequenceForUserInRoom(this.client, this.managementRoomID, protection, roomID, userID, reason));
@@ -109,7 +110,7 @@ function renderSetMembershipBans(title: DocumentNode, map: SetMemberBanResultMap
     </fragment>
 }
 
-const consequenceForUsersInRevision: ConsequenceProvider['consequenceForUsersInRevision'] = async function(
+const consequenceForUsersInRevision: BasicConsequenceProvider['consequenceForUsersInRevision'] = async function(
     this: ProviderContext, description, setMembership, revision
 ) {
     const results = await applyPolicyRevisionToSetMembership(
@@ -130,14 +131,14 @@ const consequenceForUsersInRevision: ConsequenceProvider['consequenceForUsersInR
     return Ok(undefined);
 }
 
-const consequenceForServerACL: ConsequenceProvider['consequenceForServerACL'] = async function(
+const consequenceForServerACL: BasicConsequenceProvider['consequenceForServerACL'] = async function(
     this: ProviderContext, aclContent
 ): Promise<ActionResult<void>> {
     // nothing to do
     return Ok(undefined)
 }
 
-const consequenceForServerACLInRoom: ConsequenceProvider['consequenceForServerACLInRoom'] = async function(
+const consequenceForServerACLInRoom: BasicConsequenceProvider['consequenceForServerACLInRoom'] = async function(
     this: ProviderContext, _protection, roomID, aclContent
 ): Promise<ActionResult<void>> {
     return this.client.sendStateEvent(roomID, 'm.room.server_acl', '', aclContent).then(
@@ -149,12 +150,12 @@ const consequenceForServerACLInRoom: ConsequenceProvider['consequenceForServerAC
     )
 }
 
-const consequenceForServerInRoom: ConsequenceProvider['consequenceForServerInRoom'] = async function(
+const consequenceForServerInRoom: BasicConsequenceProvider['consequenceForServerInRoom'] = async function(
 ) {
     return Ok(undefined);
 }
 
-const unbanUserFromRoomsInSet: ConsequenceProvider['unbanUserFromRoomsInSet'] = async function(
+const unbanUserFromRoomsInSet: BasicConsequenceProvider['unbanUserFromRoomsInSet'] = async function(
     this: ProviderContext, _protection, userID, protectedRoomsSet
 ): Promise<ActionResult<void>> {
     const errors: RoomUpdateError[] = [];
@@ -181,10 +182,10 @@ const unbanUserFromRoomsInSet: ConsequenceProvider['unbanUserFromRoomsInSet'] = 
     return Ok(undefined);
 }
 
-export function makeStandardConsequenceProvider(
+export function makeStandardBasicConsequenceProvider(
     client: MatrixSendClient,
     managementRoomID: StringRoomID
-): ConsequenceProvider {
+): BasicConsequenceProvider {
     return {
         consequenceForEvent,
         consequenceForServerACL,
@@ -195,8 +196,19 @@ export function makeStandardConsequenceProvider(
         unbanUserFromRoomsInSet,
         client,
         managementRoomID
-    } as unknown as ConsequenceProvider;
+    } as unknown as BasicConsequenceProvider;
 }
+
+describeConsequenceProvider<Draupnir>({
+    name: DEFAULT_CONSEQUENCE_PROVIDER,
+    description: 'Does what it says on the tin',
+    factory: function(draupnir) {
+        return makeStandardBasicConsequenceProvider(
+            draupnir.client,
+            draupnir.managementRoomID
+        )
+    }
+})
 
 export async function renderProtectionFailedToStart(
     client: MatrixSendClient,

@@ -28,7 +28,7 @@ limitations under the License.
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
 import { LogLevel } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, ConsequenceProvider, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, ProtectionDescription, RoomEvent, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringRoomID, StringUserID, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, ProtectionDescription, RoomEvent, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringRoomID, StringUserID, describeProtection, isError } from "matrix-protection-suite";
 
 const log = new Logger('BasicFloodingProtection');
 
@@ -78,7 +78,7 @@ export class BasicFloodingProtection extends AbstractProtection implements Draup
 
     public constructor(
         description: ProtectionDescription,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         private readonly settings: BasicFloodingProtectionSettings,

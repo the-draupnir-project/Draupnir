@@ -37,7 +37,7 @@ import { DefaultStateTrackingMeta, ManagerManager, ManagerManagerForMatrixEmitte
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
 import { makeProtectedRoomsSet } from "./DraupnirBotMode";
-import { makeStandardConsequenceProvider, renderProtectionFailedToStart } from "./StandardConsequenceProvider";
+import { renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
 
@@ -130,7 +130,6 @@ export class Draupnir {
             )
         );
         const loadResult = await protectedRoomsSet.protections.loadProtections(
-            makeStandardConsequenceProvider(client, draupnir.managementRoomID),
             protectedRoomsSet,
             draupnir,
             (error, description) => renderProtectionFailedToStart(

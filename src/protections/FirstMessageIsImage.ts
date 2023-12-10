@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, ConsequenceProvider, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 type FirstMessageIsImageProtectionSettings = {}
@@ -54,7 +54,7 @@ export class FirstMessageIsImageProtection extends AbstractProtection implements
 
     constructor(
         description: ProtectionDescription<Draupnir, FirstMessageIsImageProtectionSettings>,
-        consequenceProvider: ConsequenceProvider,
+        consequenceProvider: BasicConsequenceProvider,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
