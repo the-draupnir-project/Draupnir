@@ -75,7 +75,7 @@ export function renderListRules(list: ListMatches) {
     </fragment>
 }
 
-interface ListMatches {
+export interface ListMatches {
     room: MatrixRoomID,
     roomID: StringRoomID,
     profile: PolicyRoomWatchProfile,

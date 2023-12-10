@@ -32,12 +32,13 @@ import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { UserID } from "matrix-bot-sdk";
-import { renderListRules } from "../commands/Rules";
+import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, ConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
+import { listInfo } from "../commands/StatusCommand";
 
 const log = new Logger('BanPropagationProtection');
 
@@ -98,7 +99,7 @@ async function promptUnbanPropagation(
     draupnir: Draupnir,
     event: any,
     roomId: string,
-    rulesMatchingUser: Map<StringRoomID, PolicyRule[]>
+    rulesMatchingUser: ListMatches[]
 ): Promise<void> {
     const reactionMap = new Map<string, string>(Object.entries({ 'unban from all': 'unban from all'}));
     // shouldn't we warn them that the unban will be futile?
@@ -109,12 +110,7 @@ async function promptUnbanPropagation(
             However there are rules in Draupnir's watched lists matching this user:
             <ul>
             {
-            [...rulesMatchingUser.entries()]
-                .map(([list, rules]) => <li>{renderListRules({
-                    roomRef: draupnir.createRoomReference(list).toPermalink(),
-                    roomId: list,
-                    matches: rules
-                })}</li>)
+            rulesMatchingUser.map(match => <li>{renderListRules(match)}</li>)
             }
             </ul>
             Would you like to remove these rules and unban the user from all protected rooms?
@@ -156,7 +152,7 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
             this.handleBan(ban);
         }
         for (const unban of unbans) {
-            this.handleUnban(unban);
+            Task(this.handleUnban(unban, this.draupnir));
         }
         return Ok(undefined);
     }
@@ -170,9 +166,10 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
         Task(promptBanPropagation(this.draupnir, change));
     }
 
-    private handleUnban(change: MembershipChange): void {
+    private async handleUnban(change: MembershipChange, draupnir: Draupnir): Promise<void> {
         const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
         const rulesMatchingUser = policyRevision.allRulesMatchingEntity(change.userID, PolicyRuleType.User, Recommendation.Ban);
+        const policyRoomInfo = await listInfo(draupnir)
         if (rulesMatchingUser.length === 0) {
             return; // user is already unbanned.
         }
@@ -182,12 +179,24 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
             entry.push(rule);
             return map;
         }
-        Task(promptUnbanPropagation(
+        const rulesByPolicyRoom = rulesMatchingUser.reduce((map, rule) => addRule(map, rule), new Map<StringRoomID, PolicyRule[]>());
+        await promptUnbanPropagation(
             this.draupnir,
             change,
             change.roomID,
-            rulesMatchingUser.reduce((map, rule) => addRule(map, rule), new Map<StringRoomID, PolicyRule[]>())
-        ));
+            [...rulesByPolicyRoom.entries()].map(([policyRoomID, rules]) => {
+                const info = policyRoomInfo.find(i => i.revision.room.toRoomIDOrAlias() === policyRoomID);
+                if (info === undefined) {
+                    throw new TypeError(`Shouldn't be possible to have a rule from an unwatched list.`)
+                }
+                return {
+                    room: info.revision.room,
+                    roomID: policyRoomID,
+                    matches: rules,
+                    profile: info.watchedListProfile
+                }
+            })
+        );
     }
 
     private async banReactionListener(key: string, item: unknown, context: BanPropagationMessageContext) {
