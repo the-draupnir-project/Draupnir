@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import { LogService, RichReply } from "matrix-bot-sdk";
-import { parse as tokenize } from "shell-quote";
 import { readCommand } from "./interface-manager/CommandReader";
 import { BaseFunction, CommandTable, defineCommandTable, findCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
@@ -42,21 +41,30 @@ export interface DraupnirContext extends MatrixContext {
 
 export type DraupnirBaseExecutor = (this: DraupnirContext, ...args: any[]) => Promise<ActionResult<unknown>>;
 
+// Plesae keep these in alphabetical order.
 defineCommandTable("synapse admin");
+import "./AliasCommands";
+import "./DeactivateCommand";
 import "./HijackRoomCommand";
 import "./ShutdownRoomCommand";
-import "./DeactivateCommand";
-import "./AliasCommands";
 
 defineCommandTable("mjolnir").importTable(findCommandTable("synapse admin"));
 import "./Ban";
-import "./Unban";
-import "./StatusCommand";
+import "./CreateBanListCommand";
+import "./Help";
+import "./ImportCommand";
+import "./KickCommand";
+import "./PermissionCheckCommand";
+import "./ProtectionsCommands";
+import "./RedactCommand";
+import "./ResolveAlias";
 import "./Rooms";
 import "./Rules";
+import "./SetDisplayNameCommand"
+import "./SetPowerLevelCommand";
+import "./StatusCommand";
+import "./Unban";
 import "./WatchUnwatchCommand";
-import "./Help";
-import "./SetDisplayNameCommand";
 
 export const COMMAND_PREFIX = "!draupnir";
 
@@ -68,46 +76,6 @@ export async function handleCommand(
     commandTable: CommandTable<BaseFunction>
 ) {
     try {
-        /**
-         * TODO Delete these:
-
-        if (parts[1] === 'joins') {
-            return await showJoinsStatus(roomID, event, mjolnir, parts.slice(2)); // joins
-        } else if (parts[1] === 'sync') {
-            return await execSyncCommand(roomID, event, mjolnir);
-        } else if (parts[1] === 'verify') {
-            return await execPermissionCheckCommand(roomID, event, mjolnir);
-        } else if (parts.length >= 5 && parts[1] === 'list' && parts[2] === 'create') {
-            return await execCreateListCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'redact' && parts.length > 1) {
-            return await execRedactCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'import' && parts.length > 2) {
-            return await execImportCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'default' && parts.length > 2) {
-            return await execSetDefaultListCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'protections') {
-            return await execListProtections(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'enable' && parts.length > 1) {
-            return await execEnableProtection(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'disable' && parts.length > 1) {
-            return await execDisableProtection(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'config' && parts[2] === 'set' && parts.length > 3) {
-            return await execConfigSetProtection(roomID, event, mjolnir, parts.slice(3))
-        } else if (parts[1] === 'config' && parts[2] === 'add' && parts.length > 3) {
-            return await execConfigAddProtection(roomID, event, mjolnir, parts.slice(3))
-        } else if (parts[1] === 'config' && parts[2] === 'remove' && parts.length > 3) {
-            return await execConfigRemoveProtection(roomID, event, mjolnir, parts.slice(3))
-        } else if (parts[1] === 'config' && parts[2] === 'get') {
-            return await execConfigGetProtection(roomID, event, mjolnir, parts.slice(3))
-        } else if (parts[1] === 'resolve' && parts.length > 2) {
-            return await execResolveCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'powerlevel' && parts.length > 3) {
-            return await execSetPowerLevelCommand(roomID, event, mjolnir, parts);
-        } else if (parts[1] === 'since') {
-            return await execSinceCommand(roomID, event, mjolnir, tokens);
-        } else if (parts[1] === 'kick' && parts.length > 2) {
-            return await execKickCommand(roomID, event, mjolnir, parts);
-            */
         const readItems = readCommand(normalisedCommand).slice(1); // remove "!mjolnir"
         const stream = new ArgumentStream(readItems);
         const command = commandTable.findAMatchingCommand(stream)
