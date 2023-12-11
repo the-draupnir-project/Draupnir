@@ -26,10 +26,7 @@ limitations under the License.
  */
 
 import { Bridge } from "matrix-appservice-bridge";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
-import AccessControlUnit, { EntityAccess } from "../models/AccessControlUnit";
-import { EntityType, Recommendation } from "../models/ListRule";
-import PolicyList from "../models/PolicyList";
+import { ActionResult, EntityAccess, MatrixRoomID, Ok, PolicyListRevisionIssuer, PolicyRoomManager, StringUserID, isError, AccessControl as MPSAccess, PolicyRoomEditor, PolicyRuleType, Recommendation } from "matrix-protection-suite";
 
 /**
  * Utility to manage which users have access to the application service,
@@ -39,9 +36,10 @@ import PolicyList from "../models/PolicyList";
 export class AccessControl {
 
     private constructor(
-        private readonly accessControlList: PolicyList,
-        private readonly accessControlUnit: AccessControlUnit
-        ) {
+        private readonly accessControlRevisionIssuer: PolicyListRevisionIssuer,
+        private readonly editor: PolicyRoomEditor
+    ) {
+        // nothing to do.
     }
 
     /**
@@ -50,37 +48,43 @@ export class AccessControl {
      * @param bridge The matrix-appservice-bridge, used to get the appservice bot.
      * @returns A new instance of `AccessControl` to be used by `MjolnirAppService`.
      */
-    public static async setupAccessControl(
+    public static async setupAccessControlForRoom(
         /** The room id for the access control list. */
-        accessControlListId: string,
+        accessControlRoom: MatrixRoomID,
+        policyRoomManager: PolicyRoomManager,
         bridge: Bridge,
-    ): Promise<AccessControl> {
-        await bridge.getBot().getClient().joinRoom(accessControlListId);
-        const accessControlList = new PolicyList(
-            accessControlListId,
-            Permalinks.forRoom(accessControlListId),
-            bridge.getBot().getClient()
-        );
-        const accessControlUnit = new AccessControlUnit([accessControlList]);
-        await accessControlList.updateList();
-        return new AccessControl(accessControlList, accessControlUnit);
+    ): Promise<ActionResult<AccessControl>> {
+        await bridge.getBot().getClient().joinRoom(accessControlRoom.toRoomIDOrAlias());
+        const revisionIssuer = await policyRoomManager.getPolicyRoomRevisionIssuer(accessControlRoom);
+        if (isError(revisionIssuer)) {
+            return revisionIssuer;
+        }
+        const editor = await policyRoomManager.getPolicyRoomEditor(accessControlRoom);
+        if (isError(editor)) {
+            return editor;
+        }
+        return Ok(new AccessControl(revisionIssuer.ok, editor.ok));
     }
 
-    public handleEvent(roomId: string, event: any) {
-        if (roomId === this.accessControlList.roomId) {
-            this.accessControlList.updateForEvent(event);
+    public getUserAccess(mxid: StringUserID): EntityAccess {
+        return MPSAccess.getAccessForUser(this.accessControlRevisionIssuer.currentRevision, mxid, "CHECK_SERVER");
+    }
+
+    public async allow(mxid: StringUserID, reason = "<no reason supplied>"): Promise<ActionResult<void>> {
+        const result = await this.editor.createPolicy(PolicyRuleType.User, Recommendation.Allow, mxid, reason, {});
+        if (isError(result)) {
+            return result
+        } else {
+            return Ok(undefined);
         }
     }
 
-    public getUserAccess(mxid: string): EntityAccess {
-        return this.accessControlUnit.getAccessForUser(mxid, "CHECK_SERVER");
-    }
-
-    public async allow(mxid: string): Promise<void> {
-        await this.accessControlList.createPolicy(EntityType.RULE_USER, Recommendation.Allow, mxid);
-    }
-
-    public async remove(mxid: string): Promise<void> {
-        await this.accessControlList.unbanEntity(EntityType.RULE_USER, mxid);
+    public async remove(mxid: StringUserID): Promise<ActionResult<void>> {
+        const result = await this.editor.unbanEntity(PolicyRuleType.User, mxid);
+        if (isError(result)) {
+            return result;
+        } else {
+            return Ok(undefined);
+        }
     }
 }
