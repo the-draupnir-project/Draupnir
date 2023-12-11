@@ -4,7 +4,7 @@
  */
 
 import EventEmitter from "events";
-import { MatrixEmitter } from "../../MatrixEmitter";
+import { MatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 
 // See https://github.com/Gnuxie/Draupnir/issues/13.
