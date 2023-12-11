@@ -49,6 +49,8 @@ import {
     isStringUserID,
     isStringRoomAlias,
     isStringRoomID,
+    SetRoomState,
+    StandardSetRoomState,
 } from "matrix-protection-suite";
 import {
     BotSDKMatrixAccountData,
@@ -116,6 +118,20 @@ async function makeSetMembership(
     return membershipSet.ok;
 }
 
+async function makeSetRoomState(
+    roomStateManager: RoomStateManager,
+    protectedRoomsConfig: ProtectedRoomsConfig
+): Promise<SetRoomState> {
+    const setRoomState = await StandardSetRoomState.create(
+        roomStateManager,
+        protectedRoomsConfig
+    );
+    if (isError(setRoomState)) {
+        throw setRoomState.error;
+    }
+    return setRoomState.ok;
+}
+
 async function makeProtectionConfig(
     client: MatrixSendClient,
     roomStateManager: RoomStateManager,
@@ -148,6 +164,10 @@ export async function makeProtectedRoomsSet(
     userID: StringUserID
 ): Promise<ProtectedRoomsSet> {
     const protectedRoomsConfig = await makeProtectedRoomsConfig(client)
+    const setRoomState = await makeSetRoomState(
+        managerManager.roomStateManager,
+        protectedRoomsConfig
+    );
     const membershipSet = await makeSetMembership(
         managerManager.roomMembershipManager,
         protectedRoomsConfig
@@ -161,6 +181,7 @@ export async function makeProtectedRoomsSet(
             managementRoom
         ),
         membershipSet,
+        setRoomState,
         userID,
     );
     return protectedRoomsSet;
