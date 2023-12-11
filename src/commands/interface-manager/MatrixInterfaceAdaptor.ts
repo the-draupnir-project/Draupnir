@@ -29,7 +29,7 @@ limitations under the License.
  * I'd like to remove the dependency on matrix-bot-sdk.
  */
 
-import { LogService, MatrixClient } from "matrix-bot-sdk";
+import { LogService } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
