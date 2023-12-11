@@ -32,7 +32,7 @@ import { defineInterfaceCommand, findTableCommand } from "./interface-manager/In
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
-import { ActionResult, isError, MatrixRoomReference, Ok, PolicyRuleType } from "matrix-protection-suite";
+import { ActionResult, isError, isStringUserID, MatrixRoomReference, Ok, PolicyRuleType } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
@@ -88,7 +88,9 @@ async function unban(
         const rawEnttiy = typeof entity === 'string' ? entity : entity.toString();
         const isGlob = (string: string) => string.includes('*') ? true : string.includes('?');
         const rule = new MatrixGlob(entity.toString())
-        this.draupnir.unlistedUserRedactionQueue.removeUser(entity.toString());
+        if (isStringUserID(rawEnttiy)) {
+            this.draupnir.unlistedUserRedactionQueue.removeUser(rawEnttiy);
+        }
         if (!isGlob(rawEnttiy) || keywords.getKeyword<string>("true", "false") === "true") {
             await unbanUserFromRooms(this.draupnir, rule);
         } else {

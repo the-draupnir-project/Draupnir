@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { LogLevel } from "matrix-bot-sdk";
-import { Mjolnir } from "../Mjolnir";
+import ManagementRoomOutput from "../ManagementRoomOutput";
 
 export type Task<T> = (queue: ThrottlingQueue) => Promise<T>;
 
@@ -58,7 +58,7 @@ export class ThrottlingQueue {
      *
      * @param delayMS The default delay between executing two tasks, in ms.
      */
-    constructor(private mjolnir: Mjolnir, delayMS: number) {
+    constructor(private managementRoomOutput: ManagementRoomOutput, delayMS: number) {
         this.timeout = null;
         this.delayMS = delayMS;
         this._tasks = [];
@@ -189,7 +189,7 @@ export class ThrottlingQueue {
         try {
             await task();
         } catch (ex) {
-            await this.mjolnir.managementRoomOutput.logMessage(
+            await this.managementRoomOutput.logMessage(
                 LogLevel.WARN,
                 'Error while executing task',
                 ex
