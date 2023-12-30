@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { DefaultEventDecoder, Logger, MatrixRoomID, MatrixRoomReference, Membership, Ok, ProtectedRoomsSet, RoomEvent, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { Client, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -33,10 +33,9 @@ import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
-import { DefaultStateTrackingMeta, ManagerManager, ManagerManagerForMatrixEmitter, MatrixSendClient, SafeMatrixEmitter, SynapseAdminClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient, SynapseAdminClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
-import { makeProtectedRoomsSet } from "./DraupnirBotMode";
 import { renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
@@ -49,7 +48,7 @@ const log = new Logger('Draupnir');
 // to Mjolnir because it needs to be started after Mjolnir started and not before.
 // And giving it to the class was a dumb easy way of doing that.
 
-export class Draupnir {
+export class Draupnir implements Client {
     private readonly displayName: string;
     /**
      * This is for users who are not listed on a watchlist,
@@ -78,11 +77,12 @@ export class Draupnir {
     private constructor(
         public readonly client: MatrixSendClient,
         public readonly clientUserID: StringUserID,
-        public readonly matrixEmitter: SafeMatrixEmitter,
         public readonly managementRoom: MatrixRoomID,
         public readonly config: IConfig,
         public readonly protectedRoomsSet: ProtectedRoomsSet,
-        public readonly managerManager: ManagerManager,
+        public readonly roomStateManager: RoomStateManager,
+        public readonly policyRoomManager: PolicyRoomManager,
+        public readonly roomMembershipManager: RoomMembershipManager,
         public readonly synapseAdminClient?: SynapseAdminClient
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
@@ -90,7 +90,6 @@ export class Draupnir {
             this.managementRoomID, this.clientUserID, this.client, this.config
         );
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID);
-        this.setupMatrixEmitterListeners();
         this.reportManager = new ReportManager(this);
         if (config.pollReports) {
             this.reportPoller = new ReportPoller(this, this.reportManager);
@@ -99,31 +98,23 @@ export class Draupnir {
 
     public static async makeDraupnirBot(
         client: MatrixSendClient,
-        matrixEmitter: SafeMatrixEmitter,
         clientUserID: StringUserID,
         managementRoom: MatrixRoomID,
+        protectedRoomsSet: ProtectedRoomsSet,
+        roomStateManager: RoomStateManager,
+        policyRoomManager: PolicyRoomManager,
+        roomMembershipManager: RoomMembershipManager,
         config: IConfig
     ): Promise<Draupnir> {
-        const managerManager = new ManagerManagerForMatrixEmitter(
-            matrixEmitter,
-            DefaultStateTrackingMeta,
-            DefaultEventDecoder,
-            client
-        );
-        const protectedRoomsSet = await makeProtectedRoomsSet(
-            managementRoom,
-            managerManager,
-            client,
-            clientUserID
-        )
         const draupnir = new Draupnir(
             client,
             clientUserID,
-            matrixEmitter,
             managementRoom,
             config,
             protectedRoomsSet,
-            managerManager,
+            roomStateManager,
+            policyRoomManager,
+            roomMembershipManager,
             new SynapseAdminClient(
                 client,
                 clientUserID
@@ -142,49 +133,47 @@ export class Draupnir {
         return draupnir;
     }
 
-    private handleEvent(roomID: StringRoomID, event: RoomEvent): void {
-        this.protectedRoomsSet.handleTimelineEvent(roomID, event);
+    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
+        Task(this.joinOnInviteListener(roomID, event));
+        this.managementRoomMessageListener(roomID, event);
     }
 
-    private setupMatrixEmitterListeners(): void {
-        this.matrixEmitter.on("room.message", (roomID, event) => {
-            if (roomID !== this.managementRoom.toRoomIDOrAlias()) {
+    private managementRoomMessageListener(roomID: StringRoomID, event: RoomEvent): void {
+        if (roomID !== this.managementRoomID) {
+            return;
+        }
+        if (Value.Check(RoomMessage, event) && Value.Check(TextMessageContent, event.content)) {
+            if (event.content.body === "** Unable to decrypt: The sender's device has not sent us the keys for this message. **") {
+                log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom}.`);
+                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
+                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
+                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
                 return;
             }
-            if (Value.Check(TextMessageContent, event.content)) {
-                if (event.content.body === "** Unable to decrypt: The sender's device has not sent us the keys for this message. **") {
-                    log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom}.`);
-                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
-                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
-                    Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
-                    return;
+            const commandBeingRun = extractCommandFromMessageBody(
+                event.content.body,
+                {
+                    prefix: COMMAND_PREFIX,
+                    localpart: userLocalpart(this.clientUserID),
+                    displayName: this.displayName,
+                    userId: this.clientUserID,
+                    additionalPrefixes: this.config.commands.additionalPrefixes,
+                    allowNoPrefix: this.config.commands.allowNoPrefix,
                 }
-                const commandBeingRun = extractCommandFromMessageBody(
-                    event.content.body,
-                    {
-                        prefix: COMMAND_PREFIX,
-                        localpart: userLocalpart(this.clientUserID),
-                        displayName: this.displayName,
-                        userId: this.clientUserID,
-                        additionalPrefixes: this.config.commands.additionalPrefixes,
-                        allowNoPrefix: this.config.commands.allowNoPrefix,
-                    }
-                );
-                if (commandBeingRun === undefined) {
-                    return;
-                }
-                log.info(`Command being run by ${event.sender}: ${commandBeingRun}`);
-                Task(this.client.sendReadReceipt(roomID, event.event_id).then((_) => Ok(undefined)))
-                Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
+            );
+            if (commandBeingRun === undefined) {
+                return;
             }
-        });
-        this.matrixEmitter.on("room.event", this.handleEvent.bind(this))
-        this.addJoinOnInviteListener();
+            log.info(`Command being run by ${event.sender}: ${commandBeingRun}`);
+            Task(this.client.sendReadReceipt(roomID, event.event_id).then((_) => Ok(undefined)))
+            Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
+        }
     }
 
     /**
      * Adds a listener to the client that will automatically accept invitations.
-     * FIXME: This is just copied in from Mjolnir and there are plenty of places for uncaught exceptions that will cause havok
+     * FIXME: This is just copied in from Mjolnir and there are plenty of places for uncaught exceptions that will cause havok.
+     * FIXME: MOVE TO A PROTECTION.
      * @param {MatrixSendClient} client
      * @param options By default accepts invites from anyone.
      * @param {string} options.managementRoom The room to report ignored invitations to if `recordIgnoredInvites` is true.
@@ -192,8 +181,9 @@ export class Draupnir {
      * @param {boolean} options.autojoinOnlyIfManager Whether to only accept an invitation by a user present in the `managementRoom`.
      * @param {string} options.acceptInvitesFromSpace A space of users to accept invites from, ignores invites form users not in this space.
      */
-    private addJoinOnInviteListener() {
-        this.matrixEmitter.on("room.invite", async (roomID, inviteEvent) => {
+    private async joinOnInviteListener(roomID: StringRoomID, event: RoomEvent): Promise<void> {
+        if (Value.Check(MembershipEvent, event) && event.state_key === this.clientUserID) {
+            const inviteEvent = event;
             const reportInvite = async () => {
                 if (!this.config.recordIgnoredInvites) return; // Nothing to do
 
@@ -243,8 +233,8 @@ export class Draupnir {
                     return reportInvite(); // ignore invite
                 }
             }
-            return this.client.joinRoom(roomID);
-        });
+            await this.client.joinRoom(roomID);
+        }
     }
 
     public async start(): Promise<void> {
@@ -262,5 +252,8 @@ export class Draupnir {
             roomID,
             [serverName(this.clientUserID)]
         );
+    }
+    public handleEventReport(report: EventReport): void {
+        this.protectedRoomsSet.handleEventReport(report);
     }
 }
