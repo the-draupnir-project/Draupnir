@@ -1,18 +1,16 @@
-import { Mjolnir } from "../Mjolnir";
 import { Request, WeakEvent, Bridge, Intent, Logger } from "matrix-appservice-bridge";
 import { getProvisionedMjolnirConfig } from "../config";
-import PolicyList from "../models/PolicyList";
 import { MatrixClient, UserID } from "matrix-bot-sdk";
 import { DataStore, MjolnirRecord } from "./datastore";
 import { AccessControl } from "./AccessControl";
-import { Access } from "../models/AccessControlUnit";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
-import { MatrixEmitter } from "../MatrixEmitter";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
-import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
 import { Gauge } from "prom-client";
 import { decrementGaugeValue, incrementGaugeValue } from "../utils";
+import { makeDraupnirBotModeFromConfig } from "../DraupnirBotMode";
+import { Access, MatrixRoomID, PropagationType, StringRoomID, StringUserID, isError, isStringRoomID } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
+import { MatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 const log = new Logger('MjolnirManager');
 
@@ -26,7 +24,7 @@ const log = new Logger('MjolnirManager');
  * * Informing mjolnirs about new events.
  */
 export class MjolnirManager {
-    private readonly mjolnirs: Map</*the user id of the mjolnir*/string, ManagedMjolnir> = new Map();
+    private readonly mjolnirs: Map</*the user id of the mjolnir*/string, ManagedDraupnir> = new Map();
     private readonly unstartedMjolnirs: Map</** user id of the mjolnir */string, UnstartedMjolnir> = new Map();
 
     private constructor(
@@ -53,20 +51,20 @@ export class MjolnirManager {
 
     /**
      * Creates a new mjolnir for a user.
-     * @param requestingUserId The user that is requesting this mjolnir and who will own it.
+     * @param requestingUserID The user that is requesting this mjolnir and who will own it.
      * @param managementRoomId An existing matrix room to act as the management room.
      * @param client A client for the appservice virtual user that the new mjolnir should use.
      * @returns A new managed mjolnir.
      */
-    public async makeInstance(localPart: string, requestingUserId: string, managementRoomId: string, client: MatrixClient): Promise<ManagedMjolnir> {
+    public async makeInstance(localPart: string, requestingUserID: StringUserID, managementRoomID: StringRoomID, client: MatrixClient): Promise<ManagedDraupnir> {
         const mxid = await client.getUserId();
         const intentListener = new MatrixIntentListener(mxid);
-        const managedMjolnir = new ManagedMjolnir(
-            requestingUserId,
-            await Mjolnir.setupMjolnirFromConfig(
+        const managedMjolnir = new ManagedDraupnir(
+            requestingUserID,
+            await makeDraupnirBotModeFromConfig(
                 client,
                 intentListener,
-                getProvisionedMjolnirConfig(managementRoomId)
+                getProvisionedMjolnirConfig(managementRoomID)
             ),
             intentListener,
         );
@@ -81,15 +79,15 @@ export class MjolnirManager {
 
     /**
      * Gets a mjolnir for the corresponding mxid that is owned by a specific user.
-     * @param mjolnirId The mxid of the mjolnir we are trying to get.
-     * @param ownerId The owner of the mjolnir. We ask for it explicitly to not leak access to another user's mjolnir.
+     * @param mjolnirID The mxid of the mjolnir we are trying to get.
+     * @param ownerID The owner of the mjolnir. We ask for it explicitly to not leak access to another user's mjolnir.
      * @returns The matching managed mjolnir instance.
      */
-    public getMjolnir(mjolnirId: string, ownerId: string): ManagedMjolnir | undefined {
-        const mjolnir = this.mjolnirs.get(mjolnirId);
+    public getMjolnir(mjolnirID: StringUserID, ownerID: StringUserID): ManagedDraupnir | undefined {
+        const mjolnir = this.mjolnirs.get(mjolnirID);
         if (mjolnir) {
-            if (mjolnir.ownerId !== ownerId) {
-                throw new Error(`${mjolnirId} is owned by a different user to ${ownerId}`);
+            if (mjolnir.ownerID !== ownerID) {
+                throw new Error(`${mjolnirID} is owned by a different user to ${ownerID}`);
             } else {
                 return mjolnir;
             }
@@ -100,14 +98,14 @@ export class MjolnirManager {
 
     /**
      * Find all of the mjolnirs that are owned by this specific user.
-     * @param ownerId An owner of multiple mjolnirs.
+     * @param ownerID An owner of multiple mjolnirs.
      * @returns Any mjolnirs that they own.
      */
-    public getOwnedMjolnirs(ownerId: string): ManagedMjolnir[] {
+    public getOwnedMjolnirs(ownerID: StringUserID): ManagedDraupnir[] {
         // TODO we need to use the database for this but also provide the utility
         // for going from a MjolnirRecord to a ManagedMjolnir.
         // https://github.com/matrix-org/mjolnir/issues/409
-        return [...this.mjolnirs.values()].filter(mjolnir => mjolnir.ownerId !== ownerId);
+        return [...this.mjolnirs.values()].filter(mjolnir => mjolnir.ownerID !== ownerID);
     }
 
     /**
@@ -116,49 +114,52 @@ export class MjolnirManager {
     public onEvent(request: Request<WeakEvent>) {
         // TODO We need a way to map a room id (that the event is from) to a set of managed mjolnirs that should be informed.
         // https://github.com/matrix-org/mjolnir/issues/412
-        [...this.mjolnirs.values()].forEach((mj: ManagedMjolnir) => mj.onEvent(request));
+        [...this.mjolnirs.values()].forEach((mj: ManagedDraupnir) => mj.onEvent(request));
     }
 
     /**
      * provision a new mjolnir for a matrix user.
-     * @param requestingUserId The mxid of the user we are creating a mjolnir for.
+     * @param requestingUserID The mxid of the user we are creating a mjolnir for.
      * @returns The matrix id of the new mjolnir and its management room.
      */
-    public async provisionNewMjolnir(requestingUserId: string): Promise<[string, string]> {
-        const access = this.accessControl.getUserAccess(requestingUserId);
+    public async provisionNewMjolnir(requestingUserID: StringUserID): Promise<[StringUserID, StringRoomID]> {
+        const access = this.accessControl.getUserAccess(requestingUserID);
         if (access.outcome !== Access.Allowed) {
-            throw new Error(`${requestingUserId} tried to provision a mjolnir when they do not have access ${access.outcome} ${access.rule?.reason ?? 'no reason specified'}`);
+            throw new Error(`${requestingUserID} tried to provision a mjolnir when they do not have access ${access.outcome} ${access.rule?.reason ?? 'no reason specified'}`);
         }
-        const provisionedMjolnirs = await this.dataStore.lookupByOwner(requestingUserId);
+        const provisionedMjolnirs = await this.dataStore.lookupByOwner(requestingUserID);
         if (provisionedMjolnirs.length === 0) {
             const mjolnirLocalPart = `draupnir_${randomUUID()}`;
             const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
 
-            const managementRoomId = await mjIntent.matrixClient.createRoom({
+            const managementRoomID = await mjIntent.matrixClient.createRoom({
                 preset: 'private_chat',
-                invite: [requestingUserId],
-                name: `${requestingUserId}'s Draupnir`,
+                invite: [requestingUserID],
+                name: `${requestingUserID}'s Draupnir`,
                 power_level_content_override: {
                     users: {
-                        [requestingUserId]: 100,
+                        [requestingUserID]: 100,
                         // Give the mjolnir a higher PL so that can avoid issues with managing the management room.
                         [await mjIntent.matrixClient.getUserId()]: 101
                     }
                 }
             });
+            if (!isStringRoomID(managementRoomID)) {
+                throw new TypeError(`${managementRoomID} malformed managmentRoomID`);
+            }
 
-            const mjolnir = await this.makeInstance(mjolnirLocalPart, requestingUserId, managementRoomId, mjIntent.matrixClient);
-            await mjolnir.createFirstList(requestingUserId, "list");
+            const mjolnir = await this.makeInstance(mjolnirLocalPart, requestingUserID, managementRoomID, mjIntent.matrixClient);
+            await mjolnir.createFirstList(requestingUserID, "list");
 
             await this.dataStore.store({
                 local_part: mjolnirLocalPart,
-                owner: requestingUserId,
-                management_room: managementRoomId,
+                owner: requestingUserID,
+                management_room: managementRoomID,
             });
 
-            return [mjIntent.userId, managementRoomId];
+            return [mjIntent.userId as StringUserID, managementRoomID as StringRoomID];
         } else {
-            throw new Error(`User: ${requestingUserId} has already provisioned ${provisionedMjolnirs.length} Draupnirs.`);
+            throw new Error(`User: ${requestingUserID} has already provisioned ${provisionedMjolnirs.length} Draupnirs.`);
         }
     }
 
@@ -232,10 +233,13 @@ export class MjolnirManager {
     }
 }
 
-export class ManagedMjolnir {
+// FIXME: This isn't acceptable really, we need a managerManager that
+// shares the same caches internally but uses different clients to do things.
+// (Within MPS).
+export class ManagedDraupnir {
     public constructor(
-        public readonly ownerId: string,
-        private readonly mjolnir: Mjolnir,
+        public readonly ownerID: StringUserID,
+        private readonly draupnir: Draupnir,
         private readonly matrixEmitter: MatrixIntentListener,
     ) { }
 
@@ -244,26 +248,27 @@ export class ManagedMjolnir {
     }
 
     public async joinRoom(roomId: string) {
-        await this.mjolnir.client.joinRoom(roomId);
+        await this.draupnir.client.joinRoom(roomId);
     }
-    public async addProtectedRoom(roomId: string) {
-        await this.mjolnir.addProtectedRoom(roomId);
+    public async addProtectedRoom(room: MatrixRoomID) {
+        await this.draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(room);
     }
 
-    public async createFirstList(mjolnirOwnerId: string, shortcode: string) {
-        const listRoomId = await PolicyList.createList(
-            this.mjolnir.client,
+    public async createFirstList(draupnirOwnerID: StringUserID, shortcode: string) {
+        const policyRoom = await this.draupnir.managerManager.policyRoomManager.createPolicyRoom(
             shortcode,
-            [mjolnirOwnerId],
-            { name: `${mjolnirOwnerId}'s policy room` }
+            [draupnirOwnerID],
+            { name: `${draupnirOwnerID}'s policy room` }
         );
-        const roomRef = MatrixRoomReference.fromPermalink(Permalinks.forRoom(listRoomId));
-        await this.mjolnir.addProtectedRoom(listRoomId);
-        return await this.mjolnir.policyListManager.watchList(roomRef);
+        if (isError(policyRoom)) {
+            throw policyRoom.error;
+        }
+        await this.addProtectedRoom(policyRoom.ok);
+        return await this.draupnir.protectedRoomsSet.issuerManager.watchList(PropagationType.Direct, policyRoom.ok, {});
     }
 
-    public get managementRoomId(): string {
-        return this.mjolnir.managementRoomId;
+    public get managementRoomID(): StringRoomID {
+        return this.draupnir.managementRoomID;
     }
 
     /**
@@ -271,7 +276,7 @@ export class ManagedMjolnir {
      * This managed mjolnir should not be informed of any events via `onEvent` until `start` is called.
      */
     public async start(): Promise<void> {
-        await this.mjolnir.start();
+        await this.draupnir.start();
     }
 }
 

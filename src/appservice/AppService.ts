@@ -35,6 +35,8 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { isError } from "matrix-protection-suite";
 
 const log = new Logger("AppService");
 /**
@@ -85,8 +87,11 @@ export class MjolnirAppService {
             disableStores: true,
         });
         await bridge.initialise();
-        const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
-        const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
+        const accessControlRoom = await resolveRoomReferenceSafe(bridge.getBot().getClient(), config.adminRoom);
+        if (isError(accessControlRoom)) {
+            throw accessControlRoom.error;
+        }
+        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom, bridge);
         // Activate /metrics endpoint for Prometheus
 
         // This should happen automatically but in testing this didn't happen in the docker image
@@ -164,7 +169,6 @@ export class MjolnirAppService {
                 }
             }
         }
-        this.accessControl.handleEvent(mxEvent['room_id'], mxEvent);
         this.mjolnirManager.onEvent(request);
         this.commands.handleEvent(mxEvent);
     }

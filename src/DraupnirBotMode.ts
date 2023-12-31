@@ -51,19 +51,26 @@ import {
     isStringRoomID,
     SetRoomState,
     StandardSetRoomState,
+    StandardClientRooms,
+    StandardClientsInRoomMap,
+    StandardEventDecoder,
+    DefaultEventDecoder,
 } from "matrix-protection-suite";
 import {
     BotSDKMatrixAccountData,
     BotSDKMatrixStateData,
     BotSDKMjolnirProtectedRoomsStore,
     BotSDKMjolnirWatchedPolicyRoomsStore,
+    DefaultStateTrackingMeta,
     ManagerManager,
     MatrixSendClient,
+    RoomStateManagerFactory,
     SafeMatrixEmitter,
     resolveRoomReferenceSafe
 } from 'matrix-protection-suite-for-matrix-bot-sdk';
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
+import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
 
 /**
  * This is a file for providing default concrete implementations
@@ -90,11 +97,30 @@ export async function makeDraupnirBotModeFromConfig(
     if (isError(managementRoom)) {
         throw managementRoom.error;
     }
-    return await Draupnir.makeDraupnirBot(
-        client,
-        matrixEmitter,
+    const clientsInRoomMap = new StandardClientsInRoomMap();
+    const clientProvider = async (userID: StringUserID) => {
+        if (userID !== clientUserId) {
+            throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);
+        }
+        return client;
+    };
+    const roomStateManagerFactory = new RoomStateManagerFactory(
+        clientsInRoomMap,
+        clientProvider,
+        DefaultEventDecoder,
+        DefaultStateTrackingMeta
+    );
+    const draupnirFactory = new DraupnirFactory(
+        clientProvider,
+        roomStateManagerFactory
+    );
+    const clientRooms = await draupnirFactory.makeDraupnirClientRooms(
         clientUserId,
         managementRoom.ok,
         config
     );
+    if (isError(clientRooms)) {
+        throw clientRooms.error;
+    }
+
 }

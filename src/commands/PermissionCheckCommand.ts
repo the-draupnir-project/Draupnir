@@ -45,6 +45,8 @@ defineInterfaceCommand({
             proteciton.requiredPermissions.forEach(permission => permissions.add(permission));
         }
         // FIXME do we need something like setMembership but for room state?
+        // Not sure if it will work because sometimes you need room state of watched lists too.
+        // Should be considered with the appservice to effect visibility of rooms.
         return ActionError.Result(`Unimplemented`);
     },
     summary: "Verify the permissions that draupnir has."

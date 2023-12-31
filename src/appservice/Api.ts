@@ -103,7 +103,7 @@ export class Api {
             return;
         }
 
-        response.status(200).json({ managementRoom: mjolnir.managementRoomId });
+        response.status(200).json({ managementRoom: mjolnir.managementRoomID });
     }
 
     /**
