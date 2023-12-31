@@ -238,6 +238,7 @@ export class Draupnir implements Client {
     }
 
     public async start(): Promise<void> {
+        // FIXME: This method needs to be removed it won't be called at all.
         if (this.reportPoller) {
             const reportPollSetting = await ReportPoller.getReportPollSetting(
                 this.client,

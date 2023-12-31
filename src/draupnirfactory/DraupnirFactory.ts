@@ -3,48 +3,14 @@
  * All rights reserved.
  */
 
-import { ActionResult, ClientRooms, ClientsInRoomMap, InternedInstanceFactory, MatrixRoomID, Ok, PolicyRoomManager, RoomEvent, RoomMembershipManager, RoomStateManager, StandardClientsInRoomMap, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomID, Ok, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { ClientForUserID, MatrixSendClient, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirClientRooms } from "./DraupnirClientRooms";
 import { IConfig } from "../config";
+import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
 
-interface DraupnirFactory {
-    clientsInRoomMap: ClientsInRoomMap;
-    getDraupnir(
-      clientUserID: StringUserID,
-      managementRoom: MatrixRoomID,
-      config: IConfig
-    ): Promise<ActionResult<Draupnir>>;
-}
-
-export class StandardDraupnirFactory implements DraupnirFactory {
-    public readonly clientsInRoomMap = new StandardClientsInRoomMap();
-    private readonly draupnirs: InternedInstanceFactory<StringUserID, Draupnir, [MatrixRoomID, IConfig]> = new InternedInstanceFactory(
-        async (clientUserID, managementRoom, config) => {
-            const roomStateManager = await this.roomStateManagerFactory.getRoomStateManager(clientUserID);
-            const policyRoomManager = await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
-            const roomMembershipManager = await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
-            const client = await this.clientProvider(clientUserID);
-            const clientRooms = await this.makeClientRooms(clientUserID, client, managementRoom, roomStateManager, policyRoomManager, roomMembershipManager);
-            if (isError(clientRooms)) {
-                return clientRooms;
-            }
-            this.clientsInRoomMap.addClientRooms(clientRooms.ok);
-            return Ok(await Draupnir.makeDraupnirBot(
-                client,
-                clientUserID,
-                clientRooms.ok,
-                managementRoom,
-                clientRooms.ok.protectedRoomsSets[0],
-                roomStateManager,
-                policyRoomManager,
-                roomMembershipManager,
-                config
-            ))
-        }
-    )
-
+export class DraupnirFactory {
     public constructor(
         private readonly clientProvider: ClientForUserID,
         private readonly roomStateManagerFactory: RoomStateManagerFactory
@@ -52,38 +18,48 @@ export class StandardDraupnirFactory implements DraupnirFactory {
         // nothing to do.
     }
 
-    public async getDraupnir(clientUserID: StringUserID, managementRoom: MatrixRoomID, config: IConfig): Promise<ActionResult<Draupnir>> {
-        return await this.draupnirs.getInstance(clientUserID, managementRoom, config);
-    }
-
-    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
-        this.roomStateManagerFactory.handleTimelineEvent(roomID, event);
-        for (const draupnir of this.draupnirs.allInstances()) {
-            if (this.clientsInRoomMap.isClientInRoom(draupnir.clientUserID, roomID) || ('state_key' in event && draupnir.clientUserID === event.state_key)) {
-                // TODO: it would be nicer if somehow clientRooms can handle this, and finding which clients to inform.
-                // and also how to inform Draupnir.
-                draupnir.handleTimelineEvent(roomID, event);
-                draupnir.clientRooms.handleTimelineEvent(roomID, event);
-            }
-        }
-    }
-
-    private async makeClientRooms(
-        clientUserID: StringUserID,
-        client: MatrixSendClient,
-        managementRoom: MatrixRoomID,
-        roomStateManager: RoomStateManager,
-        policyRoomManager: PolicyRoomManager,
-        roomMembershipManager: RoomMembershipManager
-    ): Promise<ActionResult<ClientRooms>> {
-        return await DraupnirClientRooms.makeClientRooms(
-            client,
+    private async makeDraupnir(clientUserID: StringUserID, managementRoom: MatrixRoomID, config: IConfig): Promise<ActionResult<Draupnir>> {
+        const roomStateManager = await this.roomStateManagerFactory.getRoomStateManager(clientUserID);
+        const policyRoomManager = await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
+        const roomMembershipManager = await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
+        const client = await this.clientProvider(clientUserID);
+        const protectedRoomsSet = await makeProtectedRoomsSet(
             managementRoom,
-            async () => joinedRoomsSafe(client),
-            clientUserID,
             roomStateManager,
             policyRoomManager,
-            roomMembershipManager
+            roomMembershipManager,
+            client,
+            clientUserID
+        );
+        return Ok(await Draupnir.makeDraupnirBot(
+            client,
+            clientUserID,
+            managementRoom,
+            protectedRoomsSet,
+            roomStateManager,
+            policyRoomManager,
+            roomMembershipManager,
+            config
+        ))
+    }
+
+    public async makeDraupnirClientRooms(
+        clientUserID: StringUserID,
+        managementRoom: MatrixRoomID,
+        config: IConfig,
+    ): Promise<ActionResult<DraupnirClientRooms>> {
+        const draupnir = await this.makeDraupnir(
+            clientUserID,
+            managementRoom,
+            config
+        );
+        if (isError(draupnir)) {
+            return draupnir;
+        }
+        return await DraupnirClientRooms.makeClientRooms(
+            draupnir.ok,
+            async () => joinedRoomsSafe(draupnir.ok.client),
+            clientUserID
         )
     }
 }

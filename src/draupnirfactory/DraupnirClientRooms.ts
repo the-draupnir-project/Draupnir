@@ -3,12 +3,10 @@
  * All rights reserved.
  */
 
-import { ActionException, ActionExceptionKind, ActionResult, JoinedRoomsRevision, JoinedRoomsSafe, MatrixRoomID, Ok, PolicyRoomManager, RoomMembershipManager, RoomStateManager, StandardClientRooms, StandardJoinedRoomsRevision, StringUserID, isError } from "matrix-protection-suite";
-import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
+import { ActionException, ActionExceptionKind, ActionResult, ClientRooms, JoinedRoomsRevision, JoinedRoomsSafe, Ok, StandardClientRooms, StandardJoinedRoomsRevision, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { IConfig } from "../config";
 
-export class DraupnirClientRooms extends StandardClientRooms {
+export class DraupnirClientRooms extends StandardClientRooms implements ClientRooms {
   private constructor(
     client: Draupnir,
     joinedRoomsThunk: JoinedRoomsSafe,
@@ -25,12 +23,8 @@ export class DraupnirClientRooms extends StandardClientRooms {
 
   public static async makeClientRooms(
     client: Draupnir,
-    managementRoom: MatrixRoomID,
     joinedRoomsThunk: JoinedRoomsSafe,
     clientUserID: StringUserID,
-    roomStateManager: RoomStateManager,
-    policyRoomManager: PolicyRoomManager,
-    roomMembershipManager: RoomMembershipManager
   ): Promise<ActionResult<DraupnirClientRooms>> {
     try {
         const joinedRooms = await joinedRoomsThunk();
@@ -40,14 +34,6 @@ export class DraupnirClientRooms extends StandardClientRooms {
         const revision = StandardJoinedRoomsRevision.blankRevision(
           clientUserID
         ).reviseFromJoinedRooms(joinedRooms.ok);
-        const protectedRoomsSet = await makeProtectedRoomsSet(
-            managementRoom,
-            roomStateManager,
-            policyRoomManager,
-            roomMembershipManager,
-            client.client,
-            clientUserID
-        );
         return Ok(new DraupnirClientRooms(
             client,
             joinedRoomsThunk,
