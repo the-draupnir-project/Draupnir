@@ -26,13 +26,14 @@ limitations under the License.
  */
 
 import { ActionError, ActionResult, MatrixRoomID, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
-import { DraupnirClientRooms } from "./DraupnirClientRooms";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
+import { Draupnir } from "../Draupnir";
 
 export abstract class StandardDraupnirManager {
-    private readonly readyDraupnirs = new Map<StringUserID, DraupnirClientRooms>();
-    private readonly listeningDraupnirs = new StandardClientsInRoomMap();
+    private readonly readyDraupnirs = new Map<StringUserID, Draupnir>();
+    private readonly listeningDraupnirs = new Map<StringUserID, Draupnir>();
+    private readonly clientsInRooms = new StandardClientsInRoomMap();
     private readonly failedDraupnirs = new Map<StringUserID, UnstartedDraupnir>();
 
     public constructor(
@@ -45,28 +46,28 @@ export abstract class StandardDraupnirManager {
         clientUserID: StringUserID,
         managementRoom: MatrixRoomID,
         config: IConfig
-    ): Promise<ActionResult<DraupnirClientRooms>> {
-        const draupnirRooms = await this.draupnirFactory.makeDraupnirClientRooms(
+    ): Promise<ActionResult<Draupnir>> {
+        const draupnir = await this.draupnirFactory.makeDraupnir(
             clientUserID,
             managementRoom,
             config
         );
         if (this.readyDraupnirs.has(clientUserID)) {
             return ActionError.Result(`There is a draupnir for ${clientUserID} already waiting to be started`);
-        } else if (this.listeningDraupnirs.getClientRooms(clientUserID) !== undefined) {
+        } else if (this.clientsInRooms.getClientRooms(clientUserID) !== undefined) {
             return ActionError.Result(`There is a draupnir for ${clientUserID} already running`);
         }
-        if (isError(draupnirRooms)) {
+        if (isError(draupnir)) {
             this.failedDraupnirs.set(clientUserID, new UnstartedDraupnir(
                 clientUserID,
                 DraupnirFailType.InitializationError,
-                draupnirRooms.error
+                draupnir.error
             ))
-            return draupnirRooms;
+            return draupnir;
         }
-        this.readyDraupnirs.set(clientUserID, draupnirRooms.ok);
+        this.readyDraupnirs.set(clientUserID, draupnir.ok);
         this.failedDraupnirs.delete(clientUserID);
-        return draupnirRooms;
+        return draupnir;
     }
 
     public startDraupnir(
@@ -76,19 +77,21 @@ export abstract class StandardDraupnirManager {
         if (draupnir === undefined) {
             throw new TypeError(`Trying to start a draupnir that hasn't been created ${clientUserID}`);
         }
-        this.listeningDraupnirs.addClientRooms(draupnir);
+        this.clientsInRooms.addClientRooms(draupnir.clientRooms);
+        this.listeningDraupnirs.set(clientUserID, draupnir);
         this.readyDraupnirs.delete(clientUserID);
     }
 
     public stopDraupnir(
         clientUserID: StringUserID
     ): void {
-        const draupnir = this.listeningDraupnirs.getClientRooms(clientUserID);
+        const draupnir = this.listeningDraupnirs.get(clientUserID);
         if (draupnir === undefined) {
             return;
         } else {
-            this.listeningDraupnirs.removeClientRooms(draupnir);
-            this.readyDraupnirs.set(clientUserID, draupnir as DraupnirClientRooms);
+            this.clientsInRooms.removeClientRooms(draupnir.clientRooms);
+            this.listeningDraupnirs.delete(clientUserID);
+            this.readyDraupnirs.set(clientUserID, draupnir);
         }
     }
 }

@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Client, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { Client, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -74,10 +74,14 @@ export class Draupnir implements Client {
     public readonly reportManager: ReportManager;
 
     public readonly reactionHandler: MatrixReactionHandler;
+
+    private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
+
     private constructor(
         public readonly client: MatrixSendClient,
         public readonly clientUserID: StringUserID,
         public readonly managementRoom: MatrixRoomID,
+        public readonly clientRooms: ClientRooms,
         public readonly config: IConfig,
         public readonly protectedRoomsSet: ProtectedRoomsSet,
         public readonly roomStateManager: RoomStateManager,
@@ -94,12 +98,14 @@ export class Draupnir implements Client {
         if (config.pollReports) {
             this.reportPoller = new ReportPoller(this, this.reportManager);
         }
+        this.clientRooms.on('timeline', this.timelineEventListener);
     }
 
     public static async makeDraupnirBot(
         client: MatrixSendClient,
         clientUserID: StringUserID,
         managementRoom: MatrixRoomID,
+        clientRooms: ClientRooms,
         protectedRoomsSet: ProtectedRoomsSet,
         roomStateManager: RoomStateManager,
         policyRoomManager: PolicyRoomManager,
@@ -110,6 +116,7 @@ export class Draupnir implements Client {
             client,
             clientUserID,
             managementRoom,
+            clientRooms,
             config,
             protectedRoomsSet,
             roomStateManager,
@@ -238,7 +245,7 @@ export class Draupnir implements Client {
     }
 
     public async start(): Promise<void> {
-        // FIXME: This method needs to be removed it won't be called at all.
+        // FIXME: This method needs to be removed it probably won't be called at all.
         if (this.reportPoller) {
             const reportPollSetting = await ReportPoller.getReportPollSetting(
                 this.client,
