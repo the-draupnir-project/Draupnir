@@ -1,20 +1,19 @@
 /**
- * Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
+ * Copyright (C) 2023-2024 Gnuxie <Gnuxie@protonmail.com>
  * All rights reserved.
  */
 
-import { ActionException, ActionExceptionKind, ActionResult, ClientRooms, JoinedRoomsRevision, JoinedRoomsSafe, Ok, StandardClientRooms, StandardJoinedRoomsRevision, StringUserID, isError } from "matrix-protection-suite";
-import { Draupnir } from "../Draupnir";
+import { ActionException, ActionExceptionKind, ActionResult, ClientRooms, JoinedRoomsRevision, JoinedRoomsSafe, Ok, RoomStateManager, StandardClientRooms, StandardJoinedRoomsRevision, StringUserID, isError } from "matrix-protection-suite";
 
 export class DraupnirClientRooms extends StandardClientRooms implements ClientRooms {
   private constructor(
-    client: Draupnir,
+    roomStateManager: RoomStateManager,
     joinedRoomsThunk: JoinedRoomsSafe,
     clientUserID: StringUserID,
     joinedRoomsRevision: JoinedRoomsRevision
   ) {
     super(
-        client,
+        roomStateManager,
         joinedRoomsThunk,
         clientUserID,
         joinedRoomsRevision
@@ -22,7 +21,7 @@ export class DraupnirClientRooms extends StandardClientRooms implements ClientRo
   }
 
   public static async makeClientRooms(
-    client: Draupnir,
+    roomStateManager: RoomStateManager,
     joinedRoomsThunk: JoinedRoomsSafe,
     clientUserID: StringUserID,
   ): Promise<ActionResult<DraupnirClientRooms>> {
@@ -35,7 +34,7 @@ export class DraupnirClientRooms extends StandardClientRooms implements ClientRo
           clientUserID
         ).reviseFromJoinedRooms(joinedRooms.ok);
         return Ok(new DraupnirClientRooms(
-            client,
+            roomStateManager,
             joinedRoomsThunk,
             clientUserID,
             revision

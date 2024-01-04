@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
+ * Copyright (C) 2023-2024 Gnuxie <Gnuxie@protonmail.com>
  * All rights reserved.
  */
 
@@ -18,11 +18,19 @@ export class DraupnirFactory {
         // nothing to do.
     }
 
-    private async makeDraupnir(clientUserID: StringUserID, managementRoom: MatrixRoomID, config: IConfig): Promise<ActionResult<Draupnir>> {
+    public async makeDraupnir(clientUserID: StringUserID, managementRoom: MatrixRoomID, config: IConfig): Promise<ActionResult<Draupnir>> {
         const roomStateManager = await this.roomStateManagerFactory.getRoomStateManager(clientUserID);
         const policyRoomManager = await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
         const roomMembershipManager = await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
         const client = await this.clientProvider(clientUserID);
+        const clientRooms = await DraupnirClientRooms.makeClientRooms(
+            roomStateManager,
+            async () => joinedRoomsSafe(client),
+            clientUserID
+        );
+        if (isError(clientRooms)) {
+            return clientRooms;
+        }
         const protectedRoomsSet = await makeProtectedRoomsSet(
             managementRoom,
             roomStateManager,
@@ -35,31 +43,12 @@ export class DraupnirFactory {
             client,
             clientUserID,
             managementRoom,
+            clientRooms.ok,
             protectedRoomsSet,
             roomStateManager,
             policyRoomManager,
             roomMembershipManager,
             config
         ))
-    }
-
-    public async makeDraupnirClientRooms(
-        clientUserID: StringUserID,
-        managementRoom: MatrixRoomID,
-        config: IConfig,
-    ): Promise<ActionResult<DraupnirClientRooms>> {
-        const draupnir = await this.makeDraupnir(
-            clientUserID,
-            managementRoom,
-            config
-        );
-        if (isError(draupnir)) {
-            return draupnir;
-        }
-        return await DraupnirClientRooms.makeClientRooms(
-            draupnir.ok,
-            async () => joinedRoomsSafe(draupnir.ok.client),
-            clientUserID
-        )
     }
 }
