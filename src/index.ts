@@ -96,6 +96,7 @@ import { DefaultEventDecoder } from "matrix-protection-suite";
     }
     try {
         await bot.start();
+        await config.RUNTIME.client.start();
         healthz.isHealthy = true;
     } catch (err) {
         console.error(`Mjolnir failed to start: ${err}`);

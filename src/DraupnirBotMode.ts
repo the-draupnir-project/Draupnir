@@ -96,5 +96,9 @@ export async function makeDraupnirBotModeFromConfig(
     if (isError(draupnir)) {
         throw draupnir.error;
     }
+    matrixEmitter.on('room.event', (roomID, event) => {
+        roomStateManagerFactory.handleTimelineEvent(roomID, event);
+        clientsInRoomMap.handleTimelineEvent(roomID, event);
+    })
     return draupnir.ok;
 }
