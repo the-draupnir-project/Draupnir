@@ -35,7 +35,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
 import { DefaultStateTrackingMeta, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
@@ -58,6 +58,9 @@ export class MjolnirAppService {
         public readonly draupnirManager: AppServiceDraupnirManager,
         public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
+        private readonly eventDecoder: EventDecoder,
+        private readonly roomStateManagerFactory: RoomStateManagerFactory,
+        private readonly clientsInRoomMap: ClientsInRoomMap,
         private readonly prometheusMetrics: PrometheusMetrics
     ) {
         this.api = new Api(config.homeserver.url, draupnirManager);
@@ -71,7 +74,7 @@ export class MjolnirAppService {
      * @param registrationFilePath A file path to the registration file to read the namespace and tokens from.
      * @returns A new `MjolnirAppService`.
      */
-    public static async makeMjolnirAppService(config: IConfig, dataStore: DataStore, registrationFilePath: string) {
+    public static async makeMjolnirAppService(config: IConfig, dataStore: DataStore, eventDecoder: EventDecoder, registrationFilePath: string) {
         const bridge = new Bridge({
             homeserverUrl: config.homeserver.url,
             domain: config.homeserver.domain,
@@ -96,7 +99,7 @@ export class MjolnirAppService {
         const roomStateManagerFactory = new RoomStateManagerFactory(
             clientsInRoomMap,
             clientProvider,
-            DefaultEventDecoder,
+            eventDecoder,
             DefaultStateTrackingMeta
         );
         const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(bridge.getBot().getUserId() as StringUserID);
@@ -125,6 +128,9 @@ export class MjolnirAppService {
             mjolnirManager,
             accessControl.ok,
             dataStore,
+            eventDecoder,
+            roomStateManagerFactory,
+            clientsInRoomMap,
             prometheus
         );
         bridge.opts.controller = {
@@ -144,7 +150,7 @@ export class MjolnirAppService {
         Logger.configure(config.logging ?? { console: "debug" });
         const dataStore = new PgDataStore(config.db.connectionString);
         await dataStore.init();
-        const service = await MjolnirAppService.makeMjolnirAppService(config, dataStore, registrationFilePath);
+        const service = await MjolnirAppService.makeMjolnirAppService(config, dataStore, DefaultEventDecoder, registrationFilePath);
         // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
         await service.start(port);
         return service;
@@ -182,8 +188,19 @@ export class MjolnirAppService {
                 }
             }
         }
-        this.draupnirManager.onEvent(request);
         this.commands.handleEvent(mxEvent);
+        const decodeResult = this.eventDecoder.decodeEvent(mxEvent);
+        if (isError(decodeResult)) {
+          log.error(
+            `Got an error when decoding an event for the appservice`,
+            decodeResult.error.uuid,
+            decodeResult.error
+          );
+          return;
+        }
+        const roomID = decodeResult.ok.room_id;
+        this.roomStateManagerFactory.handleTimelineEvent(roomID, decodeResult.ok);
+        this.clientsInRoomMap.handleTimelineEvent(roomID, decodeResult.ok);
     }
 
     /**
