@@ -35,7 +35,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
 import { DefaultStateTrackingMeta, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
@@ -94,7 +94,20 @@ export class MjolnirAppService {
             disableStores: true,
         });
         await bridge.initialise();
-        const accessControlRoom = await resolveRoomReferenceSafe(bridge.getBot().getClient(), config.adminRoom);
+        const adminRoom = (() => {
+            if (isStringRoomID(config.adminRoom)) {
+                return MatrixRoomReference.fromRoomID(config.adminRoom);
+            } else if (isStringRoomAlias(config.adminRoom)) {
+                return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
+            } else {
+                const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
+                if (isError(parseResult)) {
+                    throw new TypeError(`${config.adminRoom} needs to be a room id, alias or permalink`);
+                }
+                return parseResult.ok;
+            }
+        })();
+        const accessControlRoom = await resolveRoomReferenceSafe(bridge.getBot().getClient(), adminRoom);
         if (isError(accessControlRoom)) {
             throw accessControlRoom.error;
         }
