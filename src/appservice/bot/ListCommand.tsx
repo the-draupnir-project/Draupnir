@@ -29,7 +29,7 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
     table: "appservice bot",
     parameters: parameters([]),
     command: async function () {
-        return Ok(this.appservice.mjolnirManager.getUnstartedMjolnirs());
+        return Ok(this.appservice.draupnirManager.getUnstartedMjolnirs());
     },
     summary: "List any Mjolnir that failed to start."
 });
@@ -81,7 +81,7 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
         }
     ]),
     command: async function (this, _keywords, mjolnirId: UserID): Promise<ActionResult<true>> {
-        const mjolnirManager = this.appservice.mjolnirManager;
+        const mjolnirManager = this.appservice.draupnirManager;
         const mjolnir = mjolnirManager.findUnstartedMjolnir(mjolnirId.localpart);
         if (mjolnir?.mjolnirRecord === undefined) {
             return ActionError.Result(`We can't find the unstarted mjolnir ${mjolnirId}, is it running?`);

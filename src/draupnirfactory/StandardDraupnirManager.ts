@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022-2023 Gnuxie <Gnuxie@protonmail.com>
+ * Copyright (C) 2022-2024 Gnuxie <Gnuxie@protonmail.com>
  * All rights reserved.
  *
  * This file is modified and is NOT licensed under the Apache License.
@@ -25,19 +25,19 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionResult, MatrixRoomID, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, ClientsInRoomMap, MatrixRoomID, RoomEvent, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
 
-export abstract class StandardDraupnirManager {
+export class StandardDraupnirManager {
     private readonly readyDraupnirs = new Map<StringUserID, Draupnir>();
     private readonly listeningDraupnirs = new Map<StringUserID, Draupnir>();
-    private readonly clientsInRooms = new StandardClientsInRoomMap();
     private readonly failedDraupnirs = new Map<StringUserID, UnstartedDraupnir>();
 
     public constructor(
-        protected readonly draupnirFactory: DraupnirFactory
+        protected readonly draupnirFactory: DraupnirFactory,
+        private readonly clientsInRooms: ClientsInRoomMap
     ) {
         // nothing to do.
     }
@@ -58,16 +58,44 @@ export abstract class StandardDraupnirManager {
             return ActionError.Result(`There is a draupnir for ${clientUserID} already running`);
         }
         if (isError(draupnir)) {
-            this.failedDraupnirs.set(clientUserID, new UnstartedDraupnir(
-                clientUserID,
+            this.reportUnstartedDraupnir(
                 DraupnirFailType.InitializationError,
-                draupnir.error
-            ))
+                draupnir.error,
+                clientUserID
+            );
             return draupnir;
         }
         this.readyDraupnirs.set(clientUserID, draupnir.ok);
         this.failedDraupnirs.delete(clientUserID);
         return draupnir;
+    }
+
+    public isDraupnirReady(draupnirClientID: StringUserID): boolean {
+        return this.readyDraupnirs.has(draupnirClientID);
+    }
+
+    public isDraupnirListening(draupnirClientID: StringUserID): boolean {
+        return this.listeningDraupnirs.has(draupnirClientID);
+    }
+
+    public isDraupnirFailed(draupnirClientID: StringUserID): boolean {
+        return this.failedDraupnirs.has(draupnirClientID);
+    }
+
+    public reportUnstartedDraupnir(failType: DraupnirFailType, cause: unknown, draupnirClientID: StringUserID): void {
+        this.failedDraupnirs.set(draupnirClientID, new UnstartedDraupnir(draupnirClientID, failType, cause));
+    }
+
+    public getUnstartedDraupnirs(): UnstartedDraupnir[] {
+        return [...this.failedDraupnirs.values()];
+    }
+
+    public findUnstartedDraupnir(draupnirClientID: StringUserID): UnstartedDraupnir | undefined {
+        return this.failedDraupnirs.get(draupnirClientID);
+    }
+
+    public findRunningDraupnir(draupnirClientID: StringUserID): Draupnir | undefined {
+        return this.listeningDraupnirs.get(draupnirClientID);
     }
 
     public startDraupnir(
@@ -93,6 +121,10 @@ export abstract class StandardDraupnirManager {
             this.listeningDraupnirs.delete(clientUserID);
             this.readyDraupnirs.set(clientUserID, draupnir);
         }
+    }
+
+    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
+        this.clientsInRooms.handleTimelineEvent(roomID, event);
     }
 }
 
