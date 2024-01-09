@@ -83,8 +83,12 @@ export class MjolnirAppService {
             // It also allows us to combine constructor/initialize logic
             // to make the code base much simpler. A small hack to pay for an overall less hacky code base.
             controller: {
-                onUserQuery: () => { throw new Error("Mjolnir uninitialized") },
-                onEvent: () => { throw new Error("Mjolnir uninitialized") },
+                onUserQuery: () => {
+                    throw new Error("Mjolnir uninitialized")
+                },
+                onEvent: () => {
+                    throw new Error("Mjolnir uninitialized")
+                },
             },
             suppressEcho: false,
             disableStores: true,
