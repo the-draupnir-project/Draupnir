@@ -26,43 +26,17 @@ limitations under the License.
  */
 
 import {
-    MjolnirPolicyRoomsConfig,
-    PolicyListConfig,
-    PolicyRoomManager,
-    ProtectedRoomsConfig,
-    ResolveRoom,
-    MjolnirProtectedRoomsConfig,
-    StandardProtectedRoomsSet,
     isError,
-    RoomStateManager,
-    MjolnirProtectionsConfig,
-    MjolnirEnabledProtectionsEvent,
-    MjolnirEnabledProtectionsEventType,
-    MatrixRoomID,
-    MjolnirProtectionSettingsEventType,
-    StandardSetMembership,
-    RoomMembershipManager,
-    SetMembership,
     StringUserID,
-    ProtectedRoomsSet,
     MatrixRoomReference,
     isStringUserID,
     isStringRoomAlias,
     isStringRoomID,
-    SetRoomState,
-    StandardSetRoomState,
-    StandardClientRooms,
     StandardClientsInRoomMap,
-    StandardEventDecoder,
     DefaultEventDecoder,
 } from "matrix-protection-suite";
 import {
-    BotSDKMatrixAccountData,
-    BotSDKMatrixStateData,
-    BotSDKMjolnirProtectedRoomsStore,
-    BotSDKMjolnirWatchedPolicyRoomsStore,
     DefaultStateTrackingMeta,
-    ManagerManager,
     MatrixSendClient,
     RoomStateManagerFactory,
     SafeMatrixEmitter,
@@ -114,13 +88,13 @@ export async function makeDraupnirBotModeFromConfig(
         clientProvider,
         roomStateManagerFactory
     );
-    const clientRooms = await draupnirFactory.makeDraupnirClientRooms(
+    const draupnir = await draupnirFactory.makeDraupnir(
         clientUserId,
         managementRoom.ok,
         config
     );
-    if (isError(clientRooms)) {
-        throw clientRooms.error;
+    if (isError(draupnir)) {
+        throw draupnir.error;
     }
-
+    return draupnir.ok;
 }

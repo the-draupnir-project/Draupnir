@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import { AppServiceRegistration, Bridge, Request, WeakEvent, MatrixUser, Logger, setBridgeVersion, PrometheusMetrics } from "matrix-appservice-bridge";
-import { MjolnirManager } from ".//MjolnirManager";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
 import { Api } from "./Api";
@@ -35,8 +34,9 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { isError } from "matrix-protection-suite";
+import { DefaultStateTrackingMeta, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder, StandardClientsInRoomMap, StringUserID, isError } from "matrix-protection-suite";
+import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
 /**
@@ -55,12 +55,12 @@ export class MjolnirAppService {
     private constructor(
         public readonly config: IConfig,
         public readonly bridge: Bridge,
-        public readonly mjolnirManager: MjolnirManager,
+        public readonly draupnirManager: AppServiceDraupnirManager,
         public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
         private readonly prometheusMetrics: PrometheusMetrics
     ) {
-        this.api = new Api(config.homeserver.url, mjolnirManager);
+        this.api = new Api(config.homeserver.url, draupnirManager);
         this.commands = new AppserviceCommandHandler(this);
     }
 
@@ -91,7 +91,19 @@ export class MjolnirAppService {
         if (isError(accessControlRoom)) {
             throw accessControlRoom.error;
         }
-        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom, bridge);
+        const clientsInRoomMap = new StandardClientsInRoomMap();
+        const clientProvider = async (clientUserID: StringUserID) => bridge.getIntent(clientUserID).matrixClient;
+        const roomStateManagerFactory = new RoomStateManagerFactory(
+            clientsInRoomMap,
+            clientProvider,
+            DefaultEventDecoder,
+            DefaultStateTrackingMeta
+        );
+        const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(bridge.getBot().getUserId() as StringUserID);
+        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, bridge);
+        if (isError(accessControl)) {
+            throw accessControl.error;
+        }
         // Activate /metrics endpoint for Prometheus
 
         // This should happen automatically but in testing this didn't happen in the docker image
@@ -105,12 +117,13 @@ export class MjolnirAppService {
             labels: ["status", "uuid"],
         });
 
-        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
+        const serverName = config.homeserver.domain;
+        const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(serverName, dataStore, bridge, accessControl.ok, roomStateManagerFactory, instanceCountGauge);
         const appService = new MjolnirAppService(
             config,
             bridge,
             mjolnirManager,
-            accessControl,
+            accessControl.ok,
             dataStore,
             prometheus
         );
@@ -156,7 +169,7 @@ export class MjolnirAppService {
             if ('invite' === mxEvent.content['membership'] && mxEvent.state_key === this.bridge.botUserId) {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
                 try {
-                    await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
+                    await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID)
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
                     // continue, we still want to reject this invitation.
@@ -169,7 +182,7 @@ export class MjolnirAppService {
                 }
             }
         }
-        this.mjolnirManager.onEvent(request);
+        this.draupnirManager.onEvent(request);
         this.commands.handleEvent(mxEvent);
     }
 
