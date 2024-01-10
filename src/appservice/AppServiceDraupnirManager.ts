@@ -201,7 +201,7 @@ export class AppServiceDraupnirManager {
         return this.baseManager.getUnstartedDraupnirs();
     }
 
-    public findUnstartedMjolnir(clientUserID: StringUserID): UnstartedDraupnir | undefined {
+    public findUnstartedDraupnir(clientUserID: StringUserID): UnstartedDraupnir | undefined {
         return this.baseManager.findUnstartedDraupnir(clientUserID);
     }
 
@@ -216,12 +216,21 @@ export class AppServiceDraupnirManager {
         return mjIntent;
     }
 
+    public async startDraupnirFromMXID(draupnirClientID: StringUserID): Promise<ActionResult<void>> {
+        const records = await this.dataStore.lookupByLocalPart(userLocalpart(draupnirClientID));
+        if (records.length === 0) {
+            return ActionError.Result(`There is no record of a draupnir with the mxid ${draupnirClientID}`);
+        } else {
+            return await this.startDraupnirFromRecord(records[0]);
+        }
+    }
+
     /**
      * Attempt to start a mjolnir, and notify its management room of any failure to start.
      * Will be added to `this.unstartedMjolnirs` if we fail to start it AND it is not already running.
      * @param mjolnirRecord The record for the mjolnir that we want to start.
      */
-    public async startDraupnir(mjolnirRecord: MjolnirRecord): Promise<ActionResult<void>> {
+    public async startDraupnirFromRecord(mjolnirRecord: MjolnirRecord): Promise<ActionResult<void>> {
         const clientUserID = this.draupnirMXID(mjolnirRecord);
         if (this.baseManager.isDraupnirListening(clientUserID)) {
             throw new TypeError(`${mjolnirRecord.local_part} is already running, we cannot start it.`);
@@ -271,7 +280,7 @@ export class AppServiceDraupnirManager {
      */
     public async startDraupnirs(mjolnirRecords: MjolnirRecord[]): Promise<void> {
         for (const mjolnirRecord of mjolnirRecords) {
-            await this.startDraupnir(mjolnirRecord);
+            await this.startDraupnirFromRecord(mjolnirRecord);
         }
     }
 }
