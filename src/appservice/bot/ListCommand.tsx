@@ -4,16 +4,15 @@
  */
 
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from '../../commands/interface-manager/MatrixInterfaceAdaptor';
-import { UnstartedMjolnir } from '../MjolnirManager';
 import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
 import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
-import { UserID } from 'matrix-bot-sdk';
 import { tickCrossRenderer } from '../../commands/interface-manager/MatrixHelpRenderer';
 import { JSXFactory } from '../../commands/interface-manager/JSXFactory';
 import { renderMatrixAndSend } from '../../commands/interface-manager/DeadDocumentMatrix';
-import { ActionError, ActionResult, isError, Ok } from 'matrix-protection-suite';
+import { ActionError, ActionResult, isError, Ok, UserID } from 'matrix-protection-suite';
 import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';
+import { UnstartedDraupnir } from '../../draupnirfactory/StandardDraupnirManager';
 
 /**
  * There is ovbiously something we're doing very wrong here,
@@ -29,16 +28,16 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
     table: "appservice bot",
     parameters: parameters([]),
     command: async function () {
-        return Ok(this.appservice.draupnirManager.getUnstartedMjolnirs());
+        return Ok(this.appservice.draupnirManager.getUnstartedDraupnirs());
     },
-    summary: "List any Mjolnir that failed to start."
+    summary: "List any Draupnir that failed to start."
 });
 
 // Hmm what if leter on we used OL and the numbers could be a presentation type
 // and be used similar to like #=1 and #1.
 defineMatrixInterfaceAdaptor({
     interfaceCommand: listUnstarted,
-    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: ActionResult<UnstartedMjolnir[]>) {
+    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: ActionResult<UnstartedDraupnir[]>) {
         tickCrossRenderer.call(this, client, commandRoomId, event, result); // don't await, it doesn't really matter.
         if (isError(result)) {
             return; // just let the default handler deal with it.
@@ -48,13 +47,12 @@ defineMatrixInterfaceAdaptor({
             <root>
                 <b>Unstarted Mjolnir: {unstarted.length}</b>
                 <ul>
-                    {unstarted.map(mjolnir => {
+                    {unstarted.map(draupnir => {
                         return <li>
-                            {mjolnir.mjolnirRecord.owner},
-                            <code>{mjolnir.mxid.toString()}</code>
-                            <code>{mjolnir.failCode}</code>:
+                            <code>{draupnir.clientUserID}</code>
+                            <code>{draupnir.failType}</code>:
                             <br />
-                            {mjolnir.cause}
+                            {draupnir.cause}
                         </li>
                     })}
                 </ul>
@@ -75,19 +73,18 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
     table: "appservice bot",
     parameters: parameters([
         {
-            name: "mjolnir",
+            name: "draupnir",
             acceptor: findPresentationType("UserID"),
-            description: 'The userid of the mjolnir to restart'
+            description: 'The userid of the draupnir to restart'
         }
     ]),
-    command: async function (this, _keywords, mjolnirId: UserID): Promise<ActionResult<true>> {
-        const mjolnirManager = this.appservice.draupnirManager;
-        const mjolnir = mjolnirManager.findUnstartedMjolnir(mjolnirId.localpart);
-        if (mjolnir?.mjolnirRecord === undefined) {
-            return ActionError.Result(`We can't find the unstarted mjolnir ${mjolnirId}, is it running?`);
+    command: async function (this, _keywords, draupnirUser: UserID): Promise<ActionResult<void>> {
+        const draupnirManager = this.appservice.draupnirManager;
+        const draupnir = draupnirManager.findUnstartedDraupnir(draupnirUser.toString());
+        if (draupnir !== undefined) {
+            return ActionError.Result(`We can't find the unstarted draupnir ${draupnirUser}, is it already running?`);
         }
-        await mjolnirManager.startMjolnir(mjolnir?.mjolnirRecord);
-        return Ok(true);
+        return await draupnirManager.startDraupnirFromMXID(draupnirUser.toString());
     },
     summary: "Attempt to restart a Mjolnir."
 })
