@@ -11,7 +11,7 @@ import { ArgumentStream, RestDescription, findPresentationType, parameters } fro
 import { MjolnirAppService } from '../AppService';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
 import { AppserviceBotEmitter } from './AppserviceBotEmitter';
-import { ActionResult, Ok, RoomMessage, Value, isError } from 'matrix-protection-suite';
+import { ActionResult, Ok, RoomMessage, StringRoomID, Value, isError } from 'matrix-protection-suite';
 
 defineCommandTable("appservice bot");
 
@@ -69,7 +69,7 @@ export class AppserviceCommandHandler {
                 const adaptor = findMatrixInterfaceAdaptor(command);
                 const context: AppserviceContext = {
                     appservice: this.appservice,
-                    roomId: mxEvent.room_id,
+                    roomID: mxEvent.room_id as StringRoomID,
                     event: parsedEvent,
                     client: this.appservice.bridge.getBot().getClient(),
                     emitter: new AppserviceBotEmitter(),
