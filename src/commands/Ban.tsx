@@ -43,7 +43,7 @@ export async function findPolicyRoomEditorFromRoomReference(draupnir: Draupnir, 
     if (isError(policyRoomID)) {
         return policyRoomID;
     }
-    return await draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
+    return await draupnir.policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
 }
 
 async function ban(
@@ -97,7 +97,7 @@ defineInterfaceCommand({
             ),
             prompt: async function (this: DraupnirContext, _parameter: ParameterDescription): Promise<PromptOptions> {
                 return {
-                    suggestions: this.draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(
+                    suggestions: this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(
                         this.draupnir.clientUserID,
                         PolicyRuleType.User
                     )

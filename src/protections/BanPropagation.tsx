@@ -67,7 +67,7 @@ async function promptBanPropagation(
     draupnir: Draupnir,
     change: MembershipChange,
 ): Promise<void> {
-    const editablePolicyRoomIDs = draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(
+    const editablePolicyRoomIDs = draupnir.policyRoomManager.getEditablePolicyRoomIDs(
         draupnir.clientUserID,
         PolicyRuleType.User
     );
@@ -211,7 +211,7 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
                 log.error(`Could not resolve the room reference for the policy list to ban a user within ${policyRoomRef.ok.toPermalink()}`, roomID.error);
                 return;
             }
-            const listResult = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(roomID.ok)
+            const listResult = await this.draupnir.policyRoomManager.getPolicyRoomEditor(roomID.ok)
             if (isError(listResult)) {
                 log.error(`Could not find a policy list for the policy room ${policyRoomRef.ok.toPermalink()}`, listResult.error);
                 return;
@@ -233,7 +233,7 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
             const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
             const rulesMatchingUser = policyRevision.allRulesMatchingEntity(context.target, PolicyRuleType.User, Recommendation.Ban);
             const listsWithRules = new Set<StringRoomID>(rulesMatchingUser.map((rule) => rule.sourceEvent.room_id));
-            const editablePolicyRooms = this.draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(this.draupnir.clientUserID, PolicyRuleType.User);
+            const editablePolicyRooms = this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(this.draupnir.clientUserID, PolicyRuleType.User);
             for (const roomIDWithPolicy of listsWithRules) {
                 const editablePolicyRoom = editablePolicyRooms.find((room) => room.toRoomIDOrAlias() === roomIDWithPolicy);
                 if (editablePolicyRoom === undefined) {
@@ -241,7 +241,7 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
                     errors.push(new PermissionError(roomID, `${this.draupnir.clientUserID} doesn't have the power level to remove the policy banning ${context.target} within ${roomID.toPermalink()}`));
                     continue;
                 }
-                const editorResult = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(editablePolicyRoom);
+                const editorResult = await this.draupnir.policyRoomManager.getPolicyRoomEditor(editablePolicyRoom);
                 if (isError(editorResult)) {
                     errors.push(RoomActionError.fromActionError(editablePolicyRoom, editorResult.error));
                     continue;

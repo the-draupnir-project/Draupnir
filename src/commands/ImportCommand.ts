@@ -47,7 +47,7 @@ export async function importCommand(
     if (isError(policyRoom)) {
         return policyRoom;
     }
-    const policyRoomEditor = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(
+    const policyRoomEditor = await this.draupnir.policyRoomManager.getPolicyRoomEditor(
         policyRoom.ok
     );
     if (isError(policyRoomEditor)) {
