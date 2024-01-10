@@ -64,7 +64,7 @@ async function unban(
     if (isError(policyRoom)) {
         return policyRoom;
     }
-    const policyRoomEditor = await this.draupnir.managerManager.policyRoomManager.getPolicyRoomEditor(
+    const policyRoomEditor = await this.draupnir.policyRoomManager.getPolicyRoomEditor(
         policyRoom.ok
     );
     if (isError(policyRoomEditor)) {
@@ -120,7 +120,7 @@ defineInterfaceCommand({
             ),
             prompt: async function (this: DraupnirContext) {
                 return {
-                    suggestions: this.draupnir.managerManager.policyRoomManager.getEditablePolicyRoomIDs(
+                    suggestions: this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(
                         this.draupnir.clientUserID,
                         PolicyRuleType.User
                     )

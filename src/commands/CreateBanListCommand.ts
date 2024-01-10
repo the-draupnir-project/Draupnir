@@ -39,7 +39,7 @@ export async function createList(
     alias: MatrixRoomAlias,
     ...reasonParts: string[]
 ): Promise<ActionResult<MatrixRoomID>> {
-    const newList = await this.draupnir.managerManager.policyRoomManager.createPolicyRoom(
+    const newList = await this.draupnir.policyRoomManager.createPolicyRoom(
         shortcode,
         [this.event.sender],
         {
