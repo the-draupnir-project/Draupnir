@@ -143,6 +143,7 @@ export class Draupnir implements Client {
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
         Task(this.joinOnInviteListener(roomID, event));
         this.managementRoomMessageListener(roomID, event);
+        this.reactionHandler.handleEvent(roomID, event);
     }
 
     private managementRoomMessageListener(roomID: StringRoomID, event: RoomEvent): void {

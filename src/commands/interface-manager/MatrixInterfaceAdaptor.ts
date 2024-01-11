@@ -36,12 +36,13 @@ import { tickCrossRenderer } from "./MatrixHelpRenderer";
 import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
 import { ParameterDescription } from "./ParameterParsing";
 import { matrixPromptForAccept } from "./MatrixPromptForAccept";
-import { MatrixSendClient, SafeMatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ActionError, ActionResult, ResultError, RoomEvent, RoomMessage, StringRoomID, isError } from "matrix-protection-suite";
+import { MatrixReactionHandler } from "./MatrixReactionHandler";
 
 export interface MatrixContext {
+    reactionHandler: MatrixReactionHandler,
     client: MatrixSendClient,
-    emitter: SafeMatrixEmitter,
     roomID: StringRoomID,
     event: RoomMessage,
 }

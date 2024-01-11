@@ -151,14 +151,10 @@ class ReactionHandler {
 // requiring a string, but we give one as a presentation in a reply
 // reactions should be checked first before being given to the command.
 export class PromptResponseListener {
-    private readonly reactionHandler: ReactionHandler;
-
     constructor(
-        matrixEmitter: SafeMatrixEmitter,
-        userID: StringUserID,
-        client: MatrixSendClient,
+        private readonly reactionHandler: ReactionHandler
     ) {
-        this.reactionHandler = new ReactionHandler(matrixEmitter, userID, client);
+        // nothing to do.
     }
 
     private indexToReactionKey(index: number): string {

@@ -43,6 +43,9 @@ async function promptSuggestions<PresentationType>(
 
 }
 
+// TODO: this should be changed so that we don't keep the continuation waiting.
+//       instead, the original command should either be placed as context
+//       within the prompt or reparsed from the source event.
 export async function matrixPromptForAccept<PresentationType = any> (
     this: MatrixContext, parameter: ParameterDescription, command: InterfaceCommand<BaseFunction>, promptOptions: PromptOptions
 ): Promise<ActionResult<PresentationType>> {
