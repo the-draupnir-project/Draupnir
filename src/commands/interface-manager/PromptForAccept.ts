@@ -3,10 +3,8 @@
  * All rights reserved.
  */
 
-import { ActionResult } from "matrix-protection-suite";
 import { ReadItem } from "./CommandReader";
-import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
-import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
+import { ArgumentStream } from "./ParameterParsing";
 
 export interface PromptOptions<PresentationType = any> {
     readonly suggestions: PresentationType[]
@@ -19,18 +17,12 @@ export interface PromptOptions<PresentationType = any> {
  */
 export interface InterfaceAcceptor<PresentationType = any> {
     readonly isPromptable: boolean
-    promptForAccept(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<ActionResult<PresentationType>>
-}
-
-export interface CommandInvocationRecord {
-    readonly command: InterfaceCommand<BaseFunction>,
 }
 
 export class PromptableArgumentStream extends ArgumentStream {
     constructor(
         source: ReadItem[],
         private readonly interfaceAcceptor: InterfaceAcceptor,
-        private readonly invocationRecord: CommandInvocationRecord,
         start = 0,
     ) {
         super([...source], start);
@@ -41,16 +33,5 @@ export class PromptableArgumentStream extends ArgumentStream {
 
     public isPromptable(): boolean {
         return this.interfaceAcceptor.isPromptable
-    }
-
-    public async prompt<T = ReadItem>(parameterDescription: ParameterDescription): Promise<ActionResult<T>> {
-        const result = await this.interfaceAcceptor.promptForAccept(
-            parameterDescription,
-            this.invocationRecord
-        );
-        if (result.isOkay) {
-            this.source.push(result.ok);
-        }
-        return result;
     }
 }

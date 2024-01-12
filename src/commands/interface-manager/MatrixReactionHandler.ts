@@ -11,7 +11,13 @@ import { ReactionEvent, RoomEvent, StringRoomID, StringUserID, Value } from "mat
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
 type ItemByReactionKey = Map<string/*reaction key*/, any/*serialized presentation*/>;
-export type ReactionListener = (key: string, item: any, additionalContext: unknown, reactionMap: ItemByReactionKey) => void;
+export type ReactionListener = (
+    key: string,
+    item: any,
+    additionalContext: unknown,
+    reactionMap: ItemByReactionKey,
+    annotatedEvent: RoomEvent
+) => void;
 
 /**
  * A utility that can be associated with an `MatrixEmitter` to listen for
@@ -82,7 +88,7 @@ export class MatrixReactionHandler extends EventEmitter {
             LogService.info('MatrixReactionHandler', `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
             return;
         }
-        this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)));
+        this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)), annotatedEvent);
     }
 
     /**
@@ -114,5 +120,33 @@ export class MatrixReactionHandler extends EventEmitter {
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve()
             ).catch(e => (LogService.error('MatrixReactionHandler', `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+    }
+
+    public static createItemizedReactionMap(items: string[]): ItemByReactionKey {
+        return items.reduce(
+            (acc, item, index) => {
+                const key = MatrixReactionHandler.numberToEmoji(index + 1);
+                acc.set(key, item);
+                return acc;
+            },
+            new Map<string, string>()
+        );
+    }
+
+    public static numberToEmoji(number: number): string {
+        // https://github.com/anton-bot/number-to-emoji
+        // licensed with unlicense.
+        const key = number.toString();
+        return key
+            .replace(/0/g, '0️⃣')
+            .replace(/1/g, '1️⃣')
+            .replace(/2/g, '2️⃣')
+            .replace(/3/g, '3️⃣')
+            .replace(/4/g, '4️⃣')
+            .replace(/5/g, '5️⃣')
+            .replace(/6/g, '6️⃣')
+            .replace(/7/g, '7️⃣')
+            .replace(/8/g, '8️⃣')
+            .replace(/9/g, '9️⃣');
     }
 }

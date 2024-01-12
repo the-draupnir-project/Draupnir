@@ -81,14 +81,15 @@ export async function handleCommand(
         const command = commandTable.findAMatchingCommand(stream)
             ?? findTableCommand("mjolnir", "help");
         const adaptor = findMatrixInterfaceAdaptor(command);
-        const mjolnirContext: DraupnirContext = {
-            draupnir, roomID: roomID, event, client: draupnir.client, reactionHandler: draupnir.reactionHandler,
+        const draupnirContext: DraupnirContext = {
+            ...draupnir.commandContext,
+            event
         };
         try {
-            return await adaptor.invoke(mjolnirContext, mjolnirContext, ...stream.rest());
+            return await adaptor.invoke(draupnirContext, draupnirContext, ...stream.rest());
         } catch (e) {
             const commandError = new ActionException(ActionExceptionKind.Unknown, e, 'Unknown Unexpected Error');
-            await tickCrossRenderer.call(mjolnirContext, draupnir.client, roomID, event, ResultError(commandError));
+            await tickCrossRenderer.call(draupnirContext, draupnir.client, roomID, event, ResultError(commandError));
         }
     } catch (e) {
         LogService.error("CommandHandler", e);
