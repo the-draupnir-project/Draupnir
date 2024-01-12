@@ -10,8 +10,7 @@ import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext
 import { ArgumentStream, RestDescription, findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
-import { AppserviceBotEmitter } from './AppserviceBotEmitter';
-import { ActionResult, Ok, RoomMessage, StringRoomID, Value, isError } from 'matrix-protection-suite';
+import { ActionResult, Ok, RoomMessage, Value, isError } from 'matrix-protection-suite';
 
 defineCommandTable("appservice bot");
 
@@ -24,6 +23,8 @@ export type AppserviceBaseExecutor = (this: AppserviceContext, ...args: unknown[
 import '../../commands/interface-manager/MatrixPresentations';
 import './ListCommand';
 import './AccessCommands';
+import { MatrixReactionHandler } from '../../commands/interface-manager/MatrixReactionHandler';
+import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt, makeListenerForPromptDefault } from '../../commands/interface-manager/MatrixPromptForAccept';
 
 
 
@@ -44,11 +45,37 @@ defineMatrixInterfaceAdaptor({
 
 export class AppserviceCommandHandler {
     private readonly commandTable = findCommandTable("appservice bot");
+    private commandContext: Omit<AppserviceContext, 'event'>;
+    private readonly reactionHandler: MatrixReactionHandler;
 
     constructor(
         private readonly appservice: MjolnirAppService
     ) {
-
+        this.reactionHandler = new MatrixReactionHandler(
+            this.appservice.accessControlRoomID,
+            this.appservice.bridge.getBot().getClient(),
+            this.appservice.botUserID
+        );
+        this.commandContext = {
+            appservice: this.appservice,
+            client: this.appservice.bridge.getBot().getClient(),
+            reactionHandler: this.reactionHandler,
+            roomID: this.appservice.accessControlRoomID
+        };
+        this.reactionHandler.on(ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt(
+            this.commandContext.client,
+            this.appservice.accessControlRoomID,
+            this.reactionHandler,
+            this.commandTable,
+            this.commandContext
+        ));
+        this.reactionHandler.on(DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForPromptDefault(
+            this.commandContext.client,
+            this.appservice.accessControlRoomID,
+            this.reactionHandler,
+            this.commandTable,
+            this.commandContext
+        ));
     }
 
     public handleEvent(mxEvent: WeakEvent): void {
@@ -68,11 +95,8 @@ export class AppserviceCommandHandler {
             if (command) {
                 const adaptor = findMatrixInterfaceAdaptor(command);
                 const context: AppserviceContext = {
-                    appservice: this.appservice,
-                    roomID: mxEvent.room_id as StringRoomID,
+                    ...this.commandContext,
                     event: parsedEvent,
-                    client: this.appservice.bridge.getBot().getClient(),
-                    emitter: new AppserviceBotEmitter(),
                 };
                 adaptor.invoke(context, context, ...argumentStream.rest());
                 return;

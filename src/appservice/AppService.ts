@@ -35,7 +35,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
 import { DefaultStateTrackingMeta, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
@@ -61,10 +61,11 @@ export class MjolnirAppService {
         private readonly eventDecoder: EventDecoder,
         private readonly roomStateManagerFactory: RoomStateManagerFactory,
         private readonly clientsInRoomMap: ClientsInRoomMap,
-        private readonly prometheusMetrics: PrometheusMetrics
+        private readonly prometheusMetrics: PrometheusMetrics,
+        public readonly accessControlRoomID: StringRoomID,
+        public readonly botUserID: StringUserID,
     ) {
         this.api = new Api(config.homeserver.url, draupnirManager);
-        this.commands = new AppserviceCommandHandler(this);
     }
 
     /**
@@ -119,7 +120,8 @@ export class MjolnirAppService {
             eventDecoder,
             DefaultStateTrackingMeta
         );
-        const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(bridge.getBot().getUserId() as StringUserID);
+        const botUserID = bridge.getBot().getUserId() as StringUserID;
+        const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(botUserID);
         const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, bridge);
         if (isError(accessControl)) {
             throw accessControl.error;
@@ -148,7 +150,9 @@ export class MjolnirAppService {
             eventDecoder,
             roomStateManagerFactory,
             clientsInRoomMap,
-            prometheus
+            prometheus,
+            accessControlRoom.ok.toRoomIDOrAlias(),
+            botUserID
         );
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
