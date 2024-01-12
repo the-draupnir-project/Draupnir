@@ -35,10 +35,11 @@ import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
 import { MatrixSendClient, SynapseAdminClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
-import { COMMAND_PREFIX, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
+import { COMMAND_PREFIX, DraupnirContext, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
 import { renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
+import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt as makeListenerForArgumentPrompt, makeListenerForPromptDefault } from "./commands/interface-manager/MatrixPromptForAccept";
 
 const log = new Logger('Draupnir');
 
@@ -75,6 +76,8 @@ export class Draupnir implements Client {
 
     public readonly reactionHandler: MatrixReactionHandler;
 
+    public readonly commandContext: Omit<DraupnirContext,'event'>;
+
     private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
 
     private constructor(
@@ -99,6 +102,24 @@ export class Draupnir implements Client {
             this.reportPoller = new ReportPoller(this, this.reportManager);
         }
         this.clientRooms.on('timeline', this.timelineEventListener);
+
+        this.commandContext = {
+            draupnir: this, roomID: this.managementRoomID, client: this.client, reactionHandler: this.reactionHandler,
+        };
+        this.reactionHandler.on(ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt(
+            this.client,
+            this.managementRoomID,
+            this.reactionHandler,
+            this.commandTable,
+            this.commandContext
+        ));
+        this.reactionHandler.on(DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForPromptDefault(
+            this.client,
+            this.managementRoomID,
+            this.reactionHandler,
+            this.commandTable,
+            this.commandContext
+        ));
     }
 
     public static async makeDraupnirBot(

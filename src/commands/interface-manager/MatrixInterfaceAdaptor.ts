@@ -33,18 +33,19 @@ import { LogService } from "matrix-bot-sdk";
 import { ReadItem } from "./CommandReader";
 import { BaseFunction, InterfaceCommand } from "./InterfaceCommand";
 import { tickCrossRenderer } from "./MatrixHelpRenderer";
-import { CommandInvocationRecord, InterfaceAcceptor, PromptableArgumentStream, PromptOptions } from "./PromptForAccept";
+import { InterfaceAcceptor, PromptOptions, PromptableArgumentStream } from "./PromptForAccept";
 import { ParameterDescription } from "./ParameterParsing";
-import { matrixPromptForAccept } from "./MatrixPromptForAccept";
+import { promptDefault, promptSuggestions } from "./MatrixPromptForAccept";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionError, ActionResult, ResultError, RoomEvent, RoomMessage, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, ResultError, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
 import { MatrixReactionHandler } from "./MatrixReactionHandler";
+import { PromptRequiredError } from "./PromptRequiredError";
 
 export interface MatrixContext {
     reactionHandler: MatrixReactionHandler,
     client: MatrixSendClient,
     roomID: StringRoomID,
-    event: RoomMessage,
+    event: RoomEvent,
 }
 
 export type RendererSignature<C extends MatrixContext, ExecutorType extends BaseFunction> = (
@@ -73,12 +74,28 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
      * @param args These will be the arguments to the parser function.
      */
     public async invoke(executorContext: ThisParameterType<ExecutorType>, matrixContext: C, ...args: ReadItem[]): Promise<void> {
-        const invocationRecord = new MatrixInvocationRecord<ThisParameterType<ExecutorType>>(this.interfaceCommand, executorContext, matrixContext);
-        const stream = new PromptableArgumentStream(args, this, invocationRecord);
+        const stream = new PromptableArgumentStream(args, this);
         const executorResult: Awaited<ReturnType<typeof this.interfaceCommand.parseThenInvoke>> = await this.interfaceCommand.parseThenInvoke(executorContext, stream);
+        // FIXME: IT's really not clear to me what reportValidationError is
+        // or how `renderer` gets called if a command fails?
+        // maybe it never did, i think the validation error handler uses tick cross renderer :skull:
+        // so it'd be hard to know.
         if (isError(executorResult)) {
-            this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error);
-            return;
+            if (executorResult.error instanceof PromptRequiredError) {
+                const parameter = executorResult.error.parameterRequiringPrompt as ParameterDescription<ExecutorType>;
+                if (parameter.prompt === undefined) {
+                    throw new TypeError(`A PromptRequiredError was given for a parameter which doesn't support prompts, this shouldn't happen`);
+                }
+                const promptOptions: PromptOptions = await parameter.prompt.call(executorContext, parameter);
+                if (promptOptions.default) {
+                    await promptDefault.call(matrixContext, parameter, this.interfaceCommand, promptOptions.default, args);
+                } else {
+                    await promptSuggestions.call(matrixContext, parameter, this.interfaceCommand, promptOptions.suggestions, args);
+                }
+            } else {
+                this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error);
+                return;
+            }
         }
         // just give the renderer the MatrixContext.
         // we need to give the renderer the command itself!
@@ -90,7 +107,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     // and an error discovered because their is a fault or an error running the command. Though i don't think this is correct
     // since any CommandError recieved is an expected error. It means there is no fault. An exception on the other hand does
     // so this suggests we should just remove this.
-    private async reportValidationError(client: MatrixSendClient, roomID: StringRoomID, event: RoomMessage, validationError: ActionError): Promise<void> {
+    private async reportValidationError(client: MatrixSendClient, roomID: StringRoomID, event: RoomEvent, validationError: ActionError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
             await this.validationErrorHandler.apply(this, arguments);
@@ -98,33 +115,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
         }
         await tickCrossRenderer.call(this, client, roomID, event, ResultError(validationError));
     }
-
-    public async promptForAccept<PresentationType = unknown>(parameter: ParameterDescription, invocationRecord: CommandInvocationRecord): Promise<ActionResult<PresentationType>> {
-        if (!(invocationRecord instanceof MatrixInvocationRecord)) {
-            throw new TypeError("The MatrixInterfaceAdaptor only supports invocation records that were produced by itself.");
-        }
-        if (parameter.prompt === undefined) {
-            throw new TypeError(`parameter ${parameter.name} in command ${JSON.stringify(invocationRecord.command.designator)} is not promptable, yet the MatrixInterfaceAdaptor is being prompted`);
-        }
-        // Slowly starting to think that we're making a mistake by using `this` so much....
-        // First extract the prompt results in the command executor context
-        const promptOptions: PromptOptions = await parameter.prompt.call(invocationRecord.executorContext, parameter);
-        // Then present the prompt.
-        const promptResult: Awaited<ReturnType<typeof matrixPromptForAccept<PresentationType>>> = await matrixPromptForAccept.call(invocationRecord.matrixContext, parameter, invocationRecord.command, promptOptions);
-        return promptResult;
-    }
 }
-
-export class MatrixInvocationRecord<ExecutorContext> implements CommandInvocationRecord {
-    constructor(
-        public readonly command: InterfaceCommand<BaseFunction>,
-        public readonly executorContext: ExecutorContext,
-        public readonly matrixContext: MatrixContext,
-    ) {
-
-    }
-}
-
 
 const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand<BaseFunction>, MatrixInterfaceAdaptor<MatrixContext, BaseFunction>>();
 

@@ -27,9 +27,12 @@ limitations under the License.
 import { ActionError, ActionResult, Ok, ResultError, isError } from "matrix-protection-suite";
 import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
 import { PromptOptions } from "./PromptForAccept";
+import { PromptRequiredError } from "./PromptRequiredError";
 
 export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
     rest(): ReadItem[],
+    // All of the read items before the current position.
+    priorItems(): ReadItem[],
     isPromptable(): boolean,
     // should prompt really return a new stream?
     prompt(parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>>,
@@ -38,6 +41,10 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
 export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
     public rest() {
         return this.source.slice(this.position);
+    }
+
+    public priorItems(): ReadItem[] {
+        return this.source.slice(0, this.position);
     }
 
     public isPromptable(): boolean {
@@ -160,10 +167,13 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
     public async parseRest(stream: IArgumentStream, promptForRest: boolean, keywordParser: KeywordParser): Promise<ActionResult<ReadItem[]>> {
         const items: ReadItem[] = [];
         if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
-            const result = await stream.prompt(this);
-            if (isError(result)) {
-                return result;
-            }
+            return PromptRequiredError.Result(
+                `A prompt is required for the missing argument for the ${this.name} parameter`,
+                {
+                    promptParameter: this,
+                    stream,
+                }
+            );
         }
         while (stream.peekItem() !== undefined) {
             const keywordResult = keywordParser.parseKeywords(stream);
@@ -389,11 +399,13 @@ class ArgumentListParser implements IArgumentListParser {
             }
             if (stream.peekItem() === undefined) {
                 if (parameter.prompt && stream.isPromptable()) {
-                    const promptResult = await stream.prompt(parameter);
-                    if (isError(promptResult)) {
-                        return promptResult;
-                    }
-                    hasPrompted = true;
+                    return PromptRequiredError.Result(
+                        `A prompt is required for the parameter ${parameter.name}`,
+                        {
+                            promptParameter: parameter,
+                            stream
+                        }
+                    );
                 } else {
                     return ArgumentParseError.Result(
                         `An argument for the parameter ${parameter.name} was expected but was not provided.`,
