@@ -32,7 +32,7 @@ import { htmlEscape } from "../utils";
 import { JSDOM } from 'jsdom';
 import { EventEmitter } from 'events';
 import { Draupnir } from "../Draupnir";
-import { ReactionContent, RoomEvent, StringEventID, StringRoomID, Value, isError } from "matrix-protection-suite";
+import { ReactionContent, RoomEvent, StringEventID, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -90,20 +90,13 @@ export class ReportManager extends EventEmitter {
     private displayManager: DisplayManager;
     constructor(public draupnir: Draupnir) {
         super();
-        // Configure bot interactions.
-        draupnir.matrixEmitter.on("room.event", async (roomID, event) => {
-            try {
-                switch (event["type"]) {
-                    case "m.reaction": {
-                        await this.handleReaction({ roomID, event });
-                        break;
-                    }
-                }
-            } catch (ex) {
-                LogService.error("ReportManager", "Uncaught error while handling an event", ex);
-            }
-        });
         this.displayManager = new DisplayManager(this);
+    }
+
+    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
+        if (event.type === 'm.reaction') {
+            Task(this.handleReaction({ roomID, event }));
+        }
     }
 
     /**
