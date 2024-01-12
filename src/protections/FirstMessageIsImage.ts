@@ -82,7 +82,10 @@ export class FirstMessageIsImageProtection extends AbstractProtection implements
         const roomID = room.toRoomIDOrAlias();
         if (!this.justJoined[roomID]) this.justJoined[roomID] = [];
         if (Value.Check(RoomMessage, event)) {
-            const msgtype = event.content?.['msgtype'] || 'm.text';
+            if (!('msgtype' in event.content)) {
+                return Ok(undefined);
+            }
+            const msgtype = event.content['msgtype'] || 'm.text';
             const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
             if (isMedia && this.justJoined[roomID].includes(event['sender'])) {
