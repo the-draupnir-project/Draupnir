@@ -88,6 +88,9 @@ export class WordListProtection extends AbstractProtection implements Protection
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
         const minsBeforeTrusting = this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
         if (Value.Check(RoomMessage, event)) {
+            if (!('msgtype' in event.content)) {
+                return Ok(undefined);
+            }
             const message = (event.content !== undefined && 'formatted_body' in event.content && event.content?.['formatted_body']) || event.content?.['body'];
             if (!message === undefined) {
                 return Ok(undefined);

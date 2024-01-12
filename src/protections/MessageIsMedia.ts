@@ -64,6 +64,9 @@ export class MessageIsMediaProtection extends AbstractProtection implements Prot
 
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
         if (Value.Check(RoomMessage, event)) {
+            if (!('msgtype' in event.content)) {
+                return Ok(undefined);
+            }
             const msgtype = event.content?.['msgtype'] || 'm.text';
             const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
