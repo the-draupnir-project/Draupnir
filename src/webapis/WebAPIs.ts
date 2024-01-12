@@ -30,6 +30,7 @@ import express from "express";
 import { MatrixClient } from "matrix-bot-sdk";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
+import { StringEventID, StringRoomID } from "matrix-protection-suite";
 
 
 /**
@@ -74,7 +75,7 @@ export class WebAPIs {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Date");
                 response.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-                await this.handleReport({ request, response, roomId: request.params.room_id, eventId: request.params.event_id })
+                await this.handleReport({ request, response, roomID: request.params.room_id as StringRoomID, eventID: request.params.event_id as StringEventID })
             });
             console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
         }
@@ -98,7 +99,7 @@ export class WebAPIs {
      * @param request The request. Its body SHOULD hold an object `{reason?: string}`
      * @param response The response. Used to propagate HTTP success/error.
      */
-    async handleReport({ roomId, eventId, request, response }: { roomId: string, eventId: string, request: express.Request, response: express.Response }) {
+    async handleReport({ roomID, eventID, request, response }: { roomID: StringRoomID, eventID: StringEventID, request: express.Request, response: express.Response }) {
         // To display any kind of useful information, we need
         //
         // 1. The reporter id;
@@ -175,16 +176,16 @@ export class WebAPIs {
                 //
                 // By doing this with the reporterClient, we ensure that this feature of Mjölnir can work
                 // with all Matrix homeservers, rather than just Synapse.
-                event = await reporterClient.getEvent(roomId, eventId);
+                event = await reporterClient.getEvent(roomID, eventID);
             }
 
             let reason = request.body["reason"];
-            await this.reportManager.handleServerAbuseReport({ roomId, reporterId, event, reason });
+            await this.reportManager.handleServerAbuseReport({ roomID, reporterId, event, reason });
 
             // Match the spec behavior of `/report`: return 200 and an empty JSON.
             response.status(200).json({});
         } catch (ex) {
-            console.warn("Error responding to an abuse report", roomId, eventId, ex);
+            console.warn("Error responding to an abuse report", roomID, eventID, ex);
             response.status(503);
         }
     }
