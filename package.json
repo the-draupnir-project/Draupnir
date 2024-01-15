@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": "https://github.com/Gnuxie/Draupnir.git",
   "author": "Gnuxie",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "AFL-3.0",
   "private": true,
   "scripts": {
     "build": "tsc",
