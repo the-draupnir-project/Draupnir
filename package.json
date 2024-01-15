@@ -50,7 +50,7 @@
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "await-lock": "^2.2.2",
-    "body-parser": "^1.20.1",
+    "body-parser": "^1.20.2",
     "config": "^3.3.9",
     "express": "^4.17",
     "html-to-text": "^8.0.0",
