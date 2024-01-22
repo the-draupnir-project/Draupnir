@@ -62,7 +62,7 @@
     "parse-duration": "^1.0.2",
     "pg": "^8.8.0",
     "shell-quote": "^1.7.3",
-    "ulidx": "^0.3.0",
+    "ulidx": "^2.2.1",
     "yaml": "^2.3.2"
   },
   "engines": {
