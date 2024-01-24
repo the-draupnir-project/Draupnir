@@ -34,9 +34,9 @@ import {
     isStringRoomID,
     StandardClientsInRoomMap,
     DefaultEventDecoder,
+    DefaultStateTrackingMeta,
 } from "matrix-protection-suite";
 import {
-    DefaultStateTrackingMeta,
     MatrixSendClient,
     RoomStateManagerFactory,
     SafeMatrixEmitter,

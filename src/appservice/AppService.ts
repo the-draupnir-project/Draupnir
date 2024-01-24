@@ -34,8 +34,8 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
-import { DefaultStateTrackingMeta, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientsInRoomMap, DefaultEventDecoder, DefaultStateTrackingMeta, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
