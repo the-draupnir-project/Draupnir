@@ -35,7 +35,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
 import { RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ClientsInRoomMap, DefaultEventDecoder, DefaultStateTrackingMeta, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
@@ -117,8 +117,7 @@ export class MjolnirAppService {
         const roomStateManagerFactory = new RoomStateManagerFactory(
             clientsInRoomMap,
             clientProvider,
-            eventDecoder,
-            DefaultStateTrackingMeta
+            eventDecoder
         );
         const botUserID = bridge.getBot().getUserId() as StringUserID;
         const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(botUserID);
