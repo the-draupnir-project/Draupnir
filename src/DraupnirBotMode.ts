@@ -33,8 +33,7 @@ import {
     isStringRoomAlias,
     isStringRoomID,
     StandardClientsInRoomMap,
-    DefaultEventDecoder,
-    DefaultStateTrackingMeta,
+    DefaultEventDecoder
 } from "matrix-protection-suite";
 import {
     MatrixSendClient,
@@ -81,8 +80,7 @@ export async function makeDraupnirBotModeFromConfig(
     const roomStateManagerFactory = new RoomStateManagerFactory(
         clientsInRoomMap,
         clientProvider,
-        DefaultEventDecoder,
-        DefaultStateTrackingMeta
+        DefaultEventDecoder
     );
     const draupnirFactory = new DraupnirFactory(
         clientProvider,
