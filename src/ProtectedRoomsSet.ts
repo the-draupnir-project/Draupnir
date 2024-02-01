@@ -225,12 +225,19 @@ export class ProtectedRoomsSet {
      * Synchronize all the protected rooms with all of the policies described in the watched policy lists.
      */
     private async syncRoomsWithPolicies() {
-        const errors = (await Promise.all([
-            this.applyServerAcls(this.policyLists, this.protectedRoomsByActivity()),
-            this.applyUserBans(this.protectedRoomsByActivity()),
-            this.processRedactionQueue()
-        ])).flat();
-        await this.printActionResult(errors, { title: "There were errors synchronising the protected rooms." });
+        const syncErrors = (
+            await Promise.all([
+                this.applyServerAcls(this.policyLists, this.protectedRoomsByActivity()),
+                this.applyUserBans(this.protectedRoomsByActivity()),
+            ])
+        ).flat();
+        // The redaction queue has to be processed after both serverACLS and applyUserBans has been processed,
+        // otherwise you risk adding users to the queue after this call to process them.
+        const redactionErrors = await this.processRedactionQueue();
+        await this.printActionResult(
+            [...syncErrors, ...redactionErrors],
+            { title: "There were errors synchronising the protected rooms." }
+        );
     }
 
     /**
