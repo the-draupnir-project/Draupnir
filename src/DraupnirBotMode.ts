@@ -62,7 +62,7 @@ export async function makeDraupnirBotModeFromConfig(
     if (!isStringUserID(clientUserId)) {
         throw new TypeError(`${clientUserId} is not a valid mxid`);
     }
-    if (!isStringRoomAlias(config.managementRoom) || !isStringRoomID(config.managementRoom)) {
+    if (!isStringRoomAlias(config.managementRoom) && !isStringRoomID(config.managementRoom)) {
         throw new TypeError(`${config.managementRoom} is not a valid room id or alias`);
     }
     const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(config.managementRoom);
