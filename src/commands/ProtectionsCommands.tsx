@@ -254,7 +254,7 @@ async function settingChangeSummaryRenderer(this: unknown, client: MatrixSendCli
 
 for (const designator of ["add", "set", "remove"]) {
     defineMatrixInterfaceAdaptor({
-        interfaceCommand: findTableCommand("mjolnir", "protections", designator),
+        interfaceCommand: findTableCommand("mjolnir", "protections", "config", designator),
         renderer: settingChangeSummaryRenderer,
     })
 }
