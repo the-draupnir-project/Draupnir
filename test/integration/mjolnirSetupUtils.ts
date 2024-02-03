@@ -21,15 +21,18 @@ import {
     LogLevel,
     RichConsoleLogger
 } from "matrix-bot-sdk";
-import { Mjolnir}  from '../../src/Mjolnir';
 import { overrideRatelimitForUser, registerUser } from "./clientHelper";
 import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
+import { Draupnir } from "../../src/Draupnir";
+import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
+import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder } from "matrix-protection-suite";
 
 patchMatrixClient();
 
-export interface MjolnirTestContext extends Mocha.Context {
-    mjolnir?: Mjolnir
+export interface DraupnirTestContext extends Mocha.Context {
+    draupnir?: Draupnir
 }
 
 /**
@@ -68,19 +71,19 @@ async function configureMjolnir(config: IConfig) {
     };
 }
 
-export function mjolnir(): Mjolnir | null {
+export function draupnir(): Draupnir | null {
     return globalMjolnir;
 }
-export function matrixClient(): MatrixClient | null {
+export function draupnirClient(): MatrixClient | null {
     return globalClient;
 }
 let globalClient: MatrixClient | null
-let globalMjolnir: Mjolnir | null;
+let globalMjolnir: Draupnir | null;
 
 /**
  * Return a test instance of Mjolnir.
  */
-export async function makeMjolnir(config: IConfig): Promise<Mjolnir> {
+export async function makeMjolnir(config: IConfig): Promise<Draupnir> {
     await configureMjolnir(config);
     LogService.setLogger(new RichConsoleLogger());
     LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
@@ -89,7 +92,7 @@ export async function makeMjolnir(config: IConfig): Promise<Mjolnir> {
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
     await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
     await ensureAliasedRoomExists(client, config.managementRoom);
-    let mj = await Mjolnir.setupMjolnirFromConfig(client, client, config);
+    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
     globalClient = client;
     globalMjolnir = mj;
     return mj;

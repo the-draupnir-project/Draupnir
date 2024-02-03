@@ -11,7 +11,7 @@ import AccessControlUnit, { Access, EntityAccess } from "../../src/models/Access
 import { randomUUID } from "crypto";
 import { MatrixSendClient } from "../../src/MatrixEmitter";
 import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
-import { MjolnirTestContext } from "./mjolnirSetupUtils";
+import { DraupnirTestContext } from "./mjolnirSetupUtils";
 
 /**
  * Create a policy rule in a policy room.
@@ -598,11 +598,11 @@ describe('Test: Creating policy lists.', function() {
 })
 
 describe('Test: Continue to ban other marked members when one member cannot be banned', function() {
-    it('Failing to ban a moderator should not stop other members being banned.', async function(this: MjolnirTestContext) {
-        if (this.mjolnir === undefined) {
+    it('Failing to ban a moderator should not stop other members being banned.', async function(this: DraupnirTestContext) {
+        if (this.draupnir === undefined) {
             throw new TypeError("Mjolnir was never created.")
         }
-        const mjolnir: Mjolnir = this.mjolnir;
+        const mjolnir: Mjolnir = this.draupnir;
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "mx-moderator" } });
         await moderator.joinRoom(mjolnir.managementRoomId);
         const mjolnirId = await mjolnir.client.getUserId();
