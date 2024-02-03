@@ -27,6 +27,7 @@ limitations under the License.
 
 import { MatrixRoomID, MatrixRoomReference, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringRoomAlias, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { BotSDKMatrixAccountData, BotSDKMatrixStateData, BotSDKMjolnirProtectedRoomsStore, BotSDKMjolnirWatchedPolicyRoomsStore, MatrixSendClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
 
 async function makePolicyListConfig(
     client: MatrixSendClient,
@@ -117,7 +118,8 @@ async function makeProtectionConfig(
             MjolnirProtectionSettingsEventType,
             result.ok,
             client
-        )
+        ),
+        DefaultEnabledProtectionsMigration,
     )
 }
 
