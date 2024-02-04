@@ -151,8 +151,8 @@ export class Draupnir implements Client {
         const loadResult = await protectedRoomsSet.protections.loadProtections(
             protectedRoomsSet,
             draupnir,
-            (error, description) => renderProtectionFailedToStart(
-                client, managementRoom.toRoomIDOrAlias(), error, description
+            (error, protectionName, description) => renderProtectionFailedToStart(
+                client, managementRoom.toRoomIDOrAlias(), error, protectionName, description
             )
         );
         if (isError(loadResult)) {
