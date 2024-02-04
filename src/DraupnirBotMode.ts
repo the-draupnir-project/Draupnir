@@ -70,6 +70,7 @@ export async function makeDraupnirBotModeFromConfig(
     if (isError(managementRoom)) {
         throw managementRoom.error;
     }
+    await client.joinRoom(managementRoom.ok.toRoomIDOrAlias(), managementRoom.ok.getViaServers());
     const clientsInRoomMap = new StandardClientsInRoomMap();
     const clientProvider = async (userID: StringUserID) => {
         if (userID !== clientUserId) {
