@@ -33,9 +33,11 @@ import {
     isStringRoomAlias,
     isStringRoomID,
     StandardClientsInRoomMap,
-    DefaultEventDecoder
+    DefaultEventDecoder,
+    setGlobalLoggerProvider
 } from "matrix-protection-suite";
 import {
+    BotSDKLogServiceLogger,
     MatrixSendClient,
     RoomStateManagerFactory,
     SafeMatrixEmitter,
@@ -44,6 +46,8 @@ import {
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
 import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
+
+setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 
 /**
  * This is a file for providing default concrete implementations
@@ -84,6 +88,7 @@ export async function makeDraupnirBotModeFromConfig(
         DefaultEventDecoder
     );
     const draupnirFactory = new DraupnirFactory(
+        clientsInRoomMap,
         clientProvider,
         roomStateManagerFactory
     );
@@ -93,7 +98,8 @@ export async function makeDraupnirBotModeFromConfig(
         config
     );
     if (isError(draupnir)) {
-        throw draupnir.error;
+        const error = draupnir.error;
+        throw new Error(`Unable to create Draupnir: ${error.message}`);
     }
     matrixEmitter.on('room.event', (roomID, event) => {
         roomStateManagerFactory.handleTimelineEvent(roomID, event);

@@ -25,14 +25,14 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MatrixRoomID, MatrixRoomReference, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectedRoomsEvent, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, MjolnirWatchedPolicyRoomsEvent, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringRoomAlias, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionResult, MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MatrixRoomID, MatrixRoomReference, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectedRoomsEvent, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, MjolnirWatchedPolicyRoomsEvent, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, ProtectionsConfig, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringRoomAlias, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { BotSDKMatrixAccountData, BotSDKMatrixStateData, MatrixSendClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
 
 async function makePolicyListConfig(
     client: MatrixSendClient,
     policyRoomManager: PolicyRoomManager
-): Promise<PolicyListConfig> {
+): Promise<ActionResult<PolicyListConfig>> {
     const result = await MjolnirPolicyRoomsConfig.createFromStore(
         new BotSDKMatrixAccountData(
             MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
@@ -51,68 +51,53 @@ async function makePolicyListConfig(
             }
         }
     );
-    if (isError(result)) {
-        throw result.error;
-    }
-    return result.ok;
+    return result;
 }
 
 async function makeProtectedRoomsConfig(
     client: MatrixSendClient,
-): Promise<ProtectedRoomsConfig> {
-    const result = await MjolnirProtectedRoomsConfig.createFromStore(
+): Promise<ActionResult<ProtectedRoomsConfig>> {
+    return await MjolnirProtectedRoomsConfig.createFromStore(
         new BotSDKMatrixAccountData(
             MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
             MjolnirProtectedRoomsEvent,
             client
         )
     );
-    if (isError(result)) {
-        throw result.error;
-    }
-    return result.ok;
 }
 
 async function makeSetMembership(
     roomMembershipManager: RoomMembershipManager,
     protectedRoomsConfig: ProtectedRoomsConfig
-): Promise<SetMembership> {
-    const membershipSet = await StandardSetMembership.create(
+): Promise<ActionResult<SetMembership>> {
+    return await StandardSetMembership.create(
         roomMembershipManager,
         protectedRoomsConfig
     );
-    if (isError(membershipSet)) {
-        throw membershipSet.error;
-    }
-    return membershipSet.ok;
 }
 
 async function makeSetRoomState(
     roomStateManager: RoomStateManager,
     protectedRoomsConfig: ProtectedRoomsConfig
-): Promise<SetRoomState> {
-    const setRoomState = await StandardSetRoomState.create(
+): Promise<ActionResult<SetRoomState>> {
+    return await StandardSetRoomState.create(
         roomStateManager,
         protectedRoomsConfig
     );
-    if (isError(setRoomState)) {
-        throw setRoomState.error;
-    }
-    return setRoomState.ok;
 }
 
 async function makeProtectionConfig(
     client: MatrixSendClient,
     roomStateManager: RoomStateManager,
     managementRoom: MatrixRoomID
-) {
+): Promise<ActionResult<ProtectionsConfig>> {
     const result = await roomStateManager.getRoomStateRevisionIssuer(
         managementRoom
     );
     if (isError(result)) {
-        throw result.error;
+        return result;
     }
-    return new MjolnirProtectionsConfig(
+    return Ok(new MjolnirProtectionsConfig(
         new BotSDKMatrixAccountData<MjolnirEnabledProtectionsEvent>(
             MjolnirEnabledProtectionsEventType,
             MjolnirEnabledProtectionsEvent,
@@ -124,7 +109,7 @@ async function makeProtectionConfig(
             client
         ),
         DefaultEnabledProtectionsMigration,
-    )
+    ));
 }
 
 
@@ -135,27 +120,44 @@ export async function makeProtectedRoomsSet(
     roomMembershipManager: RoomMembershipManager,
     client: MatrixSendClient,
     userID: StringUserID
-): Promise<ProtectedRoomsSet> {
+): Promise<ActionResult<ProtectedRoomsSet>> {
     const protectedRoomsConfig = await makeProtectedRoomsConfig(client)
+    if (isError(protectedRoomsConfig)) {
+        return protectedRoomsConfig;
+    }
     const setRoomState = await makeSetRoomState(
         roomStateManager,
-        protectedRoomsConfig
+        protectedRoomsConfig.ok
     );
+    if (isError(setRoomState)) {
+        return setRoomState;
+    }
     const membershipSet = await makeSetMembership(
         roomMembershipManager,
-        protectedRoomsConfig
+        protectedRoomsConfig.ok
     );
+    if (isError(membershipSet)) {
+        return membershipSet;
+    }
+    const policyListConfig = await makePolicyListConfig(client, policyRoomManager);
+    if (isError(policyListConfig)) {
+        return policyListConfig;
+    }
+    const protectionsConfig = await makeProtectionConfig(
+        client,
+        roomStateManager,
+        managementRoom
+    );
+    if (isError(protectionsConfig)) {
+        return protectionsConfig;
+    }
     const protectedRoomsSet = new StandardProtectedRoomsSet(
-        await makePolicyListConfig(client, policyRoomManager),
-        protectedRoomsConfig,
-        await makeProtectionConfig(
-            client,
-            roomStateManager,
-            managementRoom
-        ),
-        membershipSet,
-        setRoomState,
+        policyListConfig.ok,
+        protectedRoomsConfig.ok,
+        protectionsConfig.ok,
+        membershipSet.ok,
+        setRoomState.ok,
         userID,
     );
-    return protectedRoomsSet;
+    return Ok(protectedRoomsSet);
 }
