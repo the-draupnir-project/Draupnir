@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, MatrixRoomAlias, MatrixRoomID, PropagationType, isError } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomID, PropagationType, isError } from "matrix-protection-suite";
 import { DraupnirContext } from "./CommandHandler";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
@@ -36,14 +36,13 @@ export async function createList(
     this: DraupnirContext,
     _keywords: ParsedKeywords,
     shortcode: string,
-    alias: MatrixRoomAlias,
-    ...reasonParts: string[]
+    aliasName: string,
 ): Promise<ActionResult<MatrixRoomID>> {
     const newList = await this.draupnir.policyRoomManager.createPolicyRoom(
         shortcode,
         [this.event.sender],
         {
-            room_alias_name: alias.toRoomIDOrAlias()
+            room_alias_name: aliasName
         }
     );
     if (isError(newList)) {
@@ -65,8 +64,8 @@ defineInterfaceCommand({
             acceptor: findPresentationType("string"),
         },
         {
-            name: "alias",
-            acceptor: findPresentationType("MatrixRoomAlias"),
+            name: "alias name",
+            acceptor: findPresentationType("string"),
         },
     ]),
     command: createList,
