@@ -145,4 +145,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.Font,
     blank,
     blank
+).registerInnerNode(NodeTag.Span,
+    blank,
+    blank
 );
