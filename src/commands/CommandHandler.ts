@@ -76,7 +76,7 @@ export async function handleCommand(
     commandTable: CommandTable<BaseFunction>
 ) {
     try {
-        const readItems = readCommand(normalisedCommand).slice(1); // remove "!mjolnir"
+        const readItems = readCommand(normalisedCommand)
         const stream = new ArgumentStream(readItems);
         const command = commandTable.findAMatchingCommand(stream)
             ?? findTableCommand("mjolnir", "help");
