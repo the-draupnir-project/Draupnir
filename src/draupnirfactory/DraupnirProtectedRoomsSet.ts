@@ -25,8 +25,8 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MatrixRoomID, MatrixRoomReference, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringRoomAlias, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
-import { BotSDKMatrixAccountData, BotSDKMatrixStateData, BotSDKMjolnirProtectedRoomsStore, BotSDKMjolnirWatchedPolicyRoomsStore, MatrixSendClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MatrixRoomID, MatrixRoomReference, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectedRoomsEvent, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, MjolnirWatchedPolicyRoomsEvent, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringRoomAlias, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { BotSDKMatrixAccountData, BotSDKMatrixStateData, MatrixSendClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
 
 async function makePolicyListConfig(
@@ -34,7 +34,9 @@ async function makePolicyListConfig(
     policyRoomManager: PolicyRoomManager
 ): Promise<PolicyListConfig> {
     const result = await MjolnirPolicyRoomsConfig.createFromStore(
-        new BotSDKMjolnirWatchedPolicyRoomsStore(
+        new BotSDKMatrixAccountData(
+            MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
+            MjolnirWatchedPolicyRoomsEvent,
             client
         ),
         policyRoomManager,
@@ -59,7 +61,9 @@ async function makeProtectedRoomsConfig(
     client: MatrixSendClient,
 ): Promise<ProtectedRoomsConfig> {
     const result = await MjolnirProtectedRoomsConfig.createFromStore(
-        new BotSDKMjolnirProtectedRoomsStore(
+        new BotSDKMatrixAccountData(
+            MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
+            MjolnirProtectedRoomsEvent,
             client
         )
     );
