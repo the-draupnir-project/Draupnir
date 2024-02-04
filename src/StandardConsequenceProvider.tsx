@@ -214,11 +214,12 @@ export async function renderProtectionFailedToStart(
     client: MatrixSendClient,
     managementRoomID: StringRoomID,
     error: ActionError,
-    protectionDescription?: ProtectionDescription
+    protectionName: string,
+    _protectionDescription?: ProtectionDescription
 ): Promise<void> {
     await renderMatrixAndSend(
         <root>
-            <span>A protection {protectionDescription?.name} failed to start for the following reason:</span>
+            <span>A protection {protectionName} failed to start for the following reason:</span>
             <span>{error.message}</span>
         </root>,
         managementRoomID,
