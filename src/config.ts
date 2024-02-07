@@ -281,7 +281,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     }
     const config = Config.util.extendDeep(
         getDefaultConfig(),
-        allowedKeys.reduce((existingConfig: any, key: string) => {
+        allowedKeys.reduce((existingConfig: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to how reduce works. We deal with unknown content before this is finished. */any/* eslint-enable @typescript-eslint/no-explicit-any */, key: string) => {
             return { ...existingConfig, [key]: configTemplate[key as keyof IConfig] }
         }, {})
     );

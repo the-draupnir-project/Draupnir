@@ -107,7 +107,19 @@ export function decrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "of
     }
 }
 
-export function isTrueJoinEvent(event: any): boolean {
+export interface MemberEventContent {
+    membership: "invite" | "join" | "leave" | "ban" | "knock" | string;
+}
+
+export interface MinimalMemberEvent {
+    type: "m.room.member";
+    content: MemberEventContent;
+    unsigned?: {
+        prev_content: MemberEventContent;
+    }
+}
+
+export function isTrueJoinEvent(event: MinimalMemberEvent): boolean {
     const membership = event['content']['membership'] || 'join';
     let prevMembership = "leave";
     if (event['unsigned'] && event['unsigned']['prev_content']) {
@@ -167,7 +179,7 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
  * The callback will only be called if there are any relevant events.
  * @returns {Promise<void>} Resolves when either: the limit has been reached, no relevant events could be found or there is no more timeline to paginate.
  */
-export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: any[]) => void): Promise<void> {
+export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any[]/* eslint-enable @typescript-eslint/no-explicit-any */) => void): Promise<void> {
     const isGlob = sender.includes("*");
     const roomEventFilter = {
         rooms: [roomId],
@@ -193,7 +205,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * The `start` is a token for the beginning of the `chunk` (where the most recent events are).
      */
     interface BackfillResponse {
-        chunk?: any[],
+        chunk?: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any[]/* eslint-enable @typescript-eslint/no-explicit-any */,
         end?: string,
         start: string
     }
@@ -220,8 +232,8 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * @param events Events from the room timeline.
      * @returns Events that can safely be processed by the callback.
      */
-    function filterEvents(events: any[]) {
-        const messages: any[] = [];
+    function filterEvents(events: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any[]/* eslint-enable @typescript-eslint/no-explicit-any */): /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any[]/* eslint-enable @typescript-eslint/no-explicit-any */ {
+        const messages: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any[]/* eslint-enable @typescript-eslint/no-explicit-any */ = [];
         for (const event of events) {
             if (processed >= limit) return messages; // we have provided enough events.
             processed++;
@@ -282,12 +294,12 @@ function patchMatrixClientForConciseExceptions() {
         return;
     }
     let originalRequestFn = getRequestFn();
-    setRequestFn((params: { [k: string]: any }, cb: any) => {
+    setRequestFn((params: { [k: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, cb: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
         // Store an error early, to maintain *some* semblance of stack.
         // We'll only throw the error if there is one.
         let error = new Error("STACK CAPTURE");
         originalRequestFn(params, function conciseExceptionRequestFn(
-            err: { [key: string]: unknown }, response: { [key: string]: any }, resBody: unknown
+            err: { [key: string]: unknown }, response: { [key: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, resBody: unknown
         ) {
             if (!err && (response?.statusCode < 200 || response?.statusCode >= 300)) {
                 // Normally, converting HTTP Errors into rejections is done by the caller
@@ -367,7 +379,7 @@ function patchMatrixClientForConciseExceptions() {
             // we wrote this, matrix-bot-sdk has updated so that there is now a MatrixError that is thrown
             // when there are errors in the response.
             if (isMatrixError(path)) {
-                const matrixError = new MatrixError(body as any, err.statusCode as any);
+                const matrixError = new MatrixError(body as { errcode: string, error: string, retry_after_ms?: number }, err.statusCode ?? -1);
                 matrixError.stack = error.stack;
                 return cb(matrixError, response, resBody)
             } else {
@@ -397,7 +409,7 @@ function patchMatrixClientForRetry() {
         return;
     }
     let originalRequestFn = getRequestFn();
-    setRequestFn(async (params: { [k: string]: any }, cb: any) => {
+    setRequestFn(async (params: { [k: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, cb: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
         let attempt = 1;
         numberOfConcurrentRequests += 1;
         if (TRACE_CONCURRENT_REQUESTS) {
@@ -406,9 +418,9 @@ function patchMatrixClientForRetry() {
         try {
             while (true) {
                 try {
-                    let result: any[] = await new Promise((resolve, reject) => {
+                    let result: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */[] = await new Promise((resolve, reject) => {
                         originalRequestFn(params, function requestFnWithRetry(
-                            err: { [key: string]: any }, response: { [key: string]: unknown }, resBody: unknown
+                            err: { [key: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, response: { [key: string]: unknown }, resBody: unknown
                         ) {
                             // Note: There is no data race on `attempt` as we `await` before continuing
                             // to the next iteration of the loop.
@@ -453,7 +465,7 @@ function patchMatrixClientForRetry() {
 
 let isMatrixClientPatchedForPrototypePollution = false;
 
-function jsonReviver(key: string, value: any): any {
+function jsonReviver(key: string, value: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to JSON.parse */any/* eslint-enable @typescript-eslint/no-explicit-any */): /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to JSON.parse */any/* eslint-enable @typescript-eslint/no-explicit-any */ {
     if (key === '__proto__' || key === 'constructor') {
         return undefined;
     } else {
@@ -471,9 +483,9 @@ function patchMatrixClientForPrototypePollution() {
         return;
     }
     const originalRequestFn = getRequestFn();
-    setRequestFn((params: { [k: string]: any }, cb: any) => {
+    setRequestFn((params: { [k: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, cb: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
         originalRequestFn(params, function conciseExceptionRequestFn(
-            error: { [key: string]: any }, response: { [key: string]: any }, resBody: unknown
+            error: { [key: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, response: { [key: string]: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */ }, resBody: unknown
         ) {
             // https://github.com/turt2live/matrix-bot-sdk/blob/c7d16776502c26bbb547a3d667ec92eb50e7026c/src/http.ts#L77-L101
             // bring forwards this step and do it safely.

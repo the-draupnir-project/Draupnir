@@ -36,23 +36,23 @@ import { MatrixClient } from "matrix-bot-sdk";
  * when we're in appservice mode.
  */
 export declare interface MatrixEmitter extends EventEmitter {
-    on(event: 'room.event', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.event', roomId: string, mxEvent: any): boolean
+    on(event: 'room.event', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.event', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
-    on(event: 'room.message', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.message', roomId: string, mxEvent: any): boolean
+    on(event: 'room.message', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.message', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
-    on(event: 'room.invite', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.invite', roomId: string, mxEvent: any): boolean
+    on(event: 'room.invite', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.invite', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
-    on(event: 'room.join', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.join', roomId: string, mxEvent: any): boolean
+    on(event: 'room.join', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.join', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
-    on(event: 'room.leave', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.leave', roomId: string, mxEvent: any): boolean
+    on(event: 'room.leave', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.leave', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
-    on(event: 'room.archived', listener: (roomId: string, mxEvent: any) => void ): this
-    emit(event: 'room.archived', roomId: string, mxEvent: any): boolean
+    on(event: 'room.archived', listener: (roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => void): this
+    emit(event: 'room.archived', roomId: string, mxEvent: /* eslint-disable @typescript-eslint/no-explicit-any -- These are due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */): boolean
 
     start(): Promise<void>;
     stop(): void;

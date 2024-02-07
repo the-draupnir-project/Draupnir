@@ -56,6 +56,13 @@ export const STATE_CHECKING_PERMISSIONS = "checking_permissions";
 export const STATE_SYNCING = "syncing";
 export const STATE_RUNNING = "running";
 
+export interface ShutdownSynapseRoomResp {
+    kicked_users: string[];
+    failed_to_kick_users: string[];
+    local_aliases: string[];
+    new_room_id: string;
+}
+
 /**
  * Synapse will tell us where we last got to on polling reports, so we need
  * to store that for pagination on further polls
@@ -108,7 +115,13 @@ export class Mjolnir {
      * @param {boolean} options.autojoinOnlyIfManager Whether to only accept an invitation by a user present in the `managementRoom`.
      * @param {string} options.acceptInvitesFromSpace A space of users to accept invites from, ignores invites form users not in this space.
      */
-    private static addJoinOnInviteListener(mjolnir: Mjolnir, client: MatrixSendClient, options: { [key: string]: any }) {
+    private static addJoinOnInviteListener(mjolnir: Mjolnir, client: MatrixSendClient, options: {
+        managementRoom: string;
+        recordIgnoredInvites: boolean;
+        autojoinOnlyIfManager: boolean;
+        acceptInvitesFromSpace: string;
+    }) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk
         mjolnir.matrixEmitter.on("room.invite", async (roomId: string, inviteEvent: any) => {
             const membershipEvent = new MembershipEvent(inviteEvent);
 
@@ -185,6 +198,7 @@ export class Mjolnir {
         this.policyListManager = new PolicyListManager(this);
         this.reactionHandler = new MatrixReactionHandler(this.managementRoomId, client, clientUserId);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any is used as mutedModules is private here
         const mutedModules = (LogService as any).mutedModules;
         if (!Array.isArray(mutedModules)) {
             throw new TypeError("MatrixBotSdk has changed their hacky handling of muted modules, praise be");
@@ -234,11 +248,11 @@ export class Mjolnir {
             }
         });
 
-        matrixEmitter.on("room.join", (roomId: string, event: any) => {
+        matrixEmitter.on("room.join", (roomId: string, event: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
             LogService.info("Mjolnir", `Joined ${roomId}`);
             return this.resyncJoinedRooms();
         });
-        matrixEmitter.on("room.leave", (roomId: string, event: any) => {
+        matrixEmitter.on("room.leave", (roomId: string, event: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) => {
             LogService.info("Mjolnir", `Left ${roomId}`);
             return this.resyncJoinedRooms();
         });
@@ -453,7 +467,7 @@ export class Mjolnir {
         }
     }
 
-    private async handleEvent(roomId: string, event: any) {
+    private async handleEvent(roomId: string, event: /* eslint-disable @typescript-eslint/no-explicit-any -- any is used due to matrix-bot-sdk */any/* eslint-enable @typescript-eslint/no-explicit-any */) {
         // Check for UISI errors
         if (roomId === this.managementRoomId) {
             if (event['type'] === 'm.room.message' && event['content'] && event['content']['body']) {
@@ -483,7 +497,7 @@ export class Mjolnir {
     public async isSynapseAdmin(): Promise<boolean> {
         try {
             const endpoint = `/_synapse/admin/v1/users/${await this.client.getUserId()}/admin`;
-            const response = await this.client.doRequest("GET", endpoint);
+            const response: { admin: boolean; } = await this.client.doRequest("GET", endpoint);
             return response['admin'];
         } catch (e) {
             LogService.error("Mjolnir", "Error determining if Mjolnir is a server admin:", e);
@@ -491,12 +505,12 @@ export class Mjolnir {
         }
     }
 
-    public async deactivateSynapseUser(userId: string): Promise<any> {
+    public async deactivateSynapseUser(userId: string): Promise<Object> {
         const endpoint = `/_synapse/admin/v1/deactivate/${userId}`;
         return await this.client.doRequest("POST", endpoint);
     }
 
-    public async shutdownSynapseRoom(roomId: string, message?: string): Promise<any> {
+    public async shutdownSynapseRoom(roomId: string, message?: string): Promise<ShutdownSynapseRoomResp> {
         const endpoint = `/_synapse/admin/v1/rooms/${roomId}`;
         return await this.client.doRequest("DELETE", endpoint, null, {
             new_room_user_id: await this.client.getUserId(),

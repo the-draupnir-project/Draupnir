@@ -213,7 +213,8 @@ async function execSinceCommandAux(destinationRoomId: string, event: any, mjolni
             } else if (maybeRoom.startsWith("#") || maybeRoom.startsWith("!")) {
                 const roomId = await mjolnir.client.resolveRoom(maybeRoom);
                 if (!protectedRooms.has(roomId)) {
-                    return mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "SinceCommand", `This room is not protected: ${htmlEscape(roomId)}.`);
+                    mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "SinceCommand", `This room is not protected: ${htmlEscape(roomId)}.`);
+                    return { error: `This room is not protected: ${htmlEscape(roomId)}.` };
                 }
                 rooms.add(roomId);
                 continue;
