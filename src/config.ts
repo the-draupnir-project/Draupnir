@@ -227,7 +227,7 @@ export function getDefaultConfig(): IConfig {
 export function read(): IConfig {
     const explicitConfigPath = getCommandlinePathArgument("--draupnir-config", true);
     var config;
-    
+
     if (explicitConfigPath !== undefined) {
         const content = fs.readFileSync(explicitConfigPath, "utf8");
         const parsed = load(content);
