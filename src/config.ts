@@ -225,7 +225,7 @@ export function getDefaultConfig(): IConfig {
 }
 
 export function read(): IConfig {
-    const explicitConfigPath = getCommandLinePathArgument("--draupnir-config", true);
+    const explicitConfigPath = getCommandLinePathOption(process.argv, "--draupnir-config", true);
     var config;
 
     if (explicitConfigPath !== undefined) {
@@ -237,12 +237,12 @@ export function read(): IConfig {
     }
 
     // Handle secret files
-    if(getCommandLinePathArgument("--access-token-path", true) !== undefined) {
-        config.accessToken = fs.readFileSync(getCommandLinePathArgument("--access-token-path", true) as string, "utf8");
+    if(getCommandLinePathOption(process.argv, "--access-token-path", true) !== undefined) {
+        config.accessToken = fs.readFileSync(getCommandLinePathOption(process.argv, "--access-token-path", true) as string, "utf8");
     }
 
-    if(getCommandLinePathArgument("--pantalaimon-password-path", true) !== undefined) {
-        config.pantalaimon.password = fs.readFileSync(getCommandLinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
+    if(getCommandLinePathOption(process.argv, "--pantalaimon-password-path", true) !== undefined) {
+        config.pantalaimon.password = fs.readFileSync(getCommandLinePathOption(process.argv, "--pantalaimon-password-path", true) as string, "utf8");
     }
 
     return config;
@@ -312,35 +312,35 @@ export const SOFTWARE_VERSION = (() => {
 // Command line related functions
 
 /**
- * Grabs an argument from the command line and checks if it exists.
- * @param arg Argument name
- * @returns True if the argument is present, otherwise false.
+ * Grabs an option from the command line and checks if it exists.
+ * @param arg Option name
+ * @returns True if the option is present, otherwise false.
  */
-function isCommandLineArgumentPresent(arg: string): boolean {
-    return process.argv.includes(arg);
+function isCommandLineOptionPresent(args: string[], arg: string): boolean {
+    return args.includes(arg);
 }
 
 /**
- * Grabs an argument's value from program arguments if it exists, otherwise returns undefined.
- * @param arg Argument name
- * @param throwOnInvalid If true or undefined, throws an error if the argument is present but has no value. If false, returns undefined.
- * @returns The value passed to the argument, or undefined if the argument is not specified.
- * @throws Error if the argument is present but has no value.
+ * Grabs an option's value from program options if it exists, otherwise returns undefined.
+ * @param arg Option name
+ * @param throwOnInvalid If true or undefined, throws an error if the option is present but has no value. If false, returns undefined.
+ * @returns The value passed to the option, or undefined if the option is not specified.
+ * @throws Error if the option is present but has no value.
  */
-function getCommandLineStringArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
-    // We don't want to throw if the argument is not present
-    if(!isCommandLineArgumentPresent(arg)) {
+function getCommandLineStringOption(args: string[], arg: string, throwOnInvalid?: boolean): string | undefined {
+    // We don't want to throw if the option is not present
+    if(!isCommandLineOptionPresent(args, arg)) {
         return undefined;
     }
 
-    const argumentIndex = process.argv.indexOf(arg);
-    if (argumentIndex === -1) {
+    const optionIndex = args.indexOf(arg);
+    if (optionIndex === -1) {
         return undefined;
     }
     
-    //check if the next index is not an argument
-    if (process.argv[argumentIndex + 1] && !process.argv[argumentIndex + 1].startsWith("--")){
-        return process.argv[argumentIndex + 1];
+    //check if the next index is not an option
+    if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
+        return args[optionIndex + 1];
     }
     
     if (throwOnInvalid === undefined || throwOnInvalid) {
@@ -351,19 +351,19 @@ function getCommandLineStringArgument(arg: string, throwOnInvalid?: boolean): st
 }
 
 /**
- * Grabs a path argument from the command line and checks if it exists.
- * @param arg Argument name
+ * Grabs a path option from the command line and checks if it exists.
+ * @param arg Option name
  * @param throwOnInvalid If true or undefined, throws an error if the path does not exist. If false, returns undefined.
- * @returns Path if it exists, or undefined if the argument is unspecified.
+ * @returns Path if it exists, or undefined if the option is unspecified.
  * @throws Error if the path does not exist and throwOnInvalid is true or undefined.
  */
-function getCommandLinePathArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
-    // We don't want to throw if the argument is not present
-    if(!isCommandLineArgumentPresent(arg)) {
+function getCommandLinePathOption(args: string[], arg: string, throwOnInvalid?: boolean): string | undefined {
+    // We don't want to throw if the option is not present
+    if(!isCommandLineOptionPresent(args, arg)) {
         return undefined;
     }
 
-    const givenPath = getCommandLineStringArgument(arg);
+    const givenPath = getCommandLineStringOption(args, arg);
     if (givenPath && fs.existsSync(givenPath)) {
         return givenPath;
     }
