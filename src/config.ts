@@ -337,12 +337,12 @@ function getCommandLineStringOption(args: string[], arg: string, throwOnInvalid?
     if (optionIndex === -1) {
         return undefined;
     }
-    
+
     //check if the next index is not an option
     if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
         return args[optionIndex + 1];
     }
-    
+
     if (throwOnInvalid === undefined || throwOnInvalid) {
         throw new Error(`Invalid value provided for ${arg}`);
     }
@@ -367,10 +367,10 @@ function getCommandLinePathOption(args: string[], arg: string, throwOnInvalid?: 
     if (givenPath && fs.existsSync(givenPath)) {
         return givenPath;
     }
-    
+
     if (throwOnInvalid === undefined || throwOnInvalid) {
         throw new Error(`Invalid path provided for ${arg}`);
     }
-    
+
     return undefined;
 }
