@@ -225,7 +225,7 @@ export function getDefaultConfig(): IConfig {
 }
 
 export function read(): IConfig {
-    const explicitConfigPath = getCommandlinePathArgument("--draupnir-config", true);
+    const explicitConfigPath = getCommandLinePathArgument("--draupnir-config", true);
     var config;
 
     if (explicitConfigPath !== undefined) {
@@ -237,11 +237,13 @@ export function read(): IConfig {
     }
 
     // Handle secret files
-    if(getCommandlinePathArgument("--access-token-path", true) !== undefined)
-        config.accessToken = fs.readFileSync(getCommandlinePathArgument("--access-token-path", true) as string, "utf8");
+    if(getCommandLinePathArgument("--access-token-path", true) !== undefined) {
+        config.accessToken = fs.readFileSync(getCommandLinePathArgument("--access-token-path", true) as string, "utf8");
+    }
 
-    if(getCommandlinePathArgument("--pantalaimon-password-path", true) !== undefined)
-        config.pantalaimon.password = fs.readFileSync(getCommandlinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
+    if(getCommandLinePathArgument("--pantalaimon-password-path", true) !== undefined) {
+        config.pantalaimon.password = fs.readFileSync(getCommandLinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
+    }
 
     return config;
 }
@@ -314,7 +316,7 @@ export const SOFTWARE_VERSION = (() => {
  * @param arg Argument name
  * @returns True if the argument is present, otherwise false.
  */
-function getCommandlineArgumentPresent(arg: string): boolean {
+function getCommandLineArgumentPresent(arg: string): boolean {
     return process.argv.includes(arg);
 }
 
@@ -322,20 +324,29 @@ function getCommandlineArgumentPresent(arg: string): boolean {
  * Grabs an argument's value from program arguments if it exists, otherwise returns undefined.
  * @param arg Argument name
  * @param throwOnInvalid If true or undefined, throws an error if the argument is present but has no value. If false, returns undefined.
- * @returns value passed to the argument or undefined.
+ * @returns The value passed to the argument, or undefined if the argument is not specified.
  * @throws Error if the argument is present but has no value.
  */
-function getCommandlineStringArgument(arg: string, throwOnInvalid?: boolean | undefined): string | undefined {
-    // we don't want to throw if the argument is not present
-    if(!getCommandlineArgumentPresent(arg)) return undefined;
+function getCommandLineStringArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
+    // We don't want to throw if the argument is not present
+    if(!getCommandLineArgumentPresent(arg)) {
+        return undefined;
+    }
 
-    const index = process.argv.indexOf(arg);
-    if (index === -1) return undefined;
+    const argumentIndex = process.argv.indexOf(arg);
+    if (argumentIndex === -1) {
+        return undefined;
+    }
+    
     //check if the next index is not an argument
-    if (process.argv[index + 1] && !process.argv[index + 1].startsWith("--"))
-        return process.argv[index + 1];
-    if (throwOnInvalid === undefined || throwOnInvalid)
+    if (process.argv[argumentIndex + 1] && !process.argv[argumentIndex + 1].startsWith("--")){
+        return process.argv[argumentIndex + 1];
+    }
+    
+    if (throwOnInvalid === undefined || throwOnInvalid) {
         throw new Error(`Invalid value provided for ${arg}`);
+    }
+
     return undefined;
 }
 
@@ -343,16 +354,23 @@ function getCommandlineStringArgument(arg: string, throwOnInvalid?: boolean | un
  * Grabs a path argument from the command line and checks if it exists.
  * @param arg Argument name
  * @param throwOnInvalid If true or undefined, throws an error if the path does not exist. If false, returns undefined.
- * @returns Path if it exists, otherwise undefined.
+ * @returns Path if it exists, or undefined if the argument is unspecified.
  * @throws Error if the path does not exist and throwOnInvalid is true or undefined.
  */
-function getCommandlinePathArgument(arg: string, throwOnInvalid?: boolean | undefined): string | undefined {
-    // we don't want to throw if the argument is not present
-    if(!getCommandlineArgumentPresent(arg)) return undefined;
+function getCommandLinePathArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
+    // We don't want to throw if the argument is not present
+    if(!getCommandLineArgumentPresent(arg)) {
+        return undefined;
+    }
 
-    const value = getCommandlineStringArgument(arg);
-    if (value && fs.existsSync(value)) return value;
-    if (throwOnInvalid === undefined || throwOnInvalid)
+    const givenPath = getCommandLineStringArgument(arg);
+    if (givenPath && fs.existsSync(givenPath)) {
+        return givenPath;
+    }
+    
+    if (throwOnInvalid === undefined || throwOnInvalid) {
         throw new Error(`Invalid path provided for ${arg}`);
+    }
+    
     return undefined;
 }
