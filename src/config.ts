@@ -236,13 +236,11 @@ export function read(): IConfig {
     }
 
     // Handle secret files
-    if(getCommandlineArgumentPresent("--access-token-path"))
-        if(getCommandlinePathArgument("--access-token-path", true) !== undefined)
-            config.accessToken = fs.readFileSync(getCommandlinePathArgument("--access-token-path", true) as string, "utf8");
+    if(getCommandlinePathArgument("--access-token-path", true) !== undefined)
+        config.accessToken = fs.readFileSync(getCommandlinePathArgument("--access-token-path", true) as string, "utf8");
 
-    if(getCommandlineArgumentPresent("--pantalaimon-password-path"))
-        if(getCommandlinePathArgument("--pantalaimon-password-path", true) !== undefined)
-            config.pantalaimon.password = fs.readFileSync(getCommandlinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
+    if(getCommandlinePathArgument("--pantalaimon-password-path", true) !== undefined)
+        config.pantalaimon.password = fs.readFileSync(getCommandlinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
 
     return config;
 }
