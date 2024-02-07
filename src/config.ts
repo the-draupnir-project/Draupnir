@@ -316,7 +316,7 @@ export const SOFTWARE_VERSION = (() => {
  * @param arg Argument name
  * @returns True if the argument is present, otherwise false.
  */
-function getCommandLineArgumentPresent(arg: string): boolean {
+function isCommandLineArgumentPresent(arg: string): boolean {
     return process.argv.includes(arg);
 }
 
@@ -329,7 +329,7 @@ function getCommandLineArgumentPresent(arg: string): boolean {
  */
 function getCommandLineStringArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
     // We don't want to throw if the argument is not present
-    if(!getCommandLineArgumentPresent(arg)) {
+    if(!isCommandLineArgumentPresent(arg)) {
         return undefined;
     }
 
@@ -359,7 +359,7 @@ function getCommandLineStringArgument(arg: string, throwOnInvalid?: boolean): st
  */
 function getCommandLinePathArgument(arg: string, throwOnInvalid?: boolean): string | undefined {
     // We don't want to throw if the argument is not present
-    if(!getCommandLineArgumentPresent(arg)) {
+    if(!isCommandLineArgumentPresent(arg)) {
         return undefined;
     }
 
