@@ -234,7 +234,7 @@ export function read(): IConfig {
     } else {
         config = Config.util.extendDeep({}, defaultConfig, Config.util.toObject()) as IConfig;
     }
-    
+
     // Handle secret files
     if(getCommandlineArgumentPresent("--access-token-path"))
         if(getCommandlinePathArgument("--access-token-path", true) !== undefined)
@@ -243,7 +243,7 @@ export function read(): IConfig {
     if(getCommandlineArgumentPresent("--pantalaimon-password-path"))
         if(getCommandlinePathArgument("--pantalaimon-password-path", true) !== undefined)
             config.pantalaimon.password = fs.readFileSync(getCommandlinePathArgument("--pantalaimon-password-path", true) as string, "utf8");
-    
+
     return config;
 }
 
@@ -327,7 +327,7 @@ function getCommandlineArgumentPresent(arg: string): boolean {
  * @throws Error if the argument is present but has no value.
  */
 function getCommandlineStringArgument(arg: string, throwOnInvalid?: boolean | undefined): string | undefined {
-    // we don't want to throw if the argument is not present 
+    // we don't want to throw if the argument is not present
     if(!getCommandlineArgumentPresent(arg)) return undefined;
 
     const index = process.argv.indexOf(arg);
@@ -348,12 +348,12 @@ function getCommandlineStringArgument(arg: string, throwOnInvalid?: boolean | un
  * @throws Error if the path does not exist and throwOnInvalid is true or undefined.
  */
 function getCommandlinePathArgument(arg: string, throwOnInvalid?: boolean | undefined): string | undefined {
-    // we don't want to throw if the argument is not present 
+    // we don't want to throw if the argument is not present
     if(!getCommandlineArgumentPresent(arg)) return undefined;
 
     const value = getCommandlineStringArgument(arg);
     if (value && fs.existsSync(value)) return value;
-    if (throwOnInvalid === undefined || throwOnInvalid) 
+    if (throwOnInvalid === undefined || throwOnInvalid)
         throw new Error(`Invalid path provided for ${arg}`);
     return undefined;
 }
