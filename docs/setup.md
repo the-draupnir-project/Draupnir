@@ -20,11 +20,20 @@ admin, and the server needs to be Synapse.
 
 See the [sample configuration](../config/default.yaml) for documentation about individual config keys.
 
+## Secret Management
+
+If you need to use a secret management system, such as systemd's service credentials,
+the following options are available at the command line:
+
+- The access token can be provided with the option `--access-token-path`.
+- The Pantalaimon password can be provided with the option `--pantalaimon-password-path`.
+
 ## Installation
 
 On a high level, installing Draupnir works like the following;
+
 1. Creating an account for draupnir.
-    (Optional) Disable rate limits for that account.
+   (Optional) Disable rate limits for that account.
 2. Install draupnir, see below.
 3. Configure draupnir see [further below](#post-install).
 4. Start draupnir.
@@ -32,6 +41,7 @@ On a high level, installing Draupnir works like the following;
 Draupnir can be installed in two ways, via Docker, or building it yourself.
 
 See the below links for corresponding installation documentation;
+
 - [Docker](./setup_docker.md)
 - [Building It](./setup_selfbuild.md)
 
