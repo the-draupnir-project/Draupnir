@@ -7,6 +7,8 @@ homeserverUrl: "https://matrix.org"
 rawHomeserverUrl: "https://matrix.org"
 
 # Matrix Access Token to use, Draupnir will only use this if pantalaimon.use is false.
+# This option can be loaded from a file by passing "--access-token-path <path>" at the command line,
+# which would allow using secret management systems such as systemd's service credentials.
 accessToken: "YOUR_TOKEN_HERE"
 
 # Options related to Pantalaimon (https://github.com/matrix-org/pantalaimon)
@@ -26,6 +28,8 @@ pantalaimon:
   # The password Draupnir will login with.
   #
   # After successfully logging in once, this will be ignored, so this value can be blanked after first startup.
+  # This option can be loaded from a file by passing "--pantalaimon-password-path <path>" at the command line,
+  # which would allow using secret management systems such as systemd's service credentials.
   password: your_password
 
 # Experimental usage of the matrix-bot-sdk rust crypto.
@@ -241,8 +245,6 @@ health:
     # A number in [0.0, 1.0], where 0.0 means "don't bother with tracing"
     # and 1.0 means "trace performance at every opportunity".
     # tracesSampleRate: 0.5
-
-
 
 # Options for exposing web APIs.
 web:
