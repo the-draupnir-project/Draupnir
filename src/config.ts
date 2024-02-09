@@ -225,34 +225,32 @@ export function getDefaultConfig(): IConfig {
 }
 
 /**
- * Grabs an explicit path provided for mjolnir's config from an arguments vector if provided, otherwise returns undefined.
- * @param argv An arguments vector sourced from `process.argv`.
- * @returns The path if one was provided or undefined.
+ * @returns The users's raw config, deep copied over the `defaultConfig`.
  */
-function configPathFromArguments(argv: string[]): undefined | string {
-    const configOptionIndex = argv.findIndex(arg => arg === "--draupnir-config");
-    if (configOptionIndex > 0) {
-        const configOptionPath = argv.at(configOptionIndex + 1);
-        if (!configOptionPath) {
-            throw new Error("No path provided with option --draupnir-config");
-        }
-        return configOptionPath;
-    } else {
-        return;
-    }
-}
-
-export function read(): IConfig {
-    const explicitConfigPath = configPathFromArguments(process.argv);
-    if (explicitConfigPath) {
+function readConfigSource(): IConfig {
+    const explicitConfigPath = getCommandLineOption(process.argv, "--draupnir-config");
+    if (explicitConfigPath !== undefined) {
         const content = fs.readFileSync(explicitConfigPath, "utf8");
         const parsed = load(content);
         return Config.util.extendDeep({}, defaultConfig, parsed);
     } else {
-        const config = Config.util.extendDeep({}, defaultConfig, Config.util.toObject()) as IConfig;
-        return config;
+        return Config.util.extendDeep({}, defaultConfig, Config.util.toObject()) as IConfig;
     }
 }
+
+export function read(): IConfig {
+    const config = readConfigSource();
+    const explicitAccessTokenPath = getCommandLineOption(process.argv, "--access-token-path");
+    const explicitPantalaimonPasswordPath = getCommandLineOption(process.argv, "--pantalaimon-password-path");
+    if (explicitAccessTokenPath !== undefined) {
+        config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8");
+    }
+    if (explicitPantalaimonPasswordPath) {
+        config.pantalaimon.password = fs.readFileSync(explicitPantalaimonPasswordPath, "utf8");
+    }
+    return config;
+}
+
 
 /**
  * Provides a config for each newly provisioned mjolnir in appservice mode.
@@ -313,3 +311,40 @@ export const SOFTWARE_VERSION = (() => {
     // into <pre> or <code> where it will create an unnecessary newline.
     return /^(.*)$/m.exec(versionFile)?.at(0) ?? defaultText;
 })();
+
+
+// Command line related functions
+
+/**
+ * Grabs an option from the command line and checks if it exists.
+ * @param args Program options
+ * @param optionName Option name
+ * @returns True if the option is present, otherwise false.
+ */
+function isCommandLineOptionPresent(args: string[], optionName: string): boolean {
+    return args.includes(optionName);
+}
+
+/**
+ * Grabs an option's value from program options if it exists, otherwise returns undefined.
+ * @param args Program options
+ * @param optionName Option name
+ * @returns The value passed to the option, or undefined if the option is not specified.
+ * @throws Error if the option is present but has no value.
+ */
+function getCommandLineOption(args: string[], optionName: string): string | undefined {
+    // We don't want to throw if the option is not present
+    if(!isCommandLineOptionPresent(args, optionName)) {
+        return undefined;
+    }
+
+    const optionIndex = args.indexOf(optionName);
+
+    //check if the next index is not an option
+    if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
+        return args[optionIndex + 1];
+    }
+
+    // No value was provided, or the next argument is another option
+    throw new Error(`No value provided for ${optionName}`);
+}
