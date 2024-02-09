@@ -317,7 +317,8 @@ export const SOFTWARE_VERSION = (() => {
 
 /**
  * Grabs an option from the command line and checks if it exists.
- * @param arg Option name
+ * @param args Program options
+ * @param optionName Option name
  * @returns True if the option is present, otherwise false.
  */
 function isCommandLineOptionPresent(args: string[], optionName: string): boolean {
@@ -326,6 +327,7 @@ function isCommandLineOptionPresent(args: string[], optionName: string): boolean
 
 /**
  * Grabs an option's value from program options if it exists, otherwise returns undefined.
+ * @param args Program options
  * @param optionName Option name
  * @returns The value passed to the option, or undefined if the option is not specified.
  * @throws Error if the option is present but has no value.
