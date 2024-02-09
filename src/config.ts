@@ -224,29 +224,33 @@ export function getDefaultConfig(): IConfig {
     return Config.util.cloneDeep(defaultConfig);
 }
 
-export function read(): IConfig {
-    const explicitConfigPath = getCommandLinePathOption(process.argv, "--draupnir-config", true);
-    var config;
-
+/**
+ * @returns The users's raw config, deep copied over the `defaultConfig`.
+ */
+function readConfigSource(): IConfig {
+    const explicitConfigPath = getCommandLineOption(process.argv, "--draupnir-config");
     if (explicitConfigPath !== undefined) {
         const content = fs.readFileSync(explicitConfigPath, "utf8");
         const parsed = load(content);
-        config = Config.util.extendDeep({}, defaultConfig, parsed);
+        return Config.util.extendDeep({}, defaultConfig, parsed);
     } else {
-        config = Config.util.extendDeep({}, defaultConfig, Config.util.toObject()) as IConfig;
+        return Config.util.extendDeep({}, defaultConfig, Config.util.toObject()) as IConfig;
     }
+}
 
-    // Handle secret files
-    if(getCommandLinePathOption(process.argv, "--access-token-path", true) !== undefined) {
-        config.accessToken = fs.readFileSync(getCommandLinePathOption(process.argv, "--access-token-path", true) as string, "utf8");
+export function read(): IConfig {
+    const config = readConfigSource();
+    const explicitAccessTokenPath = getCommandLineOption(process.argv, "--access-token-path");
+    const explicitPantalaimonPasswordPath = getCommandLineOption(process.argv, "--pantalaimon-password-path");
+    if (explicitAccessTokenPath !== undefined) {
+        config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8");
     }
-
-    if(getCommandLinePathOption(process.argv, "--pantalaimon-password-path", true) !== undefined) {
-        config.pantalaimon.password = fs.readFileSync(getCommandLinePathOption(process.argv, "--pantalaimon-password-path", true) as string, "utf8");
+    if (explicitPantalaimonPasswordPath) {
+        config.pantalaimon.password = fs.readFileSync(explicitPantalaimonPasswordPath, "utf8");
     }
-
     return config;
 }
+
 
 /**
  * Provides a config for each newly provisioned mjolnir in appservice mode.
@@ -316,61 +320,29 @@ export const SOFTWARE_VERSION = (() => {
  * @param arg Option name
  * @returns True if the option is present, otherwise false.
  */
-function isCommandLineOptionPresent(args: string[], arg: string): boolean {
-    return args.includes(arg);
+function isCommandLineOptionPresent(args: string[], optionName: string): boolean {
+    return args.includes(optionName);
 }
 
 /**
  * Grabs an option's value from program options if it exists, otherwise returns undefined.
- * @param arg Option name
- * @param throwOnInvalid If true or undefined, throws an error if the option is present but has no value. If false, returns undefined.
+ * @param optionName Option name
  * @returns The value passed to the option, or undefined if the option is not specified.
  * @throws Error if the option is present but has no value.
  */
-function getCommandLineStringOption(args: string[], arg: string, throwOnInvalid?: boolean): string | undefined {
+function getCommandLineOption(args: string[], optionName: string): string | undefined {
     // We don't want to throw if the option is not present
-    if(!isCommandLineOptionPresent(args, arg)) {
+    if(!isCommandLineOptionPresent(args, optionName)) {
         return undefined;
     }
 
-    const optionIndex = args.indexOf(arg);
-    if (optionIndex === -1) {
-        return undefined;
-    }
+    const optionIndex = args.indexOf(optionName);
 
     //check if the next index is not an option
     if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
         return args[optionIndex + 1];
     }
-
-    if (throwOnInvalid === undefined || throwOnInvalid) {
-        throw new Error(`Invalid value provided for ${arg}`);
-    }
-
-    return undefined;
-}
-
-/**
- * Grabs a path option from the command line and checks if it exists.
- * @param arg Option name
- * @param throwOnInvalid If true or undefined, throws an error if the path does not exist. If false, returns undefined.
- * @returns Path if it exists, or undefined if the option is unspecified.
- * @throws Error if the path does not exist and throwOnInvalid is true or undefined.
- */
-function getCommandLinePathOption(args: string[], arg: string, throwOnInvalid?: boolean): string | undefined {
-    // We don't want to throw if the option is not present
-    if(!isCommandLineOptionPresent(args, arg)) {
-        return undefined;
-    }
-
-    const givenPath = getCommandLineStringOption(args, arg);
-    if (givenPath && fs.existsSync(givenPath)) {
-        return givenPath;
-    }
-
-    if (throwOnInvalid === undefined || throwOnInvalid) {
-        throw new Error(`Invalid path provided for ${arg}`);
-    }
-
-    return undefined;
+    
+    // No value was provided, or the next argument is another option
+    throw new Error(`No value provided for ${optionName}`);
 }
