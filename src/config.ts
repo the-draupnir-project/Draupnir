@@ -342,7 +342,7 @@ function getCommandLineOption(args: string[], optionName: string): string | unde
     if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
         return args[optionIndex + 1];
     }
-    
+
     // No value was provided, or the next argument is another option
     throw new Error(`No value provided for ${optionName}`);
 }
