@@ -38,12 +38,13 @@ On a high level, installing Draupnir works like the following;
 3. Configure draupnir see [further below](#post-install).
 4. Start draupnir.
 
-Draupnir can be installed in two ways, via Docker, or building it yourself.
+Draupnir can be installed in three ways, via Docker, building it yourself or via [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/docs/configuring-playbook-bot-draupnir.md).
 
 See the below links for corresponding installation documentation;
 
 - [Docker](./setup_docker.md)
 - [Building It](./setup_selfbuild.md)
+- [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/docs/configuring-playbook-bot-draupnir.md)
 
 ## Post-install
 
