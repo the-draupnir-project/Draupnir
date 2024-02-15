@@ -85,7 +85,7 @@ defineInterfaceCommand({
     command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<ActionResult<void>> {
         const room = await resolveRoomReferenceSafe(this.client, roomRef);
         if (isError(room)) {
-            return room.addContext(
+            return room.elaborate(
                 `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
                 Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
             );
@@ -108,7 +108,7 @@ defineInterfaceCommand({
     command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<ActionResult<void>> {
         const room = await resolveRoomReferenceSafe(this.client, roomRef);
         if (isError(room)) {
-            return room.addContext(
+            return room.elaborate(
                 `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
                 Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
             );
