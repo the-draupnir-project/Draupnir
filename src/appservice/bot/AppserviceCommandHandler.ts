@@ -10,7 +10,10 @@ import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext
 import { ArgumentStream, RestDescription, findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
-import { ActionResult, Ok, RoomMessage, Value, isError } from 'matrix-protection-suite';
+import { ActionResult, ClientPlatform, Ok, RoomMessage, StringUserID, Value, isError } from 'matrix-protection-suite';
+import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';
+import { MatrixReactionHandler } from '../../commands/interface-manager/MatrixReactionHandler';
+import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt, makeListenerForPromptDefault } from '../../commands/interface-manager/MatrixPromptForAccept';
 
 defineCommandTable("appservice bot");
 
@@ -23,10 +26,6 @@ export type AppserviceBaseExecutor = (this: AppserviceContext, ...args: unknown[
 import '../../commands/interface-manager/MatrixPresentations';
 import './ListCommand';
 import './AccessCommands';
-import { MatrixReactionHandler } from '../../commands/interface-manager/MatrixReactionHandler';
-import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt, makeListenerForPromptDefault } from '../../commands/interface-manager/MatrixPromptForAccept';
-
-
 
 defineInterfaceCommand({
     parameters: parameters([], new RestDescription('command parts', findPresentationType("any"))),
@@ -49,7 +48,10 @@ export class AppserviceCommandHandler {
     private readonly reactionHandler: MatrixReactionHandler;
 
     constructor(
-        private readonly appservice: MjolnirAppService
+        public readonly clientUserID: StringUserID,
+        private readonly client: MatrixSendClient,
+        private readonly clientPlatform: ClientPlatform,
+        private readonly appservice: MjolnirAppService,
     ) {
         this.reactionHandler = new MatrixReactionHandler(
             this.appservice.accessControlRoomID,
@@ -58,12 +60,14 @@ export class AppserviceCommandHandler {
         );
         this.commandContext = {
             appservice: this.appservice,
-            client: this.appservice.bridge.getBot().getClient(),
+            client: this.client,
+            clientPlatform: this.clientPlatform,
             reactionHandler: this.reactionHandler,
             roomID: this.appservice.accessControlRoomID
         };
         this.reactionHandler.on(ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt(
             this.commandContext.client,
+            this.clientPlatform,
             this.appservice.accessControlRoomID,
             this.reactionHandler,
             this.commandTable,
@@ -71,6 +75,7 @@ export class AppserviceCommandHandler {
         ));
         this.reactionHandler.on(DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForPromptDefault(
             this.commandContext.client,
+            this.clientPlatform,
             this.appservice.accessControlRoomID,
             this.reactionHandler,
             this.commandTable,

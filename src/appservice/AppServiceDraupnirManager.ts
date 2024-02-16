@@ -35,7 +35,7 @@ import { Gauge } from "prom-client";
 import { decrementGaugeValue, incrementGaugeValue } from "../utils";
 import { Access, ActionError, ActionException, ActionExceptionKind, ActionResult, MatrixRoomReference, Ok, PropagationType, StringRoomID, StringUserID, Task, isError, isStringRoomID, userLocalpart } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { RoomStateManagerFactory } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientCapabilityFactory, RoomStateManagerFactory } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirFailType, StandardDraupnirManager, UnstartedDraupnir } from "../draupnirfactory/StandardDraupnirManager";
 import { DraupnirFactory } from "../draupnirfactory/DraupnirFactory";
 
@@ -58,10 +58,13 @@ export class AppServiceDraupnirManager {
         private readonly bridge: Bridge,
         private readonly accessControl: AccessControl,
         private readonly roomStateManagerFactory: RoomStateManagerFactory,
+        private readonly clientCapabilityFactory: ClientCapabilityFactory,
         private readonly instanceCountGauge: Gauge<"status" | "uuid">
     ) {
         const clientProvider = this.bridge.getIntent.bind(this.bridge);
         const draupnirFactory = new DraupnirFactory(
+            this.roomStateManagerFactory.clientsInRoomMap,
+            this.clientCapabilityFactory,
             clientProvider,
             this.roomStateManagerFactory
         );
@@ -88,9 +91,18 @@ export class AppServiceDraupnirManager {
         bridge: Bridge,
         accessControl: AccessControl,
         roomStateManagerFactory: RoomStateManagerFactory,
+        clientCapabilityFactory: ClientCapabilityFactory,
         instanceCountGauge: Gauge<"status" | "uuid">
     ): Promise<AppServiceDraupnirManager> {
-        const draupnirManager = new AppServiceDraupnirManager(serverName, dataStore, bridge, accessControl, roomStateManagerFactory, instanceCountGauge);
+        const draupnirManager = new AppServiceDraupnirManager(
+            serverName,
+            dataStore,
+            bridge,
+            accessControl,
+            roomStateManagerFactory,
+            clientCapabilityFactory,
+            instanceCountGauge
+        );
         await draupnirManager.startDraupnirs(await dataStore.list());
         return draupnirManager;
     }

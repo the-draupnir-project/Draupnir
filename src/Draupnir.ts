@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Client, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { Client, ClientPlatform, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -83,6 +83,7 @@ export class Draupnir implements Client {
     private constructor(
         public readonly client: MatrixSendClient,
         public readonly clientUserID: StringUserID,
+        public readonly clientPlatform: ClientPlatform,
         public readonly managementRoom: MatrixRoomID,
         public readonly clientRooms: ClientRooms,
         public readonly config: IConfig,
@@ -104,10 +105,11 @@ export class Draupnir implements Client {
         this.clientRooms.on('timeline', this.timelineEventListener);
 
         this.commandContext = {
-            draupnir: this, roomID: this.managementRoomID, client: this.client, reactionHandler: this.reactionHandler,
+            draupnir: this, roomID: this.managementRoomID, client: this.client, reactionHandler: this.reactionHandler, clientPlatform: this.clientPlatform
         };
         this.reactionHandler.on(ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt(
             this.client,
+            this.clientPlatform,
             this.managementRoomID,
             this.reactionHandler,
             this.commandTable,
@@ -115,6 +117,7 @@ export class Draupnir implements Client {
         ));
         this.reactionHandler.on(DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForPromptDefault(
             this.client,
+            this.clientPlatform,
             this.managementRoomID,
             this.reactionHandler,
             this.commandTable,
@@ -125,6 +128,7 @@ export class Draupnir implements Client {
     public static async makeDraupnirBot(
         client: MatrixSendClient,
         clientUserID: StringUserID,
+        clientPlatform: ClientPlatform,
         managementRoom: MatrixRoomID,
         clientRooms: ClientRooms,
         protectedRoomsSet: ProtectedRoomsSet,
@@ -136,6 +140,7 @@ export class Draupnir implements Client {
         const draupnir = new Draupnir(
             client,
             clientUserID,
+            clientPlatform,
             managementRoom,
             clientRooms,
             config,

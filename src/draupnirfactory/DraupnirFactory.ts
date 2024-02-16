@@ -5,7 +5,7 @@
 
 import { ActionResult, ClientsInRoomMap, MatrixRoomID, Ok, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientCapabilityFactory, ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirClientRooms } from "./DraupnirClientRooms";
 import { IConfig } from "../config";
 import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
@@ -13,6 +13,7 @@ import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
 export class DraupnirFactory {
     public constructor(
         private readonly clientsInRoomMap: ClientsInRoomMap,
+        private readonly clientCapabilityFactory: ClientCapabilityFactory,
         private readonly clientProvider: ClientForUserID,
         private readonly roomStateManagerFactory: RoomStateManagerFactory
     ) {
@@ -44,9 +45,11 @@ export class DraupnirFactory {
         if (isError(protectedRoomsSet)) {
             return protectedRoomsSet;
         }
+        const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(clientUserID, client);
         return Ok(await Draupnir.makeDraupnirBot(
             client,
             clientUserID,
+            clientPlatform,
             managementRoom,
             clientRooms.ok,
             protectedRoomsSet.ok,

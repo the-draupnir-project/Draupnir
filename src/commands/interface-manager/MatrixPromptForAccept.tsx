@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { Logger, RoomEvent, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
+import { ClientPlatform, Logger, RoomEvent, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
 import { JSXFactory } from "./JSXFactory";
@@ -39,6 +39,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
     serializedPrompt: string,
     commandTable: CommandTable,
     client: MatrixSendClient,
+    clientPlatform: ClientPlatform,
     commandRoomID: StringRoomID,
     reactionHandler: MatrixReactionHandler,
     annotatedEvent: RoomEvent,
@@ -59,6 +60,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
     const commandContext = {
         roomID: commandRoomID,
         client,
+        clientPlatform,
         reactionHandler: reactionHandler,
         event: annotatedEvent,
         ...additionalCommandContext,
@@ -69,6 +71,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.default_argument_prompt';
 export function makeListenerForPromptDefault<CommandContext extends MatrixContext = MatrixContext>(
     client: MatrixSendClient,
+    clientPlatform: ClientPlatform,
     commandRoomID: StringRoomID,
     reactionHandler: MatrixReactionHandler,
     commandTable: CommandTable,
@@ -88,6 +91,7 @@ export function makeListenerForPromptDefault<CommandContext extends MatrixContex
             promptContext.ok.default,
             commandTable,
             client,
+            clientPlatform,
             commandRoomID,
             reactionHandler,
             annotatedEvent,
@@ -99,6 +103,7 @@ export function makeListenerForPromptDefault<CommandContext extends MatrixContex
 export const ARGUMENT_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.argument_prompt';
 export function makeListenerForArgumentPrompt<CommandContext extends MatrixContext = MatrixContext>(
     client: MatrixSendClient,
+    clientPlatform: ClientPlatform,
     commandRoomID: StringRoomID,
     reactionHandler: MatrixReactionHandler,
     commandTable: CommandTable,
@@ -115,6 +120,7 @@ export function makeListenerForArgumentPrompt<CommandContext extends MatrixConte
             item,
             commandTable,
             client,
+            clientPlatform,
             commandRoomID,
             reactionHandler,
             annotatedEvent,
