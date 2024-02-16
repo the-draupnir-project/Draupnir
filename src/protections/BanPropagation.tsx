@@ -31,10 +31,9 @@ limitations under the License.
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
-import { UserID } from "matrix-bot-sdk";
 import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";

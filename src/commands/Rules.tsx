@@ -33,8 +33,7 @@ import { JSXFactory } from "./interface-manager/JSXFactory";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { findPresentationType, parameters, union } from "./interface-manager/ParameterParsing";
-import { UserID } from "matrix-bot-sdk";
-import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, PolicyRoomWatchProfile, PolicyRule, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, PolicyRoomWatchProfile, PolicyRule, StringRoomID, isError, UserID } from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
 
 async function renderListMatches(
