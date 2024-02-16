@@ -210,7 +210,7 @@ function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
     }
     readUntil(/\s/, stream, word);
     const wholeWord = word.join('');
-    if (!isStringRoomID(wholeWord) || !isStringRoomAlias(wholeWord)) {
+    if (!isStringRoomID(wholeWord) && !isStringRoomAlias(wholeWord)) {
         return wholeWord;
     }
     return MatrixRoomReference.fromRoomIDOrAlias(wholeWord);

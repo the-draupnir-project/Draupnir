@@ -1,6 +1,6 @@
 import expect from "expect";
 import { Keyword, readCommand, ReadItem } from "../../src/commands/interface-manager/CommandReader";
-import { MatrixRoomReference } from "../../src/commands/interface-manager/MatrixRoomReference";
+import { MatrixRoomAlias, MatrixRoomID, MatrixRoomReference } from "matrix-protection-suite";
 
 describe("Can read", function() {
     it("Can read a simple command with only strings", function() {
@@ -11,16 +11,16 @@ describe("Can read", function() {
     it("Can turn room aliases to room references", function() {
         const command = "#meow:example.org";
         const readItems = readCommand(command);
-        expect(readItems.at(0)).toBeInstanceOf(MatrixRoomReference);
-        const roomReference = readItems.at(0) as MatrixRoomReference;
-        expect(roomReference.toRoomIdOrAlias()).toBe(command);
+        expect(readItems.at(0)).toBeInstanceOf(MatrixRoomAlias);
+        const roomReference = readItems.at(0) as MatrixRoomAlias;
+        expect(roomReference.toRoomIDOrAlias()).toBe(command);
     });
     it("Can turn room ids to room references", function() {
         const command = "!foijoiejfoij:example.org";
         const readItems = readCommand(command);
-        expect(readItems.at(0)).toBeInstanceOf(MatrixRoomReference);
-        const roomReference = readItems.at(0) as MatrixRoomReference;
-        expect(roomReference.toRoomIdOrAlias()).toBe(command);
+        expect(readItems.at(0)).toBeInstanceOf(MatrixRoomID);
+        const roomReference = readItems.at(0) as MatrixRoomID;
+        expect(roomReference.toRoomIDOrAlias()).toBe(command);
     });
     it("Can read keywords and correctly parse their designators", function() {
         const checkKeyword = (designator: string, keyword: string) => {
