@@ -25,7 +25,6 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { UserID } from "matrix-bot-sdk";
 import { DraupnirContext } from "./CommandHandler";
 import { defineInterfaceCommand,findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, ParameterDescription, parameters, ParsedKeywords, RestDescription, union } from "./interface-manager/ParameterParsing";
@@ -34,7 +33,7 @@ import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfac
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { PromptOptions } from "./interface-manager/PromptForAccept";
 import { Draupnir } from "../Draupnir";
-import { ActionResult, MatrixRoomReference, PolicyRoomEditor, PolicyRuleType, isError } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomReference, PolicyRoomEditor, PolicyRuleType, isError, UserID } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 

@@ -5,11 +5,10 @@
 
 import { ReadItem } from "./CommandReader";
 import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParameterParsing";
-import { UserID } from "matrix-bot-sdk";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
-import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
+import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID, UserID } from "matrix-protection-suite";
 
 
 makePresentationType({
