@@ -38,6 +38,7 @@ import {
 } from "matrix-protection-suite";
 import {
     BotSDKLogServiceLogger,
+    ClientCapabilityFactory,
     MatrixSendClient,
     RoomStateManagerFactory,
     SafeMatrixEmitter,
@@ -87,8 +88,10 @@ export async function makeDraupnirBotModeFromConfig(
         clientProvider,
         DefaultEventDecoder
     );
+    const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
     const draupnirFactory = new DraupnirFactory(
         clientsInRoomMap,
+        clientCapabilityFactory,
         clientProvider,
         roomStateManagerFactory
     );

@@ -34,7 +34,7 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
-import { RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientCapabilityFactory, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
@@ -60,12 +60,20 @@ export class MjolnirAppService {
         private readonly dataStore: DataStore,
         private readonly eventDecoder: EventDecoder,
         private readonly roomStateManagerFactory: RoomStateManagerFactory,
+        private readonly clientCapabilityFactory: ClientCapabilityFactory,
         private readonly clientsInRoomMap: ClientsInRoomMap,
         private readonly prometheusMetrics: PrometheusMetrics,
         public readonly accessControlRoomID: StringRoomID,
         public readonly botUserID: StringUserID,
     ) {
         this.api = new Api(config.homeserver.url, draupnirManager);
+        const client = this.bridge.getBot().getClient();
+        this.commands = new AppserviceCommandHandler(
+            botUserID,
+            client,
+            this.clientCapabilityFactory.makeClientPlatform(botUserID, client),
+            this
+        );
     }
 
     /**
@@ -119,6 +127,7 @@ export class MjolnirAppService {
             clientProvider,
             eventDecoder
         );
+        const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
         const botUserID = bridge.getBot().getUserId() as StringUserID;
         const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(botUserID);
         const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, bridge);
@@ -139,7 +148,15 @@ export class MjolnirAppService {
         });
 
         const serverName = config.homeserver.domain;
-        const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(serverName, dataStore, bridge, accessControl.ok, roomStateManagerFactory, instanceCountGauge);
+        const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(
+            serverName,
+            dataStore,
+            bridge,
+            accessControl.ok,
+            roomStateManagerFactory,
+            clientCapabilityFactory,
+            instanceCountGauge
+        );
         const appService = new MjolnirAppService(
             config,
             bridge,
@@ -148,6 +165,7 @@ export class MjolnirAppService {
             dataStore,
             eventDecoder,
             roomStateManagerFactory,
+            clientCapabilityFactory,
             clientsInRoomMap,
             prometheus,
             accessControlRoom.ok.toRoomIDOrAlias(),

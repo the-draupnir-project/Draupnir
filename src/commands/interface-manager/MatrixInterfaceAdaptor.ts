@@ -37,13 +37,19 @@ import { InterfaceAcceptor, PromptOptions, PromptableArgumentStream } from "./Pr
 import { ParameterDescription } from "./ParameterParsing";
 import { promptDefault, promptSuggestions } from "./MatrixPromptForAccept";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionError, ActionResult, ResultError, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, ClientPlatform, ResultError, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
 import { MatrixReactionHandler } from "./MatrixReactionHandler";
 import { PromptRequiredError } from "./PromptRequiredError";
 
 export interface MatrixContext {
     reactionHandler: MatrixReactionHandler,
     client: MatrixSendClient,
+    // Use the client platform capabilities over the `MatrixSendClient`, since
+    // they can use join preemption.
+    // TODO: How can we make commands declare which things they want (from the context)
+    // similar to capability providers in MPS protections?
+    // we kind of need to remove the context object.
+    clientPlatform: ClientPlatform,
     roomID: StringRoomID,
     event: RoomEvent,
 }
