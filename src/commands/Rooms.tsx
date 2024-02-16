@@ -83,7 +83,8 @@ defineInterfaceCommand({
         }
     ]),
     command: async function (this: DraupnirContext, _keywords, roomRef: MatrixRoomReference): Promise<ActionResult<void>> {
-        const room = await resolveRoomReferenceSafe(this.client, roomRef);
+        const joiner = this.clientPlatform.toRoomJoiner();
+        const room = await joiner.joinRoom(roomRef);
         if (isError(room)) {
             return room.elaborate(
                 `The homeserver that Draupnir is hosted on cannot join this room using the room reference provided.\
