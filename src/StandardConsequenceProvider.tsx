@@ -120,10 +120,12 @@ const consequenceForUsersInRevision: BasicConsequenceProvider['consequenceForUse
         (_description, roomID, userID, reason) => banUser(this.client, description, roomID, userID, reason)
     );
     Task(renderMatrixAndSend(
-        renderSetMembershipBans(
-            <span>Banning {results.size} users in protected rooms.</span>,
-            results
-        ),
+        <root>{
+            renderSetMembershipBans(
+                <span>Banning {results.size} users in protected rooms.</span>,
+                results
+            )
+        }</root>,
         this.managementRoomID,
         undefined,
         this.client
