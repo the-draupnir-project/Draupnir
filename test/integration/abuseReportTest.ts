@@ -1,8 +1,7 @@
 import { strict as assert } from "assert";
-
-import { matrixClient } from "./mjolnirSetupUtils";
 import { newTestUser } from "./clientHelper";
-import { ReportManager, ABUSE_ACTION_CONFIRMATION_KEY, ABUSE_REPORT_KEY } from "../../src/report/ReportManager";
+import { ABUSE_REPORT_KEY } from "../../src/report/ReportManager";
+import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 
 /**
  * Test the ability to turn abuse reports into room messages.
@@ -26,13 +25,20 @@ describe("Test: Reporting abuse", async () => {
     // Note that this version change only affects the actual URL at which reports
     // are sent.
     for (let endpoint of ['v3', 'r0']) {
-        it(`Mjölnir intercepts abuse reports with endpoint ${endpoint}`, async function() {
+        it(`Mjölnir intercepts abuse reports with endpoint ${endpoint}`, async function(this: DraupnirTestContext) {
             this.timeout(90000);
-
+            if (this.draupnir === undefined) {
+                throw new TypeError("setup must have failed.")
+            }
+            const draupnir = this.draupnir;
+            const draupnirSyncClient = draupnirClient();
+            if (draupnirSyncClient === null) {
+                throw new TypeError("setup must have failed.");
+            }
             // Listen for any notices that show up.
             let notices: any[] = [];
-            this.mjolnir.client.on("room.event", (roomId, event) => {
-                if (roomId = this.mjolnir.managementRoomId) {
+            draupnirSyncClient.on("room.event", (roomId, event) => {
+                if (roomId = draupnir.managementRoomID) {
                     notices.push(event);
                 }
             });
@@ -219,23 +225,28 @@ describe("Test: Reporting abuse", async () => {
                     }
                 }
             }
-        });
+        } as unknown as Mocha.AsyncFunc);
     }
-    it('The redact action works', async function() {
+    it('The redact action works', async function(this: DraupnirTestContext) {
         this.timeout(60000);
+        const draupnir = this.draupnir;
+        const draupnirSyncClient = draupnirClient();
+        if (draupnir === undefined || draupnirSyncClient === null) {
+            throw new TypeError("setup code didn't work");
+        }
 
         // Listen for any notices that show up.
         let notices: any[] = [];
-        this.mjolnir.client.on("room.event", (roomId, event) => {
-            if (roomId = this.mjolnir.managementRoomId) {
+        draupnirSyncClient.on("room.event", (roomId, event) => {
+            if (roomId = draupnir.managementRoomID) {
                 notices.push(event);
             }
         });
 
         // Create a moderator.
         let moderatorUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reporting-abuse-moderator-user" }});
-        this.mjolnir.client.inviteUser(await moderatorUser.getUserId(), this.mjolnir.managementRoomId);
-        await moderatorUser.joinRoom(this.mjolnir.managementRoomId);
+        draupnir.client.inviteUser(await moderatorUser.getUserId(), draupnir.managementRoomID);
+        await moderatorUser.joinRoom(draupnir.managementRoomID);
 
         // Create a few users and a room.
         let goodUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reacting-abuse-good-user" }});
@@ -250,8 +261,8 @@ describe("Test: Reporting abuse", async () => {
         await goodUser.joinRoom(roomId);
 
         // Setup Mjölnir as moderator for our room.
-        await moderatorUser.inviteUser(await this.mjolnir.client.getUserId(), roomId);
-        await moderatorUser.setUserPowerLevel(await this.mjolnir.client.getUserId(), roomId, 100);
+        await moderatorUser.inviteUser(await draupnir.client.getUserId(), roomId);
+        await moderatorUser.setUserPowerLevel(await draupnir.client.getUserId(), roomId, 100);
 
         console.log("Test: Reporting abuse - send messages");
         // Exchange a few messages.
@@ -281,7 +292,7 @@ describe("Test: Reporting abuse", async () => {
         console.log("Test: Reporting abuse - wait");
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        let mjolnirRooms = new Set(await this.mjolnir.client.getJoinedRooms());
+        let mjolnirRooms = new Set(await draupnir.client.getJoinedRooms());
         assert.ok(mjolnirRooms.has(roomId), "Mjölnir should be a member of the room");
 
         // Find the notice
@@ -318,7 +329,7 @@ describe("Test: Reporting abuse", async () => {
         for (let button of buttons) {
             if (button["content"]["m.relates_to"]["key"].includes("[redact-message]")) {
                 redactButtonId = button["event_id"];
-                await moderatorUser.sendEvent(this.mjolnir.managementRoomId, "m.reaction", button["content"]);
+                await moderatorUser.sendEvent(draupnir.managementRoomID, "m.reaction", button["content"]);
                 break;
             }
         }
@@ -345,7 +356,7 @@ describe("Test: Reporting abuse", async () => {
 
             // It's the confirm button, click it!
             confirmEventId = event["event_id"];
-            await moderatorUser.sendEvent(this.mjolnir.managementRoomId, "m.reaction", event["content"]);
+            await moderatorUser.sendEvent(draupnir.managementRoomID, "m.reaction", event["content"]);
             break;
         }
         assert.ok(confirmEventId, "We should have found the confirm button");
@@ -353,7 +364,7 @@ describe("Test: Reporting abuse", async () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // This should have redacted the message.
-        let newBadEvent = await this.mjolnir.client.getEvent(roomId, badEventId);
+        let newBadEvent = await draupnir.client.getEvent(roomId, badEventId);
         assert.deepEqual(Object.keys(newBadEvent.content), [], "Redaction should have removed the content of the offending event");
-    });
+    } as unknown as Mocha.AsyncFunc);
 });
