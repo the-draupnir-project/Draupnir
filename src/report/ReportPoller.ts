@@ -109,9 +109,6 @@ export class ReportPoller {
                 continue;
             }
             const report = reportResult.ok;
-            if (!this.draupnir.protectedRoomsSet.isProtectedRoom(report.room_id)) {
-                continue;
-            }
             // FIXME: shouldn't we have a SafeMatrixSendClient in the BotSDKMPS that gives us ActionResult's with
             // Decoded events.
             // Problem is that our current event model isn't going to match up with extensible events.
