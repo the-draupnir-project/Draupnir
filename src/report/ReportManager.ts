@@ -94,7 +94,7 @@ export class ReportManager extends EventEmitter {
     }
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
-        if (event.type === 'm.reaction') {
+        if (roomID === this.draupnir.managementRoomID && event.type === 'm.reaction') {
             Task(this.handleReaction({ roomID, event }));
         }
     }
