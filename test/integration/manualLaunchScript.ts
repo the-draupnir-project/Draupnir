@@ -4,10 +4,13 @@
 
 import { draupnirClient, makeMjolnir } from "./mjolnirSetupUtils";
 import { read as configRead } from '../../src/config';
+import { constructWebAPIs } from "../../src/DraupnirBotMode";
 
 (async () => {
     const config = configRead();
     let mjolnir = await makeMjolnir(config);
     await mjolnir.start();
+    const apis = constructWebAPIs(mjolnir);
     await draupnirClient()?.start();
+    await apis.start();
 })();

@@ -47,8 +47,13 @@ import {
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
 import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
+import { WebAPIs } from "./webapis/WebAPIs";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
+
+export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
+    return new WebAPIs(draupnir.reportManager, draupnir.config);
+}
 
 /**
  * This is a file for providing default concrete implementations
