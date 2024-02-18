@@ -33,5 +33,7 @@
         "./test/integration/protectionSettingsTest.ts",
         "./test/integration/banPropagationTest.ts",
         "./test/integration/protectedRoomsConfigTest.ts",
-    ]
+        "./test/integration/fixtures.ts",
+        "./test/integration/helloTest.ts"
+    ],
 }
