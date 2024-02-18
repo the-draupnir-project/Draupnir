@@ -1,6 +1,6 @@
 import { MatrixClient } from "matrix-bot-sdk";
-import { Mjolnir } from "../../src/Mjolnir"
 import { newTestUser } from "./clientHelper";
+import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 
 describe("Test: Accept Invites From Space", function() {
     let client: MatrixClient|undefined;
@@ -9,33 +9,36 @@ describe("Test: Accept Invites From Space", function() {
         await client.start();
     })
     this.afterEach(async function () {
-        await client?.stop();
+        client?.stop();
     })
-    it("Mjolnir should accept an invite from a user in a nominated Space", async function() {
+    it("Mjolnir should accept an invite from a user in a nominated Space", async function(this: DraupnirTestContext) {
         this.timeout(20000);
 
-        const mjolnir: Mjolnir = this.mjolnir!;
-        const mjolnirUserId = await mjolnir.client.getUserId();
+        const draupnir = this.draupnir;
+        const draupnirSyncClient = draupnirClient();
+        if (draupnir === undefined || draupnirSyncClient === null) {
+            throw new TypeError("fixtures.ts didn't setup Draupnir");
+        }
 
         const space = await client!.createSpace({
             name: "mjolnir space invite test",
-            invites: [mjolnirUserId],
+            invites: [draupnir.clientUserID],
             isPublic: false
         });
 
-        await this.mjolnir.client.joinRoom(space.roomId);
+        await draupnir.client.joinRoom(space.roomId);
 
         // we're mutating a static object, which may affect other tests :(
-        mjolnir.config.autojoinOnlyIfManager = false;
-        mjolnir.config.acceptInvitesFromSpace = space.roomId;
+        draupnir.config.autojoinOnlyIfManager = false;
+        draupnir.config.acceptInvitesFromSpace = space.roomId;
 
         const promise = new Promise(async resolve => {
-            const newRoomId = await client!.createRoom({ invite: [mjolnirUserId] });
+            const newRoomId = await client!.createRoom({ invite: [draupnir.clientUserID] });
             client!.on("room.event", (roomId, event) => {
                 if (
                     roomId === newRoomId
                     && event.type === "m.room.member"
-                    && event.sender === mjolnirUserId
+                    && event.sender === draupnir.clientUserID
                     && event.content?.membership === "join"
                 ) {
                     resolve(null);
@@ -43,5 +46,5 @@ describe("Test: Accept Invites From Space", function() {
             });
         });
         await promise;
-    });
+    } as unknown as Mocha.AsyncFunc);
 });
