@@ -2,6 +2,7 @@ import expect from "expect";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
 import { AppservideBotCommandClient } from "../utils/AppserviceBotCommandClient";
 import { setupHarness } from "../utils/harness";
+import { isError } from "matrix-protection-suite";
 
 interface Context extends Mocha.Context {
     appservice?:  MjolnirAppService
@@ -22,7 +23,9 @@ describe("Just test some commands innit", function() {
     it("Can list any unstarted mjolnir", async function(this: Context) {
         const commandClient = new AppservideBotCommandClient(this.appservice!);
         const result = await commandClient.sendCommand("list", "unstarted");
-        expect(result.isOk()).toBe(true);
+        if (isError(result)) {
+            throw new TypeError(`Command should have succeeded`);
+        }
         expect(result.ok).toBeInstanceOf(Array);
     });
 })
