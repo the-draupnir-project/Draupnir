@@ -109,6 +109,9 @@ export async function makeDraupnirBotModeFromConfig(
         const error = draupnir.error;
         throw new Error(`Unable to create Draupnir: ${error.message}`);
     }
+    matrixEmitter.on('room.invite', (roomID, event) => {
+        clientsInRoomMap.handleTimelineEvent(roomID, event);
+    })
     matrixEmitter.on('room.event', (roomID, event) => {
         roomStateManagerFactory.handleTimelineEvent(roomID, event);
         clientsInRoomMap.handleTimelineEvent(roomID, event);

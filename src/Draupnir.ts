@@ -163,6 +163,14 @@ export class Draupnir implements Client {
         if (isError(loadResult)) {
             throw loadResult.error;
         }
+        // we need to make sure that we are protecting the management room so we
+        // have immediate access to its membership (for accepting invitations).
+        const managementRoomProtectResult = await draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(
+            managementRoom
+        );
+        if (isError(managementRoomProtectResult)) {
+            throw managementRoomProtectResult.error;
+        }
         return draupnir;
     }
 
