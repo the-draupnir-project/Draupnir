@@ -1,3 +1,4 @@
+import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { read as configRead } from "../../src/config";
 import { WATCHED_LISTS_EVENT_TYPE } from "../../src/models/PolicyList";
 import { patchMatrixClient } from "../../src/utils";
@@ -26,6 +27,8 @@ export const mochaHooks = {
                 this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE,  { references: [] }),
             ]);
             await this.mjolnir.start();
+            this.apis = constructWebAPIs(this.mjolnir);
+            await this.apis.start();
             console.log("mochaHooks.beforeEach DONE");
         }
     ],
@@ -33,6 +36,7 @@ export const mochaHooks = {
         async function() {
             this.timeout(10000)
             await this.mjolnir.stop();
+            await this.apis?.stop();
             await Promise.all([
                 this.mjolnir.client.setAccountData('org.matrix.mjolnir.protected_rooms', { rooms: [] }),
                 this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, { references: [] }),

@@ -41,7 +41,7 @@ import {
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { read as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
-import { makeDraupnirBotModeFromConfig } from "./DraupnirBotMode";
+import { constructWebAPIs, makeDraupnirBotModeFromConfig } from "./DraupnirBotMode";
 import { Draupnir } from "./Draupnir";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
@@ -97,6 +97,8 @@ import { DefaultEventDecoder } from "matrix-protection-suite";
     try {
         await bot.start();
         await config.RUNTIME.client.start();
+        const apis = constructWebAPIs(bot);
+        await apis.start();
         healthz.isHealthy = true;
     } catch (err) {
         console.error(`Mjolnir failed to start: ${err}`);
