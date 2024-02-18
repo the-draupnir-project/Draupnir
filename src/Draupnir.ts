@@ -212,8 +212,8 @@ export class Draupnir implements Client {
             log.info(`Command being run by ${event.sender}: ${commandBeingRun}`);
             Task(this.client.sendReadReceipt(roomID, event.event_id).then((_) => Ok(undefined)))
             Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
-            this.reportManager.handleTimelineEvent(roomID, event);
         }
+        this.reportManager.handleTimelineEvent(roomID, event);
     }
 
     /**
