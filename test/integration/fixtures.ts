@@ -1,8 +1,8 @@
+import { MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE } from "matrix-protection-suite";
 import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { read as configRead } from "../../src/config";
-import { WATCHED_LISTS_EVENT_TYPE } from "../../src/models/PolicyList";
 import { patchMatrixClient } from "../../src/utils";
-import { makeMjolnir, teardownManagementRoom } from "./mjolnirSetupUtils";
+import { DraupnirTestContext, draupnirClient, makeMjolnir, teardownManagementRoom } from "./mjolnirSetupUtils";
 
 patchMatrixClient();
 
@@ -13,37 +13,44 @@ patchMatrixClient();
 // So there is some code in here to "undo" the mutation after we stop Mjolnir syncing.
 export const mochaHooks = {
     beforeEach: [
-        async function() {
-            console.error("---- entering test", JSON.stringify(this.currentTest.title)); // Makes MatrixClient error logs a bit easier to parse.
+        async function(this: DraupnirTestContext) {
+            console.error("---- entering test", JSON.stringify(this.currentTest?.title)); // Makes MatrixClient error logs a bit easier to parse.
             console.log("mochaHooks.beforeEach");
             // Sometimes it takes a little longer to register users.
             this.timeout(30000);
             const config = this.config = configRead();
             this.managementRoomAlias = config.managementRoom;
-            this.mjolnir = await makeMjolnir(config);
-            config.RUNTIME.client = this.mjolnir.client;
+            this.draupnir = await makeMjolnir(config);
+            config.RUNTIME.client = draupnirClient()!;
             await Promise.all([
-                this.mjolnir.client.setAccountData('org.matrix.mjolnir.protected_rooms', { rooms: [] }),
-                this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE,  { references: [] }),
+                this.draupnir.client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, { rooms: [] }),
+                this.draupnir.client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,  { references: [] }),
             ]);
-            await this.mjolnir.start();
-            this.apis = constructWebAPIs(this.mjolnir);
+            await this.draupnir.start();
+            this.apis = constructWebAPIs(this.draupnir);
             await this.apis.start();
+            await draupnirClient()?.start();
             console.log("mochaHooks.beforeEach DONE");
         }
     ],
     afterEach: [
-        async function() {
+        async function(this: DraupnirTestContext) {
             this.timeout(10000)
-            await this.mjolnir.stop();
-            await this.apis?.stop();
-            await Promise.all([
-                this.mjolnir.client.setAccountData('org.matrix.mjolnir.protected_rooms', { rooms: [] }),
-                this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, { references: [] }),
-            ]);
+            this.apis?.stop();
+            draupnirClient()?.stop();
+
             // remove alias from management room and leave it.
-            await teardownManagementRoom(this.mjolnir.client, this.mjolnir.managementRoomId, this.managementRoomAlias);
-            console.error("---- completed test", JSON.stringify(this.currentTest.title), "\n\n"); // Makes MatrixClient error logs a bit easier to parse.
+            if (this.draupnir !== undefined) {
+                await Promise.all([
+                    this.draupnir.client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, { rooms: [] }),
+                    this.draupnir.client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,  { references: [] }),
+                ]);
+                const client = draupnirClient();
+                if (client !== null && this.managementRoomAlias !== undefined) {
+                    await teardownManagementRoom(client, this.draupnir.managementRoomID, this.managementRoomAlias!);
+                }
+            }
+            console.error("---- completed test", JSON.stringify(this.currentTest?.title), "\n\n"); // Makes MatrixClient error logs a bit easier to parse.
         }
     ]
 };

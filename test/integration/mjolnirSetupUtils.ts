@@ -28,11 +28,18 @@ import { Draupnir } from "../../src/Draupnir";
 import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
+import { WebAPIs } from "../../src/webapis/WebAPIs";
 
 patchMatrixClient();
 
-export interface DraupnirTestContext extends Mocha.Context {
+// they are add [key: string]: any to their interface, amazing.
+export type SafeMochaContext = Pick<Mocha.Context, 'test' | 'currentTest' | 'runnable' | 'timeout' | 'slow' | 'skip' | 'retries'>
+
+export interface DraupnirTestContext extends SafeMochaContext {
     draupnir?: Draupnir
+    managementRoomAlias?: string,
+    apis?: WebAPIs,
+    config: IConfig,
 }
 
 /**
