@@ -34,18 +34,19 @@ export class DraupnirFactory {
             return clientRooms;
         }
         this.clientsInRoomMap.addClientRooms(clientRooms.ok);
+        const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(clientUserID, client);
         const protectedRoomsSet = await makeProtectedRoomsSet(
             managementRoom,
             roomStateManager,
             policyRoomManager,
             roomMembershipManager,
             client,
+            clientPlatform,
             clientUserID
         );
         if (isError(protectedRoomsSet)) {
             return protectedRoomsSet;
         }
-        const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(clientUserID, client);
         return Ok(await Draupnir.makeDraupnirBot(
             client,
             clientUserID,
