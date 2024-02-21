@@ -30,7 +30,7 @@ limitations under the License.
 
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
 import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID } from "matrix-protection-suite";
@@ -38,6 +38,7 @@ import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
 import { listInfo } from "../commands/StatusCommand";
+import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 
 const log = new Logger('BanPropagationProtection');
 
@@ -46,7 +47,9 @@ const UNBAN_PROPAGATION_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.unban_p
 
 // FIXME: https://github.com/the-draupnir-project/Draupnir/issues/160
 function makePolicyRoomReactionReferenceMap(rooms: MatrixRoomID[]): Map<string, string> {
-    return rooms.reduce((map, room, index) => (map.set(`${index + 1}.`, room.toPermalink()), map), new Map())
+    return MatrixReactionHandler.createItemizedReactionMap(
+        rooms.map(room => room.toPermalink())
+    );
 }
 
 // would be nice to be able to use presentation types here idk.
@@ -76,7 +79,7 @@ async function promptBanPropagation(
                 in <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by {new UserID(change.sender)} for <code>{change.content.reason ?? '<no reason supplied>'}</code>.<br/>
                 Would you like to add the ban to a policy list?
             <ol>
-                {editablePolicyRoomIDs}
+                {editablePolicyRoomIDs.map((room) => <li><a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a></li>)}
             </ol>
         </root>,
         draupnir.managementRoomID,
@@ -96,16 +99,16 @@ async function promptBanPropagation(
 
 async function promptUnbanPropagation(
     draupnir: Draupnir,
-    event: any,
-    roomId: string,
+    membershipChange: MembershipChange,
+    roomID: StringRoomID,
     rulesMatchingUser: ListMatches[]
 ): Promise<void> {
     const reactionMap = new Map<string, string>(Object.entries({ 'unban from all': 'unban from all'}));
     // shouldn't we warn them that the unban will be futile?
     const promptEventId = (await renderMatrixAndSend(
         <root>
-            The user {renderMentionPill(event["state_key"], event["content"]?.["displayname"] ?? event["state_key"])} was unbanned
-            from the room <a href={`https://matrix.to/#/${roomId}`}>{roomId}</a> by {new UserID(event["sender"])} for <code>{event["content"]?.["reason"] ?? '<no reason supplied>'}</code>.<br/>
+            The user {renderMentionPill(membershipChange.userID, membershipChange.content.displayname ?? membershipChange.userID)} was unbanned
+            from the room {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by {membershipChange.sender} for <code>{membershipChange.content.reason ?? '<no reason supplied>'}</code>.<br/>
             However there are rules in Draupnir's watched lists matching this user:
             <ul>
             {
@@ -121,8 +124,8 @@ async function promptUnbanPropagation(
             UNBAN_PROPAGATION_PROMPT_LISTENER,
             reactionMap,
             {
-                target: event["state_key"],
-                reason: event["content"]?.["reason"],
+                target: membershipChange.userID,
+                reason: membershipChange.content.reason,
             }
         )
     )).at(0) as string;
