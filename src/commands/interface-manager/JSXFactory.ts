@@ -9,7 +9,7 @@ import { presentationTypeOf } from "./ParameterParsing";
 
 type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
 
-export function JSXFactory(tag: NodeTag, properties: any, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
+export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
     const node = makeDocumentNode(tag);
     if (properties) {
         for (const [key, value] of Object.entries(properties)) {

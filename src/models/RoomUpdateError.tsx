@@ -33,7 +33,7 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 function renderErrorItem(error: RoomUpdateError): DocumentNode {
     return <li>
-        <a href={error.room.toPermalink()}>{error.room.toRoomIDOrAlias}</a> - {error.message}
+        <a href={error.room.toPermalink()}>{error.room.toRoomIDOrAlias()}</a> - {error.message}
     </li>
 }
 
