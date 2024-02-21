@@ -25,13 +25,14 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionException, ActionExceptionKind, ActionResult, BasicConsequenceProvider, DEFAULT_CONSEQUENCE_PROVIDER, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, RoomUpdateError, RoomUpdateException, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership, describeConsequenceProvider, isError } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionExceptionKind, ActionResult, BasicConsequenceProvider, DEFAULT_CONSEQUENCE_PROVIDER, MatrixRoomReference, Ok, Permalinks, ProtectionDescription, ProtectionDescriptionInfo, RoomUpdateError, RoomUpdateException, SetMemberBanResultMap, StringEventID, StringRoomID, StringUserID, Task, applyPolicyRevisionToSetMembership, describeConsequenceProvider, isError } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "./commands/interface-manager/JSXFactory";
 import { DocumentNode } from "./commands/interface-manager/DeadDocument";
 import { printActionResult } from "./models/RoomUpdateError";
 import { Draupnir } from "./Draupnir";
+import { renderRoomPill } from "./commands/interface-manager/MatrixHelpRenderer";
 
 interface ProviderContext {
     client: MatrixSendClient;
@@ -94,6 +95,32 @@ const consequenceForUserInRoom: BasicConsequenceProvider['consequenceForUserInRo
     return banUser(this.client, protection, roomID, userID, reason);
 }
 
+/**
+ * This is an accompniment to `renderSetMembershipbans.
+ * Something more generic should be made, probably for RoomUpdateError and we
+ * make sure the ban consequence returns RoomUpdateError's.
+ */
+function renderRoomOutcome(roomID: StringRoomID, result: ActionResult<void>): DocumentNode {
+    return <fragment>
+        <details>
+            <summary>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {result.isOkay ? 'okay' : 'failed'}</summary>
+            {result.match(() => <fragment></fragment>, (error) => <p>
+                There was an unexpected error when processing this ban:<br />
+                {error.message}<br />
+                {error instanceof ActionException
+                    ? <p>
+                        Details can be found by providing the reference <code>{error.uuid}</code>
+                        to an administrator.
+                    </p>
+                    : <fragment></fragment>}
+            </p>)}
+        </details>
+    </fragment>
+}
+
+// TODO: Why do we only have StringRoomID's in the map?
+// TODO: How do we make a common renderer for ActionResults?
+//       so that failures are shown consistently?
 function renderSetMembershipBans(title: DocumentNode, map: SetMemberBanResultMap): DocumentNode {
     return <fragment>
         {title},
@@ -101,8 +128,8 @@ function renderSetMembershipBans(title: DocumentNode, map: SetMemberBanResultMap
             [...map.entries()].map(([userID, roomResults]) => {
                 return <details>
                     <summary>{userID} will be banned from {roomResults.size} rooms.</summary>
-                    <ul>{[...roomResults.entries()].map((roomID) => {
-                    return <li>{roomID}</li>
+                    <ul>{[...roomResults.entries()].map(([roomID, outcome]) => {
+                    return <li>{renderRoomOutcome(roomID, outcome)}</li>
                 })}</ul>
                 </details>
             })
