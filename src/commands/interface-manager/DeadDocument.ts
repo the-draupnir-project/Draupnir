@@ -46,6 +46,10 @@ export interface LeafNode extends AbstractNode {
     readonly leafNode: true,
 }
 
+// TODO: https://www.typescriptlang.org/docs/handbook/jsx.html#intrinsic-elements
+// we should figure out how to type not only the attributes but also importantly
+// the result of embedded expressions
+
 // These are NOT necessarily HTML tags.
 export enum NodeTag {
     TextNode = 'text',
