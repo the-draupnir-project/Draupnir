@@ -8,8 +8,8 @@
   "license": "AFL-3.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
-    "postbuild": "yarn remove-tests-from-lib && yarn describe-version",
+    "build": "tsc --project test/tsconfig.json && tsc > /dev/null 2>&1",
+    "postbuild": "yarn describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
     "lint": "eslint ./**/*.ts",
