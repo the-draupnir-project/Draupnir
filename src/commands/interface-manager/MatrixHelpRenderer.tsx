@@ -10,7 +10,7 @@ import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionException, ActionResult, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionException, ActionResult, MatrixRoomReference, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -157,4 +157,8 @@ function renderCommandException(command: InterfaceCommand<BaseFunction>, error: 
 export function renderMentionPill(mxid: string, displayName: string): DocumentNode {
     const url = `https://matrix.to/#/${mxid}`;
     return <a href={url}>{displayName}</a>
+}
+
+export function renderRoomPill(room: MatrixRoomReference): DocumentNode {
+    return <a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a>
 }
