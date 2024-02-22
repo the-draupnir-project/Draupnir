@@ -6,7 +6,6 @@
 import { ActionResult, ClientsInRoomMap, MatrixRoomID, Ok, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { ClientCapabilityFactory, ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DraupnirClientRooms } from "./DraupnirClientRooms";
 import { IConfig } from "../config";
 import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
 
@@ -25,15 +24,13 @@ export class DraupnirFactory {
         const policyRoomManager = await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
         const roomMembershipManager = await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
         const client = await this.clientProvider(clientUserID);
-        const clientRooms = await DraupnirClientRooms.makeClientRooms(
-            roomStateManager,
+        const clientRooms = await this.clientsInRoomMap.makeClientRooms(
+            clientUserID,
             async () => joinedRoomsSafe(client),
-            clientUserID
         );
         if (isError(clientRooms)) {
             return clientRooms;
         }
-        this.clientsInRoomMap.addClientRooms(clientRooms.ok);
         const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(clientUserID, client);
         const protectedRoomsSet = await makeProtectedRoomsSet(
             managementRoom,

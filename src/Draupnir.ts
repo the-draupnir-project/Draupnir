@@ -102,7 +102,6 @@ export class Draupnir implements Client {
         if (config.pollReports) {
             this.reportPoller = new ReportPoller(this, this.reportManager);
         }
-        this.clientRooms.on('timeline', this.timelineEventListener);
 
         this.commandContext = {
             draupnir: this, roomID: this.managementRoomID, client: this.client, reactionHandler: this.reactionHandler, clientPlatform: this.clientPlatform
@@ -283,8 +282,13 @@ export class Draupnir implements Client {
         }
     }
 
+    /**
+     * Start responding to events.
+     * This will not start the appservice from listening and responding
+     * to events. Nor will it start any syncing client.
+     */
     public async start(): Promise<void> {
-        // FIXME: This method needs to be removed it probably won't be called at all.
+        this.clientRooms.on('timeline', this.timelineEventListener);
         if (this.reportPoller) {
             const reportPollSetting = await ReportPoller.getReportPollSetting(
                 this.client,
@@ -292,6 +296,11 @@ export class Draupnir implements Client {
             );
             this.reportPoller.start(reportPollSetting);
         }
+    }
+
+    public stop(): void {
+        this.clientRooms.off('timeline', this.timelineEventListener);
+        this.reportPoller?.stop()
     }
 
     public createRoomReference(roomID: StringRoomID): MatrixRoomID {
