@@ -30,9 +30,8 @@ import { LogService, UserID } from "matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
 import { htmlEscape } from "../utils";
 import { JSDOM } from 'jsdom';
-import { EventEmitter } from 'events';
 import { Draupnir } from "../Draupnir";
-import { ReactionContent, RoomEvent, StringEventID, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
+import { ReactionContent, RoomEvent, StringEventID, StringRoomID, StringUserID, Task, Value, isError } from "matrix-protection-suite";
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -86,10 +85,9 @@ enum Kind {
 /**
  * A class designed to respond to abuse reports.
  */
-export class ReportManager extends EventEmitter {
+export class ReportManager {
     private displayManager: DisplayManager;
     constructor(public draupnir: Draupnir) {
-        super();
         this.displayManager = new DisplayManager(this);
     }
 
@@ -117,7 +115,13 @@ export class ReportManager extends EventEmitter {
      * @param reason A reason provided by the reporter.
      */
     public async handleServerAbuseReport({ roomID, reporterId, event, reason }: { roomID: StringRoomID, reporterId: string, event: RoomEvent, reason?: string }) {
-        this.emit("report.new", { roomID: roomID, reporterId: reporterId, event: event, reason: reason });
+        this.draupnir.handleEventReport({
+            event_id: event.event_id,
+            room_id: roomID,
+            sender: reporterId as StringUserID,
+            event: event,
+            reason: reason
+        })
         if (this.draupnir.config.displayReports) {
             return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, reason, moderationroomID: this.draupnir.managementRoomID });
         }
