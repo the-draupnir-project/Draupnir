@@ -38,6 +38,7 @@ export const mochaHooks = {
             this.timeout(10000)
             this.apis?.stop();
             draupnirClient()?.stop();
+            this.draupnir?.stop();
 
             // remove alias from management room and leave it.
             if (this.draupnir !== undefined) {

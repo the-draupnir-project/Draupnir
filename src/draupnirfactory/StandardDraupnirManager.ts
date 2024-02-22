@@ -105,7 +105,7 @@ export class StandardDraupnirManager {
         if (draupnir === undefined) {
             throw new TypeError(`Trying to start a draupnir that hasn't been created ${clientUserID}`);
         }
-        this.clientsInRooms.addClientRooms(draupnir.clientRooms);
+        draupnir.start();
         this.listeningDraupnirs.set(clientUserID, draupnir);
         this.readyDraupnirs.delete(clientUserID);
     }
@@ -117,7 +117,7 @@ export class StandardDraupnirManager {
         if (draupnir === undefined) {
             return;
         } else {
-            this.clientsInRooms.removeClientRooms(draupnir.clientRooms);
+            draupnir.stop();
             this.listeningDraupnirs.delete(clientUserID);
             this.readyDraupnirs.set(clientUserID, draupnir);
         }
