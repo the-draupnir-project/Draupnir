@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Client, ClientPlatform, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -135,7 +135,7 @@ export class Draupnir implements Client {
         policyRoomManager: PolicyRoomManager,
         roomMembershipManager: RoomMembershipManager,
         config: IConfig
-    ): Promise<Draupnir> {
+    ): Promise<ActionResult<Draupnir>> {
         const draupnir = new Draupnir(
             client,
             clientUserID,
@@ -160,7 +160,7 @@ export class Draupnir implements Client {
             )
         );
         if (isError(loadResult)) {
-            throw loadResult.error;
+            return loadResult;
         }
         // we need to make sure that we are protecting the management room so we
         // have immediate access to its membership (for accepting invitations).
@@ -168,9 +168,9 @@ export class Draupnir implements Client {
             managementRoom
         );
         if (isError(managementRoomProtectResult)) {
-            throw managementRoomProtectResult.error;
+            return managementRoomProtectResult;
         }
-        return draupnir;
+        return Ok(draupnir);
     }
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {

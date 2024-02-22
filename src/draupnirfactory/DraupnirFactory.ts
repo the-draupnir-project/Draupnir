@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { ActionResult, ClientsInRoomMap, MatrixRoomID, Ok, StringUserID, isError } from "matrix-protection-suite";
+import { ActionResult, ClientsInRoomMap, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { ClientCapabilityFactory, ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
@@ -44,7 +44,7 @@ export class DraupnirFactory {
         if (isError(protectedRoomsSet)) {
             return protectedRoomsSet;
         }
-        return Ok(await Draupnir.makeDraupnirBot(
+        return await Draupnir.makeDraupnirBot(
             client,
             clientUserID,
             clientPlatform,
@@ -55,6 +55,6 @@ export class DraupnirFactory {
             policyRoomManager,
             roomMembershipManager,
             config
-        ))
+        );
     }
 }
