@@ -55,7 +55,6 @@ describe("Test: Reporting abuse", async () => {
 
             console.log("Test: Reporting abuse - send messages");
             // Exchange a few messages.
-            let goodText = `GOOD: ${Math.random()}`; // Will NOT be reported.
             let badText = `BAD: ${Math.random()}`;   // Will be reported as abuse.
             let badText2 = `BAD: ${Math.random()}`;   // Will be reported as abuse.
             let badText3 = `<b>BAD</b>: ${Math.random()}`; // Will be reported as abuse.
@@ -159,7 +158,7 @@ describe("Test: Reporting abuse", async () => {
                         let report = event.content[ABUSE_REPORT_KEY];
                         let body = event.content.body as string;
                         let matches: Map<string, RegExpMatchArray> | null = new Map();
-                        for (let key of Object.keys(REPORT_NOTICE_REGEXPS)) {
+                        for (let key of Object.keys(REPORT_NOTICE_REGEXPS) as (keyof typeof REPORT_NOTICE_REGEXPS)[]) {
                             let match = body.match(REPORT_NOTICE_REGEXPS[key]);
                             if (match) {
                                 console.debug("We have a match", key, REPORT_NOTICE_REGEXPS[key], match.groups);
@@ -251,8 +250,6 @@ describe("Test: Reporting abuse", async () => {
         // Create a few users and a room.
         let goodUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reacting-abuse-good-user" }});
         let badUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reacting-abuse-bad-user" }});
-        let goodUserId = await goodUser.getUserId();
-        let badUserId = await badUser.getUserId();
 
         let roomId = await moderatorUser.createRoom({ invite: [await badUser.getUserId()] });
         await moderatorUser.inviteUser(await goodUser.getUserId(), roomId);
@@ -266,22 +263,11 @@ describe("Test: Reporting abuse", async () => {
 
         console.log("Test: Reporting abuse - send messages");
         // Exchange a few messages.
-        let goodText = `GOOD: ${Math.random()}`; // Will NOT be reported.
         let badText = `BAD: ${Math.random()}`;   // Will be reported as abuse.
-        let goodEventId = await goodUser.sendText(roomId, goodText);
         let badEventId = await badUser.sendText(roomId, badText);
-        let goodEventId2 = await goodUser.sendText(roomId, goodText);
 
         console.log("Test: Reporting abuse - send reports");
 
-        // Time to report.
-        let reportToFind = {
-            reporterId: goodUserId,
-            accusedId: badUserId,
-            eventId: badEventId,
-            text: badText,
-            comment: null,
-        };
         try {
             await goodUser.doRequest("POST", `/_matrix/client/r0/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`);
         } catch (e) {
