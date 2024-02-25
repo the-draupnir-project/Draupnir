@@ -1,7 +1,7 @@
 import { MatrixClient } from "matrix-bot-sdk";
 import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
-import { ActionResult, DEFAULT_CONSEQUENCE_PROVIDER, MatrixRoomReference, Ok, Protection, ProtectionDescription, StandardProtectionSettings, StringRoomID, findConsequenceProvider } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomReference, Ok, Protection, ProtectionDescription, StandardProtectionSettings, StringRoomID } from "matrix-protection-suite";
 
 describe("Test: Report polling", function() {
     let client: MatrixClient;
@@ -23,7 +23,9 @@ describe("Test: Report polling", function() {
             const testProtectionDescription: ProtectionDescription = {
                 name: "jYvufI",
                 description: "A test protection",
-                factory: function (description, consequenceProvider, protectedRoomsSet, context, settings): ActionResult<Protection> {
+                capabilities: {},
+                defaultCapabilities: {},
+                factory: function (description, protectedRoomsSet, context, capabilities, settings): ActionResult<Protection<ProtectionDescription>> {
                     return Ok({
                         handleEventReport(report) {
                             if (report.reason === "x5h1Je") {
@@ -41,11 +43,7 @@ describe("Test: Report polling", function() {
                     {}
                 )
             }
-            const defaultConsequenceProvider = findConsequenceProvider(DEFAULT_CONSEQUENCE_PROVIDER);
-            if (defaultConsequenceProvider === undefined) {
-                throw new TypeError(`Default consequence provider should be defined mate`);
-            }
-            await draupnir.protectedRoomsSet.protections.addProtection(testProtectionDescription, defaultConsequenceProvider, draupnir.protectedRoomsSet, draupnir);
+            await draupnir.protectedRoomsSet.protections.addProtection(testProtectionDescription, {}, draupnir.protectedRoomsSet, draupnir);
             await client.doRequest(
                 "POST",
                 `/_matrix/client/r0/rooms/${encodeURIComponent(protectedRoomId)}/report/${encodeURIComponent(eventId)}`, "", {

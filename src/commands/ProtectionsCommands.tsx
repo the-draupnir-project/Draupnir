@@ -27,7 +27,7 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { KeywordsDescription, ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
-import { ActionError, ActionResult, Ok, Protection, ProtectionDescription, ProtectionSetting, ProtectionSettings, RoomEvent, StringRoomID, UnknownSettings, findConsequenceProvider, findProtection, getAllProtections, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, Ok, Protection, ProtectionDescription, ProtectionSetting, ProtectionSettings, RoomEvent, StringRoomID, UnknownSettings, findProtection, getAllProtections, isError } from "matrix-protection-suite";
 import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
@@ -60,16 +60,13 @@ defineInterfaceCommand({
         if (protectionDescription === undefined) {
             return ActionError.Result(`Couldn't find a protection named ${protectionName}`);
         }
-        const consequenceProviderName = keywords.getKeyword<string>("consequence-provider");
-        const consequenceProviderDescription = consequenceProviderName !== undefined
-        ? Ok(findConsequenceProvider(consequenceProviderName))
-        : await this.draupnir.protectedRoomsSet.protections.getConsequenceProviderDescriptionForProtection(protectionDescription);
-        if (isError(consequenceProviderDescription) || consequenceProviderDescription.ok === undefined) {
-            return ActionError.Result(`Couldn't find a consequence provider named ${consequenceProviderName}`);
+        const capabilityProviderSet = await this.draupnir.protectedRoomsSet.protections.getCapabilityProviderSet(protectionDescription);
+        if (isError(capabilityProviderSet)) {
+            return capabilityProviderSet.elaborate(`Couldn't load the capability provider set for the protection ${protectionName}`);
         }
         return await this.draupnir.protectedRoomsSet.protections.addProtection(
             protectionDescription,
-            consequenceProviderDescription.ok,
+            capabilityProviderSet.ok,
             this.draupnir.protectedRoomsSet,
             this.draupnir
         )
@@ -329,7 +326,7 @@ async function changeSettingsForCommands<TSettings extends UnknownSettings<strin
 interface ProtectionsSummary {
     readonly description: ProtectionDescription,
     readonly isEnabled: boolean,
-    readonly protection?: Protection
+    readonly protection?: Protection<ProtectionDescription>
 }
 
 defineInterfaceCommand({

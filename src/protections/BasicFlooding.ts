@@ -28,7 +28,7 @@ limitations under the License.
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
 import { LogLevel } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, ProtectionDescription, RoomEvent, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringRoomID, StringUserID, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, EventConsequences, Logger, MatrixRoomID, Ok, ProtectedRoomsSet, ProtectionDescription, RoomEvent, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringRoomID, StringUserID, UserConsequences, describeProtection, isError } from "matrix-protection-suite";
 
 const log = new Logger('BasicFloodingProtection');
 
@@ -40,13 +40,28 @@ type BasicFloodingProtectionSettings = {
 export const DEFAULT_MAX_PER_MINUTE = 10;
 const TIMESTAMP_THRESHOLD = 30000; // 30s out of phase
 
-describeProtection<Draupnir, BasicFloodingProtectionSettings>({
+export type BasicFloodingProtectionCapabilities = {
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+};
+
+export type BasicFloodingProtectionDescription = ProtectionDescription<Draupnir, BasicFloodingProtectionSettings, BasicFloodingProtectionCapabilities>;
+
+describeProtection<BasicFloodingProtectionCapabilities, Draupnir, BasicFloodingProtectionSettings>({
     name: 'BasicFloodingProtection',
     description:
     "If a user posts more than " + DEFAULT_MAX_PER_MINUTE + " messages in 60s they'll be \
     banned for spam. This does not publish the ban to any of your ban lists.\
     This is a legacy protection from Mjolnir and contains bugs.",
-    factory: (description, consequenceProvider, protectedRoomsSet, draupnir, rawSettings) => {
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: (description, protectedRoomsSet, draupnir, capabilities, rawSettings) => {
         const parsedSettings = description.protectionSettings.parseSettings(rawSettings);
         if (isError(parsedSettings)) {
             return parsedSettings;
@@ -54,7 +69,7 @@ describeProtection<Draupnir, BasicFloodingProtectionSettings>({
         return Ok(
             new BasicFloodingProtection(
               description,
-              consequenceProvider,
+              capabilities,
               protectedRoomsSet,
               draupnir,
               parsedSettings.ok
@@ -71,25 +86,28 @@ describeProtection<Draupnir, BasicFloodingProtectionSettings>({
   });
 
 
-export class BasicFloodingProtection extends AbstractProtection implements DraupnirProtection {
+export class BasicFloodingProtection extends AbstractProtection<BasicFloodingProtectionDescription> implements DraupnirProtection<BasicFloodingProtectionDescription> {
 
     private lastEvents: { [roomID: StringRoomID]: { [userID: StringUserID]: { originServerTs: number, eventID: StringEventID }[] } } = {};
     private recentlyBanned: string[] = [];
 
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
     public constructor(
-        description: ProtectionDescription,
-        consequenceProvider: BasicConsequenceProvider,
+        description: BasicFloodingProtectionDescription,
+        capabilities: BasicFloodingProtectionCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         private readonly settings: BasicFloodingProtectionSettings,
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
         )
+        this.userConsequences = capabilities.userConsequences;
     }
 
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
@@ -116,7 +134,7 @@ export class BasicFloodingProtection extends AbstractProtection implements Draup
         if (messageCount >= this.settings.maxPerMinute) {
             await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Banning ${event['sender']} in ${room.toRoomIDOrAlias()} for flooding (${messageCount} messages in the last minute)`, room.toRoomIDOrAlias());
             if (!this.draupnir.config.noop) {
-                await this.consequenceProvider.consequenceForUserInRoom(this.description, room.toRoomIDOrAlias(), event['sender'], 'spam');
+                await this.userConsequences.consequenceForUserInRoom(room.toRoomIDOrAlias(), event['sender'], 'spam');
             } else {
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to ban ${event['sender']} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`, room.toRoomIDOrAlias());
             }
@@ -130,7 +148,7 @@ export class BasicFloodingProtection extends AbstractProtection implements Draup
             // Redact all the things the user said too
             if (!this.draupnir.config.noop) {
                 for (const eventID of forUser.map(e => e.eventID)) {
-                    await this.consequenceProvider.consequenceForEvent(this.description, room.toRoomIDOrAlias(), eventID, 'spam');
+                    await this.eventConsequences.consequenceForEvent(room.toRoomIDOrAlias(), eventID, 'spam');
                 }
             } else {
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "BasicFlooding", `Tried to redact messages for ${event['sender']} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`, room.toRoomIDOrAlias());
