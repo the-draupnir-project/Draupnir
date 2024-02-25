@@ -26,19 +26,31 @@ limitations under the License.
  */
 
 import { LogLevel } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, EventConsequences, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 type MessageIsMediaProtectionSettings = {};
 
-describeProtection<Draupnir, MessageIsMediaProtectionSettings>({
+type MessageIsMediaCapabilities = {
+    eventConsequences: EventConsequences;
+}
+
+type MessageIsMediaProtectionDescription = ProtectionDescription<Draupnir, MessageIsMediaProtectionSettings, MessageIsMediaCapabilities>;
+
+describeProtection<MessageIsMediaCapabilities, Draupnir, MessageIsMediaProtectionSettings>({
     name: 'MessageIsMediaProtection',
     description: "If a user posts an image or video, that message will be redacted. No bans are issued.",
-    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+    capabilityInterfaces: {
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
             new MessageIsMediaProtection(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir
             )
@@ -46,20 +58,22 @@ describeProtection<Draupnir, MessageIsMediaProtectionSettings>({
     }
 })
 
-export class MessageIsMediaProtection extends AbstractProtection implements Protection {
+export class MessageIsMediaProtection extends AbstractProtection<MessageIsMediaProtectionDescription> implements Protection<MessageIsMediaProtectionDescription> {
+    private readonly eventConsequences: EventConsequences;
     constructor(
-        description: ProtectionDescription<Draupnir, MessageIsMediaProtectionSettings>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: MessageIsMediaProtectionDescription,
+        capabilities: MessageIsMediaCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
         );
+        this.eventConsequences = this.eventConsequences;
     }
 
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
@@ -75,7 +89,7 @@ export class MessageIsMediaProtection extends AbstractProtection implements Prot
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Redacting event from ${event['sender']} for posting an image/video. ${Permalinks.forEvent(roomID, event['event_id'], [serverName(this.draupnir.clientUserID)])}`);
                 // Redact the event
                 if (this.draupnir.config.noop) {
-                    await this.draupnir.client.redactEvent(roomID, event['event_id'], "Images/videos are not permitted here");
+                    await this.eventConsequences.consequenceForEvent(roomID, event['event_id'], "Images/videos are not permitted here");
                 } else {
                     await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsMedia", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }

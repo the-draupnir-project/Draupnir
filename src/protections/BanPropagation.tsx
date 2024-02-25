@@ -33,7 +33,7 @@ import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentM
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID, UnknownSettings, UserConsequences } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
@@ -132,15 +132,29 @@ async function promptUnbanPropagation(
     await draupnir.reactionHandler.addReactionsToEvent(draupnir.client, draupnir.managementRoomID, promptEventId, reactionMap);
 }
 
-export class BanPropagationProtection extends AbstractProtection implements DraupnirProtection {
+export type BanPropagationProtectionCapabilities = {
+    userConsequences: UserConsequences
+};
 
+export type BanPropagationProtectionCapabilitiesDescription = ProtectionDescription<
+    Draupnir,
+    UnknownSettings<string>,
+    BanPropagationProtectionCapabilities
+>;
+
+export class BanPropagationProtection
+    extends AbstractProtection<BanPropagationProtectionCapabilitiesDescription>
+    implements DraupnirProtection<BanPropagationProtectionCapabilitiesDescription> {
+
+    private readonly userConsequences: UserConsequences;
     constructor(
-        description: ProtectionDescription,
-        consequenceProvider: BasicConsequenceProvider,
+        description: BanPropagationProtectionCapabilitiesDescription,
+        capabilities: BanPropagationProtectionCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
       ) {
-        super(description, consequenceProvider, protectedRoomsSet, [], []);
+        super(description, capabilities, protectedRoomsSet, [], []);
+        this.userConsequences = capabilities.userConsequences;
         // FIXME: These listeners are gonna leak all over if we don't have a
         // hook for stopping protections.
         this.draupnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, this.banReactionListener.bind(this));
@@ -263,10 +277,9 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
                     { title: `There were errors unbanning ${context.target} from all lists.`}
                 ));
             } else {
-                this.consequenceProvider.unbanUserFromRoomsInSet(
-                    this.description,
+                this.userConsequences.unbanUserFromRoomSet(
                     context.target as StringUserID,
-                    this.protectedRoomsSet
+                    '<no reason supplied>'
                 )
             }
         } else {
@@ -275,17 +288,23 @@ export class BanPropagationProtection extends AbstractProtection implements Drau
     }
 }
 
-describeProtection<Draupnir>({
+describeProtection<BanPropagationProtectionCapabilities, Draupnir>({
     name: 'BanPropagationProtection',
     description:
     "When you ban a user in any protected room with a client, this protection\
     will turn the room level ban into a policy for a policy list of your choice.\
     This will then allow the bot to ban the user from all of your rooms.",
-    factory: (decription, consequenceProvider, protectedRoomsSet, draupnir, _settings) =>
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences'
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+    },
+    factory: (decription, protectedRoomsSet, draupnir, capabilities, _settings) =>
       Ok(
         new BanPropagationProtection(
           decription,
-          consequenceProvider,
+          capabilities,
           protectedRoomsSet,
           draupnir
         )

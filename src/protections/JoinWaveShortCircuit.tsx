@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, CapabilitySet, Logger, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, ProtectionDescription, RoomMembershipRevision, SafeIntegerProtectionSetting, StandardProtectionSettings, StringRoomID, describeProtection, isError } from "matrix-protection-suite";
 import {LogLevel} from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
@@ -41,10 +41,17 @@ type JoinWaveShortCircuitProtectionSettings = {
     timescaleMinutes: number,
 }
 
-describeProtection<Draupnir, JoinWaveShortCircuitProtectionSettings>({
+// TODO: Add join rule capability.
+type JoinWaveShortCircuitProtectionCapabilities = {}
+
+type JoinWaveShortCircuitProtectionDescription = ProtectionDescription<Draupnir, JoinWaveShortCircuitProtectionSettings, JoinWaveShortCircuitProtectionCapabilities>;
+
+describeProtection<JoinWaveShortCircuitProtectionCapabilities, Draupnir, JoinWaveShortCircuitProtectionSettings>({
     name: 'JoinWaveShortCircuitProtection',
     description: "If X amount of users join in Y time, set the room to invite-only.",
-    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, settings) {
+    capabilityInterfaces: {},
+    defaultCapabilities: {},
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, settings) {
         const parsedSettings = description.protectionSettings.parseSettings(settings);
         if (isError(parsedSettings)) {
             return parsedSettings
@@ -52,7 +59,7 @@ describeProtection<Draupnir, JoinWaveShortCircuitProtectionSettings>({
         return Ok(
             new JoinWaveShortCircuitProtection(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir,
                 parsedSettings.ok
@@ -73,7 +80,7 @@ describeProtection<Draupnir, JoinWaveShortCircuitProtectionSettings>({
     })
 })
 
-export class JoinWaveShortCircuitProtection extends AbstractProtection implements DraupnirProtection {
+export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveShortCircuitProtectionDescription> implements DraupnirProtection<JoinWaveShortCircuitProtectionDescription> {
     requiredStatePermissions = ["m.room.join_rules"]
 
     private joinBuckets: {
@@ -84,15 +91,15 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection implement
     } = {};
 
     constructor(
-        description: ProtectionDescription<Draupnir, JoinWaveShortCircuitProtectionSettings>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: JoinWaveShortCircuitProtectionDescription,
+        capabilities: CapabilitySet,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         public readonly settings: JoinWaveShortCircuitProtectionSettings
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             ["m.room.join_rules"],
             []

@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, EventReport, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringUserID, StringUserIDSetProtectionSettings, describeProtection, isError } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, EventConsequences, EventReport, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringUserID, StringUserIDSetProtectionSettings, UserConsequences, describeProtection, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
@@ -37,10 +37,25 @@ type TrustedReportersProtectionSettings = {
     banThreshold: number,
 }
 
-describeProtection<Draupnir, TrustedReportersProtectionSettings>({
+type TrustedReportersCapabilities = {
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+}
+
+type TrustedReportersDescription = ProtectionDescription<Draupnir, TrustedReportersProtectionSettings, TrustedReportersCapabilities>;
+
+describeProtection<TrustedReportersCapabilities, Draupnir, TrustedReportersProtectionSettings>({
     name: 'TrustedReporters',
     description: "Count reports from trusted reporters and take a configured action",
-    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, rawSettings) {
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, rawSettings) {
         const parsedSettings = description.protectionSettings.parseSettings(rawSettings);
         if (isError(parsedSettings)) {
             return parsedSettings;
@@ -48,7 +63,7 @@ describeProtection<Draupnir, TrustedReportersProtectionSettings>({
         return Ok(
             new TrustedReporters(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir,
                 parsedSettings.ok
@@ -76,23 +91,27 @@ describeProtection<Draupnir, TrustedReportersProtectionSettings>({
  * Hold a list of users trusted to make reports, and enact consequences on
  * events that surpass configured report count thresholds
  */
-export class TrustedReporters extends AbstractProtection implements Protection  {
+export class TrustedReporters extends AbstractProtection<TrustedReportersDescription> implements Protection<TrustedReportersDescription> {
     private recentReported = new Map<StringEventID, Set<StringUserID>>();
 
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
     public constructor(
-        description: ProtectionDescription<Draupnir, TrustedReportersProtectionSettings>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: TrustedReportersDescription,
+        capabilities: TrustedReportersCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
         public readonly settings: TrustedReportersProtectionSettings
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
         );
+        this.userConsequences = capabilities.userConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
 
     public async handleEventReport(report: EventReport): Promise<ActionResult<void>> {
@@ -122,11 +141,11 @@ export class TrustedReporters extends AbstractProtection implements Protection  
         }
         if (reporters.size === this.settings.redactThreshold) {
             met.push("redact");
-            await this.consequenceProvider.consequenceForEvent(this.description, report.room_id, report.event_id, "abuse detected");
+            await this.eventConsequences.consequenceForEvent(report.room_id, report.event_id, "abuse detected");
         }
         if (reporters.size === this.settings.banThreshold) {
             met.push("ban");
-            await this.consequenceProvider.consequenceForEvent(this.description, report.room_id, report.event_id, "abuse detected");
+            await this.userConsequences.consequenceForUserInRoom(report.room_id, report.event.sender, "abuse detected");
         }
 
         if (met.length > 0) {

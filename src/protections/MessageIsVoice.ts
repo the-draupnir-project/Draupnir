@@ -26,17 +26,29 @@ limitations under the License.
  */
 
 import { LogLevel} from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, CapabilitySet, EventConsequences, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
-describeProtection<Draupnir>({
+type MessageIsVoiceCapabilities = {
+    eventConsequences: EventConsequences;
+};
+
+type MessageIsVoiceDescription = ProtectionDescription<Draupnir, {}, MessageIsVoiceCapabilities>;
+
+describeProtection<MessageIsVoiceCapabilities, Draupnir, {}>({
     name: 'MessageIsVoiceProtection',
     description: 'If a user posts a voice message, that message will be redacted',
-    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+    capabilityInterfaces: {
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        eventConsequences: 'StandardEventConsequences'
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
                 new MessageIsVoiceProtection(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir
             )
@@ -44,16 +56,17 @@ describeProtection<Draupnir>({
     }
 })
 
-export class MessageIsVoiceProtection extends AbstractProtection implements Protection {
+export class MessageIsVoiceProtection extends AbstractProtection<MessageIsVoiceDescription> implements Protection<MessageIsVoiceDescription> {
+    private readonly eventConsequences: EventConsequences;
     constructor(
-        description: ProtectionDescription<Draupnir>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: MessageIsVoiceDescription,
+        capabilities: CapabilitySet,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
@@ -69,7 +82,7 @@ export class MessageIsVoiceProtection extends AbstractProtection implements Prot
             await this.draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "MessageIsVoice", `Redacting event from ${event['sender']} for posting a voice message. ${Permalinks.forEvent(roomID, event['event_id'], [serverName(this.draupnir.clientUserID)])}`);
             // Redact the event
             if (!this.draupnir.config.noop) {
-                return await this.consequenceProvider.consequenceForEvent(this.description, roomID, event['event_id'], "Voice messages are not permitted here");
+                return await this.eventConsequences.consequenceForEvent(roomID, event['event_id'], "Voice messages are not permitted here");
             } else {
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsVoice", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 return Ok(undefined);

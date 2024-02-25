@@ -25,20 +25,37 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, Logger, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, EventConsequences, Logger, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, UserConsequences, Value, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 const log = new Logger('WordList');
 
-describeProtection<Draupnir>({
+type WordListCapabilities = {
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+};
+
+type WordListSettings = {};
+
+type WordListDescription = ProtectionDescription<Draupnir, WordListSettings, WordListCapabilities>;
+
+describeProtection<WordListCapabilities, Draupnir, WordListSettings>({
     name: 'WordListProteciton',
     description: "If a user posts a monitored word a set amount of time after joining, they\
     will be banned from that room.  This will not publish the ban to a ban list.",
-    factory: function(description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
             new WordListProtection(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir
             )
@@ -46,23 +63,27 @@ describeProtection<Draupnir>({
     }
 });
 
-export class WordListProtection extends AbstractProtection implements Protection {
+export class WordListProtection extends AbstractProtection<WordListDescription> implements Protection<WordListDescription> {
     private justJoined: { [roomID: StringRoomID]: { [username: StringUserID]: Date} } = {};
     private badWords?: RegExp;
 
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
     constructor(
-        description: ProtectionDescription<Draupnir>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: WordListDescription,
+        capabilities: WordListCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
         );
+        this.userConsequences = capabilities.userConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
         const roomID = revision.room.toRoomIDOrAlias();
@@ -130,8 +151,8 @@ export class WordListProtection extends AbstractProtection implements Protection
             const match = this.badWords!.exec(message ?? '');
             if (match) {
                 const reason = `bad word: ${match[0]}`;
-                await this.consequenceProvider.consequenceForUserInRoom(this.description, roomID, event.sender, reason);
-                await this.consequenceProvider.consequenceForEvent(this.description, roomID, event.event_id, reason);
+                await this.userConsequences.consequenceForUserInRoom(roomID, event.sender, reason);
+                await this.eventConsequences.consequenceForEvent(roomID, event.event_id, reason);
             }
         }
         return Ok(undefined);

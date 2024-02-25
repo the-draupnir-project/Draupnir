@@ -26,20 +26,35 @@ limitations under the License.
  */
 
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { AbstractProtection, ActionResult, BasicConsequenceProvider, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, Value, describeProtection } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, EventConsequences, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, UserConsequences, Value, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
-type FirstMessageIsImageProtectionSettings = {}
+type FirstMessageIsImageProtectionSettings = {};
 
-describeProtection<Draupnir, FirstMessageIsImageProtectionSettings>({
+export type FirstMessageIsImageProtectionCapabilities ={
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+};
+
+export type FirstMessageIsImageProtectionDescription = ProtectionDescription<Draupnir, FirstMessageIsImageProtectionSettings, FirstMessageIsImageProtectionCapabilities>
+
+describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir, FirstMessageIsImageProtectionSettings>({
     name: 'FirstMessageIsImageProtection',
     description: "If the first thing a user does after joining is to post an image or video, \
     they'll be banned for spam. This does not publish the ban to any of your ban lists.",
-    factory: function (description, consequenceProvider, protectedRoomsSet, draupnir, _settings) {
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function (description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
             new FirstMessageIsImageProtection(
                 description,
-                consequenceProvider,
+                capabilities,
                 protectedRoomsSet,
                 draupnir
             )
@@ -47,24 +62,28 @@ describeProtection<Draupnir, FirstMessageIsImageProtectionSettings>({
     }
 })
 
-export class FirstMessageIsImageProtection extends AbstractProtection implements Protection {
+export class FirstMessageIsImageProtection extends AbstractProtection<FirstMessageIsImageProtectionDescription> implements Protection<FirstMessageIsImageProtectionDescription> {
 
     private justJoined: { [roomID: StringRoomID]: StringUserID[] } = {};
     private recentlyBanned: StringUserID[] = [];
 
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
     constructor(
-        description: ProtectionDescription<Draupnir, FirstMessageIsImageProtectionSettings>,
-        consequenceProvider: BasicConsequenceProvider,
+        description: FirstMessageIsImageProtectionDescription,
+        capabilities: FirstMessageIsImageProtectionCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
         super(
             description,
-            consequenceProvider,
+            capabilities,
             protectedRoomsSet,
             [],
             []
         );
+        this.userConsequences = capabilities.userConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
 
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
@@ -91,7 +110,7 @@ export class FirstMessageIsImageProtection extends AbstractProtection implements
             if (isMedia && this.justJoined[roomID].includes(event['sender'])) {
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Banning ${event['sender']} for posting an image as the first thing after joining in ${roomID}.`);
                 if (!this.draupnir.config.noop) {
-                    await this.consequenceProvider.consequenceForUserInRoom(this.description,roomID, event['sender'], 'spam');
+                    await this.userConsequences.consequenceForUserInRoom(roomID, event['sender'], 'spam');
                 } else {
                     await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to ban ${event['sender']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }
@@ -104,7 +123,7 @@ export class FirstMessageIsImageProtection extends AbstractProtection implements
 
                 // Redact the event
                 if (!this.draupnir.config.noop) {
-                    await this.draupnir.client.redactEvent(roomID, event['event_id'], "spam");
+                    await this.eventConsequences.consequenceForEvent(roomID, event['event_id'], "spam");
                 } else {
                     await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }
