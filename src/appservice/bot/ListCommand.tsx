@@ -8,7 +8,7 @@ import { MatrixSendClient } from '../../MatrixEmitter';
 import { UnstartedMjolnir } from '../MjolnirManager';
 import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
 import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
-import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
+import { AppserviceBaseExecutor, AppserviceContext } from './AppserviceCommandHandler';
 import { UserID } from 'matrix-bot-sdk';
 import { CommandError, CommandResult } from '../../commands/interface-manager/Validation';
 import { tickCrossRenderer } from '../../commands/interface-manager/MatrixHelpRenderer';
@@ -80,8 +80,8 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
             description: 'The userid of the mjolnir to restart'
         }
     ]),
-    command: async (context, _keywords, mjolnirId: UserID): Promise<CommandResult<true>> => {
-        const mjolnirManager = context.appservice.mjolnirManager;
+    command: async function (this: AppserviceContext, _keywords, mjolnirId: UserID): Promise<CommandResult<true>> {
+        const mjolnirManager = this.appservice.mjolnirManager;
         const mjolnir = mjolnirManager.findUnstartedMjolnir(mjolnirId.localpart);
         if (mjolnir?.mjolnirRecord === undefined) {
             return CommandError.Result(`We can't find the unstarted mjolnir ${mjolnirId}, is it running?`);
