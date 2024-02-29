@@ -40,6 +40,7 @@ import { renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
 import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt as makeListenerForArgumentPrompt, makeListenerForPromptDefault } from "./commands/interface-manager/MatrixPromptForAccept";
+import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
 
 const log = new Logger('Draupnir');
 
@@ -79,6 +80,8 @@ export class Draupnir implements Client {
     public readonly commandContext: Omit<DraupnirContext,'event'>;
 
     private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
+
+    public readonly capabilityMessageRenderer: RendererMessageCollector;
 
     private constructor(
         public readonly client: MatrixSendClient,
