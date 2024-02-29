@@ -13,3 +13,6 @@ import './MessageIsMedia';
 import './MessageIsVoice';
 import './TrustedReporters';
 import './WordList';
+
+// import capability renderers and glue too.
+import "../capabilities/capabilityIndex";
