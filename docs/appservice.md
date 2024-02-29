@@ -2,7 +2,7 @@ Draupnir can be run as an appservice, allowing users you trust or on your homese
 This module is currently alpha quality and is subject to rapid changes,
 it is not recommended currently and support will be limited.
 
-Usage of the [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/docs/configuring-playbook-bot-draupnir.md) role for Draupnir for all is recommended above trying to deploy Draupnir for all your self from scratch as much more support is offered when taking this route. Especially if not deviating from defaults.
+Usage of the [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/docs/configuring-playbook-bot-draupnir.md) role for Draupnir for all is recommended instead of trying to deploy Draupnir for all from scratch as much more support is offered when taking this route. Especially if not deviating from defaults.
 
 # Prerequisites
 
