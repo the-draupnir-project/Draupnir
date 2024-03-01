@@ -11,7 +11,7 @@
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { ActionResult, Capability, DescriptionMeta, Ok, Permalinks, PolicyListRevision, ResultForUserInSetMap, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import { renderFailedSingularConsequence, renderRoomSetResults } from "./CommonRenderers";
+import { renderFailedSingularConsequence, renderRoomSetResult } from "./CommonRenderers";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { Draupnir } from "../Draupnir";
 
@@ -28,7 +28,7 @@ function renderResultForUserInSetMap(usersInSetMap: ResultForUserInSetMap, {
     return <details>
     <summary><code>{description.name}</code>: {ingword} {usersInSetMap.size} {usersInSetMap.size === 1 ? 'user' : 'users'} from protected rooms.</summary>
     {[...usersInSetMap.entries()].map(([userID, roomResults]) => {
-        return renderRoomSetResults(roomResults, { summary: <fragment>{userID} will be {nnedword} from {roomResults.size} rooms.</fragment> })
+        return renderRoomSetResult(roomResults, { summary: <fragment>{userID} will be {nnedword} from {roomResults.map.size} rooms.</fragment> })
     })}
 </details>
 }

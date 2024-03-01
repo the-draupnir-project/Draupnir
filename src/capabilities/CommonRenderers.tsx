@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionError, ActionException, ActionResult, DescriptionMeta, MatrixRoomReference, StringRoomID, isOk } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionResult, DescriptionMeta, MatrixRoomReference, RoomSetResult, StringRoomID, isOk } from "matrix-protection-suite";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
@@ -78,10 +78,10 @@ export function renderRoomOutcome(roomID: StringRoomID, result: ActionResult<unk
     }
 }
 
-export function renderRoomSetResults(roomResults: Map<StringRoomID, ActionResult<void>>, { summary }: { summary: DocumentNode }): DocumentNode {
+export function renderRoomSetResult(roomResults: RoomSetResult, { summary }: { summary: DocumentNode }): DocumentNode {
     return <details>
         <summary>{summary}</summary>
-        <ul>{[...roomResults.entries()].map(([roomID, outcome]) => {
+        <ul>{[...roomResults.map.entries()].map(([roomID, outcome]) => {
         return <li>{renderRoomOutcome(roomID, outcome)}</li>
     })}</ul>
     </details>
