@@ -52,7 +52,6 @@ const log = new Logger('Draupnir');
 // And giving it to the class was a dumb easy way of doing that.
 
 export class Draupnir implements Client {
-    private readonly displayName: string;
     /**
      * This is for users who are not listed on a watchlist,
      * but have been flagged by the automatic spam detection as suispicous
@@ -204,7 +203,6 @@ export class Draupnir implements Client {
                 {
                     prefix: COMMAND_PREFIX,
                     localpart: userLocalpart(this.clientUserID),
-                    displayName: this.displayName,
                     userId: this.clientUserID,
                     additionalPrefixes: this.config.commands.additionalPrefixes,
                     allowNoPrefix: this.config.commands.allowNoPrefix,
