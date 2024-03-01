@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionResult, ClientsInRoomMap, MatrixRoomID, RoomEvent, StringRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, ClientsInRoomMap, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -121,10 +121,6 @@ export class StandardDraupnirManager {
             this.listeningDraupnirs.delete(clientUserID);
             this.readyDraupnirs.set(clientUserID, draupnir);
         }
-    }
-
-    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
-        this.clientsInRooms.handleTimelineEvent(roomID, event);
     }
 }
 
