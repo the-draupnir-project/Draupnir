@@ -104,19 +104,17 @@ export function extractCommandFromMessageBody(
     body: string,
     { prefix,
       localpart,
-      displayName,
       userId,
       additionalPrefixes,
       allowNoPrefix
     }: {
         prefix: string,
         localpart: string,
-        displayName: string,
         userId: string,
         additionalPrefixes: string[],
         allowNoPrefix: boolean
 }): string | undefined {
-    const plainPrefixes = [prefix, localpart, displayName, userId, ...additionalPrefixes];
+    const plainPrefixes = [prefix, localpart, userId, ...additionalPrefixes];
     const allPossiblePrefixes = [
         ...plainPrefixes.map(p => `!${p}`),
         ...plainPrefixes.map(p => `${p}:`),
