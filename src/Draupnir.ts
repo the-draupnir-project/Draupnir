@@ -36,11 +36,12 @@ import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReacti
 import { MatrixSendClient, SynapseAdminClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, DraupnirContext, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
-import { renderProtectionFailedToStart } from "./StandardConsequenceProvider";
 import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
 import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt as makeListenerForArgumentPrompt, makeListenerForPromptDefault } from "./commands/interface-manager/MatrixPromptForAccept";
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
+import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
+import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
 
 const log = new Logger('Draupnir');
 
@@ -125,6 +126,7 @@ export class Draupnir implements Client {
             this.commandTable,
             this.commandContext
         ));
+        this.capabilityMessageRenderer = new DraupnirRendererMessageCollector(this.client, this.managementRoomID);
     }
 
     public static async makeDraupnirBot(
