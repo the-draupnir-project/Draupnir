@@ -45,7 +45,7 @@ jobs:
       with:
         node-version: '18'
     - name: Fetch and build mx-tester (cached across runs)
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: mx-tester
         version: "0.3.3"
@@ -67,7 +67,7 @@ jobs:
       with:
         node-version: '18'
     - name: Fetch and build mx-tester (cached across runs)
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: mx-tester
         version: "0.3.3"
