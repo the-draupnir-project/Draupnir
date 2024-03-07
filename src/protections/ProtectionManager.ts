@@ -45,18 +45,6 @@ import { MatrixDataManager, RawSchemedData, SchemaMigration, SCHEMA_VERSION_KEY 
 import { Permalinks } from "../commands/interface-manager/Permalinks";
 import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
 
-const PROTECTIONS: Protection[] = [
-    new FirstMessageIsImage(),
-    new BanPropagation(),
-    new BasicFlooding(),
-    new WordList(),
-    new MessageIsVoice(),
-    new MessageIsMedia(),
-    new TrustedReporters(),
-    new DetectFederationLag(),
-    new JoinWaveShortCircuit(),
-];
-
 const ENABLED_PROTECTIONS_EVENT_TYPE = "org.matrix.mjolnir.enabled_protections";
 type EnabledProtectionsEvent = RawSchemedData & {
     enabled: string[],
@@ -66,11 +54,7 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
     protected readonly schema: SchemaMigration[] = [
         async function enableBanPropagationByDefault(input: EnabledProtectionsEvent) {
             const enabled = new Set(input.enabled);
-            const banPropagationProtection = PROTECTIONS.find(p => p.name === 'BanPropagationProtection');
-            if (banPropagationProtection === undefined) {
-                throw new TypeError("Couldn't find the ban propagation protection");
-            }
-            enabled.add(banPropagationProtection.name)
+            enabled.add("BanPropagationProtection")
             return {
                 enabled: [...enabled],
                 [SCHEMA_VERSION_KEY]: 1,
@@ -81,9 +65,14 @@ class EnabledProtectionsManager extends MatrixDataManager<EnabledProtectionsEven
     private readonly enabledProtections = new Set</* protection name */string>();
 
     constructor(
-        private readonly mjolnir: Mjolnir
+        private readonly mjolnir: Mjolnir,
+        private readonly protections: Protection[]
     ) {
         super()
+        const banPropagationProtection = this.protections.find(p => p.name === 'BanPropagationProtection');
+        if (banPropagationProtection === undefined) {
+            throw new TypeError("Couldn't find the ban propagation protection");
+        }
     }
 
     @trace
@@ -153,9 +142,21 @@ export class ProtectionManager {
     get protections(): Readonly<Map<string /* protection name */, Protection>> {
         return this._protections;
     }
+    private readonly protection_classes: Protection[] = [
+        new FirstMessageIsImage(),
+        new BanPropagation(),
+        new BasicFlooding(),
+        new WordList(),
+        new MessageIsVoice(),
+        new MessageIsMedia(),
+        new TrustedReporters(),
+        new DetectFederationLag(),
+        new JoinWaveShortCircuit(),
+    ];
+
 
     constructor(private readonly mjolnir: Mjolnir) {
-        this.enabledProtectionsManager = new EnabledProtectionsManager(this.mjolnir);
+        this.enabledProtectionsManager = new EnabledProtectionsManager(this.mjolnir, this.protection_classes);
     }
 
     /*
@@ -167,7 +168,7 @@ export class ProtectionManager {
         await this.enabledProtectionsManager.start();
         this.mjolnir.reportManager.on("report.new", this.handleReport.bind(this));
         this.mjolnir.matrixEmitter.on("room.event", this.handleEvent.bind(this));
-        for (const protection of PROTECTIONS) {
+        for (const protection of this.protection_classes) {
             try {
                 await this.registerProtection(protection);
             } catch (e) {
