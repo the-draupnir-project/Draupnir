@@ -50,11 +50,11 @@ protections:
 
 # Post Install Setup and Configuration.
 
-If you successfully followed Steps 1-8 or got to the point your running the bot thru another mean congratulations. Time for Post Install Finalisation and Configuration of your new appservice.
+If you successfully followed Steps 1-8 or got to the point your running the bot through other means congratulations. Then there are some post install steps and configuration that you should apply to your appservice
 
-1. If your successfully at this point it’s assumed that your `draupnir-moderation` or `draupnir-main` bot is in the room with `$MANAGEMENT_ALIAS` as it’s alias so make sure it’s in there before proceeding.
+1. If your successfully at this point it’s assumed that your `draupnir-moderation` or `draupnir-main` bot is in the admin room (the room with designated by `$MANAGEMENT_ALIAS`). So go back up and follow those steps if you haven't got there yet.
 
-2. Make your Appservice Management room private as it should be.
+2. Set your appservice management room to private, if you didn't already. Anyone with access to this room can manage access to the appservice, so be careful who you share this with.
 
 3. Decide if you want to allow provisioning per homeserver or per user. If you choose to only provision per user skip to step 5.
 
