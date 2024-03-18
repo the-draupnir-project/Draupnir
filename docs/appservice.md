@@ -8,6 +8,8 @@ Usage of the [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix
 
 This guide assumes you will be using Docker and that you are able to provide a postgres database for Draupnir to connect to in application service mode.
 
+Please note that Draupnir in appservice mode does not support E2EE nor support use of an E2EE proxy like [pantalaimon](https://github.com/matrix-org/pantalaimon) as there is currently no proxy for appservices like there is for /sync
+
 # Setup
 
 1. Create a new temporarily public Matrix room that will act as a combined Policy List and Management room for the appservice.
