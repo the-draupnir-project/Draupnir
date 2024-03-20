@@ -58,11 +58,13 @@ If you successfully followed Steps 1-8 or got to the point your running the bot 
 
 2. Set your appservice management room to private, if you didn't already. Anyone with access to this room can manage access to the appservice, so be careful who you share this with.
 
-3. Decide if you want to allow provisioning per homeserver or per user. If you choose to only provision per user skip to step 5.
+3. Set your appservice to have powerlevel 50 or greater in the appservice management room as to allow it to write policies into this room. The bot uses these policies to control who is allowed to use the bot.
 
-4. Allow provisioning per homeserver. To provision per homeserver you write in your control room /plain MXID_OF_APPSERVICE_HERE allow @*:homeserver_to_allow
+4. Decide if you want to allow provisioning per homeserver or per user. If you choose to only provision per user skip to step 6.
 
-5. Allow provisioning per user. To Provision per user you write in your control room /plain MXID_OF_APPSERVICE_HERE allow MXID_TO_ALLOW
+5. Allow provisioning per homeserver. To provision per homeserver you write in your control room /plain MXID_OF_APPSERVICE_HERE allow @*:homeserver_to_allow
+
+6. Allow provisioning per user. To Provision per user you write in your control room /plain MXID_OF_APPSERVICE_HERE allow MXID_TO_ALLOW
 FIXME: If the client is being dumb and adding escapes to lone instances of * in the command strip them out so you don't have to mandate /plain use to guarantee the client doesn’t screw the user over.
 
-6. Provisioning a Draupnir is done via inviting your main draupnir into a room. If the user who did it is allowed to Draupnir rejects the invite and provisions a Draupnir shortly and invites the user to the newly created policy list and control room for this Draupnir.
+7. Provisioning a Draupnir is done via inviting your main draupnir into a room. If the user who did it is allowed to Draupnir rejects the invite and provisions a Draupnir shortly and invites the user to the newly created policy list and control room for this Draupnir.
