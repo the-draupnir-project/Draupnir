@@ -25,5 +25,5 @@ describe("Test: !help command", function() {
         });
         await client.sendMessage(this.draupnir!.managementRoomID, {msgtype: "m.text", body: "!draupnir help"})
         await reply
-    } as any)
+    } as unknown as Mocha.AsyncFunc)
 })
