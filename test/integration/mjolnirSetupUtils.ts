@@ -33,7 +33,7 @@ import { WebAPIs } from "../../src/webapis/WebAPIs";
 patchMatrixClient();
 
 // they are add [key: string]: any to their interface, amazing.
-export type SafeMochaContext = Pick<Mocha.Context, 'test' | 'currentTest' | 'runnable' | 'timeout' | 'slow' | 'skip' | 'retries'>
+export type SafeMochaContext = Pick<Mocha.Context, 'test' | 'currentTest' | 'runnable' | 'timeout' | 'slow' | 'skip' | 'retries' | 'done'>
 
 export interface DraupnirTestContext extends SafeMochaContext {
     draupnir?: Draupnir
