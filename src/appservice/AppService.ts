@@ -34,7 +34,7 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
-import { ClientCapabilityFactory, RoomStateManagerFactory, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientCapabilityFactory, RoomStateManagerFactory, joinedRoomsSafe, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
@@ -71,6 +71,7 @@ export class MjolnirAppService {
         this.commands = new AppserviceCommandHandler(
             botUserID,
             client,
+            accessControlRoomID,
             this.clientCapabilityFactory.makeClientPlatform(botUserID, client),
             this
         );
@@ -129,8 +130,16 @@ export class MjolnirAppService {
         );
         const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
         const botUserID = bridge.getBot().getUserId() as StringUserID;
+        const clientRooms = await clientsInRoomMap.makeClientRooms(
+            botUserID,
+            async () => joinedRoomsSafe(bridge.getBot().getClient()),
+        );
+        if (isError(clientRooms)) {
+            throw clientRooms.error;
+        }
+        const botRoomJoiner = clientCapabilityFactory.makeClientPlatform(botUserID, bridge.getBot().getClient()).toRoomJoiner();
         const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(botUserID);
-        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, bridge);
+        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, botRoomJoiner);
         if (isError(accessControl)) {
             throw accessControl.error;
         }
@@ -155,6 +164,7 @@ export class MjolnirAppService {
             accessControl.ok,
             roomStateManagerFactory,
             clientCapabilityFactory,
+            clientProvider,
             instanceCountGauge
         );
         const appService = new MjolnirAppService(
@@ -213,7 +223,10 @@ export class MjolnirAppService {
             if ('invite' === mxEvent.content['membership'] && mxEvent.state_key === this.bridge.botUserId) {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
                 try {
-                    await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID)
+                    const result = await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID);
+                    if (isError(result)) {
+                        log.error(`Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`, result.error);
+                    }
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
                     // continue, we still want to reject this invitation.

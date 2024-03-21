@@ -25,8 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Bridge } from "matrix-appservice-bridge";
-import { ActionResult, EntityAccess, MatrixRoomID, Ok, PolicyListRevisionIssuer, PolicyRoomManager, StringUserID, isError, AccessControl as MPSAccess, PolicyRoomEditor, PolicyRuleType, Recommendation } from "matrix-protection-suite";
+import { ActionResult, EntityAccess, MatrixRoomID, Ok, PolicyListRevisionIssuer, PolicyRoomManager, StringUserID, isError, AccessControl as MPSAccess, PolicyRoomEditor, PolicyRuleType, Recommendation, RoomJoiner } from "matrix-protection-suite";
 
 /**
  * Utility to manage which users have access to the application service,
@@ -52,9 +51,12 @@ export class AccessControl {
         /** The room id for the access control list. */
         accessControlRoom: MatrixRoomID,
         policyRoomManager: PolicyRoomManager,
-        bridge: Bridge,
+        bridgeBotJoiner: RoomJoiner,
     ): Promise<ActionResult<AccessControl>> {
-        await bridge.getBot().getClient().joinRoom(accessControlRoom.toRoomIDOrAlias());
+        const joinResult = await bridgeBotJoiner.joinRoom(accessControlRoom.toRoomIDOrAlias());
+        if (isError(joinResult)) {
+            return joinResult;
+        }
         const revisionIssuer = await policyRoomManager.getPolicyRoomRevisionIssuer(accessControlRoom);
         if (isError(revisionIssuer)) {
             return revisionIssuer;

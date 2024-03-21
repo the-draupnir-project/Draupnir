@@ -50,7 +50,7 @@ describe("Test that the app service can provision a mjolnir when requested from 
         expect(managementRoomId).toBe(mjolnirDetails.managementRoomId);
         // Check that the newly provisioned mjolnir is actually responsive.
         const event = await getFirstReply(moderator, managementRoomId, () => {
-            return moderator.sendMessage(managementRoomId, { body: `!mjolnir status`, msgtype: 'm.text' });
+            return moderator.sendMessage(managementRoomId, { body: `!draupnir status`, msgtype: 'm.text' });
         })
         expect(event.sender).toBe(mjolnirDetails.mjolnirUserId);
     })
