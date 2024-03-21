@@ -41,7 +41,7 @@ import {
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { read as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
-import { constructWebAPIs, makeDraupnirBotModeFromConfig } from "./DraupnirBotMode";
+import { constructWebAPIs, makeDraupnirBotModeFromConfig, makeDraupnirFactoryForBotMode } from "./DraupnirBotMode";
 import { Draupnir } from "./Draupnir";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
@@ -90,8 +90,8 @@ import { WebAPIs } from "./webapis/WebAPIs";
         }
         patchMatrixClient();
         config.RUNTIME.client = client;
-
-        bot = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
+        const draupnirFactory = await makeDraupnirFactoryForBotMode(client);
+        bot = await makeDraupnirBotModeFromConfig(client, draupnirFactory, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
         apis = constructWebAPIs(bot);
     } catch (err) {
         console.error(`Failed to setup mjolnir from the config ${config.dataPath}: ${err}`);

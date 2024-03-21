@@ -26,9 +26,11 @@ import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
 import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
-import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { RoomStateManagerFactory, SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder, StringUserID } from "matrix-protection-suite";
 import { WebAPIs } from "../../src/webapis/WebAPIs";
+import { DraupnirFactory } from "../../src/draupnirfactory/DraupnirFactory";
+import { findBotSDKManualClientProvider } from "./clientProviderUtils";
 
 patchMatrixClient();
 
@@ -40,6 +42,7 @@ export interface DraupnirTestContext extends SafeMochaContext {
     managementRoomAlias?: string,
     apis?: WebAPIs,
     config: IConfig,
+    roomStateManagerFactory: RoomStateManagerFactory,
 }
 
 /**
@@ -90,16 +93,18 @@ let globalMjolnir: Draupnir | null;
 /**
  * Return a test instance of Mjolnir.
  */
-export async function makeMjolnir(config: IConfig): Promise<Draupnir> {
+export async function makeMjolnir(config: IConfig, draupnirFactory: DraupnirFactory): Promise<Draupnir> {
     await configureMjolnir(config);
     LogService.setLogger(new RichConsoleLogger());
     LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
     LogService.info("test/mjolnirSetupUtils", "Starting bot...");
     const pantalaimon = new PantalaimonClient(config.homeserverUrl, new MemoryStorageProvider());
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
-    await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
+    const clientUserID = await client.getUserId() as StringUserID;
+    findBotSDKManualClientProvider().addClient(clientUserID, client);
+    await overrideRatelimitForUser(config.homeserverUrl, clientUserID);
     await ensureAliasedRoomExists(client, config.managementRoom);
-    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
+    let mj = await makeDraupnirBotModeFromConfig(client, draupnirFactory, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
     globalClient = client;
     globalMjolnir = mj;
     return mj;
