@@ -10,7 +10,7 @@ import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext
 import { ArgumentStream, RestDescription, findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
-import { ActionResult, ClientPlatform, Ok, RoomMessage, StringUserID, Value, isError } from 'matrix-protection-suite';
+import { ActionResult, ClientPlatform, Ok, RoomMessage, StringRoomID, StringUserID, Value, isError } from 'matrix-protection-suite';
 import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';
 import { MatrixReactionHandler } from '../../commands/interface-manager/MatrixReactionHandler';
 import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt, makeListenerForPromptDefault } from '../../commands/interface-manager/MatrixPromptForAccept';
@@ -50,6 +50,7 @@ export class AppserviceCommandHandler {
     constructor(
         public readonly clientUserID: StringUserID,
         private readonly client: MatrixSendClient,
+        private readonly adminRoomID: StringRoomID,
         private readonly clientPlatform: ClientPlatform,
         private readonly appservice: MjolnirAppService,
     ) {
@@ -84,7 +85,7 @@ export class AppserviceCommandHandler {
     }
 
     public handleEvent(mxEvent: WeakEvent): void {
-        if (mxEvent.room_id !== this.appservice.config.adminRoom) {
+        if (mxEvent.room_id !== this.adminRoomID) {
             return;
         }
         const parsedEventResult = Value.Decode(RoomMessage, mxEvent);

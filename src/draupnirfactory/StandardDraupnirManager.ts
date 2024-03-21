@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionResult, ClientsInRoomMap, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -36,8 +36,7 @@ export class StandardDraupnirManager {
     private readonly failedDraupnirs = new Map<StringUserID, UnstartedDraupnir>();
 
     public constructor(
-        protected readonly draupnirFactory: DraupnirFactory,
-        private readonly clientsInRooms: ClientsInRoomMap
+        protected readonly draupnirFactory: DraupnirFactory
     ) {
         // nothing to do.
     }
@@ -52,9 +51,9 @@ export class StandardDraupnirManager {
             managementRoom,
             config
         );
-        if (this.readyDraupnirs.has(clientUserID)) {
+        if (this.isDraupnirReady(clientUserID)) {
             return ActionError.Result(`There is a draupnir for ${clientUserID} already waiting to be started`);
-        } else if (this.clientsInRooms.getClientRooms(clientUserID) !== undefined) {
+        } else if (this.isDraupnirListening(clientUserID)) {
             return ActionError.Result(`There is a draupnir for ${clientUserID} already running`);
         }
         if (isError(draupnir)) {
