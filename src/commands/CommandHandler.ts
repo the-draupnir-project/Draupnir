@@ -73,6 +73,7 @@ import "./Rules";
 import "./WatchUnwatchCommand";
 import "./Help";
 import "./SetDisplayNameCommand";
+import "./QueryAdminDetails";
 
 export const COMMAND_PREFIX = "!mjolnir";
 
