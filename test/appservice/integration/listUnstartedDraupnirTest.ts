@@ -20,7 +20,7 @@ describe("Just test some commands innit", function() {
             return Promise.resolve(); // TS7030: Not all code paths return a value.
         }
     });
-    it("Can list any unstarted mjolnir", async function(this: Context) {
+    it("Can list any unstarted draupnir", async function(this: Context) {
         const commandClient = new AppservideBotCommandClient(this.appservice!);
         const result = await commandClient.sendCommand("list", "unstarted");
         if (isError(result)) {
