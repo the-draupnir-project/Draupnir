@@ -74,7 +74,7 @@ export class AppServiceDraupnirManager {
     }
 
     public draupnirMXID(mjolnirRecord: MjolnirRecord): StringUserID {
-        return `${mjolnirRecord.local_part}:${this.serverName}` as StringUserID;
+        return `@${mjolnirRecord.local_part}:${this.serverName}` as StringUserID;
     }
 
     /**
