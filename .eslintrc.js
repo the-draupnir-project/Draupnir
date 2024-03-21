@@ -1,4 +1,5 @@
 module.exports = {
+    "extends": [ "plugin:editorconfig/all" ],
     "env": {
         "browser": false,
         "es6": true,
@@ -6,11 +7,12 @@ module.exports = {
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "project": "tsconfig.json",
+        "project": ["tsconfig.json", "test/tsconfig.json"],
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "editorconfig"
     ],
     "root": true,
     "rules": {

@@ -26,11 +26,11 @@ function renderResultForUserInSetMap(usersInSetMap: ResultForUserInSetMap, {
     description: DescriptionMeta,
 }): DocumentNode {
     return <details>
-    <summary><code>{description.name}</code>: {ingword} {usersInSetMap.size} {usersInSetMap.size === 1 ? 'user' : 'users'} from protected rooms.</summary>
-    {[...usersInSetMap.entries()].map(([userID, roomResults]) => {
-        return renderRoomSetResult(roomResults, { summary: <fragment>{userID} will be {nnedword} from {roomResults.map.size} rooms.</fragment> })
-    })}
-</details>
+        <summary><code>{description.name}</code>: {ingword} {usersInSetMap.size} {usersInSetMap.size === 1 ? 'user' : 'users'} from protected rooms.</summary>
+        {[...usersInSetMap.entries()].map(([userID, roomResults]) => {
+            return renderRoomSetResult(roomResults, { summary: <fragment>{userID} will be {nnedword} from {roomResults.map.size} rooms.</fragment> })
+        })}
+    </details>
 }
 
 

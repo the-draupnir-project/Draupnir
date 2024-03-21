@@ -327,7 +327,7 @@ export class FringeWalker<Context> {
                         throw new TypeError("Leaf nodes should not be marked as an inner node");
                     }
                     this.renderer.getLeafRenderer(annotatedNode.node.tag)
-                        (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
+                    (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
                     break;
                 default:
                     throw new TypeError(`Uknown fringe type ${annotatedNode.type}`);

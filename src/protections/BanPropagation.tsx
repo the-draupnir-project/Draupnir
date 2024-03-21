@@ -78,9 +78,9 @@ async function promptBanPropagation(
         <root>The user {renderMentionPill(change.userID, change.content.displayname ?? change.userID)} was banned
                 in <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by {new UserID(change.sender)} for <code>{change.content.reason ?? '<no reason supplied>'}</code>.<br/>
                 Would you like to add the ban to a policy list?
-            <ol>
-                {editablePolicyRoomIDs.map((room) => <li><a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a></li>)}
-            </ol>
+        <ol>
+            {editablePolicyRoomIDs.map((room) => <li><a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a></li>)}
+        </ol>
         </root>,
         draupnir.managementRoomID,
         undefined,
@@ -111,9 +111,9 @@ async function promptUnbanPropagation(
             from the room {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by {membershipChange.sender} for <code>{membershipChange.content.reason ?? '<no reason supplied>'}</code>.<br/>
             However there are rules in Draupnir's watched lists matching this user:
             <ul>
-            {
-            rulesMatchingUser.map(match => <li>{renderListRules(match)}</li>)
-            }
+                {
+                    rulesMatchingUser.map(match => <li>{renderListRules(match)}</li>)
+                }
             </ul>
             Would you like to remove these rules and unban the user from all protected rooms?
         </root>,
@@ -152,7 +152,7 @@ export class BanPropagationProtection
         capabilities: BanPropagationProtectionCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
-      ) {
+    ) {
         super(description, capabilities, protectedRoomsSet, [], []);
         this.userConsequences = capabilities.userConsequences;
         // FIXME: These listeners are gonna leak all over if we don't have a
@@ -301,12 +301,12 @@ describeProtection<BanPropagationProtectionCapabilities, Draupnir>({
         userConsequences: 'StandardUserConsequences',
     },
     factory: (decription, protectedRoomsSet, draupnir, capabilities, _settings) =>
-      Ok(
-        new BanPropagationProtection(
-          decription,
-          capabilities,
-          protectedRoomsSet,
-          draupnir
-        )
-      ),
-  });
+        Ok(
+            new BanPropagationProtection(
+                decription,
+                capabilities,
+                protectedRoomsSet,
+                draupnir
+            )
+        ),
+});

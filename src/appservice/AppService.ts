@@ -242,12 +242,12 @@ export class MjolnirAppService {
         this.commands.handleEvent(mxEvent);
         const decodeResult = this.eventDecoder.decodeEvent(mxEvent);
         if (isError(decodeResult)) {
-          log.error(
-            `Got an error when decoding an event for the appservice`,
-            decodeResult.error.uuid,
-            decodeResult.error
-          );
-          return;
+            log.error(
+                `Got an error when decoding an event for the appservice`,
+                decodeResult.error.uuid,
+                decodeResult.error
+            );
+            return;
         }
         const roomID = decodeResult.ok.room_id;
         this.roomStateManagerFactory.handleTimelineEvent(roomID, decodeResult.ok);

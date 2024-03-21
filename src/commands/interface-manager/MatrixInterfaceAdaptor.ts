@@ -148,9 +148,9 @@ export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<Ba
  * @param renderer Render the result of the application command back to a room.
  */
 export function defineMatrixInterfaceAdaptor<ExecutorType extends (...args: any) => Promise<any>>(details: {
-        interfaceCommand: InterfaceCommand<ExecutorType>,
-        renderer: RendererSignature<MatrixContext, ExecutorType>
-    }) {
+    interfaceCommand: InterfaceCommand<ExecutorType>,
+    renderer: RendererSignature<MatrixContext, ExecutorType>
+}) {
     internMatrixInterfaceAdaptor(
         details.interfaceCommand,
         new MatrixInterfaceAdaptor(

@@ -51,31 +51,31 @@ async function ban(
     entity: UserID|MatrixRoomReference|string,
     policyRoomReference: MatrixRoomReference,
     ...reasonParts: string[]
-    ): Promise<ActionResult<string>> {
-        const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
-            this.draupnir,
-            policyRoomReference
-        );
-        if (isError(policyListEditorResult)) {
-            return policyListEditorResult;
-        }
-        const policyListEditor = policyListEditorResult.ok;
-        const reason = reasonParts.join(' ');
-        if (entity instanceof UserID) {
-            return await policyListEditor.banEntity(PolicyRuleType.User, entity.toString(), reason);
-        } else if (typeof entity === 'string') {
-            return await policyListEditor.banEntity(PolicyRuleType.Server,entity, reason);
-        } else {
-            const resolvedRoomReference = await resolveRoomReferenceSafe(
-                this.draupnir.client,
-                entity
-            );
-            if (isError(resolvedRoomReference)) {
-                return resolvedRoomReference;
-            }
-            return await policyListEditor.banEntity(PolicyRuleType.Server, resolvedRoomReference.ok.toRoomIDOrAlias(), reason);
-        }
+): Promise<ActionResult<string>> {
+    const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
+        this.draupnir,
+        policyRoomReference
+    );
+    if (isError(policyListEditorResult)) {
+        return policyListEditorResult;
     }
+    const policyListEditor = policyListEditorResult.ok;
+    const reason = reasonParts.join(' ');
+    if (entity instanceof UserID) {
+        return await policyListEditor.banEntity(PolicyRuleType.User, entity.toString(), reason);
+    } else if (typeof entity === 'string') {
+        return await policyListEditor.banEntity(PolicyRuleType.Server,entity, reason);
+    } else {
+        const resolvedRoomReference = await resolveRoomReferenceSafe(
+            this.draupnir.client,
+            entity
+        );
+        if (isError(resolvedRoomReference)) {
+            return resolvedRoomReference;
+        }
+        return await policyListEditor.banEntity(PolicyRuleType.Server, resolvedRoomReference.ok.toRoomIDOrAlias(), reason);
+    }
+}
 
 defineInterfaceCommand({
     designator: ["ban"],

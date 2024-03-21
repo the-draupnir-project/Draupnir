@@ -41,7 +41,7 @@ defineInterfaceCommand({
     table: "mjolnir",
     parameters: parameters([]),
     command: async function (this: DraupnirContext): Promise<ActionResult<StatusInfo>> {
-         return Ok(await draupnirStatusInfo(this.draupnir))
+        return Ok(await draupnirStatusInfo(this.draupnir))
     },
     summary: "Show the status of the bot."
 })

@@ -73,14 +73,14 @@ async function unban(
     const policyRoomUnban = entity instanceof UserID
         ? await policyRoomEditor.ok.unbanEntity(PolicyRuleType.User, entity.toString())
         : typeof entity === 'string'
-        ? await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Server, entity)
-        : await (async () => {
-            const bannedRoom = await resolveRoomReferenceSafe(this.client, entity);
-            if (isError(bannedRoom)) {
-                return bannedRoom;
-            }
-            return await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Room, bannedRoom.ok.toRoomIDOrAlias());
-        })();
+            ? await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Server, entity)
+            : await (async () => {
+                const bannedRoom = await resolveRoomReferenceSafe(this.client, entity);
+                if (isError(bannedRoom)) {
+                    return bannedRoom;
+                }
+                return await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Room, bannedRoom.ok.toRoomIDOrAlias());
+            })();
     if (isError(policyRoomUnban)) {
         return policyRoomUnban;
     }

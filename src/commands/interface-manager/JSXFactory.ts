@@ -45,6 +45,7 @@ export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (D
 }
 
 
+// eslint-disable-next-line no-redeclare
 namespace JSXFactory {
     export interface IntrinsicElements {
         [elemName: string]: any;

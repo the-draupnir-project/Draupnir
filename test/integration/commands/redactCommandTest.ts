@@ -12,7 +12,9 @@ interface RedactionTestContext extends DraupnirTestContext {
 
 describe("Test: The redaction command", function () {
     // If a test has a timeout while awaitng on a promise then we never get given control back.
-    afterEach(function() { this.moderator?.stop(); });
+    afterEach(function() {
+        this.moderator?.stop();
+    });
 
     it('Mjölnir redacts all of the events sent by a spammer when instructed to by giving their id and a room id.', async function(this: RedactionTestContext) {
         this.timeout(60000);

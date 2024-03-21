@@ -30,7 +30,7 @@ type DefaultPromptContext = StaticDecode<typeof DefaultPromptContext>;
 const DefaultPromptContext = Type.Composite([
     PromptContext,
     Type.Object({
-    default: Type.String(),
+        default: Type.String(),
     })
 ]);
 

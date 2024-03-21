@@ -96,10 +96,10 @@ export async function renderMatrixAndSend(node: DocumentNode, roomId: string, ev
             ...event === undefined
                 ? {} // if they don't supply a reply just send a top level event.
                 : { "m.relates_to": {
-                        "m.in_reply_to": {
-                            "event_id": event['event_id']
-                        }
+                    "m.in_reply_to": {
+                        "event_id": event['event_id']
                     }
+                }
                 }
         })
     };

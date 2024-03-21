@@ -46,7 +46,7 @@ describeProtection<MessageIsVoiceCapabilities, Draupnir, {}>({
     },
     factory: function(description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
-                new MessageIsVoiceProtection(
+            new MessageIsVoiceProtection(
                 description,
                 capabilities,
                 protectedRoomsSet,

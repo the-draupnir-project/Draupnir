@@ -10,7 +10,9 @@ interface RoomsTestContext extends DraupnirTestContext {
 
 describe("Test: The rooms commands", function () {
     // If a test has a timeout while awaitng on a promise then we never get given control back.
-    afterEach(function() { this.moderator?.stop(); });
+    afterEach(function() {
+        this.moderator?.stop();
+    });
 
     it('Mjolnir can protect a room, show that it is protected and then stop protecting the room.', async function(this: RoomsTestContext) {
         // Create a few users and a room.
