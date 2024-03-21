@@ -1,7 +1,7 @@
 import { MatrixClient } from "matrix-bot-sdk";
 import { strict as assert } from "assert";
 import * as crypto from "crypto";
-import { MatrixEmitter } from "../../../src/MatrixEmitter";
+import { MatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 /**
  * Returns a promise that resolves to the first event replying to the event produced by targetEventThunk.
