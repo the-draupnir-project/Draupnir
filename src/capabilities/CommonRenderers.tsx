@@ -15,9 +15,9 @@ import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer
 
 export function renderElaborationTrail(error: ActionError): DocumentNode {
     return <details><summary>Elaboration trail</summary>
-    <ul>
-        {error.getElaborations().map((elaboration) => <li><pre>{elaboration}</pre></li>)}
-    </ul>
+        <ul>
+            {error.getElaborations().map((elaboration) => <li><pre>{elaboration}</pre></li>)}
+        </ul>
     </details>
 }
 
@@ -82,7 +82,7 @@ export function renderRoomSetResult(roomResults: RoomSetResult, { summary }: { s
     return <details>
         <summary>{summary}</summary>
         <ul>{[...roomResults.map.entries()].map(([roomID, outcome]) => {
-        return <li>{renderRoomOutcome(roomID, outcome)}</li>
-    })}</ul>
+            return <li>{renderRoomOutcome(roomID, outcome)}</li>
+        })}</ul>
     </details>
 }

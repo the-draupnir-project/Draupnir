@@ -68,22 +68,22 @@ describeProtection<BasicFloodingProtectionCapabilities, Draupnir, BasicFloodingP
         }
         return Ok(
             new BasicFloodingProtection(
-              description,
-              capabilities,
-              protectedRoomsSet,
-              draupnir,
-              parsedSettings.ok
+                description,
+                capabilities,
+                protectedRoomsSet,
+                draupnir,
+                parsedSettings.ok
             )
-          )
+        )
     },
     protectionSettings: new StandardProtectionSettings<BasicFloodingProtectionSettings>({
         maxPerMinute: new SafeIntegerProtectionSetting(
             'maxPerMinute'
         )},
-        {
-            maxPerMinute: DEFAULT_MAX_PER_MINUTE
-        })
-  });
+    {
+        maxPerMinute: DEFAULT_MAX_PER_MINUTE
+    })
+});
 
 
 export class BasicFloodingProtection extends AbstractProtection<BasicFloodingProtectionDescription> implements DraupnirProtection<BasicFloodingProtectionDescription> {

@@ -85,10 +85,10 @@ function calculateMedian (arr: number[]): number | undefined {
     }
 
     for (const method of [MemberFetchMethod.JoinedMembers, MemberFetchMethod.Members, MemberFetchMethod.State]) {
-        const times = getTimes(method)!;
-        const sum = times.reduce((a, b) => a + b, 0);
-        const mean = (sum / times.length) || 0;
-        const median = calculateMedian(times);
+        const nextTimes = getTimes(method)!;
+        const sum = nextTimes.reduce((a, b) => a + b, 0);
+        const mean = (sum / nextTimes.length) || 0;
+        const median = calculateMedian(nextTimes);
         console.log(`${method}: total time elapsed ${sum / 1000}seconds, mean time ${mean}ms, median time ${median}ms`);
     }
 })();

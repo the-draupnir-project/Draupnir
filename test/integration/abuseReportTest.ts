@@ -151,7 +151,7 @@ describe("Test: Reporting abuse", async () => {
             for (let toFind of reportsToFind) {
                 for (let event of notices) {
                     if ("content" in event && "body" in event.content) {
-                        if (!(ABUSE_REPORT_KEY in event.content) || event.content[ABUSE_REPORT_KEY].event_id != toFind.eventId) {
+                        if (!(ABUSE_REPORT_KEY in event.content) || event.content[ABUSE_REPORT_KEY].event_id !== toFind.eventId) {
                             // Not a report or not our report.
                             continue;
                         }
@@ -285,7 +285,7 @@ describe("Test: Reporting abuse", async () => {
         let noticeId;
         for (let event of notices) {
             if ("content" in event && ABUSE_REPORT_KEY in event.content) {
-                if (!(ABUSE_REPORT_KEY in event.content) || event.content[ABUSE_REPORT_KEY].event_id != badEventId) {
+                if (!(ABUSE_REPORT_KEY in event.content) || event.content[ABUSE_REPORT_KEY].event_id !== badEventId) {
                     // Not a report or not our report.
                     continue;
                 }
@@ -298,13 +298,13 @@ describe("Test: Reporting abuse", async () => {
         // Find the buttons.
         let buttons: any[] = [];
         for (let event of notices) {
-            if (event["type"] != "m.reaction") {
+            if (event["type"] !== "m.reaction") {
                 continue;
             }
-            if (event["content"]["m.relates_to"]["rel_type"] != "m.annotation") {
+            if (event["content"]["m.relates_to"]["rel_type"] !== "m.annotation") {
                 continue;
             }
-            if (event["content"]["m.relates_to"]["event_id"] != noticeId) {
+            if (event["content"]["m.relates_to"]["event_id"] !== noticeId) {
                 continue;
             }
             buttons.push(event);
@@ -335,7 +335,7 @@ describe("Test: Reporting abuse", async () => {
                 console.debug("Not confirm");
                 continue;
             }
-            if (!event["content"]["m.relates_to"]["event_id"] == redactButtonId) {
+            if (!event["content"]["m.relates_to"]["event_id"] === redactButtonId) {
                 console.debug("Not reaction to redact button");
                 continue;
             }

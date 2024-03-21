@@ -1,4 +1,4 @@
-﻿import { strict as assert } from "assert";
+import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction } from "./commandUtils";
 import { DraupnirTestContext, draupnirClient } from "../mjolnirSetupUtils";

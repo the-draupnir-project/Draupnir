@@ -19,10 +19,10 @@ export class DraupnirRendererMessageCollector implements RendererMessageCollecto
     private sendMessage(document: DocumentNode): void {
         Task((async () => {
             await renderMatrixAndSend(
-            <root>{document}</root>,
-            this.managementRoomID,
-            undefined,
-            this.client,
+                <root>{document}</root>,
+                this.managementRoomID,
+                undefined,
+                this.client,
             )
         })());
     }

@@ -80,8 +80,8 @@ export class ProtectedRoomActivityTracker {
     public protectedRoomsByActivity(): string[] {
         if (!this.activeRoomsCache) {
             this.activeRoomsCache = [...this.protectedRoomActivities]
-            .sort((a, b) => b[1] - a[1])
-            .map(pair => pair[0]);
+                .sort((a, b) => b[1] - a[1])
+                .map(pair => pair[0]);
         }
         return this.activeRoomsCache;
     }

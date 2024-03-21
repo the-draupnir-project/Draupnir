@@ -88,29 +88,29 @@ defineInterfaceCommand({
                 findPresentationType("MatrixEventReference")
             ),
         }],
-        new RestDescription<DraupnirContext>(
-            "reason",
-            findPresentationType("string"),
-            async function(_parameter) {
-                return {
-                    suggestions: this.draupnir.config.commands.ban.defaultReasons
-                }
+    new RestDescription<DraupnirContext>(
+        "reason",
+        findPresentationType("string"),
+        async function(_parameter) {
+            return {
+                suggestions: this.draupnir.config.commands.ban.defaultReasons
             }
-        ),
-        new KeywordsDescription({
-            limit: {
-                name: "limit",
-                isFlag: false,
-                acceptor: findPresentationType("string"),
-                description: 'Limit the number of messages to be redacted per room.'
-            },
-            room: {
-                name: 'room',
-                isFlag: false,
-                acceptor: findPresentationType("MatrixRoomReference"),
-                description: 'Allows the command to be scoped to just one protected room.'
-            }
-        }),
+        }
+    ),
+    new KeywordsDescription({
+        limit: {
+            name: "limit",
+            isFlag: false,
+            acceptor: findPresentationType("string"),
+            description: 'Limit the number of messages to be redacted per room.'
+        },
+        room: {
+            name: 'room',
+            isFlag: false,
+            acceptor: findPresentationType("MatrixRoomReference"),
+            description: 'Allows the command to be scoped to just one protected room.'
+        }
+    }),
     ),
     command: redactCommand,
     summary: "Redacts either a users's recent messagaes within protected rooms or a specific message shared with the bot."

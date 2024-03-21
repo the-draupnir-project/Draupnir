@@ -103,17 +103,17 @@ export async function handleCommand(
 export function extractCommandFromMessageBody(
     body: string,
     { prefix,
-      localpart,
-      userId,
-      additionalPrefixes,
-      allowNoPrefix
+        localpart,
+        userId,
+        additionalPrefixes,
+        allowNoPrefix
     }: {
         prefix: string,
         localpart: string,
         userId: string,
         additionalPrefixes: string[],
         allowNoPrefix: boolean
-}): string | undefined {
+    }): string | undefined {
     const plainPrefixes = [prefix, localpart, userId, ...additionalPrefixes];
     const allPossiblePrefixes = [
         ...plainPrefixes.map(p => `!${p}`),
