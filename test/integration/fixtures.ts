@@ -3,7 +3,6 @@ import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { read as configRead } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
 import { DraupnirTestContext, draupnirClient, makeMjolnir, teardownManagementRoom } from "./mjolnirSetupUtils";
-import { destroyBotSDKManualClientProvider, findBotSDKManualClientProvider, makeDraupnirFactoryForIntegrationTest } from "./clientProviderUtils";
 
 patchMatrixClient();
 
@@ -21,11 +20,7 @@ export const mochaHooks = {
             this.timeout(30000);
             const config = this.config = configRead();
             this.managementRoomAlias = config.managementRoom;
-            // draupnir factory
-            const draupnirFactory = makeDraupnirFactoryForIntegrationTest();
-            this.roomStateManagerFactory = draupnirFactory.roomStateManagerFactory;
-            // draupnir
-            this.draupnir = await makeMjolnir(config, draupnirFactory);
+            this.draupnir = await makeMjolnir(config);
             config.RUNTIME.client = draupnirClient()!;
             await Promise.all([
                 this.draupnir.client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, { rooms: [] }),
@@ -44,7 +39,7 @@ export const mochaHooks = {
             this.apis?.stop();
             draupnirClient()?.stop();
             this.draupnir?.stop();
-            destroyBotSDKManualClientProvider();
+
             // remove alias from management room and leave it.
             if (this.draupnir !== undefined) {
                 await Promise.all([

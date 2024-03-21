@@ -11,10 +11,10 @@ import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
 
 export class DraupnirFactory {
     public constructor(
-        public readonly clientsInRoomMap: ClientsInRoomMap,
-        public readonly clientCapabilityFactory: ClientCapabilityFactory,
-        public readonly clientProvider: ClientForUserID,
-        public readonly roomStateManagerFactory: RoomStateManagerFactory
+        private readonly clientsInRoomMap: ClientsInRoomMap,
+        private readonly clientCapabilityFactory: ClientCapabilityFactory,
+        private readonly clientProvider: ClientForUserID,
+        private readonly roomStateManagerFactory: RoomStateManagerFactory
     ) {
         // nothing to do.
     }
