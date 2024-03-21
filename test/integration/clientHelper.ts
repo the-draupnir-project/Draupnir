@@ -1,8 +1,6 @@
 import { HmacSHA1 } from "crypto-js";
 import { getRequestFn, LogService, MatrixClient, MemoryStorageProvider, PantalaimonClient } from "matrix-bot-sdk";
 import "../../src/utils"; // we need this for the patches to matrix-bot-sdk's `getRequestFn`.
-import { findBotSDKManualClientProvider } from "./clientProviderUtils";
-import { StringUserID } from "matrix-protection-suite";
 
 const REGISTRATION_ATTEMPTS = 10;
 const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
@@ -124,10 +122,9 @@ export async function newTestUser(homeserver: string, options: RegistrationOptio
     const username = await registerNewTestUser(homeserver, options);
     const pantalaimon = new PantalaimonClient(homeserver, new MemoryStorageProvider());
     const client = await pantalaimon.createClientWithCredentials(username, username);
-    const clientUserID = await client.getUserId() as StringUserID;
-    findBotSDKManualClientProvider().addClient(clientUserID, client);
     if (!options.isThrottled) {
-        await overrideRatelimitForUser(homeserver, clientUserID);
+        let userId = await client.getUserId();
+        await overrideRatelimitForUser(homeserver, userId);
     }
     return client;
 }

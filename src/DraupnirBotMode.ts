@@ -55,34 +55,6 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
     return new WebAPIs(draupnir.reportManager, draupnir.config);
 }
 
-export async function makeDraupnirFactoryForBotMode(
-    client: MatrixSendClient
-): Promise<DraupnirFactory> {
-    const clientUserId = await client.getUserId();
-    if (!isStringUserID(clientUserId)) {
-        throw new TypeError(`${clientUserId} is not a valid mxid`);
-    }
-    const clientsInRoomMap = new StandardClientsInRoomMap();
-    const clientProvider = async (userID: StringUserID) => {
-        if (userID !== clientUserId) {
-            throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);
-        }
-        return client;
-    };
-    const roomStateManagerFactory = new RoomStateManagerFactory(
-        clientsInRoomMap,
-        clientProvider,
-        DefaultEventDecoder
-    );
-    const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
-    return new DraupnirFactory(
-        clientsInRoomMap,
-        clientCapabilityFactory,
-        clientProvider,
-        roomStateManagerFactory
-    );
-}
-
 /**
  * This is a file for providing default concrete implementations
  * for all things to bootstrap Draupnir in 'bot mode'.
@@ -93,7 +65,6 @@ export async function makeDraupnirFactoryForBotMode(
 
 export async function makeDraupnirBotModeFromConfig(
     client: MatrixSendClient,
-    draupnirFactory: DraupnirFactory,
     matrixEmitter: SafeMatrixEmitter,
     config: IConfig
 ): Promise<Draupnir> {
@@ -110,6 +81,25 @@ export async function makeDraupnirBotModeFromConfig(
         throw managementRoom.error;
     }
     await client.joinRoom(managementRoom.ok.toRoomIDOrAlias(), managementRoom.ok.getViaServers());
+    const clientsInRoomMap = new StandardClientsInRoomMap();
+    const clientProvider = async (userID: StringUserID) => {
+        if (userID !== clientUserId) {
+            throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);
+        }
+        return client;
+    };
+    const roomStateManagerFactory = new RoomStateManagerFactory(
+        clientsInRoomMap,
+        clientProvider,
+        DefaultEventDecoder
+    );
+    const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
+    const draupnirFactory = new DraupnirFactory(
+        clientsInRoomMap,
+        clientCapabilityFactory,
+        clientProvider,
+        roomStateManagerFactory
+    );
     const draupnir = await draupnirFactory.makeDraupnir(
         clientUserId,
         managementRoom.ok,
@@ -120,11 +110,11 @@ export async function makeDraupnirBotModeFromConfig(
         throw new Error(`Unable to create Draupnir: ${error.message}`);
     }
     matrixEmitter.on('room.invite', (roomID, event) => {
-        draupnirFactory.clientsInRoomMap.handleTimelineEvent(roomID, event);
+        clientsInRoomMap.handleTimelineEvent(roomID, event);
     })
     matrixEmitter.on('room.event', (roomID, event) => {
-        draupnirFactory.roomStateManagerFactory.handleTimelineEvent(roomID, event);
-        draupnirFactory.clientsInRoomMap.handleTimelineEvent(roomID, event);
+        roomStateManagerFactory.handleTimelineEvent(roomID, event);
+        clientsInRoomMap.handleTimelineEvent(roomID, event);
     })
     return draupnir.ok;
 }
