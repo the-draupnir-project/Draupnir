@@ -49,13 +49,15 @@ async function makePolicyListConfig(
 
 async function makeProtectedRoomsConfig(
     client: MatrixSendClient,
+    roomJoiner: RoomJoiner,
 ): Promise<ActionResult<ProtectedRoomsConfig>> {
     return await MjolnirProtectedRoomsConfig.createFromStore(
         new BotSDKMatrixAccountData(
             MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
             MjolnirProtectedRoomsEvent,
             client
-        )
+        ),
+        roomJoiner
     );
 }
 
@@ -115,7 +117,7 @@ export async function makeProtectedRoomsSet(
     clientPlatform: ClientPlatform,
     userID: StringUserID
 ): Promise<ActionResult<ProtectedRoomsSet>> {
-    const protectedRoomsConfig = await makeProtectedRoomsConfig(client)
+    const protectedRoomsConfig = await makeProtectedRoomsConfig(client, clientPlatform.toRoomJoiner())
     if (isError(protectedRoomsConfig)) {
         return protectedRoomsConfig;
     }
