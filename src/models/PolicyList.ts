@@ -33,18 +33,6 @@ import AwaitLock from "await-lock";
 import { monotonicFactory } from "ulidx";
 
 /**
- * Account data event type used to store the permalinks to each of the policylists.
- *
- * Content:
- * ```jsonc
- * {
- *   references: string[], // Each entry is a `matrix.to` permalink.
- * }
- * ```
- */
-export const WATCHED_LISTS_EVENT_TYPE = "org.matrix.mjolnir.watched_lists";
-
-/**
  * A prefix used to record that we have already warned at least once that a PolicyList room is unprotected.
  */
 export const WARN_UNPROTECTED_ROOM_EVENT_PREFIX = "org.matrix.mjolnir.unprotected_room_warning.for.";

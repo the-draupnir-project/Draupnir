@@ -29,7 +29,19 @@ import { LogLevel, LogService } from "matrix-bot-sdk";
 import { Mjolnir } from "../Mjolnir";
 import { MatrixDataManager, RawSchemedData, SCHEMA_VERSION_KEY } from "./MatrixDataManager";
 import { MatrixRoomReference } from "../commands/interface-manager/MatrixRoomReference";
-import { PolicyList, WATCHED_LISTS_EVENT_TYPE, WARN_UNPROTECTED_ROOM_EVENT_PREFIX } from "./PolicyList";
+import { PolicyList, WARN_UNPROTECTED_ROOM_EVENT_PREFIX } from "./PolicyList";
+
+/**
+ * Account data event type used to store the permalinks to each of the policylists.
+ *
+ * Content:
+ * ```jsonc
+ * {
+ *   references: string[], // Each entry is a `matrix.to` permalink.
+ * }
+ * ```
+ */
+const WATCHED_LISTS_EVENT_TYPE = "org.matrix.mjolnir.watched_lists";
 
 type WatchedListsEvent = RawSchemedData & { references?: string[]; };
 /**
@@ -41,6 +53,8 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
 
     protected schema = [];
     protected isAllowedToInferNoVersionAsZero = true;
+
+    private static readonly SCHEMA_VERSION = 0;
 
     constructor(private readonly mjolnir: Mjolnir) {
         super();
@@ -113,12 +127,29 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
     }
 
     protected async createFirstData(): Promise<RawSchemedData> {
-        return { [SCHEMA_VERSION_KEY]: 0 };
+        return { [SCHEMA_VERSION_KEY]: PolicyListManager.SCHEMA_VERSION };
     }
 
     protected async requestMatrixData(): Promise<unknown> {
+        /**
+         * Try load the watched lists from the management room and if that fails,
+         * try to load the watched lists from legacy Mjolnir account data.
+         */
+        const tryCurrentAndLegacy = async () => {
+            try {
+                return await this.mjolnir.client.getRoomStateEvent(this.mjolnir.managementRoomId, WATCHED_LISTS_EVENT_TYPE, "");
+            } catch (e) {
+                if (e.statusCode === 404) {
+                    LogService.warn("PolicyListManager", "Couldn't find new watched lists for Draupnir's watched lists, trying legacy Mjolnir account data.");
+                    return await this.mjolnir.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
+                } else {
+                    throw e;
+                }
+            }
+        };
+
         try {
-            return await this.mjolnir.client.getAccountData(WATCHED_LISTS_EVENT_TYPE);
+            return await tryCurrentAndLegacy();
         } catch (e) {
             if (e.statusCode === 404) {
                 LogService.warn('PolicyListManager', "Couldn't find account data for Mjolnir's watched lists, assuming first start.", e);
@@ -155,10 +186,12 @@ export class PolicyListManager extends MatrixDataManager<WatchedListsEvent> {
      * Store to account the list of policy rooms.
      */
     protected async storeMatixData() {
-        let list = this.policyLists.map(b => b.roomRef);
-        await this.mjolnir.client.setAccountData(WATCHED_LISTS_EVENT_TYPE, {
-            references: list,
-        });
+        const lists = this.policyLists.map(b => b.roomRef);
+        const payload: WatchedListsEvent = {
+            references: lists,
+            [SCHEMA_VERSION_KEY]: PolicyListManager.SCHEMA_VERSION
+        };
+        await this.mjolnir.client.sendStateEvent(this.mjolnir.managementRoomId, WATCHED_LISTS_EVENT_TYPE, "", payload);
     }
 
     /**
