@@ -27,11 +27,11 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
-import { MjolnirContext } from "./CommandHandler";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { DraupnirContext } from "./CommandHandler";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { ActionResult, MatrixRoomReference, PropagationType, isError } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 defineInterfaceCommand({
     table: "mjolnir",
@@ -43,9 +43,12 @@ defineInterfaceCommand({
             acceptor: findPresentationType("MatrixRoomReference"),
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
-        await this.mjolnir.policyListManager.watchList(list);
-        return CommandResult.Ok(undefined);
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, policyRoomReference: MatrixRoomReference): Promise<ActionResult<void>> {
+        const policyRoom = await resolveRoomReferenceSafe(this.client, policyRoomReference);
+        if (isError(policyRoom)) {
+            return policyRoom;
+        }
+        return await this.draupnir.protectedRoomsSet.issuerManager.watchList(PropagationType.Direct, policyRoom.ok, {});
     },
 })
 
@@ -64,9 +67,12 @@ defineInterfaceCommand({
             acceptor: findPresentationType("MatrixRoomReference"),
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, list: MatrixRoomReference): Promise<CommandResult<void, CommandError>> {
-        await this.mjolnir.policyListManager.unwatchList(list);
-        return CommandResult.Ok(undefined);
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, policyRoomReference: MatrixRoomReference): Promise<ActionResult<void>> {
+        const policyRoom = await resolveRoomReferenceSafe(this.client, policyRoomReference);
+        if (isError(policyRoom)) {
+            return policyRoom;
+        }
+        return await this.draupnir.protectedRoomsSet.issuerManager.unwatchList(PropagationType.Direct, policyRoom.ok);
     },
 })
 

@@ -25,49 +25,106 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { MXIDListProtectionSetting, NumberProtectionSetting } from "./ProtectionSettings";
-import { Mjolnir } from "../Mjolnir";
+import { AbstractProtection, ActionResult, EventConsequences, EventReport, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, SafeIntegerProtectionSetting, StandardProtectionSettings, StringEventID, StringUserID, StringUserIDSetProtectionSettings, UserConsequences, describeProtection, isError } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
+
+type TrustedReportersProtectionSettings = {
+    mxids: Set<StringUserID>,
+    alertThreshold: number,
+    redactThreshold: number,
+    banThreshold: number,
+}
+
+type TrustedReportersCapabilities = {
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+}
+
+type TrustedReportersDescription = ProtectionDescription<Draupnir, TrustedReportersProtectionSettings, TrustedReportersCapabilities>;
+
+describeProtection<TrustedReportersCapabilities, Draupnir, TrustedReportersProtectionSettings>({
+    name: 'TrustedReporters',
+    description: "Count reports from trusted reporters and take a configured action",
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, rawSettings) {
+        const parsedSettings = description.protectionSettings.parseSettings(rawSettings);
+        if (isError(parsedSettings)) {
+            return parsedSettings;
+        }
+        return Ok(
+            new TrustedReporters(
+                description,
+                capabilities,
+                protectedRoomsSet,
+                draupnir,
+                parsedSettings.ok
+            )
+        );
+    },
+    protectionSettings: new StandardProtectionSettings<TrustedReportersProtectionSettings>(
+        {
+            mxids: new StringUserIDSetProtectionSettings('mxids'),
+            alertThreshold: new SafeIntegerProtectionSetting('alertThreshold'),
+            redactThreshold: new SafeIntegerProtectionSetting('redactThreshold'),
+            banThreshold: new SafeIntegerProtectionSetting('banThreshold'),
+        },
+        {
+            mxids: new Set(),
+            alertThreshold: 3,
+            // -1 means 'disabled'
+            redactThreshold: -1,
+            banThreshold: -1,
+        }
+    )
+})
 
 /*
  * Hold a list of users trusted to make reports, and enact consequences on
  * events that surpass configured report count thresholds
  */
-export class TrustedReporters extends Protection {
-    private recentReported = new Map<string /* eventId */, Set<string /* reporterId */>>();
+export class TrustedReporters extends AbstractProtection<TrustedReportersDescription> implements Protection<TrustedReportersDescription> {
+    private recentReported = new Map<StringEventID, Set<StringUserID>>();
 
-    settings = {
-        mxids: new MXIDListProtectionSetting(),
-        alertThreshold: new NumberProtectionSetting(3),
-        // -1 means 'disabled'
-        redactThreshold: new NumberProtectionSetting(-1),
-        banThreshold: new NumberProtectionSetting(-1)
-    };
-
-    constructor() {
-        super();
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
+    public constructor(
+        description: TrustedReportersDescription,
+        capabilities: TrustedReportersCapabilities,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+        public readonly settings: TrustedReportersProtectionSettings
+    ) {
+        super(
+            description,
+            capabilities,
+            protectedRoomsSet,
+            [],
+            []
+        );
+        this.userConsequences = capabilities.userConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
 
-    public get name(): string {
-        return 'TrustedReporters';
-    }
-    public get description(): string {
-        return "Count reports from trusted reporters and take a configured action";
-    }
-
-    public async handleReport(mjolnir: Mjolnir, roomId: string, reporterId: string, event: any, reason?: string): Promise<any> {
-        if (!this.settings.mxids.value.includes(reporterId)) {
+    public async handleEventReport(report: EventReport): Promise<ActionResult<void>> {
+        if (!this.settings.mxids.has(report.sender)) {
             // not a trusted user, we're not interested
-            return
+            return Ok(undefined);
         }
 
-        let reporters = this.recentReported.get(event.id);
+        let reporters = this.recentReported.get(report.event_id);
         if (reporters === undefined) {
             // first report we've seen recently for this event
-            reporters = new Set<string>();
-            this.recentReported.set(event.id, reporters);
+            reporters = new Set<StringUserID>();
+            this.recentReported.set(report.event_id, reporters);
             if (this.recentReported.size > MAX_REPORTED_EVENT_BACKLOG) {
                 // queue too big. push the oldest reported event off the queue
                 const oldest = Array.from(this.recentReported.keys())[0];
@@ -75,29 +132,29 @@ export class TrustedReporters extends Protection {
             }
         }
 
-        reporters.add(reporterId);
+        reporters.add(report.sender);
 
         let met: string[] = [];
-        if (reporters.size === this.settings.alertThreshold.value) {
+        if (reporters.size === this.settings.alertThreshold) {
             met.push("alert");
             // do nothing. let the `sendMessage` call further down be the alert
         }
-        if (reporters.size === this.settings.redactThreshold.value) {
+        if (reporters.size === this.settings.redactThreshold) {
             met.push("redact");
-            await mjolnir.client.redactEvent(roomId, event.id, "abuse detected");
+            await this.eventConsequences.consequenceForEvent(report.room_id, report.event_id, "abuse detected");
         }
-        if (reporters.size === this.settings.banThreshold.value) {
+        if (reporters.size === this.settings.banThreshold) {
             met.push("ban");
-            await mjolnir.client.banUser(event.userId, roomId, "abuse detected");
+            await this.userConsequences.consequenceForUserInRoom(report.room_id, report.event.sender, "abuse detected");
         }
-
 
         if (met.length > 0) {
-            await mjolnir.client.sendMessage(mjolnir.config.managementRoom, {
+            await this.draupnir.client.sendMessage(this.draupnir.config.managementRoom, {
                 msgtype: "m.notice",
-                body: `message ${event.id} reported by ${[...reporters].join(', ')}. `
+                body: `message ${report.event_id} reported by ${[...reporters].join(', ')}. `
                     + `actions: ${met.join(', ')}`
             });
         }
+        return Ok(undefined)
     }
 }

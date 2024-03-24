@@ -27,25 +27,31 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
-import { MjolnirBaseExecutor, MjolnirContext } from "./CommandHandler";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { UserID } from "matrix-bot-sdk";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { DraupnirBaseExecutor, DraupnirContext } from "./CommandHandler";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { ActionError, ActionResult, MatrixRoomReference, Ok, UserID, isError } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 async function hijackRoomCommand(
-    this: MjolnirContext, _keywords: void, room: MatrixRoomReference, user: UserID
-): Promise<CommandResult<void, CommandError>> {
-    const isAdmin = await this.mjolnir.isSynapseAdmin();
-    if (!this.mjolnir.config.admin?.enableMakeRoomAdminCommand || !isAdmin) {
-        return CommandError.Result("Either the command is disabled or Mjolnir is not running as homeserver administrator.")
+    this: DraupnirContext, _keywords: void, room: MatrixRoomReference, user: UserID
+): Promise<ActionResult<void>> {
+    const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+    if (!this.draupnir.config.admin?.enableMakeRoomAdminCommand || isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
+        return ActionError.Result("Either the command is disabled or Mjolnir is not running as homeserver administrator.")
     }
-    await this.mjolnir.makeUserRoomAdmin(room.toRoomIdOrAlias(), user.toString());
-    return CommandResult.Ok(undefined);
+    if (this.draupnir.synapseAdminClient === undefined) {
+        throw new TypeError('Should be impossible at this point');
+    }
+    const resolvedRoom = await resolveRoomReferenceSafe(this.client, room);
+    if (isError(resolvedRoom)) {
+        return resolvedRoom;
+    }
+    await this.draupnir.synapseAdminClient?.makeUserRoomAdmin(resolvedRoom.ok.toRoomIDOrAlias(), user.toString());
+    return Ok(undefined);
 }
 
-defineInterfaceCommand<MjolnirBaseExecutor>({
+defineInterfaceCommand<DraupnirBaseExecutor>({
     designator: ["hijack", "room"],
     table: "synapse admin",
     parameters: parameters([

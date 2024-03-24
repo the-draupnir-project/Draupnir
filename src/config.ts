@@ -125,9 +125,6 @@ export interface IConfig {
         abuseReporting: {
             enabled: boolean;
         }
-        ruleServer?: {
-            enabled: boolean;
-        }
     }
     // Experimental usage of the matrix-bot-sdk rust crypto.
     // This can not be used with Pantalaimon.
@@ -207,9 +204,6 @@ const defaultConfig: IConfig = {
         port: 8080,
         address: "localhost",
         abuseReporting: {
-            enabled: false,
-        },
-        ruleServer: {
             enabled: false,
         },
     },

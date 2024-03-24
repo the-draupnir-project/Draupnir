@@ -25,72 +25,116 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { Mjolnir } from "../Mjolnir";
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { isTrueJoinEvent } from "../utils";
+import { AbstractProtection, ActionResult, EventConsequences, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, UserConsequences, Value, describeProtection } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
-export class FirstMessageIsImage extends Protection {
+type FirstMessageIsImageProtectionSettings = {};
 
-    private justJoined: { [roomId: string]: string[] } = {};
-    private recentlyBanned: string[] = [];
+export type FirstMessageIsImageProtectionCapabilities ={
+    userConsequences: UserConsequences;
+    eventConsequences: EventConsequences;
+};
 
-    settings = {};
+export type FirstMessageIsImageProtectionDescription = ProtectionDescription<Draupnir, FirstMessageIsImageProtectionSettings, FirstMessageIsImageProtectionCapabilities>
 
-    constructor() {
-        super();
+describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir, FirstMessageIsImageProtectionSettings>({
+    name: 'FirstMessageIsImageProtection',
+    description: "If the first thing a user does after joining is to post an image or video, \
+    they'll be banned for spam. This does not publish the ban to any of your ban lists.",
+    capabilityInterfaces: {
+        userConsequences: 'UserConsequences',
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        userConsequences: 'StandardUserConsequences',
+        eventConsequences: 'StandardEventConsequences',
+    },
+    factory: function (description, protectedRoomsSet, draupnir, capabilities, _settings) {
+        return Ok(
+            new FirstMessageIsImageProtection(
+                description,
+                capabilities,
+                protectedRoomsSet,
+                draupnir
+            )
+        )
+    }
+})
+
+export class FirstMessageIsImageProtection extends AbstractProtection<FirstMessageIsImageProtectionDescription> implements Protection<FirstMessageIsImageProtectionDescription> {
+
+    private justJoined: { [roomID: StringRoomID]: StringUserID[] } = {};
+    private recentlyBanned: StringUserID[] = [];
+
+    private readonly userConsequences: UserConsequences;
+    private readonly eventConsequences: EventConsequences;
+    constructor(
+        description: FirstMessageIsImageProtectionDescription,
+        capabilities: FirstMessageIsImageProtectionCapabilities,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+    ) {
+        super(
+            description,
+            capabilities,
+            protectedRoomsSet,
+            [],
+            []
+        );
+        this.userConsequences = capabilities.userConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
 
-    public get name(): string {
-        return 'FirstMessageIsImageProtection';
-    }
-    public get description(): string {
-        return "If the first thing a user does after joining is to post an image or video, " +
-            "they'll be banned for spam. This does not publish the ban to any of your ban lists.";
-    }
-
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (!this.justJoined[roomId]) this.justJoined[roomId] = [];
-
-        if (event['type'] === 'm.room.member') {
-            if (isTrueJoinEvent(event)) {
-                this.justJoined[roomId].push(event['state_key']);
-                LogService.info("FirstMessageIsImage", `Tracking ${event['state_key']} in ${roomId} as just joined`);
+    public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
+        const roomID = revision.room.toRoomIDOrAlias();
+        if (!this.justJoined[roomID]) this.justJoined[roomID] = [];
+        for (const change of changes) {
+            if (change.membershipChangeType === MembershipChangeType.Joined) {
+                this.justJoined[roomID].push(change.userID);
             }
-
-            return; // stop processing (membership event spam is another problem)
         }
+        return Ok(undefined);
+    }
 
-        if (event['type'] === 'm.room.message') {
-            const content = event['content'] || {};
-            const msgtype = content['msgtype'] || 'm.text';
-            const formattedBody = content['formatted_body'] || '';
+    public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
+        const roomID = room.toRoomIDOrAlias();
+        if (!this.justJoined[roomID]) this.justJoined[roomID] = [];
+        if (Value.Check(RoomMessage, event)) {
+            if (!('msgtype' in event.content)) {
+                return Ok(undefined);
+            }
+            const msgtype = event.content['msgtype'] || 'm.text';
+            const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
-            if (isMedia && this.justJoined[roomId].includes(event['sender'])) {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Banning ${event['sender']} for posting an image as the first thing after joining in ${roomId}.`);
-                if (!mjolnir.config.noop) {
-                    await mjolnir.client.banUser(event['sender'], roomId, "spam");
+            if (isMedia && this.justJoined[roomID].includes(event['sender'])) {
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Banning ${event['sender']} for posting an image as the first thing after joining in ${roomID}.`);
+                if (!this.draupnir.config.noop) {
+                    await this.userConsequences.consequenceForUserInRoom(roomID, event['sender'], 'spam');
                 } else {
-                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to ban ${event['sender']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                    await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to ban ${event['sender']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }
 
-                if (this.recentlyBanned.includes(event['sender'])) return; // already handled (will be redacted)
-                mjolnir.unlistedUserRedactionHandler.addUser(event['sender']);
+                if (this.recentlyBanned.includes(event['sender'])) {
+                    return Ok(undefined); // already handled (will be redacted)
+                }
+                this.draupnir.unlistedUserRedactionQueue.addUser(event['sender']);
                 this.recentlyBanned.push(event['sender']); // flag to reduce spam
 
                 // Redact the event
-                if (!mjolnir.config.noop) {
-                    await mjolnir.client.redactEvent(roomId, event['event_id'], "spam");
+                if (!this.draupnir.config.noop) {
+                    await this.eventConsequences.consequenceForEvent(roomID, event['event_id'], "spam");
                 } else {
-                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to redact ${event['event_id']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                    await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
                 }
             }
         }
 
-        const idx = this.justJoined[roomId].indexOf(event['sender']);
+        const idx = this.justJoined[roomID].indexOf(event['sender']);
         if (idx >= 0) {
             LogService.info("FirstMessageIsImage", `${event['sender']} is no longer considered suspect`);
-            this.justJoined[roomId].splice(idx, 1);
+            this.justJoined[roomID].splice(idx, 1);
         }
+        return Ok(undefined);
     }
 }

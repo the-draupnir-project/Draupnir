@@ -25,26 +25,50 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
-import { LogLevel, LogService } from "matrix-bot-sdk";
+import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, UserID, isError } from "matrix-protection-suite";
+import { DraupnirContext } from "./CommandHandler";
+import { ParsedKeywords, RestDescription, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { defineInterfaceCommand } from "./interface-manager/InterfaceCommand";
 
-// !mjolnir powerlevel <user ID> <level> [room]
-export async function execSetPowerLevelCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const victim = parts[2];
-    const level = Math.round(Number(parts[3]));
-    const inRoom = parts[4];
-
-    let targetRooms = inRoom ? [await mjolnir.client.resolveRoom(inRoom)] : mjolnir.protectedRoomsTracker.getProtectedRooms();
-
-    for (const targetRoomId of targetRooms) {
-        try {
-            await mjolnir.client.setUserPowerLevel(victim, targetRoomId, level);
-        } catch (e) {
-            const message = e.message || (e.body ? e.body.error : '<no message>');
-            LogService.error("SetPowerLevelCommand", e);
-            await mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "SetPowerLevelCommand", `Failed to set power level of ${victim} to ${level} in ${targetRoomId}: ${message}`, targetRoomId);
+async function setPowerLevelCommand(
+    this: DraupnirContext,
+    _keywords: ParsedKeywords,
+    user: UserID,
+    powerLevel: string,
+    ...givenRooms: MatrixRoomReference[]
+): Promise<ActionResult<void>> {
+    const parsedLevel = Number.parseInt(powerLevel, 10);
+    const resolvedGivenRooms: MatrixRoomID[] = [];
+    for (const room of givenRooms) {
+        const resolvedResult = await resolveRoomReferenceSafe(this.client, room);
+        if (isError(resolvedResult)) {
+            return resolvedResult;
+        } else {
+            resolvedGivenRooms.push(resolvedResult.ok);
         }
     }
-
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
+    const rooms = givenRooms.length === 0 ? this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms : resolvedGivenRooms;
+    for (const room of rooms) {
+        await this.draupnir.client.setUserPowerLevel(user.toString(), room.toRoomIDOrAlias(), parsedLevel);
+    }
+    return Ok(undefined);
 }
+
+defineInterfaceCommand({
+    table: "mjolnir",
+    designator: ["powerlevel"],
+    parameters: parameters([
+        {
+            name: "user",
+            acceptor: findPresentationType("UserID")
+        },
+        {
+            name: "power level",
+            acceptor: findPresentationType("string")
+        }
+    ],
+    new RestDescription("rooms", findPresentationType("MatrixRoomReference"))),
+    command: setPowerLevelCommand,
+    summary: "Set the power level of a user across the protected rooms set, or within the provided rooms"
+})

@@ -40,8 +40,8 @@ import * as _ from '@sentry/tracing'; // Performing the import activates tracing
 
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { IConfig } from "./config";
-import { MatrixSendClient } from "./MatrixEmitter";
 import { Gauge } from "prom-client";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 // Define a few aliases to simplify parsing durations.
 

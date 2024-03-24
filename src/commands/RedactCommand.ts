@@ -25,43 +25,98 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir } from "../Mjolnir";
+import { ActionResult, MatrixEventReference, MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomReference, Ok, UserID, isError } from "matrix-protection-suite";
 import { redactUserMessagesIn } from "../utils";
-import { Permalinks } from "./interface-manager/Permalinks";
+import { KeywordsDescription, ParsedKeywords, RestDescription, findPresentationType, parameters, union } from "./interface-manager/ParameterParsing";
+import { DraupnirContext } from "./CommandHandler";
+import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { Draupnir } from "../Draupnir";
+import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
+import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
-// !mjolnir redact <user ID> [room alias] [limit]
-export async function execRedactCommand(roomId: string, event: any, mjolnir: Mjolnir, parts: string[]) {
-    const userId = parts[2];
-    let roomAlias: string|null = null;
-    let limit = Number.parseInt(parts.length > 3 ? parts[3] : "", 10); // default to NaN for later
-    if (parts.length > 3 && isNaN(limit)) {
-        roomAlias = await mjolnir.client.resolveRoom(parts[3]);
-        if (parts.length > 4) {
-            limit = Number.parseInt(parts[4], 10);
-        }
+export async function redactEvent(
+    draupnir: Draupnir,
+    reference: MatrixEventReference,
+    reason: string
+): Promise<ActionResult<void>> {
+    const resolvedRoom = await resolveRoomReferenceSafe(draupnir.client, reference.reference);
+    if (isError(resolvedRoom)) {
+        return resolvedRoom;
     }
-
-    // Make sure we always have a limit set
-    if (isNaN(limit)) limit = 1000;
-
-    const processingReactionId = await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], 'In Progress');
-
-    if (userId[0] !== '@') {
-        // Assume it's a permalink
-        const parsed = Permalinks.parseUrl(parts[2]);
-        if (parsed.roomIdOrAlias === undefined || parsed.eventId === undefined) {
-            throw new TypeError(`Got a malformed permalink ${parsed}`)
-        }
-        const targetRoomId = await mjolnir.client.resolveRoom(parsed.roomIdOrAlias);
-        await mjolnir.client.redactEvent(targetRoomId, parsed.eventId);
-        await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-        await mjolnir.client.redactEvent(roomId, processingReactionId, 'done processing command');
-        return;
-    }
-
-    const targetRoomIds = roomAlias ? [roomAlias] : mjolnir.protectedRoomsTracker.getProtectedRooms();
-    await redactUserMessagesIn(mjolnir.client, mjolnir.managementRoomOutput, userId, targetRoomIds, limit);
-
-    await mjolnir.client.unstableApis.addReactionToEvent(roomId, event['event_id'], '✅');
-    await mjolnir.client.redactEvent(roomId, processingReactionId, 'done processing');
+    await draupnir.client.redactEvent(resolvedRoom.ok.toRoomIDOrAlias(), reference.eventID, reason);
+    return Ok(undefined);
 }
+
+export async function redactCommand(
+    this: DraupnirContext,
+    keywords: ParsedKeywords,
+    reference: UserID | MatrixEventReference,
+    ...reasonParts: string[]
+): Promise<ActionResult<void>> {
+    const reason = reasonParts.join(' ');
+    if (reference instanceof MatrixEventViaAlias || reference instanceof MatrixEventViaRoomID) {
+        return await redactEvent(this.draupnir, reference, reason);
+    }
+    const rawLimit = keywords.getKeyword<string>('limit', undefined);
+    const limit = rawLimit === undefined ? undefined : Number.parseInt(rawLimit, 10);
+    const restrictToRoomReference = keywords.getKeyword<MatrixRoomReference>("room", undefined);
+    const restrictToRoom = restrictToRoomReference ? await resolveRoomReferenceSafe(this.client, restrictToRoomReference) : undefined;
+    if (restrictToRoom !== undefined && isError(restrictToRoom)) {
+        return restrictToRoom;
+    }
+    const roomsToRedactWithin = restrictToRoom === undefined ? this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms : [restrictToRoom.ok];
+    await redactUserMessagesIn(
+        this.client,
+        this.draupnir.managementRoomOutput,
+        reference.toString(),
+        roomsToRedactWithin.map((room) => room.toRoomIDOrAlias()),
+        limit,
+        this.draupnir.config.noop
+    );
+    return Ok(undefined);
+}
+
+defineInterfaceCommand({
+    designator: ["redact"],
+    table: "mjolnir",
+    parameters: parameters([
+        {
+            name: "entity",
+            acceptor: union(
+                findPresentationType("UserID"),
+                findPresentationType("MatrixEventReference")
+            ),
+        }],
+    new RestDescription<DraupnirContext>(
+        "reason",
+        findPresentationType("string"),
+        async function(_parameter) {
+            return {
+                suggestions: this.draupnir.config.commands.ban.defaultReasons
+            }
+        }
+    ),
+    new KeywordsDescription({
+        limit: {
+            name: "limit",
+            isFlag: false,
+            acceptor: findPresentationType("string"),
+            description: 'Limit the number of messages to be redacted per room.'
+        },
+        room: {
+            name: 'room',
+            isFlag: false,
+            acceptor: findPresentationType("MatrixRoomReference"),
+            description: 'Allows the command to be scoped to just one protected room.'
+        }
+    }),
+    ),
+    command: redactCommand,
+    summary: "Redacts either a users's recent messagaes within protected rooms or a specific message shared with the bot."
+});
+
+defineMatrixInterfaceAdaptor({
+    interfaceCommand: findTableCommand("mjolnir", "redact"),
+    renderer: tickCrossRenderer
+})

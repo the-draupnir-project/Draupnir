@@ -27,11 +27,11 @@ limitations under the License.
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, ParsedKeywords, RestDescription } from "./interface-manager/ParameterParsing";
-import { CommandResult, CommandError } from "./interface-manager/Validation";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { MjolnirContext } from "./CommandHandler";
+import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { ActionError, ActionResult, MatrixRoomReference, Ok, isError } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 defineInterfaceCommand({
     table: "synapse admin",
@@ -41,17 +41,32 @@ defineInterfaceCommand({
         {
             name: 'room',
             acceptor: findPresentationType("MatrixRoomReference"),
-        }
+        },
     ],
     new RestDescription("reason", findPresentationType("string"))),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, targetRoom: MatrixRoomReference, ...reasonParts: string[]): Promise<CommandResult<void, CommandError>> {
-        const isAdmin = await this.mjolnir.isSynapseAdmin();
-        if (!isAdmin) {
-            return CommandError.Result('I am not a Synapse administrator, or the endpoint to shutdown a room is blocked');
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, targetRoom: MatrixRoomReference, ...reasonParts: string[]): Promise<ActionResult<void>> {
+        const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+        if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
+            return ActionError.Result('I am not a Synapse administrator, or the endpoint to shutdown a room is blocked');
+        }
+        if (this.draupnir.synapseAdminClient === undefined) {
+            throw new TypeError(`Should be impossible at this point.`);
+        }
+        const resolvedRoom = await resolveRoomReferenceSafe(this.client, targetRoom);
+        if (isError(resolvedRoom)) {
+            return resolvedRoom;
         }
         const reason = reasonParts.join(" ");
-        await this.mjolnir.shutdownSynapseRoom((await targetRoom.resolve(this.client)).toRoomIdOrAlias(), reason);
-        return CommandResult.Ok(undefined);
+        await this.draupnir.synapseAdminClient.deleteRoom(
+            resolvedRoom.ok.toRoomIDOrAlias(),
+            {
+                message: reason,
+                new_room_user_id: this.draupnir.clientUserID,
+                block: true,
+            }
+
+        );
+        return Ok(undefined);
     },
 })
 

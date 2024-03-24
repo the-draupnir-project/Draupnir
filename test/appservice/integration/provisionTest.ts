@@ -43,7 +43,7 @@ describe("Test that the app service can provision a mjolnir on invite of the app
         const managementRoomId = roomsInvitedTo.filter(async roomId => !(await isPolicyRoom(moderator, roomId)))[0];
         // Check that the newly provisioned mjolnir is actually responsive.
         await getFirstReply(moderator, managementRoomId, () => {
-            return moderator.sendMessage(managementRoomId, { body: `!mjolnir status`, msgtype: 'm.text' });
+            return moderator.sendMessage(managementRoomId, { body: `!draupnir status`, msgtype: 'm.text' });
         })
     })
 })

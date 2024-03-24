@@ -25,86 +25,80 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { MjolnirContext } from "./CommandHandler";
-import { MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
+import { DraupnirContext } from "./CommandHandler";
 import { findPresentationType, KeywordsDescription, parameters, ParsedKeywords, union } from "./interface-manager/ParameterParsing";
 import { UserID, MatrixGlob, LogLevel } from "matrix-bot-sdk";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
-import { findPolicyListFromRoomReference, findPolicyListFromShortcode } from "./Ban";
-import { RULE_ROOM, RULE_SERVER, RULE_USER } from "../models/ListRule";
-import { Mjolnir } from "../Mjolnir";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import PolicyList from "../models/PolicyList";
+import { Draupnir } from "../Draupnir";
+import { ActionResult, isError, isStringUserID, MatrixRoomReference, Ok, PolicyRuleType } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
-async function unbanUserFromRooms(mjolnir: Mjolnir, rule: MatrixGlob) {
-    await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", "Unbanning users that match glob: " + rule.regex);
-    let unbannedSomeone = false;
-    for (const protectedRoomId of mjolnir.protectedRoomsTracker.getProtectedRooms()) {
-        const members = await mjolnir.client.getRoomMembers(protectedRoomId, undefined, ['ban'], undefined);
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Found ${members.length} banned user(s)`);
-        for (const member of members) {
-            const victim = member.membershipFor;
-            if (member.membership !== 'ban') continue;
-            if (rule.test(victim)) {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Unbanning ${victim} in ${protectedRoomId}`, protectedRoomId);
-
-                if (!mjolnir.config.noop) {
-                    await mjolnir.client.unbanUser(victim, protectedRoomId);
+async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
+    await draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", "Unbanning users that match glob: " + rule.regex);
+    for (const revision of draupnir.protectedRoomsSet.setMembership.allRooms) {
+        for (const member of revision.members()) {
+            if (member.membership !== 'ban') {
+                continue;
+            }
+            if (rule.test(member.userID)) {
+                await draupnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`, revision.room.toRoomIDOrAlias());
+                if (!draupnir.config.noop) {
+                    await draupnir.client.unbanUser(member.userID, revision.room.toRoomIDOrAlias());
                 } else {
-                    await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", `Attempted to unban ${victim} in ${protectedRoomId} but Mjolnir is running in no-op mode`, protectedRoomId);
+                    await draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", `Attempted to unban ${member.userID} in ${revision.room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`, revision.room.toRoomIDOrAlias());
                 }
-
-                unbannedSomeone = true;
             }
         }
-    }
-
-    if (unbannedSomeone) {
-        await mjolnir.managementRoomOutput.logMessage(LogLevel.DEBUG, "Unban", `Syncing lists to ensure no users were accidentally unbanned`);
-        await mjolnir.protectedRoomsTracker.syncLists();
     }
 }
 
 async function unban(
-    this: MjolnirContext,
+    this: DraupnirContext,
     keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
-    policyListReference: MatrixRoomReference|string,
-): Promise<CommandResult<any, CommandError>> {
-    // first step is to resolve the policy list
-    const policyListResult = typeof policyListReference === 'string'
-    ? await findPolicyListFromShortcode(this.mjolnir, policyListReference)
-    : policyListReference instanceof PolicyList
-    ? CommandResult.Ok(policyListReference)
-    : await findPolicyListFromRoomReference(this.mjolnir, policyListReference);
-    if (policyListResult.isErr()) {
-        return policyListResult;
+    policyRoomReference: MatrixRoomReference,
+): Promise<ActionResult<void>> {
+    const policyRoom = await resolveRoomReferenceSafe(this.client, policyRoomReference);
+    if (isError(policyRoom)) {
+        return policyRoom;
     }
-    const policyList = policyListResult.ok;
-
-    if (entity instanceof UserID) {
-        await policyList.unbanEntity(RULE_USER, entity.toString());
-    } else if (entity instanceof MatrixRoomReference) {
-        await policyList.unbanEntity(RULE_ROOM, entity.toRoomIdOrAlias());
-    } else {
-        await policyList.unbanEntity(RULE_SERVER, entity);
+    const policyRoomEditor = await this.draupnir.policyRoomManager.getPolicyRoomEditor(
+        policyRoom.ok
+    );
+    if (isError(policyRoomEditor)) {
+        return policyRoomEditor;
     }
-
+    const policyRoomUnban = entity instanceof UserID
+        ? await policyRoomEditor.ok.unbanEntity(PolicyRuleType.User, entity.toString())
+        : typeof entity === 'string'
+            ? await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Server, entity)
+            : await (async () => {
+                const bannedRoom = await resolveRoomReferenceSafe(this.client, entity);
+                if (isError(bannedRoom)) {
+                    return bannedRoom;
+                }
+                return await policyRoomEditor.ok.unbanEntity(PolicyRuleType.Room, bannedRoom.ok.toRoomIDOrAlias());
+            })();
+    if (isError(policyRoomUnban)) {
+        return policyRoomUnban;
+    }
     if (typeof entity === 'string' || entity instanceof UserID) {
         const rawEnttiy = typeof entity === 'string' ? entity : entity.toString();
         const isGlob = (string: string) => string.includes('*') ? true : string.includes('?');
         const rule = new MatrixGlob(entity.toString())
-        this.mjolnir.unlistedUserRedactionHandler.removeUser(entity.toString());
+        if (isStringUserID(rawEnttiy)) {
+            this.draupnir.unlistedUserRedactionQueue.removeUser(rawEnttiy);
+        }
         if (!isGlob(rawEnttiy) || keywords.getKeyword<string>("true", "false") === "true") {
-            await unbanUserFromRooms(this.mjolnir, rule);
+            await unbanUserFromRooms(this.draupnir, rule);
         } else {
-            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", "Running unban without `unban <list> <user> true` will not override existing room level bans");
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "Unban", "Running unban without `unban <list> <user> true` will not override existing room level bans");
         }
     }
 
-    return CommandResult.Ok(undefined);
+    return Ok(undefined);
 }
 
 defineInterfaceCommand({
@@ -123,12 +117,13 @@ defineInterfaceCommand({
             name: "list",
             acceptor: union(
                 findPresentationType("MatrixRoomReference"),
-                findPresentationType("string"),
-                findPresentationType("PolicyList"),
             ),
-            prompt: async function (this: MjolnirContext) {
+            prompt: async function (this: DraupnirContext) {
                 return {
-                    suggestions: this.mjolnir.policyListManager.lists
+                    suggestions: this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(
+                        this.draupnir.clientUserID,
+                        PolicyRuleType.User
+                    )
                 };
             }
         },

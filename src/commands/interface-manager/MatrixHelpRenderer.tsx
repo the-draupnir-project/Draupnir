@@ -2,16 +2,15 @@
  * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
  */
 
-import { MatrixSendClient } from "../../MatrixEmitter";
 import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
-import { MatrixContext, MatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
+import { MatrixContext, MatrixInterfaceAdaptor, RendererSignature } from "./MatrixInterfaceAdaptor";
 import { ArgumentParseError, ParameterDescription, RestDescription } from "./ParameterParsing";
-import { CommandError, CommandResult } from "./Validation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
-import { CommandException } from "./CommandException";
 import { LogService } from "matrix-bot-sdk";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ActionException, ActionResult, MatrixRoomReference, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -77,45 +76,45 @@ function renderTableHelp(table: CommandTable): DocumentNode {
     </root>
 }
 
-export async function renderHelp(client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<CommandTable, CommandError>): Promise<void> {
-    if (result.isErr()) {
+export async function renderHelp(client: MatrixSendClient, commandRoomID: StringRoomID, event: any, result: ActionResult<CommandTable>): Promise<void> {
+    if (isError(result)) {
         throw new TypeError("This command isn't supposed to fail");
     }
     await renderMatrixAndSend(
         renderTableHelp(result.ok),
-        commandRoomId,
+        commandRoomID,
         event,
         client
     );
 }
 
-export async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: CommandResult<unknown, CommandError>): Promise<void> {
+export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
     const react = async (emote: string) => {
         try {
-            await client.unstableApis.addReactionToEvent(commandRoomId, event['event_id'], emote);
+            await client.unstableApis.addReactionToEvent(commandRoomID, event['event_id'], emote);
         } catch (e) {
             LogService.error("tickCrossRenderer", "Couldn't react to the event", event['event_id'], e);
         }
     }
-    if (result.isOk()) {
+    if (result.isOkay) {
         await react('✅')
     } else {
-        if (result.err instanceof ArgumentParseError) {
+        if (result.error instanceof ArgumentParseError) {
             await renderMatrixAndSend(
-                renderArgumentParseError(this.interfaceCommand, result.err),
-                commandRoomId,
+                renderArgumentParseError(this.interfaceCommand, result.error),
+                commandRoomID,
                 event,
                 client);
-        } else if (result.err instanceof CommandException) {
-            const commandError = result.err;
+        } else if (result.error instanceof ActionException) {
+            const commandError = result.error;
             LogService.error("CommandException", commandError.uuid, commandError.message, commandError.exception);
             await renderMatrixAndSend(
-                renderCommandException(this.interfaceCommand, result.err),
-                commandRoomId,
+                renderCommandException(this.interfaceCommand, result.error),
+                commandRoomID,
                 event,
                 client);
         } else {
-            await client.replyNotice(commandRoomId, event, result.err.message);
+            await client.replyNotice(commandRoomID, event, result.error.message);
         }
         // reacting is way less important than communicating what happened, do it last.
         await react('❌');
@@ -146,7 +145,7 @@ function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error
     </root>
 }
 
-function renderCommandException(command: InterfaceCommand<BaseFunction>, error: CommandException): DocumentNode {
+function renderCommandException(command: InterfaceCommand<BaseFunction>, error: ActionException): DocumentNode {
     return <root>
         There was an unexpected error when processing this command:<br />
         {error.message}<br />
@@ -158,4 +157,8 @@ function renderCommandException(command: InterfaceCommand<BaseFunction>, error: 
 export function renderMentionPill(mxid: string, displayName: string): DocumentNode {
     const url = `https://matrix.to/#/${mxid}`;
     return <a href={url}>{displayName}</a>
+}
+
+export function renderRoomPill(room: MatrixRoomReference): DocumentNode {
+    return <a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a>
 }

@@ -26,7 +26,6 @@ limitations under the License.
  */
 
 import { AppServiceRegistration, Bridge, Request, WeakEvent, MatrixUser, Logger, setBridgeVersion, PrometheusMetrics } from "matrix-appservice-bridge";
-import { MjolnirManager } from ".//MjolnirManager";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
 import { Api } from "./Api";
@@ -35,6 +34,9 @@ import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
+import { ClientCapabilityFactory, RoomStateManagerFactory, joinedRoomsSafe, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
 /**
@@ -53,13 +55,26 @@ export class MjolnirAppService {
     private constructor(
         public readonly config: IConfig,
         public readonly bridge: Bridge,
-        public readonly mjolnirManager: MjolnirManager,
+        public readonly draupnirManager: AppServiceDraupnirManager,
         public readonly accessControl: AccessControl,
         private readonly dataStore: DataStore,
-        private readonly prometheusMetrics: PrometheusMetrics
+        private readonly eventDecoder: EventDecoder,
+        private readonly roomStateManagerFactory: RoomStateManagerFactory,
+        private readonly clientCapabilityFactory: ClientCapabilityFactory,
+        private readonly clientsInRoomMap: ClientsInRoomMap,
+        private readonly prometheusMetrics: PrometheusMetrics,
+        public readonly accessControlRoomID: StringRoomID,
+        public readonly botUserID: StringUserID,
     ) {
-        this.api = new Api(config.homeserver.url, mjolnirManager);
-        this.commands = new AppserviceCommandHandler(this);
+        this.api = new Api(config.homeserver.url, draupnirManager);
+        const client = this.bridge.getBot().getClient();
+        this.commands = new AppserviceCommandHandler(
+            botUserID,
+            client,
+            accessControlRoomID,
+            this.clientCapabilityFactory.makeClientPlatform(botUserID, client),
+            this
+        );
     }
 
     /**
@@ -69,7 +84,7 @@ export class MjolnirAppService {
      * @param registrationFilePath A file path to the registration file to read the namespace and tokens from.
      * @returns A new `MjolnirAppService`.
      */
-    public static async makeMjolnirAppService(config: IConfig, dataStore: DataStore, registrationFilePath: string) {
+    public static async makeMjolnirAppService(config: IConfig, dataStore: DataStore, eventDecoder: EventDecoder, registrationFilePath: string) {
         const bridge = new Bridge({
             homeserverUrl: config.homeserver.url,
             domain: config.homeserver.domain,
@@ -78,15 +93,56 @@ export class MjolnirAppService {
             // It also allows us to combine constructor/initialize logic
             // to make the code base much simpler. A small hack to pay for an overall less hacky code base.
             controller: {
-                onUserQuery: () => { throw new Error("Mjolnir uninitialized") },
-                onEvent: () => { throw new Error("Mjolnir uninitialized") },
+                onUserQuery: () => {
+                    throw new Error("Mjolnir uninitialized")
+                },
+                onEvent: () => {
+                    throw new Error("Mjolnir uninitialized")
+                },
             },
             suppressEcho: false,
             disableStores: true,
         });
         await bridge.initialise();
-        const accessControlListId = await bridge.getBot().getClient().resolveRoom(config.adminRoom);
-        const accessControl = await AccessControl.setupAccessControl(accessControlListId, bridge);
+        const adminRoom = (() => {
+            if (isStringRoomID(config.adminRoom)) {
+                return MatrixRoomReference.fromRoomID(config.adminRoom);
+            } else if (isStringRoomAlias(config.adminRoom)) {
+                return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
+            } else {
+                const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
+                if (isError(parseResult)) {
+                    throw new TypeError(`${config.adminRoom} needs to be a room id, alias or permalink`);
+                }
+                return parseResult.ok;
+            }
+        })();
+        const accessControlRoom = await resolveRoomReferenceSafe(bridge.getBot().getClient(), adminRoom);
+        if (isError(accessControlRoom)) {
+            throw accessControlRoom.error;
+        }
+        const clientsInRoomMap = new StandardClientsInRoomMap();
+        const clientProvider = async (clientUserID: StringUserID) => bridge.getIntent(clientUserID).matrixClient;
+        const roomStateManagerFactory = new RoomStateManagerFactory(
+            clientsInRoomMap,
+            clientProvider,
+            eventDecoder
+        );
+        const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
+        const botUserID = bridge.getBot().getUserId() as StringUserID;
+        const clientRooms = await clientsInRoomMap.makeClientRooms(
+            botUserID,
+            async () => joinedRoomsSafe(bridge.getBot().getClient()),
+        );
+        if (isError(clientRooms)) {
+            throw clientRooms.error;
+        }
+        const botRoomJoiner = clientCapabilityFactory.makeClientPlatform(botUserID, bridge.getBot().getClient()).toRoomJoiner();
+        const appserviceBotPolicyRoomManager = await roomStateManagerFactory.getPolicyRoomManager(botUserID);
+        const accessControl = await AccessControl.setupAccessControlForRoom(accessControlRoom.ok, appserviceBotPolicyRoomManager, botRoomJoiner);
+        if (isError(accessControl)) {
+            throw accessControl.error;
+        }
         // Activate /metrics endpoint for Prometheus
 
         // This should happen automatically but in testing this didn't happen in the docker image
@@ -100,14 +156,30 @@ export class MjolnirAppService {
             labels: ["status", "uuid"],
         });
 
-        const mjolnirManager = await MjolnirManager.makeMjolnirManager(dataStore, bridge, accessControl, instanceCountGauge);
+        const serverName = config.homeserver.domain;
+        const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(
+            serverName,
+            dataStore,
+            bridge,
+            accessControl.ok,
+            roomStateManagerFactory,
+            clientCapabilityFactory,
+            clientProvider,
+            instanceCountGauge
+        );
         const appService = new MjolnirAppService(
             config,
             bridge,
             mjolnirManager,
-            accessControl,
+            accessControl.ok,
             dataStore,
-            prometheus
+            eventDecoder,
+            roomStateManagerFactory,
+            clientCapabilityFactory,
+            clientsInRoomMap,
+            prometheus,
+            accessControlRoom.ok.toRoomIDOrAlias(),
+            botUserID
         );
         bridge.opts.controller = {
             onUserQuery: appService.onUserQuery.bind(appService),
@@ -126,7 +198,7 @@ export class MjolnirAppService {
         Logger.configure(config.logging ?? { console: "debug" });
         const dataStore = new PgDataStore(config.db.connectionString);
         await dataStore.init();
-        const service = await MjolnirAppService.makeMjolnirAppService(config, dataStore, registrationFilePath);
+        const service = await MjolnirAppService.makeMjolnirAppService(config, dataStore, DefaultEventDecoder, registrationFilePath);
         // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
         await service.start(port);
         return service;
@@ -151,7 +223,10 @@ export class MjolnirAppService {
             if ('invite' === mxEvent.content['membership'] && mxEvent.state_key === this.bridge.botUserId) {
                 log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
                 try {
-                    await this.mjolnirManager.provisionNewMjolnir(mxEvent.sender)
+                    const result = await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID);
+                    if (isError(result)) {
+                        log.error(`Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`, result.error);
+                    }
                 } catch (e: any) {
                     log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
                     // continue, we still want to reject this invitation.
@@ -164,9 +239,19 @@ export class MjolnirAppService {
                 }
             }
         }
-        this.accessControl.handleEvent(mxEvent['room_id'], mxEvent);
-        this.mjolnirManager.onEvent(request);
         this.commands.handleEvent(mxEvent);
+        const decodeResult = this.eventDecoder.decodeEvent(mxEvent);
+        if (isError(decodeResult)) {
+            log.error(
+                `Got an error when decoding an event for the appservice`,
+                decodeResult.error.uuid,
+                decodeResult.error
+            );
+            return;
+        }
+        const roomID = decodeResult.ok.room_id;
+        this.roomStateManagerFactory.handleTimelineEvent(roomID, decodeResult.ok);
+        this.clientsInRoomMap.handleTimelineEvent(roomID, decodeResult.ok);
     }
 
     /**

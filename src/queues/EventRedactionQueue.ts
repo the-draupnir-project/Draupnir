@@ -24,16 +24,15 @@ limitations under the License.
  * However, this file is modified and the modifications in this file
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
-import { LogLevel, MatrixClient } from "matrix-bot-sdk"
-import { IRoomUpdateError, RoomUpdateException } from "../models/RoomUpdateError";
+import { LogLevel } from "matrix-bot-sdk"
 import { redactUserMessagesIn } from "../utils";
 import ManagementRoomOutput from "../ManagementRoomOutput";
-import { MatrixSendClient } from "../MatrixEmitter";
-import { CommandExceptionKind } from "../commands/interface-manager/CommandException";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ActionExceptionKind, MatrixRoomReference, RoomUpdateError, RoomUpdateException, StringRoomID, StringUserID } from "matrix-protection-suite";
 
 export interface QueuedRedaction {
     /** The room which the redaction will take place in. */
-    readonly roomId: string;
+    readonly roomID: StringRoomID;
     /**
      * Carry out the redaction.
      * Called by the EventRedactionQueue.
@@ -51,22 +50,20 @@ export interface QueuedRedaction {
  * Redacts all of the messages a user has sent to one room.
  */
 export class RedactUserInRoom implements QueuedRedaction {
-    userId: string;
-    roomId: string;
-
-    constructor(userId: string, roomId: string) {
-        this.userId = userId;
-        this.roomId = roomId;
+    constructor(
+        public readonly userID: StringUserID,
+        public readonly roomID: StringRoomID,
+    ) {
     }
 
-    public async redact(client: MatrixClient, managementRoom: ManagementRoomOutput) {
-        await managementRoom.logMessage(LogLevel.DEBUG, "Mjolnir", `Redacting events from ${this.userId} in room ${this.roomId}.`);
-        await redactUserMessagesIn(client, managementRoom, this.userId, [this.roomId]);
+    public async redact(client: MatrixSendClient, managementRoom: ManagementRoomOutput) {
+        await managementRoom.logMessage(LogLevel.DEBUG, "Mjolnir", `Redacting events from ${this.userID} in room ${this.roomID}.`);
+        await redactUserMessagesIn(client, managementRoom, this.userID, [this.roomID]);
     }
 
     public redactionEqual(redaction: QueuedRedaction): boolean {
         if (redaction instanceof RedactUserInRoom) {
-            return redaction.userId === this.userId && redaction.roomId === this.roomId;
+            return redaction.userID === this.userID && redaction.roomID === this.roomID;
         } else {
             return false;
         }
@@ -87,7 +84,7 @@ export class EventRedactionQueue {
      * @returns True if the queue already has the redaction, false otherwise.
      */
     public has(redaction: QueuedRedaction): boolean {
-        return !!this.toRedact.get(redaction.roomId)?.find(r => r.redactionEqual(redaction));
+        return !!this.toRedact.get(redaction.roomID)?.find(r => r.redactionEqual(redaction));
     }
 
     /**
@@ -99,11 +96,11 @@ export class EventRedactionQueue {
         if (this.has(redaction)) {
             return false;
         } else {
-            let entry = this.toRedact.get(redaction.roomId);
+            let entry = this.toRedact.get(redaction.roomID);
             if (entry) {
                 entry.push(redaction);
             } else {
-                this.toRedact.set(redaction.roomId, [redaction]);
+                this.toRedact.set(redaction.roomID, [redaction]);
             }
             return true;
         }
@@ -119,8 +116,8 @@ export class EventRedactionQueue {
      * @param limitToRoomId If the roomId is provided, only redactions for that room will be processed.
      * @returns A description of any errors encountered by each QueuedRedaction that was processed.
      */
-    public async process(client: MatrixSendClient, managementRoom: ManagementRoomOutput, limitToRoomId?: string): Promise<IRoomUpdateError[]> {
-        const errors: IRoomUpdateError[] = [];
+    public async process(client: MatrixSendClient, managementRoom: ManagementRoomOutput, limitToRoomID?: StringRoomID): Promise<RoomUpdateError[]> {
+        const errors: RoomUpdateError[] = [];
         const redact = async (currentBatch: QueuedRedaction[]) => {
             for (const redaction of currentBatch) {
                 try {
@@ -128,8 +125,8 @@ export class EventRedactionQueue {
                 } catch (e) {
                     const message = e.message || (e.body ? e.body.error : '<no message>');
                     const error = new RoomUpdateException(
-                        redaction.roomId,
-                        CommandExceptionKind.Unknown,
+                        MatrixRoomReference.fromRoomID(redaction.roomID),
+                        ActionExceptionKind.Unknown,
                         e,
                         message
                     );
@@ -137,11 +134,11 @@ export class EventRedactionQueue {
                 }
             }
         }
-        if (limitToRoomId) {
+        if (limitToRoomID) {
             // There might not actually be any queued redactions for this room.
-            let queuedRedactions = this.toRedact.get(limitToRoomId);
+            let queuedRedactions = this.toRedact.get(limitToRoomID);
             if (queuedRedactions) {
-                this.toRedact.delete(limitToRoomId);
+                this.toRedact.delete(limitToRoomID);
                 await redact(queuedRedactions);
             }
         } else {

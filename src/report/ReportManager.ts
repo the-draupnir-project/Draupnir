@@ -30,8 +30,8 @@ import { LogService, UserID } from "matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
 import { htmlEscape } from "../utils";
 import { JSDOM } from 'jsdom';
-import { EventEmitter } from 'events';
-import { Mjolnir } from "../Mjolnir";
+import { Draupnir } from "../Draupnir";
+import { ReactionContent, RoomEvent, StringEventID, StringRoomID, StringUserID, Task, Value, isError } from "matrix-protection-suite";
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -85,24 +85,16 @@ enum Kind {
 /**
  * A class designed to respond to abuse reports.
  */
-export class ReportManager extends EventEmitter {
+export class ReportManager {
     private displayManager: DisplayManager;
-    constructor(public mjolnir: Mjolnir) {
-        super();
-        // Configure bot interactions.
-        mjolnir.matrixEmitter.on("room.event", async (roomId, event) => {
-            try {
-                switch (event["type"]) {
-                    case "m.reaction": {
-                        await this.handleReaction({ roomId, event });
-                        break;
-                    }
-                }
-            } catch (ex) {
-                LogService.error("ReportManager", "Uncaught error while handling an event", ex);
-            }
-        });
+    constructor(public draupnir: Draupnir) {
         this.displayManager = new DisplayManager(this);
+    }
+
+    public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
+        if (roomID === this.draupnir.managementRoomID && event.type === 'm.reaction') {
+            Task(this.handleReaction({ roomID, event }));
+        }
     }
 
     /**
@@ -112,51 +104,62 @@ export class ReportManager extends EventEmitter {
      *
      * The following MUST hold true:
      * - the reporter's id is `reporterId`;
-     * - the reporter is a member of `roomId`;
-     * - `event` did take place in room `roomId`;
-     * - the reporter could witness event `event` in room `roomId`;
+     * - the reporter is a member of `roomID`;
+     * - `event` did take place in room `roomID`;
+     * - the reporter could witness event `event` in room `roomID`;
      * - the event being reported is `event`;
      *
-     * @param roomId The room in which the abuse took place.
+     * @param roomID The room in which the abuse took place.
      * @param reporterId The user who reported the event.
      * @param event The event being reported.
      * @param reason A reason provided by the reporter.
      */
-    public async handleServerAbuseReport({ roomId, reporterId, event, reason }: { roomId: string, reporterId: string, event: any, reason?: string }) {
-        this.emit("report.new", { roomId: roomId, reporterId: reporterId, event: event, reason: reason });
-        if (this.mjolnir.config.displayReports) {
-            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, reason, moderationRoomId: this.mjolnir.managementRoomId });
+    public async handleServerAbuseReport({ roomID, reporterId, event, reason }: { roomID: StringRoomID, reporterId: string, event: RoomEvent, reason?: string }) {
+        this.draupnir.handleEventReport({
+            event_id: event.event_id,
+            room_id: roomID,
+            sender: reporterId as StringUserID,
+            event: event,
+            reason: reason
+        })
+        if (this.draupnir.config.displayReports) {
+            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, reason, moderationroomID: this.draupnir.managementRoomID });
         }
     }
 
     /**
      * Handle a reaction to an abuse report.
      *
-     * @param roomId The room in which the reaction took place.
+     * @param roomID The room in which the reaction took place.
      * @param event The reaction.
      */
-    public async handleReaction({ roomId, event }: { roomId: string, event: any }) {
-        if (event.sender === await this.mjolnir.client.getUserId()) {
+    public async handleReaction({ roomID, event }: { roomID: StringRoomID, event: RoomEvent }) {
+        if (event.sender === this.draupnir.clientUserID) {
             // Let's not react to our own reactions.
             return;
         }
 
-        if (roomId !== this.mjolnir.managementRoomId) {
+        if (roomID !== this.draupnir.managementRoomID) {
             // Let's not accept commands in rooms other than the management room.
             return;
         }
-        let relation;
-        try {
-            relation = event["content"]["m.relates_to"]!;
-        } catch (ex) {
+        const reactionContent = Value.Decode(
+            ReactionContent,
+            event.content
+        );
+        if (isError(reactionContent)) {
+            return;
+        }
+        const relation = reactionContent.ok["m.relates_to"];
+        if (relation === undefined) {
             return;
         }
 
         // Get the original event.
         let initialNoticeReport: IReport | undefined, confirmationReport: IReportWithAction | undefined;
         try {
-            let originalEvent = await this.mjolnir.client.getEvent(roomId, relation.event_id);
-            if (originalEvent.sender !== await this.mjolnir.client.getUserId()) {
+            let originalEvent = await this.draupnir.client.getEvent(roomID, relation.event_id);
+            if (originalEvent.sender !== this.draupnir.clientUserID) {
                 // Let's not handle reactions to events we didn't send as
                 // some setups have two or more Mjolnir's in the same management room.
                 return;
@@ -188,7 +191,7 @@ export class ReportManager extends EventEmitter {
 
         if (confirmationReport) {
             // Extract the action and the decision.
-            let matches = relation.key.match(REACTION_CONFIRMATION);
+            let matches = relation.key?.match(REACTION_CONFIRMATION);
             if (!matches) {
                 // Invalid key.
                 return;
@@ -212,19 +215,19 @@ export class ReportManager extends EventEmitter {
                 await this.executeAction({
                     label: matches[1],
                     report: confirmationReport,
-                    successEventId: confirmationReport.notification_event_id,
+                    successEventId: confirmationReport.notification_event_id as StringEventID,
                     failureEventId: relation.event_id,
                     onSuccessRemoveEventId: relation.event_id,
-                    moderationRoomId: roomId
+                    moderationRoomId: roomID,
                 })
             } else {
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "cancelled action", matches[1]);
-                this.mjolnir.client.redactEvent(this.mjolnir.managementRoomId, relation.event_id, "Action cancelled");
+                this.draupnir.client.redactEvent(this.draupnir.managementRoomID, relation.event_id, "Action cancelled");
             }
 
             return;
         } else if (initialNoticeReport) {
-            let matches = relation.key.match(REACTION_ACTION);
+            let matches = relation.key?.match(REACTION_ACTION);
             if (!matches) {
                 // Invalid key.
                 return;
@@ -253,21 +256,22 @@ export class ReportManager extends EventEmitter {
                     [ABUSE_ACTION_CONFIRMATION_KEY]: confirmationReport
                 };
 
-                let requestConfirmationEventId = await this.mjolnir.client.sendMessage(this.mjolnir.managementRoomId, confirmation);
-                await this.mjolnir.client.sendEvent(this.mjolnir.managementRoomId, "m.reaction", {
+                let requestConfirmationEventId = await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, confirmation);
+                await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                     "m.relates_to": {
                         "rel_type": "m.annotation",
                         "event_id": requestConfirmationEventId,
                         "key": `🆗 ${action.emoji} ${await action.title(this, initialNoticeReport)} [${action.label}][${CONFIRM}]`
                     }
                 });
-                await this.mjolnir.client.sendEvent(this.mjolnir.managementRoomId, "m.reaction", {
+                await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                     "m.relates_to": {
                         "rel_type": "m.annotation",
                         "event_id": requestConfirmationEventId,
                         "key": `⬛ Cancel [${action.label}][${CANCEL}]`
                     }
                 });
+                // FIXME: We've clobbered the roomID parts on all of these events.
             } else {
                 // Execute immediately.
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "executed (no confirmation needed) action", matches[1]);
@@ -275,8 +279,8 @@ export class ReportManager extends EventEmitter {
                     label,
                     report: confirmationReport,
                     successEventId: relation.event_id,
-                    failureEventId: relation.eventId,
-                    moderationRoomId: roomId
+                    failureEventId: relation.event_id,
+                    moderationRoomId: roomID
                 })
             }
         }
@@ -296,7 +300,21 @@ export class ReportManager extends EventEmitter {
         * @param failureEventId The event to annotate with a "FAIL" in case of failure.
         * @param onSuccessRemoveEventId Optionally, an event to remove in case of success (e.g. the confirmation dialog).
         */
-    private async executeAction({ label, report, successEventId, failureEventId, onSuccessRemoveEventId, moderationRoomId }: { label: string, report: IReportWithAction, successEventId: string, failureEventId: string, onSuccessRemoveEventId?: string, moderationRoomId: string }) {
+    private async executeAction({
+        label,
+        report,
+        successEventId,
+        failureEventId,
+        onSuccessRemoveEventId,
+        moderationRoomId
+    }: {
+        label: string,
+        report: IReportWithAction,
+        successEventId: StringEventID,
+        failureEventId: StringEventID,
+        onSuccessRemoveEventId?: StringEventID,
+        moderationRoomId: StringRoomID
+    }) {
         let action: IUIAction | undefined = ACTIONS.get(label);
         if (!action) {
             return;
@@ -305,7 +323,7 @@ export class ReportManager extends EventEmitter {
         let response;
         try {
             // Check security.
-            if (moderationRoomId === this.mjolnir.managementRoomId) {
+            if (moderationRoomId === this.draupnir.managementRoomID) {
                 // Always accept actions executed from the management room.
             } else {
                 throw new Error("Security error: Cannot execute this action.");
@@ -315,14 +333,14 @@ export class ReportManager extends EventEmitter {
             error = ex;
         }
         if (error) {
-            this.mjolnir.client.sendEvent(this.mjolnir.managementRoomId, "m.reaction", {
+            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                 "m.relates_to": {
                     "rel_type": "m.annotation",
                     "event_id": failureEventId,
                     "key": `${action.emoji} ❌`
                 }
             });
-            this.mjolnir.client.sendEvent(this.mjolnir.managementRoomId, "m.notice", {
+            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.notice", {
                 "body": error.message || "<unknown error>",
                 "m.relationship": {
                     "rel_type": "m.reference",
@@ -330,7 +348,7 @@ export class ReportManager extends EventEmitter {
                 }
             })
         } else {
-            this.mjolnir.client.sendEvent(this.mjolnir.managementRoomId, "m.reaction", {
+            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                 "m.relates_to": {
                     "rel_type": "m.annotation",
                     "event_id": successEventId,
@@ -338,10 +356,10 @@ export class ReportManager extends EventEmitter {
                 }
             });
             if (onSuccessRemoveEventId) {
-                this.mjolnir.client.redactEvent(this.mjolnir.managementRoomId, onSuccessRemoveEventId, "Action complete");
+                this.draupnir.client.redactEvent(this.draupnir.managementRoomID, onSuccessRemoveEventId, "Action complete");
             }
             if (response) {
-                this.mjolnir.client.sendMessage(this.mjolnir.managementRoomId, {
+                this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
                     msgtype: "m.notice",
                     "formatted_body": response,
                     format: "org.matrix.custom.html",
@@ -439,7 +457,7 @@ interface IUIAction {
      *
      * @param report Details on the abuse report.
      */
-    canExecute(manager: ReportManager, report: IReport, moderationRoomId: string): Promise<boolean>;
+    canExecute(manager: ReportManager, report: IReport, moderationroomID: string): Promise<boolean>;
 
     /**
      * A human-readable title to display for the end-user.
@@ -458,7 +476,7 @@ interface IUIAction {
     /**
      * Attempt to execute the action.
      */
-    execute(manager: ReportManager, report: IReport, moderationRoomId: string, displayManager: DisplayManager): Promise<string | undefined>;
+    execute(manager: ReportManager, report: IReport, moderationroomID: string, displayManager: DisplayManager): Promise<string | undefined>;
 }
 
 /**
@@ -478,7 +496,7 @@ class IgnoreBadReport implements IUIAction {
         return "Ignore bad report";
     }
     public async execute(manager: ReportManager, report: IReportWithAction): Promise<string | undefined> {
-        await manager.mjolnir.client.sendEvent(manager.mjolnir.managementRoomId, "m.room.message",
+        await manager.draupnir.client.sendEvent(manager.draupnir.managementRoomID, "m.room.message",
             {
                 msgtype: "m.notice",
                 body: "Report classified as invalid",
@@ -505,7 +523,7 @@ class RedactMessage implements IUIAction {
     public needsConfirmation = true;
     public async canExecute(manager: ReportManager, report: IReport): Promise<boolean> {
         try {
-            return await manager.mjolnir.client.userHasPowerLevelForAction(await manager.mjolnir.client.getUserId(), report.room_id, PowerLevelAction.RedactEvents);
+            return await manager.draupnir.client.userHasPowerLevelForAction(await manager.draupnir.client.getUserId(), report.room_id, PowerLevelAction.RedactEvents);
         } catch (ex) {
             return false;
         }
@@ -516,8 +534,8 @@ class RedactMessage implements IUIAction {
     public async help(_manager: ReportManager, report: IReport): Promise<string> {
         return `Redact event ${report.event_id}`;
     }
-    public async execute(manager: ReportManager, report: IReport, _moderationRoomId: string): Promise<string | undefined> {
-        await manager.mjolnir.client.redactEvent(report.room_id, report.event_id);
+    public async execute(manager: ReportManager, report: IReport, _moderationroomID: string): Promise<string | undefined> {
+        await manager.draupnir.client.redactEvent(report.room_id, report.event_id);
         return;
     }
 }
@@ -531,7 +549,7 @@ class KickAccused implements IUIAction {
     public needsConfirmation = true;
     public async canExecute(manager: ReportManager, report: IReport): Promise<boolean> {
         try {
-            return await manager.mjolnir.client.userHasPowerLevelForAction(await manager.mjolnir.client.getUserId(), report.room_id, PowerLevelAction.Kick);
+            return await manager.draupnir.client.userHasPowerLevelForAction(await manager.draupnir.client.getUserId(), report.room_id, PowerLevelAction.Kick);
         } catch (ex) {
             return false;
         }
@@ -543,7 +561,7 @@ class KickAccused implements IUIAction {
         return `Kick ${htmlEscape(report.accused_id)} from room ${htmlEscape(report.room_alias_or_id)}`;
     }
     public async execute(manager: ReportManager, report: IReport): Promise<string | undefined> {
-        await manager.mjolnir.client.kickUser(report.accused_id, report.room_id);
+        await manager.draupnir.client.kickUser(report.accused_id, report.room_id);
         return;
     }
 }
@@ -557,7 +575,7 @@ class MuteAccused implements IUIAction {
     public needsConfirmation = true;
     public async canExecute(manager: ReportManager, report: IReport): Promise<boolean> {
         try {
-            return await manager.mjolnir.client.userHasPowerLevelFor(await manager.mjolnir.client.getUserId(), report.room_id, "m.room.power_levels", true);
+            return await manager.draupnir.client.userHasPowerLevelFor(await manager.draupnir.client.getUserId(), report.room_id, "m.room.power_levels", true);
         } catch (ex) {
             return false;
         }
@@ -569,7 +587,7 @@ class MuteAccused implements IUIAction {
         return `Mute ${htmlEscape(report.accused_id)} in room ${htmlEscape(report.room_alias_or_id)}`;
     }
     public async execute(manager: ReportManager, report: IReport): Promise<string | undefined> {
-        await manager.mjolnir.client.setUserPowerLevel(report.accused_id, report.room_id, -1);
+        await manager.draupnir.client.setUserPowerLevel(report.accused_id, report.room_id, -1);
         return;
     }
 }
@@ -583,7 +601,7 @@ class BanAccused implements IUIAction {
     public needsConfirmation = true;
     public async canExecute(manager: ReportManager, report: IReport): Promise<boolean> {
         try {
-            return await manager.mjolnir.client.userHasPowerLevelForAction(await manager.mjolnir.client.getUserId(), report.room_id, PowerLevelAction.Ban);
+            return await manager.draupnir.client.userHasPowerLevelForAction(await manager.draupnir.client.getUserId(), report.room_id, PowerLevelAction.Ban);
         } catch (ex) {
             return false;
         }
@@ -595,7 +613,7 @@ class BanAccused implements IUIAction {
         return `Ban ${htmlEscape(report.accused_id)} from room ${htmlEscape(report.room_alias_or_id)}`;
     }
     public async execute(manager: ReportManager, report: IReport): Promise<string | undefined> {
-        await manager.mjolnir.client.banUser(report.accused_id, report.room_id);
+        await manager.draupnir.client.banUser(report.accused_id, report.room_id);
         return;
     }
 }
@@ -616,15 +634,15 @@ class Help implements IUIAction {
     public async help(_manager: ReportManager, _report: IReport): Promise<string> {
         return "This help";
     }
-    public async execute(manager: ReportManager, report: IReport, moderationRoomId: string): Promise<string | undefined> {
+    public async execute(manager: ReportManager, report: IReport, moderationroomID: string): Promise<string | undefined> {
         // Produce a html list of actions, in the order specified by ACTION_LIST.
         let list: string[] = [];
         for (let action of ACTION_LIST) {
-            if (await action.canExecute(manager, report, moderationRoomId)) {
+            if (await action.canExecute(manager, report, moderationroomID)) {
                 list.push(`<li>${action.emoji} ${await action.help(manager, report)}</li>`);
             }
         }
-        if (!await ACTIONS.get("ban-accused")!.canExecute(manager, report, moderationRoomId)) {
+        if (!await ACTIONS.get("ban-accused")!.canExecute(manager, report, moderationroomID)) {
             list.push(`<li>Some actions were disabled because Mjölnir is not moderator in room ${htmlEscape(report.room_alias_or_id)}</li>`)
         }
         let body = `<ul>${list.join("\n")}</ul>`;
@@ -639,13 +657,13 @@ class EscalateToServerModerationRoom implements IUIAction {
     public label = "escalate-to-server-moderation";
     public emoji = "⏫";
     public needsConfirmation = true;
-    public async canExecute(manager: ReportManager, report: IReport, moderationRoomId: string): Promise<boolean> {
-        if (moderationRoomId === manager.mjolnir.managementRoomId) {
+    public async canExecute(manager: ReportManager, report: IReport, moderationroomID: string): Promise<boolean> {
+        if (moderationroomID === manager.draupnir.managementRoomID) {
             // We're already at the top of the chain.
             return false;
         }
         try {
-            await manager.mjolnir.client.getEvent(report.room_id, report.event_id);
+            await manager.draupnir.client.getEvent(report.room_id, report.event_id);
         } catch (ex) {
             // We can't fetch the event.
             return false;
@@ -656,20 +674,20 @@ class EscalateToServerModerationRoom implements IUIAction {
         return "Escalate";
     }
     public async help(manager: ReportManager, _report: IReport): Promise<string> {
-        return `Escalate report to ${getHomeserver(await manager.mjolnir.client.getUserId())} server moderators`;
+        return `Escalate report to ${getHomeserver(await manager.draupnir.client.getUserId())} server moderators`;
     }
-    public async execute(manager: ReportManager, report: IReport, _moderationRoomId: string, displayManager: DisplayManager): Promise<string | undefined> {
-        let event = await manager.mjolnir.client.getEvent(report.room_id, report.event_id);
+    public async execute(manager: ReportManager, report: IReport, _moderationroomID: string, displayManager: DisplayManager): Promise<string | undefined> {
+        let event = await manager.draupnir.client.getEvent(report.room_id, report.event_id);
 
         // Display the report and UI directly in the management room, as if it had been
         // received from /report.
         //
         // Security:
         // - `kind`: statically known good;
-        // - `moderationRoomId`: statically known good;
+        // - `moderationroomID`: statically known good;
         // - `reporterId`: we trust `report`, could be forged by a moderator, low impact;
         // - `event`: checked just before.
-        await displayManager.displayReportAndUI({ kind: Kind.ESCALATED_REPORT, reporterId: report.reporter_id, moderationRoomId: manager.mjolnir.managementRoomId, event });
+        await displayManager.displayReportAndUI({ kind: Kind.ESCALATED_REPORT, reporterId: report.reporter_id, moderationroomID: manager.draupnir.managementRoomID, event });
         return;
     }
 }
@@ -692,17 +710,17 @@ class DisplayManager {
      * @param event The offending event. The fact that it's the offending event MUST be checked. No assumptions are made on the content.
      * @param reporterId The user who reported the event. MUST be checked.
      * @param reason A user-provided comment. Low-security.
-     * @param moderationRoomId The room in which the report and ui will be displayed. MUST be checked.
+     * @param moderationroomID The room in which the report and ui will be displayed. MUST be checked.
      */
-    public async displayReportAndUI(args: { kind: Kind, event: any, reporterId: string, reason?: string, nature?: string, moderationRoomId: string, error?: string }) {
-        let { kind, event, reporterId, reason, nature, moderationRoomId, error } = args;
+    public async displayReportAndUI(args: { kind: Kind, event: any, reporterId: string, reason?: string, nature?: string, moderationroomID: string, error?: string }) {
+        let { kind, event, reporterId, reason, nature, moderationroomID, error } = args;
 
-        let roomId = event["room_id"]!;
+        let roomID = event["room_id"]!;
         let eventId = event["event_id"]!;
 
-        let roomAliasOrId = roomId;
+        let roomAliasOrId = roomID;
         try {
-            roomAliasOrId = await this.owner.mjolnir.client.getPublishedAlias(roomId) || roomId;
+            roomAliasOrId = await this.owner.draupnir.client.getPublishedAlias(roomID) || roomID;
         } catch (ex) {
             // Ignore.
         }
@@ -732,17 +750,17 @@ class DisplayManager {
 
         let reporterDisplayName: string, accusedDisplayName: string;
         try {
-            reporterDisplayName = (await this.owner.mjolnir.client.getUserProfile(reporterId))["displayname"] || reporterId;
+            reporterDisplayName = (await this.owner.draupnir.client.getUserProfile(reporterId))["displayname"] || reporterId;
         } catch (ex) {
             reporterDisplayName = "<Error: Cannot extract reporter display name>";
         }
         try {
-            accusedDisplayName = (await this.owner.mjolnir.client.getUserProfile(accusedId))["displayname"] || accusedId;
+            accusedDisplayName = (await this.owner.draupnir.client.getUserProfile(accusedId))["displayname"] || accusedId;
         } catch (ex) {
             accusedDisplayName = "<Error: Cannot extract accused display name>";
         }
 
-        let eventShortcut = `https://matrix.to/#/${encodeURIComponent(roomId)}/${encodeURIComponent(eventId)}`;
+        let eventShortcut = `https://matrix.to/#/${encodeURIComponent(roomID)}/${encodeURIComponent(eventId)}`;
         let roomShortcut = `https://matrix.to/#/${encodeURIComponent(roomAliasOrId)}`;
 
         let eventTimestamp;
@@ -876,7 +894,7 @@ class DisplayManager {
             accused_id: accusedId,
             reporter_id: reporterId,
             event_id: eventId,
-            room_id: roomId,
+            room_id: roomID,
             room_alias_or_id: roomAliasOrId,
         };
         let notice = {
@@ -887,15 +905,15 @@ class DisplayManager {
             [ABUSE_REPORT_KEY]: report
         };
 
-        let noticeEventId = await this.owner.mjolnir.client.sendMessage(this.owner.mjolnir.managementRoomId, notice);
+        let noticeEventId = await this.owner.draupnir.client.sendMessage(this.owner.draupnir.managementRoomID, notice);
         if (kind !== Kind.ERROR) {
             // Now let's display buttons.
             for (let [label, action] of ACTIONS) {
                 // Display buttons for actions that can be executed.
-                if (!await action.canExecute(this.owner, report, moderationRoomId)) {
+                if (!await action.canExecute(this.owner, report, moderationroomID)) {
                     continue;
                 }
-                await this.owner.mjolnir.client.sendEvent(this.owner.mjolnir.managementRoomId, "m.reaction", {
+                await this.owner.draupnir.client.sendEvent(this.owner.draupnir.managementRoomID, "m.reaction", {
                     "m.relates_to": {
                         "rel_type": "m.annotation",
                         "event_id": noticeEventId,
