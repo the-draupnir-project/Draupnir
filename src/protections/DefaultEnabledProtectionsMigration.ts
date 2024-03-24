@@ -4,6 +4,7 @@
  */
 
 import { ActionError,ActionException,ActionExceptionKind,DRAUPNIR_SCHEMA_VERSION_KEY, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, Ok, SchemedDataManager, Value, findProtection } from "matrix-protection-suite";
+import { RedactionSynchronisationProtection } from "./RedactionSynchronisation";
 
 export const DefaultEnabledProtectionsMigration = new SchemedDataManager<MjolnirEnabledProtectionsEvent>([
     async function enableBanPropagationByDefault(input) {
@@ -50,6 +51,27 @@ export const DefaultEnabledProtectionsMigration = new SchemedDataManager<Mjolnir
         return Ok({
             enabled: [...enabledProtections],
             [DRAUPNIR_SCHEMA_VERSION_KEY]: 2,
+        });
+    },
+    async function enableRedactionSynchronisationProtectionByDefault(input) {
+        if (!Value.Check(MjolnirEnabledProtectionsEvent, input)) {
+            return ActionError.Result(
+                `The data for ${MjolnirEnabledProtectionsEventType} is corrupted.`
+            );
+        }
+        const enabledProtections = new Set(input.enabled);
+        const protection = findProtection(RedactionSynchronisationProtection.name);
+        if (protection === undefined) {
+            const message = `Cannot find the ${RedactionSynchronisationProtection.name} protection`;
+            return ActionException.Result(message, {
+                exception: new TypeError(message),
+                exceptionKind: ActionExceptionKind.Unknown
+            });
+        }
+        enabledProtections.add(protection.name);
+        return Ok({
+            enabled: [...enabledProtections],
+            [DRAUPNIR_SCHEMA_VERSION_KEY]: 3,
         });
     }
 ]);

@@ -9,6 +9,7 @@ import './BanPropagation';
 import './BasicFlooding';
 import './FirstMessageIsImage';
 import './JoinWaveShortCircuit';
+import './RedactionSynchronisation';
 import './MessageIsMedia';
 import './MessageIsVoice';
 import './TrustedReporters';
