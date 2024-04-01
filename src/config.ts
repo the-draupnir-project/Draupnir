@@ -125,7 +125,12 @@ export interface IConfig {
         abuseReporting: {
             enabled: boolean;
         }
-    }
+    };
+    // Store room state using sqlite to improve startup time when Synapse responds
+    // slowly to requests for `/state`.
+    roomStateBackingStore: {
+        enabled?: boolean;
+    };
     // Experimental usage of the matrix-bot-sdk rust crypto.
     // This can not be used with Pantalaimon.
     experimentalRustCrypto: boolean;
@@ -206,6 +211,9 @@ const defaultConfig: IConfig = {
         abuseReporting: {
             enabled: false,
         },
+    },
+    roomStateBackingStore: {
+        enabled: false,
     },
     experimentalRustCrypto: false,
 

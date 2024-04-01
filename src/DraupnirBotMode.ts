@@ -34,7 +34,8 @@ import {
     isStringRoomID,
     StandardClientsInRoomMap,
     DefaultEventDecoder,
-    setGlobalLoggerProvider
+    setGlobalLoggerProvider,
+    RoomStateBackingStore
 } from "matrix-protection-suite";
 import {
     BotSDKLogServiceLogger,
@@ -66,7 +67,8 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
 export async function makeDraupnirBotModeFromConfig(
     client: MatrixSendClient,
     matrixEmitter: SafeMatrixEmitter,
-    config: IConfig
+    config: IConfig,
+    backingStore?: RoomStateBackingStore
 ): Promise<Draupnir> {
     const clientUserId = await client.getUserId();
     if (!isStringUserID(clientUserId)) {
@@ -91,7 +93,8 @@ export async function makeDraupnirBotModeFromConfig(
     const roomStateManagerFactory = new RoomStateManagerFactory(
         clientsInRoomMap,
         clientProvider,
-        DefaultEventDecoder
+        DefaultEventDecoder,
+        backingStore
     );
     const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
     const draupnirFactory = new DraupnirFactory(

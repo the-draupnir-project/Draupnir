@@ -27,7 +27,7 @@ import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
 import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { DefaultEventDecoder, RoomStateBackingStore } from "matrix-protection-suite";
 import { WebAPIs } from "../../src/webapis/WebAPIs";
 
 patchMatrixClient();
@@ -90,7 +90,7 @@ let globalMjolnir: Draupnir | null;
 /**
  * Return a test instance of Mjolnir.
  */
-export async function makeMjolnir(config: IConfig): Promise<Draupnir> {
+export async function makeMjolnir(config: IConfig, backingStore?: RoomStateBackingStore): Promise<Draupnir> {
     await configureMjolnir(config);
     LogService.setLogger(new RichConsoleLogger());
     LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
@@ -99,7 +99,7 @@ export async function makeMjolnir(config: IConfig): Promise<Draupnir> {
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
     await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
     await ensureAliasedRoomExists(client, config.managementRoom);
-    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
+    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
     globalClient = client;
     globalMjolnir = mj;
     return mj;

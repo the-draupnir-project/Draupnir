@@ -46,6 +46,7 @@ import { Draupnir } from "./Draupnir";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
 import { WebAPIs } from "./webapis/WebAPIs";
+import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
 
 (async function () {
@@ -90,8 +91,9 @@ import { WebAPIs } from "./webapis/WebAPIs";
         }
         patchMatrixClient();
         config.RUNTIME.client = client;
-
-        bot = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config);
+        const eventDecoder = DefaultEventDecoder;
+        const store = config.roomStateBackingStore.enabled ? new SqliteRoomStateBackingStore(path.join(config.dataPath, 'room-state-backing-store.db'), eventDecoder) : undefined;
+        bot = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, eventDecoder), config, store);
         apis = constructWebAPIs(bot);
     } catch (err) {
         console.error(`Failed to setup mjolnir from the config ${config.dataPath}: ${err}`);

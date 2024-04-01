@@ -453,7 +453,7 @@ function patchMatrixClientForRetry() {
 
 let isMatrixClientPatchedForPrototypePollution = false;
 
-function jsonReviver(key: string, value: any): any {
+export function jsonReviver(key: string, value: any): any {
     if (key === '__proto__' || key === 'constructor') {
         return undefined;
     } else {
