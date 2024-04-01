@@ -68,15 +68,18 @@ export class RedactionSynchronisationProtection extends AbstractProtection<Redac
         }
     }
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
-        const relevantChanges = changes.filter((change) =>
-            change.membershipChangeType === MembershipChangeType.Joined
-            || change.membershipChangeType === MembershipChangeType.Rejoined
-            && (
-                (policy) =>
-                    policy !== undefined
-                    && this.automaticRedactionReasons.some(reason => reason.test(policy.reason))
-            )(this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision.findRuleMatchingEntity(change.userID, PolicyRuleType.User, Recommendation.Ban))
-        );
+        const isUserJoiningWithPolicyRequiringRedaction = (change: MembershipChange) => {
+            if (change.membershipChangeType === MembershipChangeType.Joined
+                || change.membershipChangeType === MembershipChangeType.Rejoined
+            ) {
+                const policyRevision = this.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
+                const matchingPolicy = policyRevision.findRuleMatchingEntity(change.userID, PolicyRuleType.User, Recommendation.Ban);
+                return matchingPolicy !== undefined && this.automaticRedactionReasons.some(reason => reason.test(matchingPolicy.reason))
+            } else {
+                return false;
+            }
+        }
+        const relevantChanges = changes.filter(isUserJoiningWithPolicyRequiringRedaction);
         for (const change of relevantChanges) {
             void Task(redactUserMessagesIn(this.draupnir.client, this.draupnir.managementRoomOutput, change.userID, [revision.room.toRoomIDOrAlias()]));
         }
