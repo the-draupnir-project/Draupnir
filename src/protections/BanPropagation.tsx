@@ -33,7 +33,7 @@ import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentM
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID, UnknownSettings, UserConsequences } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID, UnknownSettings, UserConsequences, Membership } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
@@ -162,7 +162,8 @@ export class BanPropagationProtection
     }
 
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
-        const bans = changes.filter(change => change.membershipChangeType === MembershipChangeType.Banned && change.sender !== this.protectedRoomsSet.userID);
+        // use Membership and not MembershipChangeType so that we can detect edits to ban reasons.
+        const bans = changes.filter(change => change.membership === Membership.Ban && change.sender !== this.protectedRoomsSet.userID);
         const unbans = changes.filter(change => change.membershipChangeType === MembershipChangeType.Unbanned && change.sender !== this.protectedRoomsSet.userID);
         for (const ban of bans) {
             this.handleBan(ban);
