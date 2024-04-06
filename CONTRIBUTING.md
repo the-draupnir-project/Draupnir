@@ -15,10 +15,47 @@ please keep an eye on the pull request for feedback.
 
 You should read the [context document](./docs/context.md).
 
+
 ## Development
 
 To run unit tests in a local development environment, you can use `yarn test`
 and `yarn lint`.
+
+### matrix-protection-suite
+
+While not necessary, some changes will require you to make changes to the
+[matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite)
+and the associated backend for the matrix-bot-sdk: [matrix-protection-suite-for-matrix-bot-sdk](https://github.com/Gnuxie/matrix-protection-suite-for-matrix-bot-sdk).
+
+You should clone these locally and then link them by using
+`yarn link` in each directory followed by `yarn link matirx-protection-suite matrix-protection-suite-for-matrix-bot-sdk` within Draupnir.
+
+You may also need to `yarn add --dev "matrix-bot-sdk@npm:@vector-im/matrix-bot-sdk@^0.6.6-element.1"`
+within the `matrix-protection-suite-for-matrix-bot-sdk` directory to ensure
+that that the local copy is using the same version as Draupnir.
+I don't understand why `yarn` will not respect overrides for linked
+dependencies.
+
+#### VSCode
+
+You will also want to edit your `settings.json` to match something like
+this, so that you can debug into MPS while debugging Draupnir.
+
+```
+    "debug.javascript.terminalOptions": {
+        "runtimeArgs": ["--preserve-symlinks"],
+        "sourceMaps": true,
+        "outFiles": [
+            "${userHome}/experiments/draupnir/lib/**/*.js",
+            "${userHome}/experiments/draupnir/src/**/*.ts",
+            "${userHome}/experiments/draupnir/test/**/*.ts",
+            "${userHome}/experiments/matrix-protection-suite/dist/**/*.js",
+            "${userHome}/experiments/matrix-protection-suite/src/**/*.ts",
+            "${userHome}/experiments/matrix-protection-suite-for-matrix-bot-sdk/dist/**/*.js",
+            "${userHome}/experiments/matrix-protection-suite-for-matrix-bot-sdk/src/**/*.ts",
+          ]
+    }
+```
 
 ### mx-tester
 
