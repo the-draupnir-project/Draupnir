@@ -1,19 +1,65 @@
 # Draupnir
 
-A moderation tool for Matrix. Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)
-for more information.
+A [Matrix](https://matrix.org) moderation bot.
+Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)
+in your client and come say hi.
+
+## Features
+
+Draupnir has two main functions, the first is to synchronise bans for
+users and servers across all of the matrix rooms that you moderate.
+The second is to protect your community by applying policies from community curated
+policy lists, for example the [community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev),
+to your rooms around the clock. This means that communities can warn
+and protect each other of known threats
+
+Draupnir also includes a series of protections that can be enabled
+that might help you in some scenarios.
+
+By default Draupnir includes support for user bans, redactions and
+server ACLs.
+
+Some support is also provided for server administrative functions,
+such as reviewing abuse reports, deactivating user accounts and
+shutting down rooms.
+
+### Differences from Mjolnir
 
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
-This is a continuation and fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
-with an entirely new framework for interacting with Matrix written to
-overcome some of the burdens there were holding development of mjolnir.
+Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
+and is a continuation of Mjolnir. However, large sections of the the
+code base are now very distinct and much of Draupnir was rewritten
+into a library called the [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite).
+
+The main difference from Mjolnir is that it is no longer necessary to use
+commands for some functions. Banning a user in a protected room from your
+Matrix client will cause Draupnir to show a prompt in the management room,
+which will offer to add the ban to a policy list[^the-gif-width].
+
+![A demo showing a propagation prompt](docs/ban-propagation-prompt.gif)
+
+You can also unban users the same way, and Draupnir will prompt you
+to unban them without any confusing hiccups.
+If you do still wish to use the ban command, please note that users
+and other entities that are being banned are now the first argument
+to the ban command. It is now also possible to provide only the entity to
+Draupnir and have Draupnir prompt you for the policy list and the ban reason.
+
+![A demo showing the ban command](docs/ban-command-prompt.gif)
+
+In general, all commands have been migrated to a new interface which
+feature better error messages for common problems and allow admins
+to trace the cause of unexpected errors much more easily.
+
+[^the-gif-width]: Yes, i know they don't align horizontally,
+you are welcome to suggest how this should be fixed.
+
 
 ## Status
 
-The command handler is currently being refactored and some command syntax will become
-incompatible with legacy Mjolnir commands.
-The UX is being overhauled and Draupnir is slowly moving towards a 2.0.0 release.
+The UX and code base of Draupnir is being overhauled and Draupnir is
+slowly moving towards a 2.0.0 release.
 
 As Draupnir heads towards `v2.0.0`, releases will appear [here](https://github.com/Gnuxie/Draupnir/releases).
 Until `v2.0.0` there will be frequent changes to commands but all of these
@@ -28,43 +74,6 @@ Draupnir remains backwards compatible so that it is possible to try Draupnir
 and still have the option to switch back to Mjolnir.
 
 Any problems with migration should be reported to our [support room](https://matrix.to/#/#draupnir:matrix.org).
-
-## Features
-
-As an all-in-one moderation tool, Draupnir can protect your community by
-applying policies from both your own and community curated policy lists.
-
-The bot by default includes support for bans, redactions, anti-spam, server ACLs, room
-directory changes and room alias transfers.
-
-Support is also provided for some Synapse admin functions such as account
-deactivation and room shutdown.
-
-A Synapse module is also available to apply the same rulesets the bot is watching
-across an entire homeserver.
-
-### Differences from Mjolnir
-
-The main difference from Mjolnir is that it is no longer necessary to use
-commands for some functions. Banning a user in a protected room from your
-Matrix client will cause Draupnir to show a prompt in the management room,
-which will offer to add the ban to a policy list[^the-gif-width].
-
-![A demo showing a propagation prompt](docs/ban-propagation-prompt.gif)
-
-If you do still wish to use the ban command, please note that users
-and other entities that are being banned are now the first argument
-to the ban command. It is now also possible to provide only the entity to
-Draupnir and have Draupnir prompt you for the policy list and the ban reason.
-
-![A demo showing the ban command](docs/ban-command-prompt.gif)
-
-In general, any command that has been migrated to the new interface will
-feature better error messages for common problems and allow admins
-to trace the cause of unexpected errors much more easily.
-
-[^the-gif-width]: Yes, i know they don't align horizontally,
-you are welcome to suggest how this should be fixed.
 
 ## Setting up
 
