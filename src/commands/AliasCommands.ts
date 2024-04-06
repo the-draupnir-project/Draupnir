@@ -27,11 +27,11 @@ limitations under the License.
 
 import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { MjolnirContext } from "./CommandHandler";
-import { MatrixRoomAlias, MatrixRoomReference } from "./interface-manager/MatrixRoomReference";
-import { CommandError, CommandResult } from "./interface-manager/Validation";
+import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { ActionError, ActionResult, isError, MatrixRoomAlias, MatrixRoomReference, Ok } from "matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 // TODO: we should probably add an --admin keyword to these commands
 // since they don't actually need admin. Mjolnir had them as admin though.
@@ -53,15 +53,18 @@ defineInterfaceCommand({
             description: 'The room to move the alias to.'
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, movingAlias: MatrixRoomAlias, room: MatrixRoomReference): Promise<CommandResult<void>> {
-        const isAdmin = await this.mjolnir.isSynapseAdmin();
-        if (!isAdmin) {
-            return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, movingAlias: MatrixRoomAlias, room: MatrixRoomReference): Promise<ActionResult<void>> {
+        const isAdminResult = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+        if (isAdminResult === undefined || isError(isAdminResult) || !isAdminResult.ok) {
+            return ActionError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
         }
-        const newRoomId = await room.resolve(this.mjolnir.client);
-        await this.mjolnir.client.deleteRoomAlias(movingAlias.toRoomIdOrAlias());
-        await this.mjolnir.client.createRoomAlias(movingAlias.toRoomIdOrAlias(), newRoomId.toRoomIdOrAlias());
-        return CommandResult.Ok(undefined);
+        const newRoomID = await resolveRoomReferenceSafe(this.client, room);
+        if (isError(newRoomID)) {
+            return newRoomID;
+        }
+        await this.draupnir.client.deleteRoomAlias(movingAlias.toRoomIDOrAlias());
+        await this.draupnir.client.createRoomAlias(movingAlias.toRoomIDOrAlias(), newRoomID.ok.toRoomIDOrAlias());
+        return Ok(undefined);
     },
 })
 
@@ -86,14 +89,17 @@ defineInterfaceCommand({
             description: 'The room to add the alias to.'
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, movingAlias: MatrixRoomAlias, room: MatrixRoomReference): Promise<CommandResult<void>> {
-        const isAdmin = await this.mjolnir.isSynapseAdmin();
-        if (!isAdmin) {
-            return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, movingAlias: MatrixRoomAlias, room: MatrixRoomReference): Promise<ActionResult<void>> {
+        const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+        if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
+            return ActionError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
         }
-        const roomId = await room.resolve(this.mjolnir.client);
-        await this.mjolnir.client.createRoomAlias(movingAlias.toRoomIdOrAlias(), roomId.toRoomIdOrAlias());
-        return CommandResult.Ok(undefined);
+        const roomID = await resolveRoomReferenceSafe(this.draupnir.client, room);
+        if (isError(roomID)) {
+            return roomID;
+        }
+        await this.draupnir.client.createRoomAlias(movingAlias.toRoomIDOrAlias(), roomID.ok.toRoomIDOrAlias());
+        return Ok(undefined);
     },
 })
 
@@ -113,13 +119,13 @@ defineInterfaceCommand({
             description: 'The alias that should be deleted.'
         }
     ]),
-    command: async function (this: MjolnirContext, _keywords: ParsedKeywords, alias: MatrixRoomAlias): Promise<CommandResult<void>> {
-        const isAdmin = await this.mjolnir.isSynapseAdmin();
-        if (!isAdmin) {
-            return CommandError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, alias: MatrixRoomAlias): Promise<ActionResult<void>> {
+        const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+        if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
+            return ActionError.Result('I am not a Synapse administrator, or the endpoint to deactivate a user is blocked');
         }
-        await this.mjolnir.client.deleteRoomAlias(alias.toRoomIdOrAlias());
-        return CommandResult.Ok(undefined);
+        await this.draupnir.client.deleteRoomAlias(alias.toRoomIDOrAlias());
+        return Ok(undefined);
     },
 })
 

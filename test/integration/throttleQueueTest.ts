@@ -1,6 +1,3 @@
-import { strict as assert } from "assert";
-
-import { UserID } from "matrix-bot-sdk";
 import { ThrottlingQueue } from "../../src/queues/ThrottlingQueue";
 
 describe("Test: ThrottlingQueue", function() {

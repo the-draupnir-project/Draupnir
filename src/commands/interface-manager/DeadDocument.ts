@@ -46,6 +46,10 @@ export interface LeafNode extends AbstractNode {
     readonly leafNode: true,
 }
 
+// TODO: https://www.typescriptlang.org/docs/handbook/jsx.html#intrinsic-elements
+// we should figure out how to type not only the attributes but also importantly
+// the result of embedded expressions
+
 // These are NOT necessarily HTML tags.
 export enum NodeTag {
     TextNode = 'text',
@@ -67,6 +71,7 @@ export enum NodeTag {
     Details = 'details',
     Summary = 'summary',
     Font = 'font',
+    Span = 'span',
 }
 
 /**
@@ -322,7 +327,7 @@ export class FringeWalker<Context> {
                         throw new TypeError("Leaf nodes should not be marked as an inner node");
                     }
                     this.renderer.getLeafRenderer(annotatedNode.node.tag)
-                        (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
+                    (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
                     break;
                 default:
                     throw new TypeError(`Uknown fringe type ${annotatedNode.type}`);

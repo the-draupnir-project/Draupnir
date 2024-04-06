@@ -23,15 +23,6 @@
         "jsxFactory": "JSXFactory"
     },
     "include": [
-        "./src/**/*",
-        "./test/appservice/**/*",
-        "./test/integration/manualLaunchScript.ts",
-        "./test/integration/roomMembersTest.ts",
-        "./test/integration/banListTest.ts",
-        "./test/integration/reportPollingTest",
-        "./test/integration/policyConsumptionTest.ts",
-        "./test/integration/protectionSettingsTest.ts",
-        "./test/integration/banPropagationTest.ts",
-        "./test/integration/protectedRoomsConfigTest.ts",
-    ]
+        "./src/**/*"
+    ],
 }

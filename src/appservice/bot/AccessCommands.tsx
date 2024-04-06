@@ -5,9 +5,8 @@
 
 import { defineInterfaceCommand, findTableCommand } from "../../commands/interface-manager/InterfaceCommand";
 import { findPresentationType, parameters, ParsedKeywords } from "../../commands/interface-manager/ParameterParsing";
-import { CommandResult } from "../../commands/interface-manager/Validation";
 import { AppserviceContext } from "./AppserviceCommandHandler";
-import { UserID } from "matrix-bot-sdk";
+import { UserID, ActionResult } from "matrix-protection-suite"
 import { defineMatrixInterfaceAdaptor } from "../../commands/interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "../../commands/interface-manager/MatrixHelpRenderer";
 
@@ -21,9 +20,8 @@ defineInterfaceCommand({
             description: 'The user that should be allowed to provision a bot'
         }
     ]),
-    command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<CommandResult<void>> {
-        await this.appservice.accessControl.allow(user.toString());
-        return CommandResult.Ok(undefined);
+    command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<ActionResult<void>> {
+        return await this.appservice.accessControl.allow(user.toString());
     },
     summary: "Allow a user to provision themselves a draupnir using the appservice."
 })
@@ -43,9 +41,8 @@ defineInterfaceCommand({
             description: 'The user which shall not be allowed to provision bots anymore'
         }
     ]),
-    command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<CommandResult<void>> {
-        await this.appservice.accessControl.remove(user.toString());
-        return CommandResult.Ok(undefined);
+    command: async function (this: AppserviceContext, _keywords: ParsedKeywords, user: UserID): Promise<ActionResult<void>> {
+        return await this.appservice.accessControl.remove(user.toString());
     },
     summary: "Stop a user from using any provisioned draupnir in the appservice."
 })

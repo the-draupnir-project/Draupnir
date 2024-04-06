@@ -27,10 +27,10 @@ limitations under the License.
 
 import { Server } from "http";
 import express from "express";
-import { LogService, MatrixClient } from "matrix-bot-sdk";
-import RuleServer from "../models/RuleServer";
+import { MatrixClient } from "matrix-bot-sdk";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
+import { StringEventID, StringRoomID } from "matrix-protection-suite";
 
 
 /**
@@ -38,13 +38,13 @@ import { IConfig } from "../config";
  */
 const API_PREFIX = "/api/1";
 
-const AUTHORIZATION: RegExp = new RegExp("Bearer (.*)");
+const AUTHORIZATION = new RegExp("Bearer (.*)");
 
 export class WebAPIs {
     private webController: express.Express = express();
     private httpServer?: Server;
 
-    constructor(private reportManager: ReportManager, private readonly config: IConfig, private readonly ruleServer: RuleServer|null) {
+    constructor(private reportManager: ReportManager, private readonly config: IConfig) {
         // Setup JSON parsing.
         this.webController.use(express.json());
     }
@@ -75,25 +75,9 @@ export class WebAPIs {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Date");
                 response.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-                await this.handleReport({ request, response, roomId: request.params.room_id, eventId: request.params.event_id })
+                await this.handleReport({ request, response, roomID: request.params.room_id as StringRoomID, eventID: request.params.event_id as StringEventID })
             });
             console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
-        }
-
-        // configure ruleServer API.
-        // FIXME: Doesn't this need some kind of access control?
-        // See https://github.com/matrix-org/mjolnir/issues/139#issuecomment-1012221479.
-        if (this.config.web.ruleServer?.enabled) {
-            const updatesUrl = `${API_PREFIX}/ruleserver/updates`;
-            LogService.info("WebAPIs", `configuring ${updatesUrl}...`);
-            if (!this.ruleServer) {
-                throw new Error("The rule server to use has not been configured for the WebAPIs.");
-            }
-            const ruleServer: RuleServer = this.ruleServer;
-            this.webController.get(updatesUrl, async (request, response) => {
-                await this.handleRuleServerUpdate(ruleServer, { request, response, since: request.query.since as string});
-            });
-            LogService.info("WebAPIs", `configuring ${updatesUrl}... DONE`);
         }
     }
 
@@ -115,7 +99,7 @@ export class WebAPIs {
      * @param request The request. Its body SHOULD hold an object `{reason?: string}`
      * @param response The response. Used to propagate HTTP success/error.
      */
-    async handleReport({ roomId, eventId, request, response }: { roomId: string, eventId: string, request: express.Request, response: express.Response }) {
+    async handleReport({ roomID, eventID, request, response }: { roomID: StringRoomID, eventID: StringEventID, request: express.Request, response: express.Response }) {
         // To display any kind of useful information, we need
         //
         // 1. The reporter id;
@@ -192,29 +176,17 @@ export class WebAPIs {
                 //
                 // By doing this with the reporterClient, we ensure that this feature of Mjölnir can work
                 // with all Matrix homeservers, rather than just Synapse.
-                event = await reporterClient.getEvent(roomId, eventId);
+                event = await reporterClient.getEvent(roomID, eventID);
             }
 
             let reason = request.body["reason"];
-            await this.reportManager.handleServerAbuseReport({ roomId, reporterId, event, reason });
+            await this.reportManager.handleServerAbuseReport({ roomID, reporterId, event, reason });
 
             // Match the spec behavior of `/report`: return 200 and an empty JSON.
             response.status(200).json({});
         } catch (ex) {
-            console.warn("Error responding to an abuse report", roomId, eventId, ex);
+            console.warn("Error responding to an abuse report", roomID, eventID, ex);
             response.status(503);
-        }
-    }
-
-    async handleRuleServerUpdate(ruleServer: RuleServer, { since, request, response }: { since: string, request: express.Request, response: express.Response }) {
-        // FIXME Have to do this because express sends keep alive by default and during tests.
-        // The server will never be able to close because express never closes the sockets, only stops accepting new connections.
-        // See https://github.com/matrix-org/mjolnir/issues/139#issuecomment-1012221479.
-        response.set("Connection", "close");
-        try {
-            response.json(ruleServer.getUpdates(since)).status(200);
-        } catch (ex) {
-            LogService.error("WebAPIs", `Error responding to a rule server updates request`, since, ex);
         }
     }
 }

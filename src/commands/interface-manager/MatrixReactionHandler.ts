@@ -4,28 +4,32 @@
  */
 
 import { EventEmitter } from "stream";
-import { MatrixEmitter, MatrixSendClient } from "../../MatrixEmitter";
 import { LogService } from "matrix-bot-sdk";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { ReactionEvent, RoomEvent, StringRoomID, StringUserID, Value } from "matrix-protection-suite";
 
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
 type ItemByReactionKey = Map<string/*reaction key*/, any/*serialized presentation*/>;
-export type ReactionListener = (key: string, item: any, additionalContext: unknown, reactionMap: ItemByReactionKey) => void;
+export type ReactionListener = (
+    key: string,
+    item: any,
+    additionalContext: unknown,
+    reactionMap: ItemByReactionKey,
+    annotatedEvent: RoomEvent
+) => void;
 
 /**
  * A utility that can be associated with an `MatrixEmitter` to listen for
  * reactions to Matrix Events. The aim is to simplify reaction UX.
  */
 export class MatrixReactionHandler extends EventEmitter {
-
-    private listener: MatrixReactionHandler['handleEvent'];
-
     public constructor(
         /**
          * The room the handler is for. Cannot be enabled for every room as the
-         * OG event lookup is very slow.
+         * OG event lookup is very slow. So usually draupnir's management room.
          */
-        public readonly roomId: string,
+        public readonly roomID: StringRoomID,
         /**
          * A client to lookup the related events to reactions.
          */
@@ -33,31 +37,30 @@ export class MatrixReactionHandler extends EventEmitter {
         /**
          * The user id of the client. Ignores reactions from this user
          */
-        private readonly clientUserId: string
+        private readonly clientUserID: StringUserID
     ) {
         super();
-        this.listener = this.handleEvent.bind(this);
     }
 
     /**
      * Handle an event from a `MatrixEmitter` and see if it is a reaction to
      * a previously annotated event. If it is a reaction to an annotated event,
      * then call its associated listener.
-     * @param roomId The room the event took place in.
+     * @param roomID The room the event took place in.
      * @param event The Matrix event.
      */
-    private async handleEvent(roomId: string, event: any): Promise<void> {
-        if (roomId !== this.roomId) {
+    public async handleEvent(roomID: StringRoomID, event: RoomEvent): Promise<void> {
+        if (roomID !== this.roomID) {
             return;
         }
-        const relatesTo = event['content']?.['m.relates_to'];
+        if (event.sender === this.clientUserID) {
+            return;
+        }
+        if (!Value.Check(ReactionEvent, event)) {
+            return;
+        }
+        const relatesTo = event.content?.["m.relates_to"];
         if (relatesTo === undefined) {
-            return;
-        }
-        if (relatesTo['rel_type'] !== 'm.annotation') {
-            return;
-        }
-        if (event['sender'] === this.clientUserId) {
             return;
         }
         const reactionKey = relatesTo['key'];
@@ -65,42 +68,27 @@ export class MatrixReactionHandler extends EventEmitter {
         if (!(typeof relatedEventId === 'string' && typeof reactionKey === 'string')) {
             return;
         }
-        const annotatedEvent = await this.client.getEvent(roomId, relatedEventId);
+        const annotatedEvent = await this.client.getEvent(roomID, relatedEventId);
         const annotation = annotatedEvent.content[REACTION_ANNOTATION_KEY];
         if (annotation === undefined) {
             return;
         }
         const reactionMap = annotation['reaction_map'];
         if (typeof reactionMap !== 'object' || reactionMap === null) {
-            LogService.warn('MatrixReactionHandler', `Missing reaction_map for the annotated event ${relatedEventId} in ${roomId}`);
+            LogService.warn('MatrixReactionHandler', `Missing reaction_map for the annotated event ${relatedEventId} in ${roomID}`);
             return;
         }
         const listenerName = annotation['name'];
         if (typeof listenerName !== 'string') {
-            LogService.warn('MatrixReactionHandler', `The event ${relatedEventId} in ${roomId} is missing the name of the annotation`);
+            LogService.warn('MatrixReactionHandler', `The event ${relatedEventId} in ${roomID} is missing the name of the annotation`);
             return;
         }
         const association = reactionMap[reactionKey];
         if (association === undefined) {
-            LogService.info('MatrixReactionHandler', `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomId}`);
+            LogService.info('MatrixReactionHandler', `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
             return;
         }
-        this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)));
-    }
-
-    /**
-     * Start listening for reactions to events.
-     * Called normally by an associated mjolnir instance when it is started.
-     */
-    public start(emitter: MatrixEmitter): void {
-        emitter.on('room.event', this.listener);
-    }
-
-    /**
-     * Stop listening for reactions to events.
-     */
-    public stop(emitter: MatrixEmitter): void {
-        emitter.off('room.event', this.listener);
+        this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)), annotatedEvent);
     }
 
     /**
@@ -132,5 +120,33 @@ export class MatrixReactionHandler extends EventEmitter {
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve()
             ).catch(e => (LogService.error('MatrixReactionHandler', `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+    }
+
+    public static createItemizedReactionMap(items: string[]): ItemByReactionKey {
+        return items.reduce(
+            (acc, item, index) => {
+                const key = MatrixReactionHandler.numberToEmoji(index + 1);
+                acc.set(key, item);
+                return acc;
+            },
+            new Map<string, string>()
+        );
+    }
+
+    public static numberToEmoji(number: number): string {
+        // https://github.com/anton-bot/number-to-emoji
+        // licensed with unlicense.
+        const key = number.toString();
+        return key
+            .replace(/0/g, '0️⃣')
+            .replace(/1/g, '1️⃣')
+            .replace(/2/g, '2️⃣')
+            .replace(/3/g, '3️⃣')
+            .replace(/4/g, '4️⃣')
+            .replace(/5/g, '5️⃣')
+            .replace(/6/g, '6️⃣')
+            .replace(/7/g, '7️⃣')
+            .replace(/8/g, '8️⃣')
+            .replace(/9/g, '9️⃣');
     }
 }

@@ -25,37 +25,69 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Protection } from "./Protection";
-import { Mjolnir } from "../Mjolnir";
-import { LogLevel, UserID } from "matrix-bot-sdk";
-import { Permalinks } from "../commands/interface-manager/Permalinks";
+import { LogLevel} from "matrix-bot-sdk";
+import { AbstractProtection, ActionResult, CapabilitySet, EventConsequences, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 
-export class MessageIsVoice extends Protection {
+type MessageIsVoiceCapabilities = {
+    eventConsequences: EventConsequences;
+};
 
-    settings = {};
+type MessageIsVoiceDescription = ProtectionDescription<Draupnir, {}, MessageIsVoiceCapabilities>;
 
-    constructor() {
-        super();
+describeProtection<MessageIsVoiceCapabilities, Draupnir, {}>({
+    name: 'MessageIsVoiceProtection',
+    description: 'If a user posts a voice message, that message will be redacted',
+    capabilityInterfaces: {
+        eventConsequences: 'EventConsequences',
+    },
+    defaultCapabilities: {
+        eventConsequences: 'StandardEventConsequences'
+    },
+    factory: function(description, protectedRoomsSet, draupnir, capabilities, _settings) {
+        return Ok(
+            new MessageIsVoiceProtection(
+                description,
+                capabilities,
+                protectedRoomsSet,
+                draupnir
+            )
+        );
+    }
+})
+
+export class MessageIsVoiceProtection extends AbstractProtection<MessageIsVoiceDescription> implements Protection<MessageIsVoiceDescription> {
+    private readonly eventConsequences: EventConsequences;
+    constructor(
+        description: MessageIsVoiceDescription,
+        capabilities: CapabilitySet,
+        protectedRoomsSet: ProtectedRoomsSet,
+        private readonly draupnir: Draupnir,
+    ) {
+        super(
+            description,
+            capabilities,
+            protectedRoomsSet,
+            [],
+            []
+        );
     }
 
-    public get name(): string {
-        return 'MessageIsVoiceProtection';
-    }
-    public get description(): string {
-        return "If a user posts a voice message, that message will be redacted. No bans are issued.";
-    }
-
-    public async handleEvent(mjolnir: Mjolnir, roomId: string, event: any): Promise<any> {
-        if (event['type'] === 'm.room.message' && event['content']) {
-            if (event['content']['msgtype'] !== 'm.audio') return;
-            if (event['content']['org.matrix.msc3245.voice'] === undefined) return;
-            await mjolnir.managementRoomOutput.logMessage(LogLevel.INFO, "MessageIsVoice", `Redacting event from ${event['sender']} for posting a voice message. ${Permalinks.forEvent(roomId, event['event_id'], [new UserID(await mjolnir.client.getUserId()).domain])}`);
+    public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
+        const roomID = room.toRoomIDOrAlias();
+        if (Value.Check(RoomMessage, event)) {
+            if (!('msgtype' in event.content) || event.content?.msgtype !== 'm.audio') {
+                return Ok(undefined);
+            }
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "MessageIsVoice", `Redacting event from ${event['sender']} for posting a voice message. ${Permalinks.forEvent(roomID, event['event_id'], [serverName(this.draupnir.clientUserID)])}`);
             // Redact the event
-            if (!mjolnir.config.noop) {
-                await mjolnir.client.redactEvent(roomId, event['event_id'], "Voice messages are not permitted here");
+            if (!this.draupnir.config.noop) {
+                return await this.eventConsequences.consequenceForEvent(roomID, event['event_id'], "Voice messages are not permitted here");
             } else {
-                await mjolnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsVoice", `Tried to redact ${event['event_id']} in ${roomId} but Mjolnir is running in no-op mode`, roomId);
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "MessageIsVoice", `Tried to redact ${event['event_id']} in ${roomID} but Mjolnir is running in no-op mode`, roomID);
+                return Ok(undefined);
             }
         }
+        return Ok(undefined);
     }
 }

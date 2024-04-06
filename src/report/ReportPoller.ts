@@ -25,16 +25,27 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { Mjolnir, REPORT_POLL_EVENT_TYPE } from "../Mjolnir";
+import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ReportManager } from './ReportManager';
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "matrix-bot-sdk";
+import ManagementRoomOutput from "../ManagementRoomOutput";
+import { Draupnir } from "../Draupnir";
+import { ActionException, ActionExceptionKind, Ok, SynapseReport, Value, isError } from "matrix-protection-suite";
+
+/**
+ * Synapse will tell us where we last got to on polling reports, so we need
+ * to store that for pagination on further polls
+ */
+export const REPORT_POLL_EVENT_TYPE = "org.matrix.mjolnir.report_poll";
 
 class InvalidStateError extends Error { }
+
+export type ReportPollSetting = { from: number };
 
 /**
  * A class to poll synapse's report endpoint, so we can act on new reports
  *
- * @param mjolnir The running Mjolnir instance
+ * @param draupnir The running Draupnir instance
  * @param manager The report manager in to which we feed new reports
  */
 export class ReportPoller {
@@ -49,7 +60,7 @@ export class ReportPoller {
     private timeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor(
-        private mjolnir: Mjolnir,
+        private draupnir: Draupnir,
         private manager: ReportManager,
     ) { }
 
@@ -72,11 +83,11 @@ export class ReportPoller {
 
     private async getAbuseReports() {
         let response_: {
-            event_reports: { room_id: string, event_id: string, sender: string, reason: string }[],
+            event_reports: unknown[],
             next_token: number | undefined
         } | undefined;
         try {
-            response_ = await this.mjolnir.client.doRequest(
+            response_ = await this.draupnir.client.doRequest(
                 "GET",
                 "/_synapse/admin/v1/event_reports",
                 {
@@ -86,32 +97,39 @@ export class ReportPoller {
                 }
             );
         } catch (ex) {
-            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to poll events: ${ex}`);
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to poll events: ${ex}`);
             return;
         }
 
         const response = response_!;
-        for (let report of response.event_reports) {
-            if (!this.mjolnir.protectedRoomsTracker.isProtectedRoom(report.room_id)) {
+        for (const rawReport of response.event_reports) {
+            const reportResult = Value.Decode(SynapseReport, rawReport);
+            if (isError(reportResult)) {
+                LogService.error('ReportPoller', `Failed to decode a synapse report ${reportResult.error.uuid}`, rawReport);
                 continue;
             }
-
-            let event: any; // `any` because `handleServerAbuseReport` uses `any`
-            try {
-                event = (await this.mjolnir.client.doRequest(
-                    "GET",
-                    `/_synapse/admin/v1/rooms/${report.room_id}/context/${report.event_id}?limit=1`
-                )).event;
-            } catch (ex) {
-                this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${ex}`);
+            const report = reportResult.ok;
+            // FIXME: shouldn't we have a SafeMatrixSendClient in the BotSDKMPS that gives us ActionResult's with
+            // Decoded events.
+            // Problem is that our current event model isn't going to match up with extensible events.
+            const eventContext = await this.draupnir.client.doRequest(
+                "GET",
+                `/_synapse/admin/v1/rooms/${report.room_id}/context/${report.event_id}?limit=1`
+            ).then(
+                (value) => Ok(value),
+                (exception) => ActionException.Result(`Failed to retrieve the context for an event ${report.event_id}`, { exception, exceptionKind: ActionExceptionKind.Unknown })
+            )
+            if (isError(eventContext)) {
+                this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${eventContext.error.uuid}`);
                 continue;
             }
+            const event = eventContext.ok.event;
 
             await this.manager.handleServerAbuseReport({
-                roomId: report.room_id,
+                roomID: report.room_id,
                 reporterId: report.sender,
                 event: event,
-                reason: report.reason,
+                reason: report.reason ?? undefined,
             });
         }
 
@@ -123,9 +141,9 @@ export class ReportPoller {
         if (response.next_token !== undefined) {
             this.from = response.next_token;
             try {
-                await this.mjolnir.client.setAccountData(REPORT_POLL_EVENT_TYPE, { from: response.next_token });
+                await this.draupnir.client.setAccountData(REPORT_POLL_EVENT_TYPE, { from: response.next_token });
             } catch (ex) {
-                await this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to update progress: ${ex}`);
+                await this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to update progress: ${ex}`);
             }
         }
     }
@@ -136,12 +154,25 @@ export class ReportPoller {
         try {
             await this.getAbuseReports()
         } catch (ex) {
-            await this.mjolnir.managementRoomOutput.logMessage(LogLevel.ERROR, "tryGetAbuseReports", `failed to get abuse reports: ${ex}`);
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "tryGetAbuseReports", `failed to get abuse reports: ${ex}`);
         }
 
         this.schedulePoll();
     }
-    public start(startFrom: number) {
+    public static async getReportPollSetting(client: MatrixSendClient, managementRoomOutput: ManagementRoomOutput): Promise<ReportPollSetting> {
+        let reportPollSetting: ReportPollSetting = { from: 0 };
+        try {
+            reportPollSetting = await client.getAccountData(REPORT_POLL_EVENT_TYPE);
+        } catch (err) {
+            if (err.body?.errcode !== "M_NOT_FOUND") {
+                throw err;
+            } else {
+                managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "report poll setting does not exist yet");
+            }
+        }
+        return reportPollSetting;
+    }
+    public start({from: startFrom }: ReportPollSetting) {
         if (this.timeout === null) {
             this.from = startFrom;
             this.schedulePoll();

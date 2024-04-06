@@ -55,7 +55,9 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
         context.output.writeString(node.data);
     }
 ).registerInnerNode(NodeTag.HeadingOne,
-    function (_fringeType, _node, context: TransactionalOutputContext) { context.output.writeString('# ') },
+    function (_fringeType, _node, context: TransactionalOutputContext) {
+        context.output.writeString('# ')
+    },
     staticString('\n\n'),
 ).registerInnerNode(NodeTag.Emphasis,
     staticString('*'),
@@ -143,6 +145,9 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     staticString('<summary>'),
     staticString('</summary>')
 ).registerInnerNode(NodeTag.Font,
+    blank,
+    blank
+).registerInnerNode(NodeTag.Span,
     blank,
     blank
 );

@@ -25,10 +25,12 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
+import { StringRoomID, StringUserID } from "matrix-protection-suite";
+
 export interface MjolnirRecord {
     local_part: string,
-    owner: string,
-    management_room: string,
+    owner: StringUserID,
+    management_room: StringRoomID,
 }
 
 /**

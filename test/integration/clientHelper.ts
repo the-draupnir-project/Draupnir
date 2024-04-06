@@ -183,6 +183,6 @@ export function noticeListener(targetRoomdId: string, cb: (event: any) => void) 
     return (roomId: string, event: any) => {
         if (roomId !== targetRoomdId) return;
         if (event?.content?.msgtype !== "m.notice") return;
-            cb(event);
+        cb(event);
     }
 }

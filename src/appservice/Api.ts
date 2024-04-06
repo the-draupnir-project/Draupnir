@@ -1,9 +1,10 @@
 import request from "request";
 import express from "express";
 import * as bodyParser from "body-parser";
-import { MjolnirManager } from "./MjolnirManager";
 import * as http from "http";
 import { Logger } from "matrix-appservice-bridge";
+import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
+import { isError, isStringUserID } from "matrix-protection-suite";
 
 const log = new Logger("Api");
 /**
@@ -15,7 +16,7 @@ export class Api {
 
     constructor(
         private homeserver: string,
-        private mjolnirManager: MjolnirManager,
+        private mjolnirManager: AppServiceDraupnirManager,
     ) {}
 
     /**
@@ -88,22 +89,24 @@ export class Api {
             response.status(401).send("unauthorised");
             return;
         }
+        if (!isStringUserID(userId)) {
+            response.status(400).send("invalid user mxid");
+            return;
+        }
 
         const mjolnirId = req.body["mxid"];
-        if (mjolnirId === undefined) {
+        if (mjolnirId === undefined || !isStringUserID(mjolnirId)) {
             response.status(400).send("invalid request");
             return;
         }
 
-        // TODO: getMjolnir can fail if the ownerId doesn't match the requesting userId.
-        // https://github.com/matrix-org/mjolnir/issues/408
-        const mjolnir = this.mjolnirManager.getMjolnir(mjolnirId, userId);
+        const mjolnir = await this.mjolnirManager.getRunningDraupnir(mjolnirId, userId);
         if (mjolnir === undefined) {
             response.status(400).send("unknown mjolnir mxid");
             return;
         }
 
-        response.status(200).json({ managementRoom: mjolnir.managementRoomId });
+        response.status(200).json({ managementRoom: mjolnir.managementRoomID });
     }
 
     /**
@@ -122,8 +125,12 @@ export class Api {
             response.status(401).send("unauthorised");
             return;
         }
+        if (!isStringUserID(userId)) {
+            response.status(400).send("invalid user mxid");
+            return;
+        }
 
-        const existing = this.mjolnirManager.getOwnedMjolnirs(userId)
+        const existing = this.mjolnirManager.getOwnedDraupnir(userId)
         response.status(200).json(existing);
     }
 
@@ -151,12 +158,20 @@ export class Api {
             response.status(401).send("unauthorised");
             return;
         }
+        if (!isStringUserID(userId)) {
+            response.status(400).send("invalid user mxid");
+            return;
+        }
 
-        // TODO: provisionNewMjolnir will throw if it fails...
-        // https://github.com/matrix-org/mjolnir/issues/408
-        const [mjolnirId, managementRoom] = await this.mjolnirManager.provisionNewMjolnir(userId);
-
-        response.status(200).json({ mxid: mjolnirId, roomId: managementRoom });
+        const record = await this.mjolnirManager.provisionNewDraupnir(userId);
+        if (isError(record)) {
+            response.status(500).send(record.error.message);
+            return;
+        }
+        response.status(200).json({
+            mxid: this.mjolnirManager.draupnirMXID(record.ok),
+            roomId: record.ok.management_room
+        });
     }
 
     /**
@@ -177,9 +192,13 @@ export class Api {
             response.status(401).send("unauthorised");
             return;
         }
+        if (!isStringUserID(userId)) {
+            response.status(400).send("invalid user mxid");
+            return;
+        }
 
         const mjolnirId = req.body["mxid"];
-        if (mjolnirId === undefined) {
+        if (mjolnirId === undefined || !isStringUserID(mjolnirId)) {
             response.status(400).send("invalid request");
             return;
         }
@@ -192,14 +211,14 @@ export class Api {
 
         // TODO: getMjolnir can fail if the ownerId doesn't match the requesting userId.
         // https://github.com/matrix-org/mjolnir/issues/408
-        const mjolnir = this.mjolnirManager.getMjolnir(mjolnirId, userId);
+        const mjolnir = await this.mjolnirManager.getRunningDraupnir(mjolnirId, userId);
         if (mjolnir === undefined) {
             response.status(400).send("unknown mjolnir mxid");
             return;
         }
 
-        await mjolnir.joinRoom(roomId);
-        await mjolnir.addProtectedRoom(roomId);
+        await mjolnir.client.joinRoom(roomId);
+        await mjolnir.protectedRoomsSet.protectedRoomsConfig.addRoom(roomId);
 
         response.status(200).json({});
     }

@@ -1,28 +1,31 @@
 import { strict as assert } from "assert";
 
 import { newTestUser } from "../clientHelper";
+import { DraupnirTestContext, draupnirClient } from "../mjolnirSetupUtils";
+import { MatrixClient } from "matrix-bot-sdk";
 
 describe("Test: shutdown command", function() {
-    let client;
+    let client: MatrixClient;
     this.beforeEach(async function () {
         client = await newTestUser(this.config.homeserverUrl, { name: { contains: "shutdown-command" }});
         await client.start();
     })
     this.afterEach(async function () {
-        await client.stop();
+        client.stop();
     })
-    it("Mjolnir asks synapse to shut down a channel", async function() {
+    it("Mjolnir asks synapse to shut down a channel", async function(this: DraupnirTestContext) {
         this.timeout(20000);
         const badRoom = await client.createRoom();
-        await client.joinRoom(this.mjolnir.managementRoomId);
+        const draupnir = this.draupnir!;
+        await client.joinRoom(draupnir.managementRoomID);
 
-        let reply1 = new Promise(async (resolve, reject) => {
-            const msgid = await client.sendMessage(this.mjolnir.managementRoomId, {msgtype: "m.text", body: `!mjolnir shutdown room ${badRoom} closure test`});
+        let reply1 = new Promise(async (resolve) => {
+            const msgid = await client.sendMessage(draupnir.managementRoomID, {msgtype: "m.text", body: `!draupnir shutdown room ${badRoom} closure test`});
             client.on('room.event', (roomId, event) => {
                 if (
-                    roomId === this.mjolnir.managementRoomId
+                    roomId === draupnir.managementRoomID
                     && event?.type === "m.reaction"
-                    && event.sender === this.mjolnir.client.userId
+                    && event.sender === draupnir.clientUserID
                     && event.content?.["m.relates_to"]?.event_id === msgid
                 ) {
                     resolve(event);
@@ -30,13 +33,13 @@ describe("Test: shutdown command", function() {
             });
         });
 
-        const reply2 = new Promise((resolve, reject) => {
-            this.mjolnir.client.on('room.event', (roomId, event) => {
+        const reply2 = new Promise((resolve) => {
+            draupnirClient()!.on('room.event', (roomId, event) => {
                 if (
-                    roomId !== this.mjolnir.managementRoomId
+                    roomId !== draupnir.managementRoomID
                     && roomId !== badRoom
                     && event?.type === "m.room.message"
-                    && event.sender === this.mjolnir.client.userId
+                    && event.sender === draupnir.clientUserID
                     && event.content?.body === "closure test"
                 ) {
                     resolve(event);
@@ -52,5 +55,5 @@ describe("Test: shutdown command", function() {
             assert.equal(e.body.error, "This room has been blocked on this server");
             return true;
         });
-    });
+    } as unknown as Mocha.AsyncFunc);
 });
