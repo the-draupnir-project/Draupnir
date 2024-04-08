@@ -69,7 +69,7 @@
     "pg": "^8.8.0",
     "shell-quote": "^1.7.3",
     "ulidx": "^2.2.1",
-    "yaml": "^2.3.2"
+    "yaml": "^2.4.1"
   },
   "overrides": {
     "matrix-bot-sdk": "$@vector-im/matrix-bot-sdk",
