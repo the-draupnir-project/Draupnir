@@ -34,6 +34,7 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
 import { ActionResult, isError, isStringUserID, MatrixRoomReference, Ok, PolicyRuleType } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 
 async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
     await draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", "Unbanning users that match glob: " + rule.regex);
@@ -58,9 +59,15 @@ async function unban(
     this: DraupnirContext,
     keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
-    policyRoomReference: MatrixRoomReference,
+    policyRoomDesignator: MatrixRoomReference|string,
 ): Promise<ActionResult<void>> {
-    const policyRoom = await resolveRoomReferenceSafe(this.client, policyRoomReference);
+    const policyRoomReference = typeof policyRoomDesignator === 'string'
+        ? await findPolicyRoomIDFromShortcode(this.draupnir, policyRoomDesignator)
+        : Ok(policyRoomDesignator);
+    if (isError(policyRoomReference)) {
+        return policyRoomReference;
+    }
+    const policyRoom = await resolveRoomReferenceSafe(this.client, policyRoomReference.ok);
     if (isError(policyRoom)) {
         return policyRoom;
     }
@@ -117,6 +124,7 @@ defineInterfaceCommand({
             name: "list",
             acceptor: union(
                 findPresentationType("MatrixRoomReference"),
+                findPresentationType("string")
             ),
             prompt: async function (this: DraupnirContext) {
                 return {

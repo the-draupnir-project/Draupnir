@@ -33,8 +33,9 @@ import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfac
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { PromptOptions } from "./interface-manager/PromptForAccept";
 import { Draupnir } from "../Draupnir";
-import { ActionResult, MatrixRoomReference, PolicyRoomEditor, PolicyRuleType, isError, UserID } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomReference, PolicyRoomEditor, PolicyRuleType, isError, UserID, Ok } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 
 
 export async function findPolicyRoomEditorFromRoomReference(draupnir: Draupnir, policyRoomReference: MatrixRoomReference): Promise<ActionResult<PolicyRoomEditor>> {
@@ -49,12 +50,18 @@ async function ban(
     this: DraupnirContext,
     _keywords: ParsedKeywords,
     entity: UserID|MatrixRoomReference|string,
-    policyRoomReference: MatrixRoomReference,
+    policyRoomDesignator: MatrixRoomReference|string,
     ...reasonParts: string[]
 ): Promise<ActionResult<string>> {
+    const policyRoomReference = typeof policyRoomDesignator === 'string'
+        ? await findPolicyRoomIDFromShortcode(this.draupnir, policyRoomDesignator)
+        : Ok(policyRoomDesignator);
+    if (isError(policyRoomReference)) {
+        return policyRoomReference;
+    }
     const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
         this.draupnir,
-        policyRoomReference
+        policyRoomReference.ok
     );
     if (isError(policyListEditorResult)) {
         return policyListEditorResult;
@@ -92,7 +99,8 @@ defineInterfaceCommand({
         {
             name: "list",
             acceptor: union(
-                findPresentationType("MatrixRoomReference")
+                findPresentationType("MatrixRoomReference"),
+                findPresentationType("string")
             ),
             prompt: async function (this: DraupnirContext, _parameter: ParameterDescription): Promise<PromptOptions> {
                 return {

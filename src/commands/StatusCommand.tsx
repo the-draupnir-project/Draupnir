@@ -100,7 +100,8 @@ defineMatrixInterfaceAdaptor({
         const renderPolicyLists = (header: string, lists: ListInfo[]) => {
             const renderedLists = lists.map(list => {
                 return <li>
-                    <a href={list.revision.room.toPermalink()}>{list.revision.room.toRoomIDOrAlias()}</a> propagation: {list.watchedListProfile.propagation}
+                    <a href={list.revision.room.toPermalink()}>{list.revision.room.toRoomIDOrAlias()}</a> &#32;
+                    ({list.revision.shortcode ?? '<no shortcode>'}) propagation: {list.watchedListProfile.propagation} &#32;
                     (rules: {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers, {list.revision.allRulesOfType(PolicyRuleType.User).length} users, {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms)
                 </li>
             });
