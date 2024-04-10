@@ -54,6 +54,10 @@ export async function createList(
     if (isError(watchResult)) {
         return watchResult;
     }
+    const protectResult = await this.draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(newList.ok);
+    if (isError(protectResult)) {
+        return protectResult;
+    }
     return newList;
 }
 
