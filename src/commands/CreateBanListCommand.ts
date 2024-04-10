@@ -25,12 +25,14 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, MatrixRoomID, PropagationType, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, MatrixRoomID, Ok, PolicyRuleType, PropagationType, isError } from "matrix-protection-suite";
 import { DraupnirContext } from "./CommandHandler";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { listInfo } from "./StatusCommand";
+import { Draupnir } from "../Draupnir";
 
 export async function createList(
     this: DraupnirContext,
@@ -76,3 +78,20 @@ defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "list", "create"),
     renderer: tickCrossRenderer
 })
+
+export async function findPolicyRoomIDFromShortcode(draupnir: Draupnir, shortcode: string): Promise<ActionResult<MatrixRoomID>> {
+    const info = await listInfo(draupnir);
+    const matchingRevisions = info.filter(list => list.revision.shortcode === shortcode);
+    if (matchingRevisions.length === 0) {
+        return ActionError.Result(`Could not find a policy room from the shortcode: ${shortcode}`);
+    } else if (matchingRevisions.length === 1) {
+        return Ok(matchingRevisions[0].revision.room);
+    } else {
+        const remainingRevisions = matchingRevisions.filter(revision => revision.revision.isAbleToEdit(draupnir.clientUserID, PolicyRuleType.User));
+        if (remainingRevisions.length !== 1) {
+            return ActionError.Result(`The shortcode ${shortcode} is ambiguous and is currently used by ${remainingRevisions.length} lists.`)
+        } else {
+            return Ok(remainingRevisions[0].revision.room)
+        }
+    }
+}
