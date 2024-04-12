@@ -1,11 +1,11 @@
 # Copied from https://github.com/matrix-org/matrix-bifrost/blob/develop/.github/workflows/docker-hub-release.yml
-# This is duplicated with docker-hub-latest.yml the only difference is the tag and hook
+# This is duplicated with docker-hub-release.yml the only difference is the tag and hook
 
-name: "Docker Hub - Release"
+name: "Docker Hub - Latest"
 
 on:
   release:
-    types: [published]
+    types: [released]
 
 env:
   DOCKER_NAMESPACE: gnuxie
@@ -45,4 +45,4 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.DOCKER_NAMESPACE }}/draupnir:${{ env.RELEASE_VERSION }}
+            ${{ env.DOCKER_NAMESPACE }}/draupnir:latest
