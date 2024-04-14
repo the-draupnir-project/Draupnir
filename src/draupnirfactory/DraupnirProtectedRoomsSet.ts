@@ -25,10 +25,14 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, ClientPlatform, MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE, MatrixRoomID, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectedRoomsEvent, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, MjolnirWatchedPolicyRoomsEvent, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, ProtectionsConfig, RoomJoiner, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardSetMembership, StandardSetRoomState, StringUserID, isError } from "matrix-protection-suite";
+import { ActionResult, ClientPlatform, Logger, MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE, MatrixRoomID, MissingProtectionCB, MjolnirEnabledProtectionsEvent, MjolnirEnabledProtectionsEventType, MjolnirPolicyRoomsConfig, MjolnirProtectedRoomsConfig, MjolnirProtectedRoomsEvent, MjolnirProtectionSettingsEventType, MjolnirProtectionsConfig, MjolnirWatchedPolicyRoomsEvent, Ok, PolicyListConfig, PolicyRoomManager, ProtectedRoomsConfig, ProtectedRoomsSet, ProtectionsManager, RoomJoiner, RoomMembershipManager, RoomStateManager, SetMembership, SetRoomState, StandardProtectedRoomsSet, StandardProtectionsManager, StandardSetMembership, StandardSetRoomState, StringUserID, isError } from "matrix-protection-suite";
 import { BotSDKMatrixAccountData, BotSDKMatrixStateData, MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
 import '../protections/DraupnirProtectionsIndex';
+import { IConfig } from "../config";
+import { runProtectionConfigHooks } from "../protections/ConfigHooks";
+
+const log = new Logger('DraupnirProtectedRoomsSet');
 
 async function makePolicyListConfig(
     client: MatrixSendClient,
@@ -81,30 +85,55 @@ async function makeSetRoomState(
     );
 }
 
-async function makeProtectionConfig(
+function missingProtectionCB(protectionName: string): void {
+    log.warn(`Unable to find a protection description for the protection named`, protectionName);
+}
+
+// FIXME: https://github.com/the-draupnir-project/Draupnir/issues/338
+function makeMissingProtectionCB(): MissingProtectionCB {
+    return missingProtectionCB
+}
+
+async function makeProtectionsManager(
     client: MatrixSendClient,
     roomStateManager: RoomStateManager,
-    managementRoom: MatrixRoomID
-): Promise<ActionResult<ProtectionsConfig>> {
+    managementRoom: MatrixRoomID,
+    config: IConfig
+): Promise<ActionResult<ProtectionsManager>> {
     const result = await roomStateManager.getRoomStateRevisionIssuer(
         managementRoom
     );
     if (isError(result)) {
         return result;
     }
-    return Ok(new MjolnirProtectionsConfig(
+    const protectionsConfigResult = await MjolnirProtectionsConfig.create(
         new BotSDKMatrixAccountData<MjolnirEnabledProtectionsEvent>(
             MjolnirEnabledProtectionsEventType,
             MjolnirEnabledProtectionsEvent,
             client
         ),
-        new BotSDKMatrixStateData(
-            MjolnirProtectionSettingsEventType,
-            result.ok,
-            client
-        ),
-        DefaultEnabledProtectionsMigration,
-    ));
+        {
+            migrationHandler: DefaultEnabledProtectionsMigration,
+            missingProtectionCB: makeMissingProtectionCB()
+        }
+    );
+    if (isError(protectionsConfigResult)) {
+        return protectionsConfigResult;
+    }
+    const hookResult = await runProtectionConfigHooks(config, protectionsConfigResult.ok);
+    if (isError(hookResult)) {
+        return hookResult;
+    }
+    return Ok(
+        new StandardProtectionsManager(
+            protectionsConfigResult.ok,
+            new BotSDKMatrixStateData(
+                MjolnirProtectionSettingsEventType,
+                result.ok,
+                client
+            )
+        )
+    );
 }
 
 
@@ -115,7 +144,8 @@ export async function makeProtectedRoomsSet(
     roomMembershipManager: RoomMembershipManager,
     client: MatrixSendClient,
     clientPlatform: ClientPlatform,
-    userID: StringUserID
+    userID: StringUserID,
+    config: IConfig,
 ): Promise<ActionResult<ProtectedRoomsSet>> {
     const protectedRoomsConfig = await makeProtectedRoomsConfig(client, clientPlatform.toRoomJoiner())
     if (isError(protectedRoomsConfig)) {
@@ -139,10 +169,11 @@ export async function makeProtectedRoomsSet(
     if (isError(policyListConfig)) {
         return policyListConfig;
     }
-    const protectionsConfig = await makeProtectionConfig(
+    const protectionsConfig = await makeProtectionsManager(
         client,
         roomStateManager,
-        managementRoom
+        managementRoom,
+        config
     );
     if (isError(protectionsConfig)) {
         return protectionsConfig;
