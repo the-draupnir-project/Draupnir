@@ -39,7 +39,8 @@ export class DraupnirFactory {
             roomMembershipManager,
             client,
             clientPlatform,
-            clientUserID
+            clientUserID,
+            config
         );
         if (isError(protectedRoomsSet)) {
             return protectedRoomsSet;

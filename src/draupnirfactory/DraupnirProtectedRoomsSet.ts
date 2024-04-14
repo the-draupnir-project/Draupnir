@@ -29,6 +29,8 @@ import { ActionResult, ClientPlatform, Logger, MJOLNIR_PROTECTED_ROOMS_EVENT_TYP
 import { BotSDKMatrixAccountData, BotSDKMatrixStateData, MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
 import '../protections/DraupnirProtectionsIndex';
+import { IConfig } from "../config";
+import { runProtectionConfigHooks } from "../protections/ConfigHooks";
 
 const log = new Logger('DraupnirProtectedRoomsSet');
 
@@ -95,7 +97,8 @@ function makeMissingProtectionCB(): MissingProtectionCB {
 async function makeProtectionsManager(
     client: MatrixSendClient,
     roomStateManager: RoomStateManager,
-    managementRoom: MatrixRoomID
+    managementRoom: MatrixRoomID,
+    config: IConfig
 ): Promise<ActionResult<ProtectionsManager>> {
     const result = await roomStateManager.getRoomStateRevisionIssuer(
         managementRoom
@@ -117,6 +120,10 @@ async function makeProtectionsManager(
     if (isError(protectionsConfigResult)) {
         return protectionsConfigResult;
     }
+    const hookResult = await runProtectionConfigHooks(config, protectionsConfigResult.ok);
+    if (isError(hookResult)) {
+        return hookResult;
+    }
     return Ok(
         new StandardProtectionsManager(
             protectionsConfigResult.ok,
@@ -137,7 +144,8 @@ export async function makeProtectedRoomsSet(
     roomMembershipManager: RoomMembershipManager,
     client: MatrixSendClient,
     clientPlatform: ClientPlatform,
-    userID: StringUserID
+    userID: StringUserID,
+    config: IConfig,
 ): Promise<ActionResult<ProtectedRoomsSet>> {
     const protectedRoomsConfig = await makeProtectedRoomsConfig(client, clientPlatform.toRoomJoiner())
     if (isError(protectedRoomsConfig)) {
@@ -164,7 +172,8 @@ export async function makeProtectedRoomsSet(
     const protectionsConfig = await makeProtectionsManager(
         client,
         roomStateManager,
-        managementRoom
+        managementRoom,
+        config
     );
     if (isError(protectionsConfig)) {
         return protectionsConfig;
