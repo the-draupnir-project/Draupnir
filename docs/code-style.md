@@ -2,29 +2,33 @@
 
 For now we don't have many objective code recommendations.
 Just try to stay consistent with the rest of the project,
-if that is alient to you, it's ok, just try. In the worst case we will
+if that is alien to you, it's ok, just try. In the worst case we will
 clean things up for you.
 
 We give some general advice about style below.
 
 ## Code style: optimisation
 
-One of the most important things that we do is let go of any tendencies
-that you may have towards micro optimisation. We want clear code
-a thousand times over more than anything else, optimisation should
+One of the most important things a Draupnir developer should do is let
+to go of any tendencies that they may have towards micro optimisation.
+We want clear code so much more than anything else, optimisation should
 not be a concern at all when actually writing code.
 
+If you are somewhat unseasoned, you may find this somewhat puzzling.
+
 We believe the only way to effectively optimise is through design,
-and the use of a profiler. There is very little more inefficient
+and the use of a profiler. There are very few things more inefficient
 for programmers to work with than code written with overbearing
 concerns about performance. Using idioms and data structures
 appropriate for the programming language and problem being solved
-will always be enough.
+will always be enough. And I invite you to believe that,
+if micro optimisation is something you struggle with,
+then tell yourself that it does not matter.
 
 ## Code style: scope
 
-You might notice that we try to keep the scope (which by 'scope'
-here we really mean 'how much stuff is in a function/method)
+You might notice that we try to keep the scope (which by "scope"
+here we really mean "how much stuff" is in a function/method)
 as small as possible. This is something you should stick to aswell.
 
 It really helps to introduce local functions if your method body starts
@@ -48,7 +52,7 @@ Something you may notice is that we almost always try to use `const`.
 
 You will very likely reach a point where you need to reassign a
 lexical variable. Don't stress too much about it, give it a try
-but if it's not partical then don't worry about using `let`,
+but if it's not practical then don't worry about using `let`,
 it's ok.
 
 A common hack that we use is an [IIFE](https://developer.mozilla.org/en-US/docs/Glossary/IIFE)
