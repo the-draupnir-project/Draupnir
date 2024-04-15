@@ -1,6 +1,6 @@
 # Developing Draupnir
 
-This document is a part of our [contributing documentation](../CONTRIBUTING.),
+This document is a part of our [contributing documentation](../CONTRIBUTING.md),
 which you should take a read of if you didn't already.
 
 Draupnir is a TypeScript project that depends on the labour of a
