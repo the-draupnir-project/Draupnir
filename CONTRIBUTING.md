@@ -2,16 +2,16 @@
 
 ## Welcome
 
-Hi, we're that you are considering to contribute to Draupnir.
+Hi, thank you for considering to contribute to Draupnir.
 We want this process to be as welcoming as possible, no matter your
-experience level, or the kind of contribution you want to make.
+experience level, or the kind of contribution that you want to make.
 
 If you believe that your experience is anything but that, please let
 us know!
 
 Do not worry about following the guidance in this document to the
 letter, we'd much rather you get involved than avoid doing so
-because of a technicality. Keep this in mind throughout.
+because of a technicality. Please keep this in mind throughout.
 
 ## Getting Started
 
