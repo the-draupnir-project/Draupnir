@@ -127,7 +127,12 @@ However, if you are uncomfortable with this, please do not activate this feature
 Also, you should probably setup your `production.yaml` to ensure that the web
 server can only receive requests from your reverse proxy (e.g. `localhost`).
 
-## Development
+## Contributing & Opening Issues
+
+Draupnir wants to be yours as much as it is ours.
+Please see or [contributing document](./CONTRIBUTING.md), but do not
+worry too much about following the guidance to the letter. And
+keep that in mind throughout.
 
 Draupnir is a TypeScript project that depends on the labour of a handful of
 developers, testers and users. The code base is in relatively good shape,
