@@ -134,13 +134,6 @@ Please see or [contributing document](./CONTRIBUTING.md), but do not
 worry too much about following the guidance to the letter. And
 keep that in mind throughout.
 
-Draupnir is a TypeScript project that depends on the labour of a handful of
-developers, testers and users. The code base is in relatively good shape,
-and if you would like to contribute or gain an understanding of the workings
-of Draupnir, please read our [context document](./docs/context.md).
-
-Once you have done that, go ahead and read our [contributing document](./CONTRIBUTING.md)
-
 ### Development and testing with mx-tester
 
 WARNING: mx-tester is currently work in progress, but it can still save you some time and is better than struggling with nothing.
