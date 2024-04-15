@@ -12,6 +12,7 @@ import './JoinWaveShortCircuit';
 import './RedactionSynchronisation';
 import './MessageIsMedia';
 import './MessageIsVoice';
+import './PolicyChangeNotification';
 import './TrustedReporters';
 import './WordList';
 
