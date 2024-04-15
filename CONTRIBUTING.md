@@ -1,6 +1,86 @@
-# Contributing code to Draupnir
+# Contributing to Draupnir
 
-## How to contribute
+## Welcome
+
+Hi, we're that you are considering to contribute to Draupnir.
+We want this process to be as welcoming as possible, no matter your
+experience level, or the kind of contribution you want to make.
+
+If you believe that your experience is anything but that, please let
+us know!
+
+Do not worry about following the guidance in this document to the
+letter, we'd much rather you get involved than avoid doing so
+because of a technicality. Keep this in mind throughout.
+
+## Getting Started
+
+What kind of contribution are you trying to make?
+
+If you are looking to document an issue, request a feature, develop
+a feature, please proceed into the [Issue](#issue) section.
+
+If you are looking to develop or contribute a fix, feature,
+or documentation for an existing issue, please proceed to the
+[Fixing or implementing an existing issue](#fixing-or-implementing-an-existing-issue) section.
+
+### Issue
+
+If you can, just open the issue on the repository and we'll see it
+and come speak to you.
+
+Alternatively, if you aren't comfortable doing so or can't phrase
+the problem or feature, then come speak to us in our support room.
+We'll probably end up creating the issue for you!
+
+In either case, you should join our support room [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org) :3
+
+Do not worry about making duplicates or alignment with project
+goals, the triage process is supposed to find that for you.
+
+### Fixing or implementing an existing issue
+
+If we have triaged the issue, even without writing our own context or
+clarifications, then the issue is likely ready to implement.
+
+You should write a small statement in the issue or a quick message to
+our support room about how you intend to resolve the issue before getting
+started.
+
+If you don't know how to get started or what to change, please ask!
+We'd love nothing more than to help you, or at the least, make
+our documentation and process better.
+
+## Where to start
+
+Join our room [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)!
+
+### How Draupnir works
+
+Checkout our [context document](./docs/context.md).
+
+### Code
+
+Checkout our [development guide](./docs/development.md).
+
+### Issues & Triaging
+
+We don't have a specific guide for opening issues, just go ahead.
+
+You can read about our issue triaging process [here](./docs/triaging.md)
+
+### Documentation
+
+WIP, our documentation isn't great!
+
+If you know how we can improve that then let us know!
+
+Currently we just have markdown documents, but maybe we need
+something more complete? like a markdown book?
+
+Go ahead and edit anything.
+
+## Making Pull Requests
 
 The preferred and easiest way to contribute changes to Matrix is to fork the
 relevant project on github, and then [create a pull request](
@@ -10,131 +90,6 @@ your changes into our repo.
 We use Github Actions for continuous integration.
 If your change breaks the build, this will be shown in GitHub, so
 please keep an eye on the pull request for feedback.
-
-## How Draupnir works
-
-You should read the [context document](./docs/context.md).
-
-
-## Development
-
-To run unit tests in a local development environment, you can use `yarn test`
-and `yarn lint`.
-
-### matrix-protection-suite
-
-While not necessary, some changes will require you to make changes to the
-[matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite)
-and the associated backend for the matrix-bot-sdk: [matrix-protection-suite-for-matrix-bot-sdk](https://github.com/Gnuxie/matrix-protection-suite-for-matrix-bot-sdk).
-
-You should clone these locally and then link them by using
-`yarn link` in each directory followed by `yarn link matirx-protection-suite matrix-protection-suite-for-matrix-bot-sdk` within Draupnir.
-
-You may also need to `yarn add --dev "matrix-bot-sdk@npm:@vector-im/matrix-bot-sdk@^0.6.6-element.1"`
-within the `matrix-protection-suite-for-matrix-bot-sdk` directory to ensure
-that that the local copy is using the same version as Draupnir.
-I don't understand why `yarn` will not respect overrides for linked
-dependencies.
-
-#### VSCode
-
-You will also want to edit your `settings.json` to match something like
-this, so that you can debug into MPS while debugging Draupnir.
-
-```
-    "debug.javascript.terminalOptions": {
-        "runtimeArgs": ["--preserve-symlinks"],
-        "sourceMaps": true,
-        "outFiles": [
-            "${userHome}/experiments/draupnir/lib/**/*.js",
-            "${userHome}/experiments/draupnir/src/**/*.ts",
-            "${userHome}/experiments/draupnir/test/**/*.ts",
-            "${userHome}/experiments/matrix-protection-suite/dist/**/*.js",
-            "${userHome}/experiments/matrix-protection-suite/src/**/*.ts",
-            "${userHome}/experiments/matrix-protection-suite-for-matrix-bot-sdk/dist/**/*.js",
-            "${userHome}/experiments/matrix-protection-suite-for-matrix-bot-sdk/src/**/*.ts",
-          ]
-    }
-```
-
-### mx-tester
-
-For integration testing, and spinning up a local synapse we use
-[mx-tester](https://github.com/matrix-org/mx-tester).
-While not required for basic changes, it is strongly recommended
-to use mx-tester or have the ability to spin up your own
-development Synapse to develop mjolnir interactively.
-
-To install `mx-tester` you will need the [rust toolchain](https://rustup.rs/)
-and Docker. You should refer to your linux distribution's documentation
-for installing both, and do not naively follow the instructions
-from rustup.rs without doing so first.
-Then you will be able to install `mx-tester` with `cargo install mx-tester`.
-Updating mx-tester can be done by installing `cargo install cargo-update`
-and using `cargo install-update mx-tester`, though you may skip
-this step until it is necessary to update `mx-tester`.
-
-#### Usage
-
-You can then start a local synapse using `mx-tester build`,
-followed by `mx-tester up`. You can then use `up`, `down` as many
-times as you like.
-If for some reason you need to get a clean Synapse database,
-you can just use `mx-tester down build`.
-
-### Debugging
-
-For debugging mx-tester it is recommended to use Visual Studio Code.
-If you open the project in visual studio code, press `F1`,
-type `Debug: JavaScript Debug Terminal`
-(see the [documentation](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_javascript-debug-terminal)),
-and you should get a terminal from which node will always connect to
-Visual Studio Code.
-
-The following sections assume that a Synapse is running
-and `config/harness.yaml` has been configured to connect to it.
-If you are using `mx-tester` and you use `mx-tester up`, this will
-already be the case.
-
-#### Debugging and reproducing an issue
-
-If you need to debug an issue that is occurring through use in matrix,
-say the unban command has stopped working, you can launch
-mjolnir from the JavaScript Debug Terminal using `yarn test:manual`.
-This will launch mjolnir using the config found in `config/harness.yaml`.
-You can now open https://app.element.io, change the server to `localhost:8081`,
-and then create an account.
-From here you can join the room `#moderators:localhost:9999` (you will also be
-able to find it in the rooms directory) and interact with mjolnir.
-
-It is recommended to set breakpoints in the editor while interacting
-and switch the tab to "DEBUG CONSOLE" (within Visual Studio Code)
-to evaluate arbitrary expressions in the currently paused context (when
-a breakpoint has been hit).
-
-#### Debugging an integration test
-
-To debug the integration test suite from the JavaScript Debug Terminal,
-you can start them using `yarn test:integration`.
-However, more often than not there is a specific section of
-code you will be working on that has specific tests. Running
-the entire suite is therefore unnecessary.
-To run a specific test from the JavaScript Debug Terminal,
-you can use the script `yarn test:integration:single test/integration/banListTest.ts`,
-where `test/integration/banListTest.ts` is the name of the integration test you
-want to run.
-
-## Code style
-
-All Matrix projects have a well-defined code-style - and sometimes we've even
-got as far as documenting it... Mjolnir's code style is a relatively standard
-TypeScript project - run `yarn lint` to see how your code fairs.
-
-Before pushing new changes, ensure they don't produce linting errors.
-
-Please ensure your changes match the cosmetic style of the existing project,
-and **never** mix cosmetic and functional changes in the same commit, as it
-makes it horribly hard to review otherwise.
 
 ## Sign off
 
