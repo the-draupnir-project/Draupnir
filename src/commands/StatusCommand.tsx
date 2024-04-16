@@ -35,6 +35,7 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { ActionResult, Ok, PolicyRoomRevision, PolicyRoomWatchProfile, PolicyRuleType, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import { DocumentNode } from "./interface-manager/DeadDocument";
 
 defineInterfaceCommand({
     designator: ["status"],
@@ -81,7 +82,7 @@ export async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
 }
 
 // FIXME: need a shoutout to dependencies in here and NOTICE info.
-async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo> {
+export async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo> {
     const watchedListInfo = await listInfo(draupnir);
     const protectedWatchedLists = watchedListInfo.filter((info) => draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
     const unprotectedListProfiles = watchedListInfo.filter((info) => !draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
@@ -94,39 +95,44 @@ async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo> {
     }
 }
 
+export function renderStatusInfo(info: StatusInfo): DocumentNode {
+    const renderPolicyLists = (header: string, lists: ListInfo[]) => {
+        const renderedLists = lists.map(list => {
+            return <li>
+                <a href={list.revision.room.toPermalink()}>{list.revision.room.toRoomIDOrAlias()}</a> &#32;
+                ({list.revision.shortcode ?? '<no shortcode>'}) propagation: {list.watchedListProfile.propagation} &#32;
+                (rules: {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers, {list.revision.allRulesOfType(PolicyRuleType.User).length} users, {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms)
+            </li>
+        });
+        return <fragment>
+            <b>{header}</b><br/>
+            <ul>
+                {renderedLists.length === 0 ? <li><i>None</i></li> : renderedLists}
+            </ul>
+        </fragment>
+    };
+    return <root>
+        <b>Protected Rooms: </b>{info.numberOfProtectedRooms}<br/>
+        {renderPolicyLists('Subscribed policy rooms', info.subscribedLists)}
+        {renderPolicyLists('Subscribed and protected policy rooms', info.subscribedAndProtectedLists)}
+        <b>Version: </b><code>{info.version}</code><br/>
+        <b>Repository: </b><code>{info.repository}</code><br/>
+    </root>
+}
+
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("mjolnir", "status"),
     renderer: async function (this, client, commandRoomID, event, result: ActionResult<StatusInfo>): Promise<void> {
-        const renderPolicyLists = (header: string, lists: ListInfo[]) => {
-            const renderedLists = lists.map(list => {
-                return <li>
-                    <a href={list.revision.room.toPermalink()}>{list.revision.room.toRoomIDOrAlias()}</a> &#32;
-                    ({list.revision.shortcode ?? '<no shortcode>'}) propagation: {list.watchedListProfile.propagation} &#32;
-                    (rules: {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers, {list.revision.allRulesOfType(PolicyRuleType.User).length} users, {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms)
-                </li>
-            });
-            return <fragment>
-                <b>{header}</b><br/>
-                <ul>
-                    {renderedLists.length === 0 ? <li><i>None</i></li> : renderedLists}
-                </ul>
-            </fragment>
-        };
         if (isError(result)) {
             await tickCrossRenderer.call(this, client, commandRoomID, event, result);
             return;
         }
         const info = result.ok;
-
-        await renderMatrixAndSend(<root>
-            <b>Protected Rooms: </b>{info.numberOfProtectedRooms}<br/>
-            {renderPolicyLists('Subscribed policy rooms', info.subscribedLists)}
-            {renderPolicyLists('Subscribed and protected policy rooms', info.subscribedAndProtectedLists)}
-            <b>Version: </b><code>{info.version}</code><br/>
-            <b>Repository: </b><code>{info.repository}</code><br/>
-        </root>,
-        commandRoomID,
-        event,
-        client);
+        await renderMatrixAndSend(
+            renderStatusInfo(info),
+            commandRoomID,
+            event,
+            client
+        );
     }
 });
