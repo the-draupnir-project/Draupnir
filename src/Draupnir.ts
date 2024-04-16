@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, LoggableConfigTracker, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -94,7 +94,8 @@ export class Draupnir implements Client {
         public readonly roomStateManager: RoomStateManager,
         public readonly policyRoomManager: PolicyRoomManager,
         public readonly roomMembershipManager: RoomMembershipManager,
-        public readonly synapseAdminClient?: SynapseAdminClient
+        public readonly loggableConfigTracker: LoggableConfigTracker,
+        public readonly synapseAdminClient?: SynapseAdminClient,
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
         this.managementRoomOutput = new ManagementRoomOutput(
@@ -138,7 +139,8 @@ export class Draupnir implements Client {
         roomStateManager: RoomStateManager,
         policyRoomManager: PolicyRoomManager,
         roomMembershipManager: RoomMembershipManager,
-        config: IConfig
+        config: IConfig,
+        loggableConfigTracker: LoggableConfigTracker
     ): Promise<ActionResult<Draupnir>> {
         const draupnir = new Draupnir(
             client,
@@ -151,6 +153,7 @@ export class Draupnir implements Client {
             roomStateManager,
             policyRoomManager,
             roomMembershipManager,
+            loggableConfigTracker,
             new SynapseAdminClient(
                 client,
                 clientUserID
