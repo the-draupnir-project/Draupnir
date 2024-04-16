@@ -42,6 +42,8 @@ import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListen
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
+import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
+import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 
 const log = new Logger('Draupnir');
 
@@ -177,7 +179,23 @@ export class Draupnir implements Client {
         if (isError(managementRoomProtectResult)) {
             return managementRoomProtectResult;
         }
+        void Task(draupnir.startupComplete());
         return Ok(draupnir);
+    }
+
+    private async startupComplete(): Promise<void> {
+        const statusInfo = await draupnirStatusInfo(this);
+        try {
+            await this.managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "Startup complete. Now monitoring rooms.")
+            await renderMatrixAndSend(
+                renderStatusInfo(statusInfo),
+                this.managementRoomID,
+                undefined,
+                this.client
+            )
+        } catch (ex) {
+            log.error(`Caught an error when trying to show status at startup`, ex);
+        }
     }
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {

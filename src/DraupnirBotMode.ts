@@ -35,7 +35,7 @@ import {
     StandardClientsInRoomMap,
     DefaultEventDecoder,
     setGlobalLoggerProvider,
-    RoomStateBackingStore
+    RoomStateBackingStore,
 } from "matrix-protection-suite";
 import {
     BotSDKLogServiceLogger,
