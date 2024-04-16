@@ -35,7 +35,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { SOFTWARE_VERSION } from "../config";
 import { Registry } from 'prom-client';
 import { ClientCapabilityFactory, RoomStateManagerFactory, joinedRoomsSafe, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
+import { ClientsInRoomMap, DefaultEventDecoder, EventDecoder, MatrixRoomReference, StandardClientsInRoomMap, StringRoomID, StringUserID, Task, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 
 const log = new Logger("AppService");
@@ -208,6 +208,27 @@ export class MjolnirAppService {
         return {}; // auto-provision users with no additonal data
     }
 
+    // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
+    // Acts as an alternative to the web api provided for the widget.
+    private async handleProvisionInvite(mxEvent: WeakEvent): Promise<void> {
+        log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
+        try {
+            const result = await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID);
+            if (isError(result)) {
+                log.error(`Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`, result.error);
+            }
+        } catch (e: any) {
+            log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
+            // continue, we still want to reject this invitation.
+        }
+        try {
+            // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their mjolnir.
+            await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
+        } catch (e: any) {
+            log.warn("Unable to reject an invite to a room", e);
+        }
+    }
+
     /**
      * Handle an individual event pushed by the homeserver to us.
      * This function is async (and anything downstream would be anyway), which does mean that events can be processed out of order.
@@ -215,27 +236,14 @@ export class MjolnirAppService {
      * @param request A matrix-appservice-bridge request encapsulating a Matrix event.
      * @param context Additional context for the Matrix event.
      */
-    public async onEvent(request: Request<WeakEvent>) {
+    public onEvent(request: Request<WeakEvent>): void {
         const mxEvent = request.getData();
-        // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
-        // Acts as an alternative to the web api provided for the widget.
         if ('m.room.member' === mxEvent.type) {
-            if ('invite' === mxEvent.content['membership'] && mxEvent.state_key === this.bridge.botUserId) {
-                log.info(`${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`);
-                try {
-                    const result = await this.draupnirManager.provisionNewDraupnir(mxEvent.sender as StringUserID);
-                    if (isError(result)) {
-                        log.error(`Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`, result.error);
-                    }
-                } catch (e: any) {
-                    log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
-                    // continue, we still want to reject this invitation.
-                }
-                try {
-                    // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their mjolnir.
-                    await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
-                } catch (e: any) {
-                    log.warn("Unable to reject an invite to a room", e);
+            if ('invite' === mxEvent.content['membership']) {
+                if (mxEvent.room_id === this.accessControlRoomID) {
+                    // do nothing, setup code should handle this.
+                } else if (mxEvent.state_key === this.bridge.botUserId) {
+                    void Task(this.handleProvisionInvite(mxEvent))
                 }
             }
         }
@@ -259,7 +267,6 @@ export class MjolnirAppService {
      * @param port The port that the appservice should listen on to receive transactions from the homeserver.
      */
     private async start(port: number) {
-        await this.bridge.getBot().getClient().joinRoom(this.config.adminRoom);
         log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
         this.api.start(this.config.webAPI.port);
         await this.bridge.listen(port);
