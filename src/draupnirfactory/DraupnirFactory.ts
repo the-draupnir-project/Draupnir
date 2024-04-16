@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { ActionResult, ClientsInRoomMap, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionResult, ClientsInRoomMap, MatrixRoomID, StandardLoggableConfigTracker, StringUserID, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { ClientCapabilityFactory, ClientForUserID, RoomStateManagerFactory, joinedRoomsSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
@@ -32,6 +32,7 @@ export class DraupnirFactory {
             return clientRooms;
         }
         const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(clientUserID, client);
+        const configLogTracker = new StandardLoggableConfigTracker();
         const protectedRoomsSet = await makeProtectedRoomsSet(
             managementRoom,
             roomStateManager,
@@ -40,7 +41,8 @@ export class DraupnirFactory {
             client,
             clientPlatform,
             clientUserID,
-            config
+            config,
+            configLogTracker
         );
         if (isError(protectedRoomsSet)) {
             return protectedRoomsSet;
@@ -55,7 +57,8 @@ export class DraupnirFactory {
             roomStateManager,
             policyRoomManager,
             roomMembershipManager,
-            config
+            config,
+            configLogTracker
         );
     }
 }
