@@ -147,6 +147,9 @@ export class BanPropagationProtection
     implements DraupnirProtection<BanPropagationProtectionCapabilitiesDescription> {
 
     private readonly userConsequences: UserConsequences;
+
+    private readonly banPropagationPromptListener = this.banReactionListener.bind(this);
+    private readonly unbanPropagationPromptListener = this.unbanUserReactionListener.bind(this);
     constructor(
         description: BanPropagationProtectionCapabilitiesDescription,
         capabilities: BanPropagationProtectionCapabilities,
@@ -155,10 +158,13 @@ export class BanPropagationProtection
     ) {
         super(description, capabilities, protectedRoomsSet, [], []);
         this.userConsequences = capabilities.userConsequences;
-        // FIXME: These listeners are gonna leak all over if we don't have a
-        // hook for stopping protections.
-        this.draupnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, this.banReactionListener.bind(this));
-        this.draupnir.reactionHandler.on(UNBAN_PROPAGATION_PROMPT_LISTENER, this.unbanUserReactionListener.bind(this));
+        this.draupnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, this.banPropagationPromptListener);
+        this.draupnir.reactionHandler.on(UNBAN_PROPAGATION_PROMPT_LISTENER, this.unbanPropagationPromptListener);
+    }
+
+    handleProtectionDisable(): void {
+        this.draupnir.reactionHandler.off(BAN_PROPAGATION_PROMPT_LISTENER, this.banPropagationPromptListener);
+        this.draupnir.reactionHandler.off(UNBAN_PROPAGATION_PROMPT_LISTENER, this.unbanPropagationPromptListener)
     }
 
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
