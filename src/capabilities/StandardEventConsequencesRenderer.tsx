@@ -26,11 +26,12 @@ class StandardEventConsequencesRenderer implements EventConsequences {
     public readonly requiredPermissions = this.capability.requiredPermissions;
     public async consequenceForEvent(roomID: StringRoomID, eventID: StringEventID, reason: string): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForEvent(roomID, eventID, reason);
+        const title = <fragment>Redacting {Permalinks.forEvent(roomID, eventID)}.</fragment>;
         if (isError(capabilityResult)) {
-            this.messageCollector.addOneliner(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            this.messageCollector.addOneliner(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
-        this.messageCollector.addOneliner(this.description, <fragment>Redacting {Permalinks.forEvent(roomID, eventID)}.</fragment>)
+        this.messageCollector.addOneliner(this.description, title)
         return capabilityResult;
     }
 }

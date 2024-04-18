@@ -44,11 +44,13 @@ export function renderExceptionTrail(error: ActionError): DocumentNode {
 
 export function renderFailedSingularConsequence(
     description: DescriptionMeta,
+    title: DocumentNode,
     error: ActionError
 ): DocumentNode {
     return <fragment>
         <details>
-            <summary><code>{description.name}</code>: {error.mostRelevantElaboration}</summary>
+            <summary><code>{description.name}</code>: {title} - {renderOutcome(false)}</summary>
+            {error.mostRelevantElaboration}
             {renderDetailsNotice(error)}
             {renderElaborationTrail(error)}
             {renderExceptionTrail(error)}
@@ -56,13 +58,20 @@ export function renderFailedSingularConsequence(
     </fragment>
 }
 
+export function renderOutcome(isOutcomeOk: boolean): DocumentNode {
+    const colour = isOutcomeOk ? '#7cfc00' : '#E01F2B';
+    return <fragment>
+        <span data-mx-color={colour}>{isOutcomeOk ? 'OK' : 'Failed'}</span>
+    </fragment>
+}
+
 function renderRoomOutcomeOk(roomID: StringRoomID): DocumentNode {
-    return <span>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - OK</span>
+    return <span>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(true)}</span>
 }
 function renderRoomOutcomeError(roomID: StringRoomID, error: ActionError): DocumentNode {
     return <fragment>
         <details>
-            <summary>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - Error: {error.mostRelevantElaboration}</summary>
+            <summary>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(false)}: {error.mostRelevantElaboration}</summary>
             {renderDetailsNotice(error)}
             {renderElaborationTrail(error)}
             {renderExceptionTrail(error)}
