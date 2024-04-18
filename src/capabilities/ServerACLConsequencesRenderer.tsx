@@ -26,37 +26,40 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     public readonly requiredPermissions = this.capability.requiredPermissions;
     public async consequenceForServerInRoom(roomID: StringRoomID, revision: PolicyListRevision): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForServerInRoom(roomID, revision);
+        const title = <fragment>
+            Setting server ACL in {Permalinks.forRoom(roomID)} as it is out of sync with watched policies.
+        </fragment>;
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
-        this.messageCollector.addOneliner(this.description, <fragment>
-            Setting server ACL in {Permalinks.forRoom(roomID)} as it is out of sync with watched policies.
-        </fragment>)
+        this.messageCollector.addOneliner(this.description, title);
         return Ok(undefined);
     }
     public async consequenceForServerInRoomSet(revision: PolicyListRevision): Promise<ActionResult<RoomSetResult>> {
         const capabilityResult = await this.capability.consequenceForServerInRoomSet(revision);
+        const title = <fragment>Updating server ACL in protected rooms.</fragment>;
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
         this.messageCollector.addMessage(
             this.description, renderRoomSetResult(capabilityResult.ok, {
-                summary: <fragment><code>{this.description.name}</code>: Updating server ACL in protected rooms.</fragment>
+                summary: <fragment><code>{this.description.name}</code>: {title}</fragment>
             })
         );
         return capabilityResult;
     }
     public async unbanServerFromRoomSet(serverName: string, reason: string): Promise<ActionResult<RoomSetResult>> {
         const capabilityResult = await this.capability.unbanServerFromRoomSet(serverName, reason);
+        const title = <fragment>Removing {serverName} from denied servers in protected rooms.</fragment>;
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error));
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error));
             return capabilityResult;
         }
         this.messageCollector.addMessage(
             this.description, renderRoomSetResult(capabilityResult.ok, {
-                summary: <fragment><code>{this.description.name}</code>: Removing {serverName} from denied servers in protected rooms.</fragment>
+                summary: <fragment><code>{this.description.name}</code>: {title}</fragment>
             })
         );
         return capabilityResult;

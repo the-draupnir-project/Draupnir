@@ -9,14 +9,14 @@
 // </text>
 
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
-import { ActionResult, Capability, DescriptionMeta, Ok, Permalinks, PolicyListRevision, ResultForUserInSetMap, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
+import { ActionResult, Capability, DescriptionMeta, Ok, Permalinks, PolicyListRevision, ResultForUsersInSet, RoomSetResult, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import { renderFailedSingularConsequence, renderRoomSetResult } from "./CommonRenderers";
+import { renderFailedSingularConsequence, renderOutcome, renderRoomSetResult } from "./CommonRenderers";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { Draupnir } from "../Draupnir";
 
 // yeah i know this is a bit insane but whatever, it can be our secret.
-function renderResultForUserInSetMap(usersInSetMap: ResultForUserInSetMap, {
+function renderResultForUserInSetMap(usersInSetMap: ResultForUsersInSet, {
     ingword,
     nnedword,
     description
@@ -26,11 +26,32 @@ function renderResultForUserInSetMap(usersInSetMap: ResultForUserInSetMap, {
     description: DescriptionMeta,
 }): DocumentNode {
     return <details>
-        <summary><code>{description.name}</code>: {ingword} {usersInSetMap.size} {usersInSetMap.size === 1 ? 'user' : 'users'} from protected rooms.</summary>
-        {[...usersInSetMap.entries()].map(([userID, roomResults]) => {
-            return renderRoomSetResult(roomResults, { summary: <fragment>{userID} will be {nnedword} from {roomResults.map.size} rooms.</fragment> })
-        })}
+        <summary>
+            <code>{description.name}</code>: {ingword} {usersInSetMap.map.size} &#32;
+            {usersInSetMap.map.size === 1 ? 'user' : 'users'} from protected rooms - &#32;
+            {renderOutcome(usersInSetMap.isEveryResultOk)}.
+        </summary>
+        {[...usersInSetMap.map.entries()].map(([userID, roomResults]) =>
+            renderRoomSetResultForUser(roomResults, userID, nnedword, {}))}
     </details>
+}
+
+function renderRoomSetResultForUser(
+    roomResults: RoomSetResult,
+    userID: StringUserID,
+    nnedword: string,
+    { description }: { description?: DescriptionMeta }
+): DocumentNode {
+    return renderRoomSetResult(
+        roomResults,
+        {
+            summary: <fragment>
+                {description === undefined ? '' : <fragment><code>{description.name}</code>:</fragment>}
+                {userID} will be {nnedword} from {roomResults.map.size} rooms - &#32;
+                {renderOutcome(roomResults.isEveryResultOk)}.
+            </fragment>
+        }
+    )
 }
 
 
@@ -47,24 +68,26 @@ class StandardUserConsequencesRenderer implements UserConsequences {
 
     public async consequenceForUserInRoom(roomID: StringRoomID, userID: StringUserID, reason: string): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForUserInRoom(roomID, userID, reason);
+        const title = <fragment>
+        Banning user {userID} in {Permalinks.forRoom(roomID)} for {reason}.
+        </fragment>;
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
-        this.messageCollector.addOneliner(this.description, <fragment>
-            Banning user {userID} in {Permalinks.forRoom(roomID)} for {reason}.
-        </fragment>)
+        this.messageCollector.addOneliner(this.description, title)
         return Ok(undefined);
 
     }
-    public async consequenceForUserInRoomSet(revision: PolicyListRevision): Promise<ActionResult<ResultForUserInSetMap>> {
+    public async consequenceForUserInRoomSet(revision: PolicyListRevision): Promise<ActionResult<ResultForUsersInSet>> {
         const capabilityResult = await this.capability.consequenceForUserInRoomSet(revision);
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            const title = <fragment>Applying policy revision to protected rooms</fragment>
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
         const usersInSetMap = capabilityResult.ok;
-        if (usersInSetMap.size === 0) {
+        if (usersInSetMap.map.size === 0) {
             return capabilityResult;
         }
         this.messageCollector.addMessage(this.description, renderResultForUserInSetMap(usersInSetMap, {
@@ -75,21 +98,23 @@ class StandardUserConsequencesRenderer implements UserConsequences {
         return capabilityResult;
 
     }
-    public async unbanUserFromRoomSet(userID: StringUserID, reason: string): Promise<ActionResult<ResultForUserInSetMap>> {
+    public async unbanUserFromRoomSet(userID: StringUserID, reason: string): Promise<ActionResult<RoomSetResult>> {
         const capabilityResult = await this.capability.unbanUserFromRoomSet(userID, reason);
         if (isError(capabilityResult)) {
-            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, capabilityResult.error))
+            const title = <fragment>Unbanning {userID} from protected rooms</fragment>
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
             return capabilityResult;
         }
         const usersInSetMap = capabilityResult.ok;
-        if (usersInSetMap.size === 0) {
+        if (usersInSetMap.map.size === 0) {
             return capabilityResult;
         }
-        this.messageCollector.addMessage(this.description, renderResultForUserInSetMap(usersInSetMap, {
-            ingword: 'Unbanning',
-            nnedword: 'unbanned',
-            description: this.description,
-        }));
+        this.messageCollector.addMessage(this.description, renderRoomSetResultForUser(
+            usersInSetMap,
+            userID,
+            'unbanned',
+            { description: this.description },
+        ));
         return capabilityResult;
     }
 
