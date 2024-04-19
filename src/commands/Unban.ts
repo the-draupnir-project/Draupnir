@@ -110,7 +110,7 @@ async function unban(
 
 defineInterfaceCommand({
     designator: ["unban"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "entity",
@@ -150,6 +150,6 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "unban"),
+    interfaceCommand: findTableCommand("draupnir", "unban"),
     renderer: tickCrossRenderer
 })

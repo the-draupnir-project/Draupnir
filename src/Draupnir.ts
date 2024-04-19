@@ -60,7 +60,7 @@ export class Draupnir implements Client {
      */
     public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
-    private readonly commandTable = findCommandTable("mjolnir");
+    private readonly commandTable = findCommandTable("draupnir");
     public taskQueue: ThrottlingQueue;
     /**
      * Reporting back to the management room.

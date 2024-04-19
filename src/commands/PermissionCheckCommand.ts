@@ -34,7 +34,7 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 defineInterfaceCommand({
     designator: ["verify"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([]),
     command: async function (this: DraupnirContext, _keywords: ParsedKeywords): Promise<ActionResult<unknown>> {
         const enabledProtection = this.draupnir.protectedRoomsSet.protections.allProtections;
@@ -53,6 +53,6 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "verify"),
+    interfaceCommand: findTableCommand("draupnir", "verify"),
     renderer: tickCrossRenderer
 })

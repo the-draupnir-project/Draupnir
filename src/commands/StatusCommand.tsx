@@ -39,7 +39,7 @@ import { DocumentNode } from "./interface-manager/DeadDocument";
 
 defineInterfaceCommand({
     designator: ["status"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([]),
     command: async function (this: DraupnirContext): Promise<ActionResult<StatusInfo>> {
         return Ok(await draupnirStatusInfo(this.draupnir))
@@ -121,7 +121,7 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
 }
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "status"),
+    interfaceCommand: findTableCommand("draupnir", "status"),
     renderer: async function (this, client, commandRoomID, event, result: ActionResult<StatusInfo>): Promise<void> {
         if (isError(result)) {
             await tickCrossRenderer.call(this, client, commandRoomID, event, result);

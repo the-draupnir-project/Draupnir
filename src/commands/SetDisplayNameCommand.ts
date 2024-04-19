@@ -7,7 +7,7 @@ import { ActionError, ActionResult, Ok } from "matrix-protection-suite";
 
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["displayname"],
     summary: "Sets the displayname of the draupnir instance to the specified value in all rooms.",
     parameters: parameters(
@@ -34,6 +34,6 @@ export async function execSetDisplayNameCommand(this: DraupnirContext, _keywords
 }
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "displayname"),
+    interfaceCommand: findTableCommand("draupnir", "displayname"),
     renderer: tickCrossRenderer
 })

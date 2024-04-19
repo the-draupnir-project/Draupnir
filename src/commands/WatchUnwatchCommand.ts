@@ -34,7 +34,7 @@ import { ActionResult, MatrixRoomReference, PropagationType, isError } from "mat
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["watch"],
     summary: "Watches a list and applies the list's assocated policies to draupnir's protected rooms.",
     parameters: parameters([
@@ -53,12 +53,12 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "watch"),
+    interfaceCommand: findTableCommand("draupnir", "watch"),
     renderer: tickCrossRenderer,
 })
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["unwatch"],
     summary: "Unwatches a list and stops applying the list's assocated policies to draupnir's protected rooms.",
     parameters: parameters([
@@ -77,6 +77,6 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "unwatch"),
+    interfaceCommand: findTableCommand("draupnir", "unwatch"),
     renderer: tickCrossRenderer,
 })

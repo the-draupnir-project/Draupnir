@@ -103,7 +103,7 @@ export async function kickCommand(
 
 defineInterfaceCommand({
     designator: ["kick"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "user",
@@ -137,7 +137,7 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "kick"),
+    interfaceCommand: findTableCommand("draupnir", "kick"),
     renderer: async function (this, client, commandRoomdID, event, result: ActionResult<UsersToKick>) {
         tickCrossRenderer.call(this, client, commandRoomdID, event, result);
         if (isError(result)) {

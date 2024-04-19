@@ -79,7 +79,7 @@ export async function redactCommand(
 
 defineInterfaceCommand({
     designator: ["redact"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "entity",
@@ -117,6 +117,6 @@ defineInterfaceCommand({
 });
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "redact"),
+    interfaceCommand: findTableCommand("draupnir", "redact"),
     renderer: tickCrossRenderer
 })
