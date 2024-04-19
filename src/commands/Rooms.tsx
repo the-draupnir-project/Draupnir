@@ -37,7 +37,7 @@ import { ActionException, ActionExceptionKind, ActionResult, MatrixRoomID, Matri
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["rooms"],
     summary: "List all of the protected rooms.",
     parameters: parameters([]),
@@ -58,7 +58,7 @@ function renderProtectedRooms(rooms: MatrixRoomID[]): DocumentNode {
 }
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "rooms"),
+    interfaceCommand: findTableCommand("draupnir", "rooms"),
     renderer: async function (client, commandRoomId, event, result: ActionResult<MatrixRoomID[]>) {
         tickCrossRenderer.call(this, ...arguments);
         if (isError(result)) {
@@ -72,7 +72,7 @@ defineMatrixInterfaceAdaptor({
 })
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["rooms", "add"],
     summary: "Protect the room using the watched policy lists, banning users and synchronizing server ACL.",
     parameters: parameters([
@@ -96,7 +96,7 @@ defineInterfaceCommand({
 })
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["rooms", "remove"],
     summary: "Stop protecting the room and leave.",
     parameters: parameters([
@@ -132,7 +132,7 @@ defineInterfaceCommand({
 
 for (const designator of [["rooms", "add"], ["rooms", "remove"]]) {
     defineMatrixInterfaceAdaptor({
-        interfaceCommand: findTableCommand("mjolnir", ...designator),
+        interfaceCommand: findTableCommand("draupnir", ...designator),
         renderer: tickCrossRenderer,
     })
 }

@@ -83,7 +83,7 @@ export interface ListMatches {
 
 defineInterfaceCommand({
     designator: ["rules"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([]),
     command: async function (this: DraupnirContext): Promise<ActionResult<ListMatches[]>> {
         const infoResult = await listInfo(this.draupnir);
@@ -102,13 +102,13 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "rules"),
+    interfaceCommand: findTableCommand("draupnir", "rules"),
     renderer: renderListMatches
 })
 
 defineInterfaceCommand({
     designator: ["rules", "matching"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "entity",
@@ -140,6 +140,6 @@ defineInterfaceCommand({
 
 // I'm pretty sure that both commands could merge and use the same rendeer.
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "rules", "matching"),
+    interfaceCommand: findTableCommand("draupnir", "rules", "matching"),
     renderer: renderListMatches
 })

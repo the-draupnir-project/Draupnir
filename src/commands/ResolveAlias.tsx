@@ -44,7 +44,7 @@ async function resolveAliasCommand(
 }
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["resolve"],
     parameters: parameters([{
         name: "alias",
@@ -55,7 +55,7 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "resolve"),
+    interfaceCommand: findTableCommand("draupnir", "resolve"),
     renderer: async function(this, client, commandRoomID, event, result: ActionResult<MatrixRoomID>) {
         if (isError(result)) {
             await tickCrossRenderer.call(this, client, commandRoomID, event, result);

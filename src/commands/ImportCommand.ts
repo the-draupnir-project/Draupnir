@@ -85,7 +85,7 @@ export async function importCommand(
 
 defineInterfaceCommand<DraupnirBaseExecutor>({
     designator: ["import"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "import from room",
@@ -101,6 +101,6 @@ defineInterfaceCommand<DraupnirBaseExecutor>({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "import"),
+    interfaceCommand: findTableCommand("draupnir", "import"),
     renderer: tickCrossRenderer
 })

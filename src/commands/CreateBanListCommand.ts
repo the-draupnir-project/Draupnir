@@ -63,7 +63,7 @@ export async function createList(
 
 defineInterfaceCommand({
     designator: ["list", "create"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "shortcode",
@@ -79,7 +79,7 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "list", "create"),
+    interfaceCommand: findTableCommand("draupnir", "list", "create"),
     renderer: tickCrossRenderer
 })
 

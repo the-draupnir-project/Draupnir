@@ -86,7 +86,7 @@ async function ban(
 
 defineInterfaceCommand({
     designator: ["ban"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: "entity",
@@ -126,6 +126,6 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "ban"),
+    interfaceCommand: findTableCommand("draupnir", "ban"),
     renderer: tickCrossRenderer
 })

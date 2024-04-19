@@ -39,7 +39,7 @@ import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 
 defineInterfaceCommand({
     designator: ["protections", "enable"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: 'protection name',
@@ -75,13 +75,13 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "protections", "enable"),
+    interfaceCommand: findTableCommand("draupnir", "protections", "enable"),
     renderer: tickCrossRenderer
 });
 
 defineInterfaceCommand({
     designator: ["protections", "disable"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: 'protection name',
@@ -104,7 +104,7 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "protections", "disable"),
+    interfaceCommand: findTableCommand("draupnir", "protections", "disable"),
     renderer: tickCrossRenderer
 });
 
@@ -127,7 +127,7 @@ interface SettingChangeSummary<Key extends string = string, TSettings extends Un
 
 defineInterfaceCommand({
     designator: ["protections", "config", "set"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([...CommonProtectionSettingParameters, {
         name: 'new value',
         acceptor: findPresentationType('any'),
@@ -156,7 +156,7 @@ defineInterfaceCommand({
 
 defineInterfaceCommand({
     designator: ["protections", "config", "add"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: 'item',
@@ -192,7 +192,7 @@ defineInterfaceCommand({
 
 defineInterfaceCommand({
     designator: ["protections", "config", "remove"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([
         {
             name: 'item',
@@ -251,7 +251,7 @@ async function settingChangeSummaryRenderer(this: unknown, client: MatrixSendCli
 
 for (const designator of ["add", "set", "remove"]) {
     defineMatrixInterfaceAdaptor({
-        interfaceCommand: findTableCommand("mjolnir", "protections", "config", designator),
+        interfaceCommand: findTableCommand("draupnir", "protections", "config", designator),
         renderer: settingChangeSummaryRenderer,
     })
 }
@@ -331,7 +331,7 @@ interface ProtectionsSummary {
 
 defineInterfaceCommand({
     designator: ["protections"],
-    table: "mjolnir",
+    table: "draupnir",
     parameters: parameters([]),
     command: async function (this: DraupnirContext, keywords: ParsedKeywords, protectionName: string): Promise<ActionResult<ProtectionsSummary[]>> {
         const enabledProtections = this.draupnir.protectedRoomsSet.protections.allProtections;
@@ -357,7 +357,7 @@ defineInterfaceCommand({
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "protections"),
+    interfaceCommand: findTableCommand("draupnir", "protections"),
     renderer: async function(client, commandRoomID, event, result: ActionResult<ProtectionsSummary[]>) {
         await tickCrossRenderer.call(this, client, commandRoomID, event, result);
         if (isError(result)) {

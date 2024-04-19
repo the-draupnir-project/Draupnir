@@ -56,7 +56,7 @@ async function setPowerLevelCommand(
 }
 
 defineInterfaceCommand({
-    table: "mjolnir",
+    table: "draupnir",
     designator: ["powerlevel"],
     parameters: parameters([
         {

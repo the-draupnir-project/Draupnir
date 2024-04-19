@@ -48,7 +48,7 @@ import "./DeactivateCommand";
 import "./HijackRoomCommand";
 import "./ShutdownRoomCommand";
 
-defineCommandTable("mjolnir").importTable(findCommandTable("synapse admin"));
+defineCommandTable("draupnir").importTable(findCommandTable("synapse admin"));
 import "./Ban";
 import "./CreateBanListCommand";
 import "./Help";
@@ -79,7 +79,7 @@ export async function handleCommand(
         const readItems = readCommand(normalisedCommand)
         const stream = new ArgumentStream(readItems);
         const command = commandTable.findAMatchingCommand(stream)
-            ?? findTableCommand("mjolnir", "help");
+            ?? findTableCommand("draupnir", "help");
         const adaptor = findMatrixInterfaceAdaptor(command);
         const draupnirContext: DraupnirContext = {
             ...draupnir.commandContext,

@@ -53,16 +53,16 @@ function renderMjolnirHelp(mjolnirTable: CommandTable): DocumentNode {
 
 defineInterfaceCommand({
     parameters: parameters([], new RestDescription('command parts', findPresentationType("any"))),
-    table: "mjolnir",
+    table: "draupnir",
     command: async function() {
-        return Ok(findCommandTable("mjolnir"))
+        return Ok(findCommandTable("draupnir"))
     },
     designator: ["help"],
     summary: "Display this message"
 })
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("mjolnir", "help"),
+    interfaceCommand: findTableCommand("draupnir", "help"),
     renderer: async function(client, commandRoomId, event, result: ActionResult<CommandTable>) {
         if (isError(result)) {
             throw new TypeError("This command isn't supposed to fail");
