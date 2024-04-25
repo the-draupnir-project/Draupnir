@@ -107,8 +107,7 @@ export class TrustedReporters extends AbstractProtection<TrustedReportersDescrip
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         );
         this.userConsequences = capabilities.userConsequences;
         this.eventConsequences = capabilities.eventConsequences;

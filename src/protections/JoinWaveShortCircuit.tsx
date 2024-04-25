@@ -81,8 +81,6 @@ describeProtection<JoinWaveShortCircuitProtectionCapabilities, Draupnir, JoinWav
 })
 
 export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveShortCircuitProtectionDescription> implements DraupnirProtection<JoinWaveShortCircuitProtectionDescription> {
-    requiredStatePermissions = ["m.room.join_rules"]
-
     private joinBuckets: {
         [roomID: StringRoomID]: {
             lastBucketStart: Date,
@@ -101,8 +99,9 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveS
             description,
             capabilities,
             protectedRoomsSet,
-            ["m.room.join_rules"],
-            []
+            {
+                requiredStatePermissions: ["m.room.join_rules"]
+            }
         );
     }
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {

@@ -68,8 +68,7 @@ export class MessageIsVoiceProtection extends AbstractProtection<MessageIsVoiceD
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         );
     }
 

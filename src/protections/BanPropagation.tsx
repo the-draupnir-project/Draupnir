@@ -156,7 +156,7 @@ export class BanPropagationProtection
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
-        super(description, capabilities, protectedRoomsSet, [], []);
+        super(description, capabilities, protectedRoomsSet, {});
         this.userConsequences = capabilities.userConsequences;
         this.draupnir.reactionHandler.on(BAN_PROPAGATION_PROMPT_LISTENER, this.banPropagationPromptListener);
         this.draupnir.reactionHandler.on(UNBAN_PROPAGATION_PROMPT_LISTENER, this.unbanPropagationPromptListener);

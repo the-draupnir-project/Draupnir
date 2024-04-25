@@ -104,8 +104,7 @@ export class BasicFloodingProtection extends AbstractProtection<BasicFloodingPro
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         )
         this.userConsequences = capabilities.userConsequences;
     }

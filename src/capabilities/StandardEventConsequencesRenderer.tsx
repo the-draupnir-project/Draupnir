@@ -24,6 +24,7 @@ class StandardEventConsequencesRenderer implements EventConsequences {
     }
     public readonly requiredEventPermissions = this.capability.requiredEventPermissions;
     public readonly requiredPermissions = this.capability.requiredPermissions;
+    public readonly requiredStatePermissions = this.capability.requiredStatePermissions;
     public async consequenceForEvent(roomID: StringRoomID, eventID: StringEventID, reason: string): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForEvent(roomID, eventID, reason);
         const title = <fragment>Redacting {Permalinks.forEvent(roomID, eventID)}.</fragment>;
