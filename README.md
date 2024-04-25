@@ -95,7 +95,7 @@ set up:
 2. `!draupnir default coc` - This sets the default ban list to the list we just created to
    help with the ban commands later on.
 3. Review the [Moderator's Guide](./docs/moderators.md).
-4. Review `!mjolnir help` to see what else the bot can do.
+4. Review `!draupnir help` to see what else the bot can do.
 
 ## Enabling readable abuse reports
 
