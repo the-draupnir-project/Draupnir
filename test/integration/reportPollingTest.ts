@@ -35,7 +35,8 @@ describe("Test: Report polling", function() {
                         },
                         description: testProtectionDescription,
                         requiredEventPermissions: [],
-                        requiredPermissions: []
+                        requiredPermissions: [],
+                        requiredStatePermissions: [],
                     })
                 },
                 protectionSettings: new StandardProtectionSettings(

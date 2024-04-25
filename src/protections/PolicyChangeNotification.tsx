@@ -38,7 +38,7 @@ export class PolicyChangeNotification
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
-        super(description, capabilities, protectedRoomsSet, [], []);
+        super(description, capabilities, protectedRoomsSet, {});
     }
 
     public async handlePolicyChange(revision: PolicyListRevision, changes: PolicyRuleChange[]): Promise<ActionResult<void>> {

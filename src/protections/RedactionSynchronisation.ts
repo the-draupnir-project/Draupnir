@@ -7,7 +7,7 @@
 // policies that operate on a timeline cache, which removes the painfull process
 // that is currently used to repeatedly fetch `/messages`.
 
-import { AbstractProtection, ActionResult, CapabilitySet, MatrixGlob, MembershipChange, MembershipChangeType, Ok, PolicyListRevision, PolicyRule, PolicyRuleChange, PolicyRuleType, ProtectedRoomsSet, Protection, ProtectionDescription, Recommendation, RoomMembershipRevision, SimpleChangeType, StringRoomID, StringUserID, Task, describeProtection } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, CapabilitySet, MatrixGlob, MembershipChange, MembershipChangeType, Ok, PolicyListRevision, PolicyRule, PolicyRuleChange, PolicyRuleType, PowerLevelPermission, ProtectedRoomsSet, Protection, ProtectionDescription, Recommendation, RoomMembershipRevision, SimpleChangeType, StringRoomID, StringUserID, Task, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { redactUserMessagesIn } from "../utils";
 
@@ -25,8 +25,9 @@ export class RedactionSynchronisationProtection extends AbstractProtection<Redac
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            ['redact']
+            {
+                requiredPermissions: [PowerLevelPermission.Redact]
+            }
         );
         for (const reason of draupnir.config.automaticallyRedactForReasons) {
             this.automaticRedactionReasons.push(new MatrixGlob(reason.toLowerCase()));

@@ -24,6 +24,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     }
     public readonly requiredEventPermissions = this.capability.requiredEventPermissions;
     public readonly requiredPermissions = this.capability.requiredPermissions;
+    public readonly requiredStatePermissions = this.capability.requiredStatePermissions;
     public async consequenceForServerInRoom(roomID: StringRoomID, revision: PolicyListRevision): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForServerInRoom(roomID, revision);
         const title = <fragment>

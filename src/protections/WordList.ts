@@ -79,8 +79,7 @@ export class WordListProtection extends AbstractProtection<WordListDescription> 
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         );
         this.userConsequences = capabilities.userConsequences;
         this.eventConsequences = capabilities.eventConsequences;

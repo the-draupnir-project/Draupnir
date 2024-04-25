@@ -79,8 +79,7 @@ export class FirstMessageIsImageProtection extends AbstractProtection<FirstMessa
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         );
         this.userConsequences = capabilities.userConsequences;
         this.eventConsequences = capabilities.eventConsequences;

@@ -70,8 +70,7 @@ export class MessageIsMediaProtection extends AbstractProtection<MessageIsMediaP
             description,
             capabilities,
             protectedRoomsSet,
-            [],
-            []
+            {}
         );
         this.eventConsequences = this.eventConsequences;
     }

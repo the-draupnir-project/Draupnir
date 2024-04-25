@@ -65,6 +65,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     }
     public readonly requiredEventPermissions = this.capability.requiredEventPermissions;
     public readonly requiredPermissions = this.capability.requiredPermissions;
+    public readonly requiredStatePermissions = this.capability.requiredStatePermissions;
 
     public async consequenceForUserInRoom(roomID: StringRoomID, userID: StringUserID, reason: string): Promise<ActionResult<void>> {
         const capabilityResult = await this.capability.consequenceForUserInRoom(roomID, userID, reason);
