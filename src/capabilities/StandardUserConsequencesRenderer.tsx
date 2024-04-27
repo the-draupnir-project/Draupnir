@@ -9,11 +9,12 @@
 // </text>
 
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
-import { ActionResult, Capability, DescriptionMeta, Ok, Permalinks, PolicyListRevision, ResultForUsersInSet, RoomSetResult, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
+import { ActionResult, Capability, DescriptionMeta, MatrixRoomReference, Ok, Permalinks, PolicyListRevision, ResultForUsersInRoom, ResultForUsersInSet, RoomSetResult, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import { renderFailedSingularConsequence, renderOutcome, renderRoomSetResult } from "./CommonRenderers";
+import { renderFailedSingularConsequence, renderOutcome, renderResultForUsersInRoom, renderRoomSetResult } from "./CommonRenderers";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { Draupnir } from "../Draupnir";
+import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
 // yeah i know this is a bit insane but whatever, it can be our secret.
 function renderResultForUserInSetMap(usersInSetMap: ResultForUsersInSet, {
@@ -54,7 +55,6 @@ function renderRoomSetResultForUser(
     )
 }
 
-
 class StandardUserConsequencesRenderer implements UserConsequences {
     constructor(
         private readonly description: DescriptionMeta,
@@ -80,8 +80,8 @@ class StandardUserConsequencesRenderer implements UserConsequences {
         return Ok(undefined);
 
     }
-    public async consequenceForUserInRoomSet(revision: PolicyListRevision): Promise<ActionResult<ResultForUsersInSet>> {
-        const capabilityResult = await this.capability.consequenceForUserInRoomSet(revision);
+    public async consequenceForUsersInRoomSet(revision: PolicyListRevision): Promise<ActionResult<ResultForUsersInSet>> {
+        const capabilityResult = await this.capability.consequenceForUsersInRoomSet(revision);
         if (isError(capabilityResult)) {
             const title = <fragment>Applying policy revision to protected rooms</fragment>
             this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))
@@ -98,6 +98,28 @@ class StandardUserConsequencesRenderer implements UserConsequences {
         }));
         return capabilityResult;
 
+    }
+    public async consequenceForUsersInRoom(roomID: StringRoomID, revision: PolicyListRevision): Promise<ActionResult<ResultForUsersInRoom>> {
+        const capabilityResult = await this.capability.consequenceForUsersInRoom(roomID, revision);
+        if (isError(capabilityResult)) {
+            const title = <fragment>Applying policy revision to {renderRoomPill(MatrixRoomReference.fromRoomID(roomID, []))}</fragment>
+            this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error));
+            return capabilityResult;
+        }
+        const resultMap = capabilityResult.ok;
+        if (resultMap.map.size === 0) {
+            return capabilityResult;
+        }
+        this.messageCollector.addMessage(this.description, renderResultForUsersInRoom(resultMap,
+            {
+                summary: <fragment>
+                    {this.description === undefined ? '' : <fragment><code>{this.description.name}</code>:</fragment>}
+                    {resultMap.map.size} will be banned from {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - &#32;
+                    {renderOutcome(resultMap.isEveryResultOk)}.
+                </fragment>
+            }
+        ));
+        return capabilityResult;
     }
     public async unbanUserFromRoomSet(userID: StringUserID, reason: string): Promise<ActionResult<RoomSetResult>> {
         const capabilityResult = await this.capability.unbanUserFromRoomSet(userID, reason);

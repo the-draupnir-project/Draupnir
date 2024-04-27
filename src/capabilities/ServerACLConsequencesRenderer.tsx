@@ -25,8 +25,8 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     public readonly requiredEventPermissions = this.capability.requiredEventPermissions;
     public readonly requiredPermissions = this.capability.requiredPermissions;
     public readonly requiredStatePermissions = this.capability.requiredStatePermissions;
-    public async consequenceForServerInRoom(roomID: StringRoomID, revision: PolicyListRevision): Promise<ActionResult<void>> {
-        const capabilityResult = await this.capability.consequenceForServerInRoom(roomID, revision);
+    public async consequenceForServersInRoom(roomID: StringRoomID, revision: PolicyListRevision): Promise<ActionResult<void>> {
+        const capabilityResult = await this.capability.consequenceForServersInRoom(roomID, revision);
         const title = <fragment>
             Setting server ACL in {Permalinks.forRoom(roomID)} as it is out of sync with watched policies.
         </fragment>;
@@ -37,8 +37,8 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
         this.messageCollector.addOneliner(this.description, title);
         return Ok(undefined);
     }
-    public async consequenceForServerInRoomSet(revision: PolicyListRevision): Promise<ActionResult<RoomSetResult>> {
-        const capabilityResult = await this.capability.consequenceForServerInRoomSet(revision);
+    public async consequenceForServersInRoomSet(revision: PolicyListRevision): Promise<ActionResult<RoomSetResult>> {
+        const capabilityResult = await this.capability.consequenceForServersInRoomSet(revision);
         const title = <fragment>Updating server ACL in protected rooms.</fragment>;
         if (isError(capabilityResult)) {
             this.messageCollector.addMessage(this.description, renderFailedSingularConsequence(this.description, title, capabilityResult.error))

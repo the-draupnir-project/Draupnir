@@ -8,10 +8,10 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionError, ActionException, ActionResult, DescriptionMeta, MatrixRoomReference, RoomSetResult, StringRoomID, isOk } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionResult, DescriptionMeta, MatrixRoomReference, ResultForUsersInRoom, RoomSetResult, StringRoomID, StringUserID, isOk } from "matrix-protection-suite";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { JSXFactory } from "../commands/interface-manager/JSXFactory";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
 export function renderElaborationTrail(error: ActionError): DocumentNode {
     return <details><summary>Elaboration trail</summary>
@@ -68,16 +68,36 @@ export function renderOutcome(isOutcomeOk: boolean): DocumentNode {
 function renderRoomOutcomeOk(roomID: StringRoomID): DocumentNode {
     return <span>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(true)}</span>
 }
-function renderRoomOutcomeError(roomID: StringRoomID, error: ActionError): DocumentNode {
+
+function renderUserOutcomeOk(userID: StringUserID, result: ActionResult<unknown>): DocumentNode {
+    return <span>{renderMentionPill(userID, userID)} - {renderOutcome(true)}</span>
+}
+
+function renderOutcomeError(summary: DocumentNode, error: ActionError): DocumentNode {
     return <fragment>
         <details>
-            <summary>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(false)}: {error.mostRelevantElaboration}</summary>
+            <summary>{summary}</summary>
             {renderDetailsNotice(error)}
             {renderElaborationTrail(error)}
             {renderExceptionTrail(error)}
         </details>
     </fragment>
 }
+
+function renderRoomOutcomeError(roomID: StringRoomID, error: ActionError): DocumentNode {
+    return renderOutcomeError(
+        <fragment>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(false)}: {error.mostRelevantElaboration}</fragment>,
+        error
+    )
+}
+
+function renderUserOutcomeError(userID: StringUserID, error: ActionError): DocumentNode {
+    return renderOutcomeError(
+        <fragment>{renderMentionPill(userID, userID)} - {renderOutcome(false)}</fragment>,
+        error
+    )
+}
+
 
 export function renderRoomOutcome(roomID: StringRoomID, result: ActionResult<unknown>): DocumentNode {
     if (isOk(result)) {
@@ -87,11 +107,30 @@ export function renderRoomOutcome(roomID: StringRoomID, result: ActionResult<unk
     }
 }
 
+export function renderUserOutcome(userID: StringUserID, result: ActionResult<unknown>): DocumentNode {
+    if (isOk(result)) {
+        return renderUserOutcomeOk(userID, result);
+    } else {
+        return renderUserOutcomeError(userID, result.error);
+    }
+}
+
 export function renderRoomSetResult(roomResults: RoomSetResult, { summary }: { summary: DocumentNode }): DocumentNode {
     return <details>
         <summary>{summary}</summary>
         <ul>{[...roomResults.map.entries()].map(([roomID, outcome]) => {
             return <li>{renderRoomOutcome(roomID, outcome)}</li>
         })}</ul>
+    </details>
+}
+
+export function renderResultForUsersInRoom(results: ResultForUsersInRoom, { summary }: { summary: DocumentNode}): DocumentNode {
+    return <details>
+        <summary>{summary}</summary>
+        <ul>
+            {[...results.map.entries()].map(([userID, outcome]) => {
+                <li>{renderUserOutcome(userID, outcome)}</li>
+            })}
+        </ul>
     </details>
 }
