@@ -31,6 +31,7 @@ import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnable
 import '../protections/DraupnirProtectionsIndex';
 import { IConfig } from "../config";
 import { runProtectionConfigHooks } from "../protections/ConfigHooks";
+import { makeHandleMissingProtectionPermissions } from "../protections/MissingProtectionPermissions";
 
 const log = new Logger('DraupnirProtectedRoomsSet');
 
@@ -166,6 +167,10 @@ export async function makeProtectedRoomsSet(
         protectedRoomsManager.ok,
         protectionsConfig.ok,
         userID,
+        makeHandleMissingProtectionPermissions(
+            client,
+            managementRoom.toRoomIDOrAlias()
+        )
     );
     return Ok(protectedRoomsSet);
 }
