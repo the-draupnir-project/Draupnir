@@ -307,7 +307,7 @@ async function createFirstList(draupnir: Draupnir, draupnirOwnerID: StringUserID
     if (isError(policyRoom)) {
         throw policyRoom.error;
     }
-    const addRoomResult = await draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(policyRoom.ok);
+    const addRoomResult = await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(policyRoom.ok);
     if (isError(addRoomResult)) {
         return addRoomResult;
     }

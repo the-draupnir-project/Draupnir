@@ -36,7 +36,7 @@ export class RedactionSynchronisationProtection extends AbstractProtection<Redac
     public redactForNewUserPolicy(policy: PolicyRule): void {
         const rooms: StringRoomID[] = [];
         if (policy.isGlob()) {
-            this.protectedRoomsSet.protectedRoomsConfig.allRooms.forEach(room => rooms.push(room.toRoomIDOrAlias()));
+            this.protectedRoomsSet.allProtectedRooms.forEach(room => rooms.push(room.toRoomIDOrAlias()));
         } else {
             for (const roomMembership of this.protectedRoomsSet.setMembership.allRooms) {
                 const membership = roomMembership.membershipForUser(policy.entity as StringUserID);
