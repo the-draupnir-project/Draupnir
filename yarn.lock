@@ -1045,7 +1045,7 @@ cross-spawn@^7.0.2:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
-crypto-js@^4.1.1, crypto-js@^4.2.0:
+crypto-js@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
   integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
@@ -2022,10 +2022,10 @@ immediate@~3.0.5:
   resolved "https://registry.npmjs.org/immediate/-/immediate-3.0.6.tgz"
   integrity sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==
 
-immutable@^5.0.0-beta.4:
-  version "5.0.0-beta.4"
-  resolved "https://registry.yarnpkg.com/immutable/-/immutable-5.0.0-beta.4.tgz#6c12ac4ad8b16aeec4d064c9d2f4024bb270b7ca"
-  integrity sha512-sl9RE3lqd2LoQSESc8VV0k8qE9y57iT7dinq3Q+8mR2dqReHDZlgUrudzmFfZhDXBLXlNJMVWv3SG1YpQIokig==
+immutable@^5.0.0-beta.5:
+  version "5.0.0-beta.5"
+  resolved "https://registry.yarnpkg.com/immutable/-/immutable-5.0.0-beta.5.tgz#57dcaeadefae61ebc2d3feb6ea5b584a65282b61"
+  integrity sha512-1RO6wxfJdh/uyWb2MTn3RuCPXYmpRiAhoKm8vEnA50+2Gy0j++6GBtu5q6sq2d4tpcL+e1sCHzk8NkWnRhT2/Q==
 
 import-fresh@^3.2.1:
   version "3.3.0"
@@ -2505,21 +2505,21 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@0.18.2":
-  version "0.18.2"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-0.18.2.tgz#e06fc72fdc56e367ab577b575addc00f00eb076c"
-  integrity sha512-v8o9uDmdTtgHHU4RZo9QZN0GrQJythpjCMVORdq3lDBhFQh2gffgy4+sQgbAbWmjENzVXBUThe1x5bxA39LhpQ==
+"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@0.19.0":
+  version "0.19.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-0.19.0.tgz#3e715aa0e1345d403a418278a8eaf9f3dc0bfc45"
+  integrity sha512-AhJCw3UzGD/J45qCWqQyb6np+rh43ass3BM2qhFr0KeDxr+Om4GqqlJFIfFSqRFVWpEQCI/GzVgDqkEwJZNHTQ==
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@0.18.2":
-  version "0.18.2"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-0.18.2.tgz#0ecba07ba51f20a4c9698c2dc23e069128f5180f"
-  integrity sha512-Lo/uL9GYIyHczzYRMovUpIBzmGM3UMYyiQkuZN+y6ESXR0dmJOrxmERlWQpuC9pjH8Osa0P5vd3pyx7tiw5GtA==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@0.19.0":
+  version "0.19.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-0.19.0.tgz#6960349352ab30f21aa191af4a6624cabea8b4d9"
+  integrity sha512-gP2pQGYzh7rCw5bzEGedpAfEf9r6fIIMugzct5mrAnY2EE44xqewqSzkoVr9x/S3TlNR8JU7U6CNYs0SZdtROg==
   dependencies:
     await-lock "^2.2.2"
-    crypto-js "^4.1.1"
+    crypto-js "^4.2.0"
     glob-to-regexp "^0.4.1"
-    immutable "^5.0.0-beta.4"
-    ulidx "^2.1.0"
+    immutable "^5.0.0-beta.5"
+    ulidx "^2.3.0"
 
 media-typer@0.3.0:
   version "0.3.0"
@@ -3790,10 +3790,17 @@ typescript@^5.3.3:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.3.3.tgz#b3ce6ba258e72e6305ba66f5c9b452aaee3ffe37"
   integrity sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==
 
-ulidx@^2.1.0, ulidx@^2.2.1:
+ulidx@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/ulidx/-/ulidx-2.2.1.tgz#9dd6e48630f7a4ba612461523bc86d9101038996"
   integrity sha512-DU9F5t1tihdafuNyW3fIrXUFHHiHxmwuQSGVGIbSpqkc93IH4P0dU8nPhk0gOW7ARxaFu4+P/9cxVwn6PdnIaQ==
+  dependencies:
+    layerr "^2.0.1"
+
+ulidx@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/ulidx/-/ulidx-2.3.0.tgz#0ed0360b40b7f5ddb88f636d470c51ffebdbee58"
+  integrity sha512-36piWNqcdp9hKlQewyeehCaALy4lyx3FodsCxHuV6i0YdexSkjDOubwxEVr2yi4kh62L/0MgyrxqG4K+qtovnw==
   dependencies:
     layerr "^2.0.1"
 
