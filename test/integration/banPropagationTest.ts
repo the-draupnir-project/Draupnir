@@ -29,7 +29,7 @@ describe("Ban propagation test", function() {
             const room = await moderator.createRoom({ invite: [draupnir.clientUserID] });
             await draupnir.client.joinRoom(room);
             await moderator.setUserPowerLevel(draupnir.clientUserID, room, 100);
-            await draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(MatrixRoomReference.fromRoomID(room as StringRoomID));
+            await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(MatrixRoomReference.fromRoomID(room as StringRoomID));
             return room;
         }));
         // create a policy list so that we can check it for a user rule later

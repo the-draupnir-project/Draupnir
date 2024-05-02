@@ -48,7 +48,7 @@ async function setPowerLevelCommand(
             resolvedGivenRooms.push(resolvedResult.ok);
         }
     }
-    const rooms = givenRooms.length === 0 ? this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms : resolvedGivenRooms;
+    const rooms = givenRooms.length === 0 ? this.draupnir.protectedRoomsSet.allProtectedRooms : resolvedGivenRooms;
     for (const room of rooms) {
         await this.draupnir.client.setUserPowerLevel(user.toString(), room.toRoomIDOrAlias(), parsedLevel);
     }

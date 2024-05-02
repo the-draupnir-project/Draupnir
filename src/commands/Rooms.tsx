@@ -42,7 +42,7 @@ defineInterfaceCommand({
     summary: "List all of the protected rooms.",
     parameters: parameters([]),
     command: async function (this: DraupnirContext, _keywrods): Promise<ActionResult<MatrixRoomID[]>> {
-        return Ok(this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms);
+        return Ok(this.draupnir.protectedRoomsSet.allProtectedRooms);
     }
 })
 
@@ -91,7 +91,7 @@ defineInterfaceCommand({
                 Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
             );
         }
-        return await this.draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(room.ok);
+        return await this.draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(room.ok);
     },
 })
 
@@ -114,7 +114,7 @@ defineInterfaceCommand({
                 Try an alias or the "share room" button in your client to obtain a valid reference to the room.`,
             );
         };
-        const removeResult = await this.draupnir.protectedRoomsSet.protectedRoomsConfig.removeRoom(room.ok);
+        const removeResult = await this.draupnir.protectedRoomsSet.protectedRoomsManager.removeRoom(room.ok);
         if (isError(removeResult)) {
             return removeResult;
         }

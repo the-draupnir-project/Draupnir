@@ -87,7 +87,7 @@ export async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo
     const protectedWatchedLists = watchedListInfo.filter((info) => draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
     const unprotectedListProfiles = watchedListInfo.filter((info) => !draupnir.protectedRoomsSet.isProtectedRoom(info.revision.room.toRoomIDOrAlias()));
     return {
-        numberOfProtectedRooms: draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms.length,
+        numberOfProtectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.length,
         subscribedLists: unprotectedListProfiles,
         subscribedAndProtectedLists: protectedWatchedLists,
         version: SOFTWARE_VERSION,

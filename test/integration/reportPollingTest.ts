@@ -16,7 +16,7 @@ describe("Test: Report polling", function() {
         }
         let protectedRoomId = await draupnir.client.createRoom({ invite: [await client.getUserId()] });
         await client.joinRoom(protectedRoomId);
-        await draupnir.protectedRoomsSet.protectedRoomsConfig.addRoom(MatrixRoomReference.fromRoomID(protectedRoomId as StringRoomID));
+        await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(MatrixRoomReference.fromRoomID(protectedRoomId as StringRoomID));
 
         const eventId = await client.sendMessage(protectedRoomId, {msgtype: "m.text", body: "uwNd3q"});
         await new Promise(async resolve => {

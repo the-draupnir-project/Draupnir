@@ -65,7 +65,7 @@ export async function redactCommand(
     if (restrictToRoom !== undefined && isError(restrictToRoom)) {
         return restrictToRoom;
     }
-    const roomsToRedactWithin = restrictToRoom === undefined ? this.draupnir.protectedRoomsSet.protectedRoomsConfig.allRooms : [restrictToRoom.ok];
+    const roomsToRedactWithin = restrictToRoom === undefined ? this.draupnir.protectedRoomsSet.allProtectedRooms : [restrictToRoom.ok];
     await redactUserMessagesIn(
         this.client,
         this.draupnir.managementRoomOutput,

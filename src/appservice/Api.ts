@@ -218,7 +218,7 @@ export class Api {
         }
 
         await mjolnir.client.joinRoom(roomId);
-        await mjolnir.protectedRoomsSet.protectedRoomsConfig.addRoom(roomId);
+        await mjolnir.protectedRoomsSet.protectedRoomsManager.addRoom(roomId);
 
         response.status(200).json({});
     }
