@@ -77,6 +77,6 @@
     "@vector-im/matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.7.0-element.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
