@@ -77,7 +77,7 @@ Any problems with migration should be reported to our [support room](https://mat
 
 ## Setting up
 
-See the [setup documentation](docs/setup.md) for first-time setup documentation.
+See the [setup documentation](https://the-draupnir-project.github.io/draupnir-documentation/docs/bot/setup) for first-time setup documentation.
 
 See the [configuration sample with documentation](config/default.yaml) for detailed information about Draupnir's configuration.
 
@@ -94,7 +94,7 @@ set up:
    as the visibility of the room.
 2. `!draupnir default coc` - This sets the default ban list to the list we just created to
    help with the ban commands later on.
-3. Review the [Moderator's Guide](./docs/moderators.md).
+3. Review the [Moderator's Guide](https://the-draupnir-project.github.io/draupnir-documentation/docs/bot/moderators).
 4. Review `!draupnir help` to see what else the bot can do.
 
 ## Enabling readable abuse reports
@@ -130,6 +130,6 @@ server can only receive requests from your reverse proxy (e.g. `localhost`).
 ## Contributing & Opening Issues
 
 Draupnir wants to be yours as much as it is ours.
-Please see or [contributing document](./CONTRIBUTING.md), but do not
+Please see or [contributing document](https://the-draupnir-project.github.io/draupnir-documentation/docs/contributing), but do not
 worry too much about following the guidance to the letter. And
 keep that in mind throughout.
