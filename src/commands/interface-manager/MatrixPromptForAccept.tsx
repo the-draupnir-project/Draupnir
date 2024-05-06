@@ -13,6 +13,7 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { MatrixReactionHandler, ReactionListener } from "./MatrixReactionHandler";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { ReadItem, readCommand } from "./CommandReader";
+import { printReadably } from "./PrintReadably";
 
 const log = new Logger('MatrixPromptForAccept');
 
@@ -150,8 +151,8 @@ export async function promptDefault<PresentationType extends ReadItem>(
             reactionMap,
             {
                 command_designator: command.designator,
-                read_items: existingArguments.map(item => item.toString()),
-                default: defaultPrompt.toString()
+                read_items: existingArguments.map(printReadably),
+                default: printReadably(defaultPrompt)
             }
         )
     );
@@ -173,7 +174,7 @@ export async function promptSuggestions(
     existingArguments: ReadItem[],
 ): Promise<void> {
     const reactionMap = MatrixReactionHandler.createItemizedReactionMap(
-        suggestions.map(item => item.toString())
+        suggestions.map(printReadably)
     );
     const events = await renderMatrixAndSend(
         <root>Please select one of the following options to provide as an argument for the parameter <code>{parameter.name}</code>:
@@ -190,7 +191,7 @@ export async function promptSuggestions(
             ARGUMENT_PROMPT_LISTENER,
             reactionMap,
             {
-                read_items: existingArguments,
+                read_items: existingArguments.map(printReadably),
                 command_designator: command.designator
             }
         )

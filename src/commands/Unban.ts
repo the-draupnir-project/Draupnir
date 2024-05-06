@@ -27,12 +27,12 @@ limitations under the License.
 
 import { DraupnirContext } from "./CommandHandler";
 import { findPresentationType, KeywordsDescription, parameters, ParsedKeywords, union } from "./interface-manager/ParameterParsing";
-import { UserID, MatrixGlob, LogLevel } from "matrix-bot-sdk";
+import { MatrixGlob, LogLevel } from "matrix-bot-sdk";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
-import { ActionResult, isError, isStringUserID, MatrixRoomReference, Ok, PolicyRuleType } from "matrix-protection-suite";
+import { ActionResult, isError, isStringUserID, MatrixRoomReference, Ok, PolicyRuleType, UserID } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 

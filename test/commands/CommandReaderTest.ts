@@ -1,6 +1,6 @@
 import expect from "expect";
 import { Keyword, readCommand } from "../../src/commands/interface-manager/CommandReader";
-import { MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
+import { MatrixRoomAlias, MatrixRoomID, UserID } from "matrix-protection-suite";
 
 describe("Can read", function() {
     it("Can read a simple command with only strings", function() {
@@ -43,5 +43,12 @@ describe("Can read", function() {
         }
         checkMalformedRoomReference("#singasongaboutlife");
         checkMalformedRoomReference("!mjolnir");
-    })
+    });
+    it("Can parse userID's", function() {
+        const command = "@spam:example.com";
+        const readItems = readCommand(command);
+        expect(readItems.at(0)).toBeInstanceOf(UserID);
+        const user = readItems.at(0) as UserID;
+        expect(user.localpart).toBe('spam');
+    });
 })
