@@ -3,8 +3,9 @@
  * All rights reserved.
  */
 
+import { MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
 import { DocumentNode } from "./DeadDocument"
-import { PresentationType } from "./ParameterParsing";
+import { PresentationType, findPresentationType, presentationTypeOf } from "./ParameterParsing";
 
 type PresentationRenderer = (presentation: unknown) => DocumentNode;
 
@@ -26,3 +27,19 @@ export function findPresentationRenderer(presentationType: PresentationType): Pr
     }
     return entry;
 }
+
+export const DeadDocumentPresentationMirror = Object.freeze({
+    present(object: unknown): DocumentNode {
+        if (object instanceof MatrixRoomID || object instanceof MatrixRoomAlias) {
+            return findPresentationRenderer(findPresentationType('MatrixRoomReference'))(object)
+        } else {
+            const presentationType = presentationTypeOf(object);
+            if (presentationType !== undefined) {
+                const renderer = findPresentationRenderer(presentationType);
+                return renderer(object);
+            } else {
+                throw new TypeError(`Unable to present: ${object}`);
+            }
+        }
+    }
+})

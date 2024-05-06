@@ -8,7 +8,7 @@ import { findPresentationType, makePresentationType, simpleTypeValidator } from 
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
 import { JSXFactory } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
-import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID, UserID } from "matrix-protection-suite";
+import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID, MatrixRoomReference, UserID } from "matrix-protection-suite";
 
 
 makePresentationType({
@@ -19,6 +19,10 @@ makePresentationType({
 makePresentationType({
     name: 'MatrixRoomReference',
     validator: simpleTypeValidator('MatrixRoomReference', (item: ReadItem) => item instanceof MatrixRoomID || item instanceof MatrixRoomAlias),
+})
+
+definePresentationRenderer(findPresentationType('MatrixRoomReference'), function(presentation: MatrixRoomReference): DocumentNode {
+    return <a href={presentation.toPermalink()}>{presentation.toRoomIDOrAlias()}</a>
 })
 
 makePresentationType({

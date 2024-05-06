@@ -4,8 +4,7 @@
  */
 
 import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNode } from "./DeadDocument";
-import { findPresentationRenderer } from "./DeadDocumentPresentation";
-import { presentationTypeOf } from "./ParameterParsing";
+import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
 
 type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
 
@@ -31,13 +30,7 @@ export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (D
                 node.addChild(rawChild);
             }
         } else {
-            const presentationType = presentationTypeOf(rawChild);
-            if (presentationType !== undefined) {
-                const renderer = findPresentationRenderer(presentationType);
-                node.addChild(renderer(rawChild));
-            } else {
-                throw new TypeError(`Unexpected raw child ${JSON.stringify(rawChild)}`);
-            }
+            node.addChild(DeadDocumentPresentationMirror.present(rawChild));
         }
     }
     rawChildren.forEach(ensureChild);

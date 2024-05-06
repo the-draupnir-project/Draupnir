@@ -98,6 +98,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
                 } else {
                     await promptSuggestions.call(matrixContext, parameter, this.interfaceCommand, promptOptions.suggestions, args);
                 }
+                return;
             } else {
                 this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error);
                 return;
