@@ -199,7 +199,10 @@ export class Draupnir implements Client {
     }
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
-        Task(this.joinOnInviteListener(roomID, event));
+        if (Value.Check(MembershipEvent, event) && event.content.membership === Membership.Invite && event.state_key === this.clientUserID) {
+            this.protectedRoomsSet.handleExternalInvite(roomID, event);
+            Task(this.joinOnInviteListener(roomID, event));
+        }
         this.managementRoomMessageListener(roomID, event);
         this.reactionHandler.handleEvent(roomID, event);
         if (this.protectedRoomsSet.isProtectedRoom(roomID)) {
@@ -250,7 +253,7 @@ export class Draupnir implements Client {
      * @param {boolean} options.autojoinOnlyIfManager Whether to only accept an invitation by a user present in the `managementRoom`.
      * @param {string} options.acceptInvitesFromSpace A space of users to accept invites from, ignores invites form users not in this space.
      */
-    private async joinOnInviteListener(roomID: StringRoomID, event: RoomEvent): Promise<void> {
+    private async joinOnInviteListener(roomID: StringRoomID, event: MembershipEvent): Promise<void> {
         if (Value.Check(MembershipEvent, event) && event.state_key === this.clientUserID) {
             const inviteEvent = event;
             const reportInvite = async () => {
