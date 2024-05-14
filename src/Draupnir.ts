@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, LoggableConfigTracker, Logger, MatrixRoomID, MatrixRoomReference, Membership, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, LoggableConfigTracker, Logger, MatrixRoomID, MatrixRoomReference, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMembershipRevisionIssuer, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -33,10 +33,9 @@ import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
-import { MatrixSendClient, SynapseAdminClient, resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient, SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { COMMAND_PREFIX, DraupnirContext, extractCommandFromMessageBody, handleCommand } from "./commands/CommandHandler";
-import { htmlEscape } from "./utils";
 import { LogLevel } from "matrix-bot-sdk";
 import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt as makeListenerForArgumentPrompt, makeListenerForPromptDefault } from "./commands/interface-manager/MatrixPromptForAccept";
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
@@ -44,6 +43,7 @@ import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendere
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
 import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
 import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
+import { isInvitationForUser } from "./protections/invitation/inviteCore";
 
 const log = new Logger('Draupnir');
 
@@ -97,6 +97,9 @@ export class Draupnir implements Client {
         public readonly policyRoomManager: PolicyRoomManager,
         public readonly roomMembershipManager: RoomMembershipManager,
         public readonly loggableConfigTracker: LoggableConfigTracker,
+        /** Mjolnir has a feature where you can choose to accept invitations from a space and not just the management room. */
+        public readonly acceptInvitesFromRoom: MatrixRoomID,
+        public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
         public readonly synapseAdminClient?: SynapseAdminClient,
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
@@ -144,6 +147,34 @@ export class Draupnir implements Client {
         config: IConfig,
         loggableConfigTracker: LoggableConfigTracker
     ): Promise<ActionResult<Draupnir>> {
+        const acceptInvitesFromRoom = await (async () => {
+            if (config.autojoinOnlyIfManager) {
+                return Ok(managementRoom)
+            } else {
+                if (config.acceptInvitesFromSpace === undefined) {
+                    throw new TypeError(`You cannot leave config.acceptInvitesFromSpace undefined if you have disabled config.autojoinOnlyIfManager`);
+                }
+                const room = (() => {
+                    if (isStringRoomID(config.acceptInvitesFromSpace) || isStringRoomAlias(config.acceptInvitesFromSpace)) {
+                        return config.acceptInvitesFromSpace;
+                    } else {
+                        const parseResult = MatrixRoomReference.fromPermalink(config.acceptInvitesFromSpace);
+                        if (isError(parseResult)) {
+                            throw new TypeError(`config.acceptInvitesFromSpace: ${config.acceptInvitesFromSpace} needs to be a room id, alias or permalink`);
+                        }
+                        return parseResult.ok;
+                    }
+                })();
+                return await clientPlatform.toRoomJoiner().joinRoom(room);
+            }
+        })();
+        if (isError(acceptInvitesFromRoom)) {
+            return acceptInvitesFromRoom;
+        }
+        const acceptInvitesFromRoomIssuer = await roomMembershipManager.getRoomMembershipRevisionIssuer(acceptInvitesFromRoom.ok);
+        if (isError(acceptInvitesFromRoomIssuer)) {
+            return acceptInvitesFromRoomIssuer;
+        }
         const draupnir = new Draupnir(
             client,
             clientUserID,
@@ -156,6 +187,8 @@ export class Draupnir implements Client {
             policyRoomManager,
             roomMembershipManager,
             loggableConfigTracker,
+            acceptInvitesFromRoom.ok,
+            acceptInvitesFromRoomIssuer.ok,
             new SynapseAdminClient(
                 client,
                 clientUserID
@@ -199,9 +232,8 @@ export class Draupnir implements Client {
     }
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
-        if (Value.Check(MembershipEvent, event) && event.content.membership === Membership.Invite && event.state_key === this.clientUserID) {
+        if (Value.Check(MembershipEvent, event) && isInvitationForUser(event, this.clientUserID)) {
             this.protectedRoomsSet.handleExternalInvite(roomID, event);
-            Task(this.joinOnInviteListener(roomID, event));
         }
         this.managementRoomMessageListener(roomID, event);
         this.reactionHandler.handleEvent(roomID, event);
@@ -240,73 +272,6 @@ export class Draupnir implements Client {
             Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
         }
         this.reportManager.handleTimelineEvent(roomID, event);
-    }
-
-    /**
-     * Adds a listener to the client that will automatically accept invitations.
-     * FIXME: This is just copied in from Mjolnir and there are plenty of places for uncaught exceptions that will cause havok.
-     * FIXME: MOVE TO A PROTECTION.
-     * @param {MatrixSendClient} client
-     * @param options By default accepts invites from anyone.
-     * @param {string} options.managementRoom The room to report ignored invitations to if `recordIgnoredInvites` is true.
-     * @param {boolean} options.recordIgnoredInvites Whether to report invites that will be ignored to the `managementRoom`.
-     * @param {boolean} options.autojoinOnlyIfManager Whether to only accept an invitation by a user present in the `managementRoom`.
-     * @param {string} options.acceptInvitesFromSpace A space of users to accept invites from, ignores invites form users not in this space.
-     */
-    private async joinOnInviteListener(roomID: StringRoomID, event: MembershipEvent): Promise<void> {
-        if (Value.Check(MembershipEvent, event) && event.state_key === this.clientUserID) {
-            const inviteEvent = event;
-            const reportInvite = async () => {
-                if (!this.config.recordIgnoredInvites) return; // Nothing to do
-
-                Task((async () => {
-                    await this.client.sendMessage(this.managementRoomID, {
-                        msgtype: "m.text",
-                        body: `${inviteEvent.sender} has invited me to ${inviteEvent.room_id} but the config prevents me from accepting the invitation. `
-                            + `If you would like this room protected, use "!mjolnir rooms add ${inviteEvent.room_id}" so I can accept the invite.`,
-                        format: "org.matrix.custom.html",
-                        formatted_body: `${htmlEscape(inviteEvent.sender)} has invited me to ${htmlEscape(inviteEvent.room_id)} but the config prevents me from `
-                            + `accepting the invitation. If you would like this room protected, use <code>!mjolnir rooms add ${htmlEscape(inviteEvent.room_id)}</code> `
-                            + `so I can accept the invite.`,
-                    });
-                    return Ok(undefined);
-                })());
-            };
-
-            if (this.config.autojoinOnlyIfManager) {
-                const managementMembership = this.protectedRoomsSet.setMembership.getRevision(this.managementRoomID);
-                if (managementMembership === undefined) {
-                    throw new TypeError(`Processing an invitation before the protected rooms set has properly initialized. Are we protecting the management room?`);
-                }
-                const senderMembership = managementMembership.membershipForUser(inviteEvent.sender);
-                if (senderMembership?.membership !== Membership.Join) return reportInvite(); // ignore invite
-            } else {
-                if (!(isStringRoomID(this.config.acceptInvitesFromSpace) || isStringRoomAlias(this.config.acceptInvitesFromSpace))) {
-                    // FIXME: We need to do StringRoomID stuff at parse time of the config.
-                    throw new TypeError(`${this.config.acceptInvitesFromSpace} is not a valid room ID or Alias`);
-                }
-                const spaceReference = MatrixRoomReference.fromRoomIDOrAlias(this.config.acceptInvitesFromSpace);
-                const spaceID = await resolveRoomReferenceSafe(this.client, spaceReference);
-                if (isError(spaceID)) {
-                    await this.managementRoomOutput.logMessage(LogLevel.ERROR, 'Draupnir', `Unable to resolve the space ${spaceReference.toPermalink} from config.acceptInvitesFromSpace when trying to accept an invitation from ${inviteEvent.sender}`);
-                }
-                const spaceId = await this.client.resolveRoom(this.config.acceptInvitesFromSpace);
-                const spaceUserIds = await this.client.getJoinedRoomMembers(spaceId)
-                    .catch(async e => {
-                        if (e.body?.errcode === "M_FORBIDDEN") {
-                            await this.managementRoomOutput.logMessage(LogLevel.ERROR, 'Mjolnir', `Mjolnir is not in the space configured for acceptInvitesFromSpace, did you invite it?`);
-                            await this.client.joinRoom(spaceId);
-                            return await this.client.getJoinedRoomMembers(spaceId);
-                        } else {
-                            return Promise.reject(e);
-                        }
-                    });
-                if (!spaceUserIds.includes(inviteEvent.sender)) {
-                    return reportInvite(); // ignore invite
-                }
-            }
-            await this.client.joinRoom(roomID);
-        }
     }
 
     /**

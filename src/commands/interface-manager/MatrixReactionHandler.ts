@@ -19,11 +19,16 @@ export type ReactionListener = (
     annotatedEvent: RoomEvent
 ) => void;
 
+export declare interface MatrixReactionHandlerListeners {
+    on(eventName: string, listener: ReactionListener): void;
+    emit(eventName: string, ...args: Parameters<ReactionListener>): void;
+}
+
 /**
  * A utility that can be associated with an `MatrixEmitter` to listen for
  * reactions to Matrix Events. The aim is to simplify reaction UX.
  */
-export class MatrixReactionHandler extends EventEmitter {
+export class MatrixReactionHandler extends EventEmitter implements MatrixReactionHandlerListeners {
     public constructor(
         /**
          * The room the handler is for. Cannot be enabled for every room as the
