@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { AbstractProtection, ActionError, ActionResult, Logger, MatrixRoomReference, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, ProtectionDescription, RoomEvent, StringRoomID, Task, Value, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionError, ActionResult, Logger, MatrixRoomReference, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, ProtectionDescription, RoomEvent, StandardDeduplicator, StringRoomID, Task, Value, describeProtection, isError, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
 import { isInvitationForUser, isSenderJoinedInRevision } from "./inviteCore";
@@ -40,6 +40,7 @@ export class ProtectRoomsOnInviteProtection
     implements DraupnirProtection<
     ProtectRoomsOnInviteProtectionDescription
 > {
+    private readonly promptedToProtectedDeduplicator = new StandardDeduplicator<StringRoomID>();
     private readonly protectPromptListener = this.protectListener.bind(this);
     public constructor(
         description: ProtectRoomsOnInviteProtectionDescription,
@@ -65,6 +66,11 @@ export class ProtectRoomsOnInviteProtection
             return;
         }
         if (this.protectedRoomsSet.isProtectedRoom(roomID)) {
+            return;
+        }
+        // The event handler gets called again when we join the room we were invited to.
+        // As sometimes we get the invitation a second time from the join section of sync.
+        if (this.promptedToProtectedDeduplicator.isDuplicate(roomID)) {
             return;
         }
         void Task(this.checkAgainstRequiredMembershipRoom(event));
