@@ -64,6 +64,9 @@ export class ProtectRoomsOnInviteProtection
         if (!isInvitationForUser(event, this.protectedRoomsSet.userID)) {
             return;
         }
+        if (this.protectedRoomsSet.isProtectedRoom(roomID)) {
+            return;
+        }
         void Task(this.checkAgainstRequiredMembershipRoom(event));
     }
 
