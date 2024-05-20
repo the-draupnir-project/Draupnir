@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { EventEmitter } from "stream";
-import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ActionResult, ClientPlatform, Logger, ReactionEvent, RoomEvent, StringEventID, StringRoomID, StringUserID, Task, Value, isError } from "matrix-protection-suite";
 
@@ -82,17 +81,17 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
         }
         const reactionMap = annotation['reaction_map'];
         if (typeof reactionMap !== 'object' || reactionMap === null) {
-            LogService.warn('MatrixReactionHandler', `Missing reaction_map for the annotated event ${relatedEventId} in ${roomID}`);
+            log.warn( `Missing reaction_map for the annotated event ${relatedEventId} in ${roomID}`);
             return;
         }
         const listenerName = annotation['name'];
         if (typeof listenerName !== 'string') {
-            LogService.warn('MatrixReactionHandler', `The event ${relatedEventId} in ${roomID} is missing the name of the annotation`);
+            log.warn( `The event ${relatedEventId} in ${roomID} is missing the name of the annotation`);
             return;
         }
         const association = reactionMap[reactionKey];
         if (association === undefined) {
-            LogService.info('MatrixReactionHandler', `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
+            log.info( `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
             return;
         }
         this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)), annotatedEvent);
@@ -126,7 +125,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
         await [...reactionMap.keys()]
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve()
-            ).catch(e => (LogService.error('MatrixReactionHandler', `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+            ).catch(e => (log.error( `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
     }
 
     public async completePrompt(
