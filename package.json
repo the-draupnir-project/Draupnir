@@ -49,7 +49,7 @@
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
-    "@sentry/node": "^7.17.2",
+    "@sentry/node": "^8.2.1",
     "@sentry/tracing": "^7.17.2",
     "@sinclair/typebox": "0.32.29",
     "await-lock": "^2.2.2",
