@@ -128,7 +128,7 @@ export class ProtectRoomsOnInviteProtection
                 {renderRoomPill(invitedRoomReference)},
                 would you like to protect this room?
             </root>;
-        const reactionMap = new Map<string, string>(Object.entries({ 'OK': 'OK' }));
+        const reactionMap = new Map<string, string>(Object.entries({ 'OK': 'OK', 'Cancel': 'Cancel' }));
         const promptEventID = (await renderMatrixAndSend(
             renderPromptProtect(),
             this.draupnir.managementRoomID,
@@ -148,6 +148,10 @@ export class ProtectRoomsOnInviteProtection
 
 
     private protectListener(key: string, _item: unknown, rawContext: unknown, _reactionMap: Map<string, unknown>, promptEvent: RoomEvent): void {
+        if (key === 'Cancel') {
+            void Task(this.draupnir.reactionHandler.cancelPrompt(promptEvent));
+            return;
+        }
         if (key !== 'OK') {
             return;
         }
@@ -171,6 +175,7 @@ export class ProtectRoomsOnInviteProtection
                 return;
             }
             renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);
+            void Task(this.draupnir.reactionHandler.completePrompt(promptEvent.room_id, promptEvent.event_id));
         })());
     }
 }

@@ -106,7 +106,7 @@ export class Draupnir implements Client {
         this.managementRoomOutput = new ManagementRoomOutput(
             this.managementRoomID, this.clientUserID, this.client, this.config
         );
-        this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID);
+        this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID, clientPlatform);
         this.reportManager = new ReportManager(this);
         if (config.pollReports) {
             this.reportPoller = new ReportPoller(this, this.reportManager);
