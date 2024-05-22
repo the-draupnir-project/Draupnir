@@ -125,7 +125,7 @@ export class JoinRoomsOnInviteProtection
             return joinResult;
         }
         void this.watchRoomsOnInvite.promptIfPossiblePolicyRoom(invitedRoomReference, event);
-        if (!this.protectedRoomsSet.isProtectedRoom(event.room_id)) {
+        if (!this.draupnir.config.protectAllJoinedRooms && !this.protectedRoomsSet.isProtectedRoom(event.room_id)) {
             void this.protectRoomsOnInvite.promptToProtect(invitedRoomReference, event);
         }
         return Ok(undefined);
