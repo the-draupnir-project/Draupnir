@@ -8,32 +8,21 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { AbstractProtection, ActionError, ActionResult, Logger, MatrixRoomReference, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, ProtectionDescription, RoomEvent, StandardDeduplicator, StringRoomID, Task, Value, describeProtection, isError, serverName } from "matrix-protection-suite";
+import { AbstractProtection, ActionError, ActionResult, MatrixRoomReference, MembershipEvent, Ok, ProtectedRoomsSet, ProtectionDescription, StandardDeduplicator, StringRoomID, Task, describeProtection, isError, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
 import { isInvitationForUser, isSenderJoinedInRevision } from "./inviteCore";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
 import { JSXFactory } from "../../commands/interface-manager/JSXFactory";
-import { renderActionResultToEvent, renderMentionPill, renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
+import { renderMentionPill, renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { renderFailedSingularConsequence } from "../../capabilities/CommonRenderers";
-import { StaticDecode, Type } from "@sinclair/typebox";
-
-const log = new Logger('ProtectRoomsOnInviteProtection');
+import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";
+import { WatchRoomsOnInvite } from "./WatchRoomsOnInvite";
 
 export type ProtectRoomsOnInviteProtectionCapabilities = {};
 
 export type ProtectRoomsOnInviteProtectionDescription = ProtectionDescription<Draupnir, {}, ProtectRoomsOnInviteProtectionCapabilities>;
-
-const PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER = 'me.marewolf.draupnir.protect_rooms_on_invite';
-
-// would be nice to be able to use presentation types here idk.
-const ProtectRoomsOnInvitePromptContext = Type.Object({
-    invited_room: Permalink
-});
-// this rule is stupid.
-// eslint-disable-next-line no-redeclare
-type ProtectRoomsOnInvitePromptContext = StaticDecode<typeof ProtectRoomsOnInvitePromptContext>;
 
 export class ProtectRoomsOnInviteProtection
     extends AbstractProtection<ProtectRoomsOnInviteProtectionDescription>
@@ -41,7 +30,14 @@ export class ProtectRoomsOnInviteProtection
     ProtectRoomsOnInviteProtectionDescription
 > {
     private readonly promptedToProtectedDeduplicator = new StandardDeduplicator<StringRoomID>();
-    private readonly protectPromptListener = this.protectListener.bind(this);
+    private readonly protectRoomsOnInvite = new ProtectroomsOnInvite(
+        this.draupnir,
+        this.protectedRoomsSet
+    );
+    private readonly watchRoomsOnInvite = new WatchRoomsOnInvite(
+        this.draupnir,
+        this.protectedRoomsSet
+    );
     public constructor(
         description: ProtectRoomsOnInviteProtectionDescription,
         capabilities: ProtectRoomsOnInviteProtectionCapabilities,
@@ -54,18 +50,15 @@ export class ProtectRoomsOnInviteProtection
             protectedRoomsSet,
             {}
         )
-        this.draupnir.reactionHandler.on(PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER, this.protectPromptListener);
     }
 
     handleProtectionDisable(): void {
-        this.draupnir.reactionHandler.off(PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER, this.protectPromptListener);
+        this.protectRoomsOnInvite.handleProtectionDisable();
+        this.watchRoomsOnInvite.handleProtectionDisable();
     }
 
     handleExternalInvite(roomID: StringRoomID, event: MembershipEvent): void {
         if (!isInvitationForUser(event, this.protectedRoomsSet.userID)) {
-            return;
-        }
-        if (this.protectedRoomsSet.isProtectedRoom(roomID)) {
             return;
         }
         // The event handler gets called again when we join the room we were invited to.
@@ -79,7 +72,7 @@ export class ProtectRoomsOnInviteProtection
     private async checkAgainstRequiredMembershipRoom(event: MembershipEvent): Promise<ActionResult<void>> {
         const revision = this.draupnir.acceptInvitesFromRoomIssuer.currentRevision;
         if (isSenderJoinedInRevision(event.sender, revision)) {
-            return await this.joinAndPromptProtect(event);
+            return await this.joinAndIssuePrompts(event);
         } else {
             this.reportUnknownInvite(event, revision.room);
             return Ok(undefined);
@@ -125,68 +118,19 @@ export class ProtectRoomsOnInviteProtection
         return joinResult;
     }
 
-    private async joinAndPromptProtect(event: MembershipEvent): Promise<ActionResult<void>> {
+    private async joinAndIssuePrompts(event: MembershipEvent): Promise<ActionResult<void>> {
         const invitedRoomReference = MatrixRoomReference.fromRoomID(event.room_id, [serverName(event.sender), serverName(event.state_key)]);
         const joinResult = await this.joinInvitedRoom(event, invitedRoomReference);
         if (isError(joinResult)) {
             return joinResult;
         }
-        const renderPromptProtect = (): DocumentNode =>
-            <root>
-                {renderMentionPill(event.sender, event.sender)} has invited me to
-                {renderRoomPill(invitedRoomReference)},
-                would you like to protect this room?
-            </root>;
-        const reactionMap = new Map<string, string>(Object.entries({ 'OK': 'OK', 'Cancel': 'Cancel' }));
-        const promptEventID = (await renderMatrixAndSend(
-            renderPromptProtect(),
-            this.draupnir.managementRoomID,
-            undefined,
-            this.draupnir.client,
-            this.draupnir.reactionHandler.createAnnotation(
-                PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER,
-                reactionMap,
-                {
-                    invited_room: invitedRoomReference.toPermalink(),
-                }
-            )
-        ))[0];
-        await this.draupnir.reactionHandler.addReactionsToEvent(this.draupnir.client, this.draupnir.managementRoomID, promptEventID, reactionMap);
+        void this.watchRoomsOnInvite.promptIfPossiblePolicyRoom(invitedRoomReference, event);
+        if (!this.protectedRoomsSet.isProtectedRoom(event.room_id)) {
+            void this.protectRoomsOnInvite.promptToProtect(invitedRoomReference, event);
+        }
         return Ok(undefined);
     }
 
-
-    private protectListener(key: string, _item: unknown, rawContext: unknown, _reactionMap: Map<string, unknown>, promptEvent: RoomEvent): void {
-        if (key === 'Cancel') {
-            void Task(this.draupnir.reactionHandler.cancelPrompt(promptEvent));
-            return;
-        }
-        if (key !== 'OK') {
-            return;
-        }
-        const context = Value.Decode(ProtectRoomsOnInvitePromptContext, rawContext);
-        if (isError(context)) {
-            log.error(`Could not decode context from prompt event`, context.error);
-            renderActionResultToEvent(this.draupnir.client, promptEvent, context);
-            return;
-        }
-        void Task((async () => {
-            const resolvedRoom = await this.draupnir.clientPlatform.toRoomResolver().resolveRoom(context.ok.invited_room);
-            if (isError(resolvedRoom)) {
-                resolvedRoom.elaborate(`Could not resolve the room to protect from the MatrixRoomReference: ${context.ok.invited_room.toPermalink()}.`);
-                renderActionResultToEvent(this.draupnir.client, promptEvent, resolvedRoom);
-                return;
-            }
-            const addResult = await this.protectedRoomsSet.protectedRoomsManager.addRoom(resolvedRoom.ok)
-            if (isError(addResult)) {
-                addResult.elaborate(`Could not protect the room: ${resolvedRoom.ok.toPermalink()}`);
-                renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);
-                return;
-            }
-            renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);
-            void Task(this.draupnir.reactionHandler.completePrompt(promptEvent.room_id, promptEvent.event_id));
-        })());
-    }
 }
 
 describeProtection<{}, Draupnir>({
