@@ -20,14 +20,14 @@ import { renderFailedSingularConsequence } from "../../capabilities/CommonRender
 import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";
 import { WatchRoomsOnInvite } from "./WatchRoomsOnInvite";
 
-export type ProtectRoomsOnInviteProtectionCapabilities = {};
+export type JoinRoomsOnInviteProtectionCapabilities = {};
 
-export type ProtectRoomsOnInviteProtectionDescription = ProtectionDescription<Draupnir, {}, ProtectRoomsOnInviteProtectionCapabilities>;
+export type JoinRoomsOnInviteProtectionDescription = ProtectionDescription<Draupnir, {}, JoinRoomsOnInviteProtectionCapabilities>;
 
-export class ProtectRoomsOnInviteProtection
-    extends AbstractProtection<ProtectRoomsOnInviteProtectionDescription>
+export class JoinRoomsOnInviteProtection
+    extends AbstractProtection<JoinRoomsOnInviteProtectionDescription>
     implements DraupnirProtection<
-    ProtectRoomsOnInviteProtectionDescription
+    JoinRoomsOnInviteProtectionDescription
 > {
     private readonly promptedToProtectedDeduplicator = new StandardDeduplicator<StringRoomID>();
     private readonly protectRoomsOnInvite = new ProtectroomsOnInvite(
@@ -39,8 +39,8 @@ export class ProtectRoomsOnInviteProtection
         this.protectedRoomsSet
     );
     public constructor(
-        description: ProtectRoomsOnInviteProtectionDescription,
-        capabilities: ProtectRoomsOnInviteProtectionCapabilities,
+        description: JoinRoomsOnInviteProtectionDescription,
+        capabilities: JoinRoomsOnInviteProtectionCapabilities,
         protectedRoomsSet: ProtectedRoomsSet,
         private readonly draupnir: Draupnir,
     ) {
@@ -134,13 +134,13 @@ export class ProtectRoomsOnInviteProtection
 }
 
 describeProtection<{}, Draupnir>({
-    name: ProtectRoomsOnInviteProtection.name,
+    name: JoinRoomsOnInviteProtection.name,
     description: "Automatically joins rooms when invited by members of the management room and offers to protect them",
     capabilityInterfaces: {},
     defaultCapabilities: {},
     factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
         return Ok(
-            new ProtectRoomsOnInviteProtection(
+            new JoinRoomsOnInviteProtection(
                 description,
                 capabilities,
                 protectedRoomsSet,
