@@ -73,7 +73,7 @@ export class WatchRoomsOnInvite {
     private async promptWatchPolicyRoom(candidateRoom: MatrixRoomID, invitation: MembershipEvent) {
         const renderPromptWatch = (): DocumentNode =>
             <root>
-                {renderMentionPill(invitation.sender, invitation.sender)} has invited me to a policy room
+                {renderMentionPill(invitation.sender, invitation.sender)} has invited me to a policy room &#32;
                 {renderRoomPill(candidateRoom)},
                 would you like Draupnir to watch this room as a policy list?
             </root>;

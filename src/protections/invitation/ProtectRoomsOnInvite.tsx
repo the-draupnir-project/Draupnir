@@ -46,7 +46,7 @@ export class ProtectroomsOnInvite {
         void Task((async () => {
             const renderPromptProtect = (): DocumentNode =>
                 <root>
-                    {renderMentionPill(invitation.sender, invitation.sender)} has invited me to
+                    {renderMentionPill(invitation.sender, invitation.sender)} has invited me to &#32;
                     {renderRoomPill(candidateRoom)},
                     would you like to protect this room?
                 </root>;
