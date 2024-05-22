@@ -128,7 +128,7 @@ export class MjolnirAppService {
             clientProvider,
             eventDecoder
         );
-        const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
+        const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap, eventDecoder);
         const botUserID = bridge.getBot().getUserId() as StringUserID;
         const clientRooms = await clientsInRoomMap.makeClientRooms(
             botUserID,

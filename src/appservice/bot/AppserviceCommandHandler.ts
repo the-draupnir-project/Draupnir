@@ -57,7 +57,8 @@ export class AppserviceCommandHandler {
         this.reactionHandler = new MatrixReactionHandler(
             this.appservice.accessControlRoomID,
             this.appservice.bridge.getBot().getClient(),
-            this.appservice.botUserID
+            this.appservice.botUserID,
+            clientPlatform
         );
         this.commandContext = {
             appservice: this.appservice,

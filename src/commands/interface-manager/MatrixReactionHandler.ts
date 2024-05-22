@@ -1,12 +1,12 @@
-/**
- * Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
- * All rights reserved.
- */
+// SPDX-FileCopyrightText: 2023 - 2024 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: AFL-3.0
 
 import { EventEmitter } from "stream";
-import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ReactionEvent, RoomEvent, StringRoomID, StringUserID, Value } from "matrix-protection-suite";
+import { ActionResult, ClientPlatform, Logger, ReactionEvent, RoomEvent, StringEventID, StringRoomID, StringUserID, Task, Value, isError } from "matrix-protection-suite";
+
+const log = new Logger("MatrixReactionHandler");
 
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
@@ -19,11 +19,16 @@ export type ReactionListener = (
     annotatedEvent: RoomEvent
 ) => void;
 
+export declare interface MatrixReactionHandlerListeners {
+    on(eventName: string, listener: ReactionListener): void;
+    emit(eventName: string, ...args: Parameters<ReactionListener>): void;
+}
+
 /**
  * A utility that can be associated with an `MatrixEmitter` to listen for
  * reactions to Matrix Events. The aim is to simplify reaction UX.
  */
-export class MatrixReactionHandler extends EventEmitter {
+export class MatrixReactionHandler extends EventEmitter implements MatrixReactionHandlerListeners {
     public constructor(
         /**
          * The room the handler is for. Cannot be enabled for every room as the
@@ -37,7 +42,8 @@ export class MatrixReactionHandler extends EventEmitter {
         /**
          * The user id of the client. Ignores reactions from this user
          */
-        private readonly clientUserID: StringUserID
+        private readonly clientUserID: StringUserID,
+        private readonly clientPlatform: ClientPlatform
     ) {
         super();
     }
@@ -75,17 +81,17 @@ export class MatrixReactionHandler extends EventEmitter {
         }
         const reactionMap = annotation['reaction_map'];
         if (typeof reactionMap !== 'object' || reactionMap === null) {
-            LogService.warn('MatrixReactionHandler', `Missing reaction_map for the annotated event ${relatedEventId} in ${roomID}`);
+            log.warn( `Missing reaction_map for the annotated event ${relatedEventId} in ${roomID}`);
             return;
         }
         const listenerName = annotation['name'];
         if (typeof listenerName !== 'string') {
-            LogService.warn('MatrixReactionHandler', `The event ${relatedEventId} in ${roomID} is missing the name of the annotation`);
+            log.warn( `The event ${relatedEventId} in ${roomID} is missing the name of the annotation`);
             return;
         }
         const association = reactionMap[reactionKey];
         if (association === undefined) {
-            LogService.info('MatrixReactionHandler', `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
+            log.info( `There wasn't a defined key for ${reactionKey} on event ${relatedEventId} in ${roomID}`);
             return;
         }
         this.emit(listenerName, reactionKey, association, annotation['additional_context'], new Map(Object.entries(reactionMap)), annotatedEvent);
@@ -119,7 +125,57 @@ export class MatrixReactionHandler extends EventEmitter {
         await [...reactionMap.keys()]
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve()
-            ).catch(e => (LogService.error('MatrixReactionHandler', `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+            ).catch(e => (log.error( `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+    }
+
+    public async completePrompt(
+        roomID: StringRoomID,
+        eventID: StringEventID,
+        reason?: string
+    ): Promise<ActionResult<void>> {
+        const eventRelationsGetter = this.clientPlatform.toRoomEventRelationsGetter();
+        const redacter = this.clientPlatform.toRoomEventRedacter();
+        return await eventRelationsGetter.forEachRelation<ReactionEvent>(
+            roomID,
+            eventID,
+            {
+                relationType: 'm.annotation',
+                eventType: 'm.reaction',
+                forEachCB: (event) => {
+                    const key = event.content?.["m.relates_to"]?.key
+                    // skip the bots own reactions that mark the event as complete
+                    if (key === '✅' || key === '❌') {
+                        return;
+                    }
+                    void Task((async function () {
+                        redacter.redactEvent(roomID, event.event_id, reason)
+                    })())
+                }
+            }
+        );
+    }
+
+    /**
+     * Removes all reactions from the prompt event in an attempt to stop it being used further.
+     */
+    public async cancelPrompt(
+        promptEvent: RoomEvent,
+        cancelReason?: string
+    ): Promise<ActionResult<void>> {
+        const completeResult = await this.completePrompt(
+            promptEvent.room_id,
+            promptEvent.event_id,
+            cancelReason ?? 'prompt cancelled'
+        );
+        if (isError(completeResult)) {
+            return completeResult;
+        }
+        void this.client.unstableApis.addReactionToEvent(
+            promptEvent.room_id,
+            promptEvent.event_id,
+            `🚫 Cancelled by ${promptEvent.sender}`
+        ).catch(e => log.error(`Could not send cancelled reaction event for prompt ${promptEvent.event_id} in ${promptEvent.room_id}`, e));
+        return completeResult;
     }
 
     public static createItemizedReactionMap(items: string[]): ItemByReactionKey {

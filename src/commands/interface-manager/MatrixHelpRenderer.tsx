@@ -10,7 +10,8 @@ import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionException, ActionResult, MatrixRoomReference, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionError, ActionException, ActionExceptionKind, ActionResult, MatrixRoomReference, Ok, RoomEvent, StringRoomID, Task, isError, isOk } from "matrix-protection-suite";
+import { renderDetailsNotice, renderElaborationTrail, renderExceptionTrail } from "../../capabilities/CommonRenderers";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -88,17 +89,62 @@ export async function renderHelp(client: MatrixSendClient, commandRoomID: String
     );
 }
 
-export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
-    const react = async (emote: string) => {
+export async function reactToEventWithResult(client: MatrixSendClient, event: RoomEvent, result: ActionResult<unknown>): Promise<ActionResult<void>> {
+    // implement this so we can use it in the invitation protection
+    // then in the invitation protection makes ure we render when the listener fails
+    // then in the ban propagation protection also do this.
+    const react = async (emote: string): Promise<ActionResult<void>> => {
         try {
-            await client.unstableApis.addReactionToEvent(commandRoomID, event['event_id'], emote);
+            await client.unstableApis.addReactionToEvent(event.room_id, event.event_id, emote);
+            return Ok(undefined);
         } catch (e) {
-            LogService.error("tickCrossRenderer", "Couldn't react to the event", event['event_id'], e);
+            return ActionException.Result(`tickCrossRenderer Couldn't react to the event ${event.event_id}`, {
+                exception: e,
+                exceptionKind: ActionExceptionKind.Unknown
+            });
         }
-    }
-    if (result.isOkay) {
-        await react('✅')
+    };
+    if (isOk(result)) {
+        return await react('✅');
     } else {
+        return await react('❌');
+    }
+}
+
+export async function replyToEventWithErrorDetails(client: MatrixSendClient, event: RoomEvent, error: ActionError): Promise<ActionResult<void>> {
+    try {
+        await renderMatrixAndSend(
+            <root>
+                <details>
+                    <summary>{error.mostRelevantElaboration}</summary>
+                    {renderDetailsNotice(error)}
+                    {renderElaborationTrail(error)}
+                    {renderExceptionTrail(error)}
+                </details>
+            </root>,
+            event.room_id,
+            event,
+            client,
+        );
+        return Ok(undefined);
+    } catch (e) {
+        return ActionException.Result(`replyToEventIfError Couldn't send a reply to the event ${event.event_id}`, {
+            exception: e,
+            exceptionKind: ActionExceptionKind.Unknown
+        });
+    }
+}
+
+export function renderActionResultToEvent(client: MatrixSendClient, event: RoomEvent, result: ActionResult<void>): void {
+    if (isError(result)) {
+        void Task(replyToEventWithErrorDetails(client, event, result.error));
+    }
+    void Task(reactToEventWithResult(client, event, result));
+}
+
+export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
+    void Task(reactToEventWithResult(client, event, result));
+    if (isError(result)) {
         if (result.error instanceof ArgumentParseError) {
             await renderMatrixAndSend(
                 renderArgumentParseError(this.interfaceCommand, result.error),
@@ -116,8 +162,6 @@ export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =
         } else {
             await client.replyNotice(commandRoomID, event, result.error.message);
         }
-        // reacting is way less important than communicating what happened, do it last.
-        await react('❌');
     }
 }
 

@@ -96,7 +96,7 @@ export async function makeDraupnirBotModeFromConfig(
         DefaultEventDecoder,
         backingStore
     );
-    const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap);
+    const clientCapabilityFactory = new ClientCapabilityFactory(clientsInRoomMap, DefaultEventDecoder);
     const draupnirFactory = new DraupnirFactory(
         clientsInRoomMap,
         clientCapabilityFactory,
