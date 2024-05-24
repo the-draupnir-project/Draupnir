@@ -33,10 +33,12 @@ import { findPresentationType, parameters, RestDescription } from "./interface-m
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { ActionResult, Ok, isError } from "matrix-protection-suite";
+import { DOCUMENTATION_URL } from "../config";
 
 function renderTableHelp(table: CommandTable): DocumentNode {
     // FIXME: is it possible to force case of table names?
     return <fragment>
+        <b>Documentation: </b> <a href={DOCUMENTATION_URL}>{DOCUMENTATION_URL}</a><br/>
         <details>
             <summary><b>{table.name} commands:</b></summary>
             {table.getExportedCommands().map(renderCommandSummary)}

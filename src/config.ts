@@ -314,6 +314,7 @@ export const SOFTWARE_VERSION = (() => {
     return /^(.*)$/m.exec(versionFile)?.at(0) ?? defaultText;
 })();
 
+export const DOCUMENTATION_URL = "https://the-draupnir-project.github.io/draupnir-documentation/";
 
 // Command line related functions
 

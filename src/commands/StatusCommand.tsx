@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
+import { DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { parameters } from "./interface-manager/ParameterParsing";
 import { DraupnirContext } from "./CommandHandler";
@@ -57,7 +57,8 @@ export interface StatusInfo {
     subscribedLists: ListInfo[],
     subscribedAndProtectedLists: ListInfo[],
     version: string,
-    repository: string
+    repository: string,
+    documentationURL: string,
 }
 
 export async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
@@ -90,6 +91,7 @@ export async function draupnirStatusInfo(draupnir: Draupnir): Promise<StatusInfo
         numberOfProtectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.length,
         subscribedLists: unprotectedListProfiles,
         subscribedAndProtectedLists: protectedWatchedLists,
+        documentationURL: DOCUMENTATION_URL,
         version: SOFTWARE_VERSION,
         repository: PACKAGE_JSON['repository'] ?? 'Unknown'
     }
@@ -117,6 +119,7 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
         {renderPolicyLists('Subscribed and protected policy rooms', info.subscribedAndProtectedLists)}
         <b>Version: </b><code>{info.version}</code><br/>
         <b>Repository: </b><code>{info.repository}</code><br/>
+        <b>Documentation: </b> <a href={info.documentationURL}>{info.documentationURL}</a><br/>
     </root>
 }
 
