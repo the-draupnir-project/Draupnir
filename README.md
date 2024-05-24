@@ -65,6 +65,9 @@ As Draupnir heads towards `v2.0.0`, releases will appear [here](https://github.c
 Until `v2.0.0` there will be frequent changes to commands but all of these
 will be noted in the changes for that release.
 
+For the latest stable release, see `v1.87.0`, the documentation
+for which can be found [here](https://github.com/the-draupnir-project/Draupnir/tree/v1.87.0).
+
 ### Migration
 
 Migrating from Mjolnir is straightforward and requires no manual steps,
