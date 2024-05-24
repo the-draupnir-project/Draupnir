@@ -55,5 +55,5 @@ jobs:
               return;
             }
 
-            core.setFailed('No sign off found. Please ensure you have signed off following the advice in https://the-draupnir-project.github.io/draupnir-documentation/docs/contributing#sign-off .')
+            core.setFailed('No sign off found. Please ensure you have signed off following the advice in https://the-draupnir-project.github.io/draupnir-documentation/contributing#sign-off .')
             core.notice('Ensure you have matched the format `Signed-off-by: Your Name <your@email.example.org>`')

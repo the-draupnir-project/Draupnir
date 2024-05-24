@@ -1,1 +1,1 @@
-This Document has moved to https://the-draupnir-project.github.io/draupnir-documentation/docs/bot/setup_selfbuild
+This Document has moved to https://the-draupnir-project.github.io/draupnir-documentation/bot/setup_selfbuild
