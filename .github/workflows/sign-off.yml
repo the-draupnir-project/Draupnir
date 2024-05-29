@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR for sign-off text
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             // We don't require owners or members of the org to sign off.
