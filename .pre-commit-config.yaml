@@ -3,6 +3,7 @@
 # See https://pre-commit.ci for more information
 ci:
   autoupdate_schedule: weekly
+  skip: [yarn-lint]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -18,3 +19,9 @@ repos:
     hooks:
       - id: editorconfig-checker
         alias: ec
+  - repo: local
+    hooks:
+      - id: yarn-lint
+        name: linter
+        entry: yarn lint --cache
+        language: system
