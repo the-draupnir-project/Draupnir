@@ -160,7 +160,7 @@ const SentryConfig = Type.Object({
 
 const HealthConfig = Type.Object({
     healthz: HealthzConfig,
-    sentry: Type.Optional(SentryConfig),
+    sentry: Type.Optional(Type.Union([SentryConfig, Type.Null()])),
 }, {
     description: "Options for advanced monitoring of the health of the bot."
 })

@@ -19,6 +19,9 @@ export const mochaHooks = {
             // Sometimes it takes a little longer to register users.
             this.timeout(30000);
             const config = this.config = configRead();
+            if (config.managementRoom !== '#moderators:localhost:9999') {
+                throw new TypeError(`Test harness isn't built to use any other alias than #moderators:localhost:9999, sorry about it.`)
+            }
             this.managementRoomAlias = config.managementRoom;
             this.draupnir = await makeMjolnir(config);
             config.RUNTIME.client = draupnirClient()!;

@@ -148,7 +148,7 @@ export class TrustedReporters extends AbstractProtection<TrustedReportersDescrip
         }
 
         if (met.length > 0) {
-            await this.draupnir.client.sendMessage(this.draupnir.config.managementRoom, {
+            await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
                 msgtype: "m.notice",
                 body: `message ${report.event_id} reported by ${[...reporters].join(', ')}. `
                     + `actions: ${met.join(', ')}`
