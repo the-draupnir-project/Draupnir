@@ -128,9 +128,9 @@ export function renderResultForUsersInRoom(results: ResultForUsersInRoom, { summ
     return <details>
         <summary>{summary}</summary>
         <ul>
-            {[...results.map.entries()].map(([userID, outcome]) => {
+            {[...results.map.entries()].map(([userID, outcome]) =>
                 <li>{renderUserOutcome(userID, outcome)}</li>
-            })}
+            )}
         </ul>
     </details>
 }

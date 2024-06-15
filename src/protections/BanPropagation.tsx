@@ -33,7 +33,7 @@ import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentM
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { ListMatches, renderListRules } from "../commands/Rules";
 import { printActionResult } from "../models/RoomUpdateError";
-import { AbstractProtection, ActionResult, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UserID, UnknownSettings, UserConsequences, Membership } from "matrix-protection-suite";
+import { AbstractProtection, ActionResult, Logger, MatrixRoomID, MatrixRoomReference, MembershipChange, MembershipChangeType, Ok, PermissionError, PolicyRule, PolicyRuleType, ProtectedRoomsSet, ProtectionDescription, Recommendation, RoomActionError, RoomMembershipRevision, RoomUpdateError, StringRoomID, StringUserID, Task, describeProtection, isError, serverName, UnknownSettings, UserConsequences, Membership } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
@@ -76,7 +76,7 @@ async function promptBanPropagation(
     const reactionMap = makePolicyRoomReactionReferenceMap(editablePolicyRoomIDs);
     const promptEventId = (await renderMatrixAndSend(
         <root>The user {renderMentionPill(change.userID, change.content.displayname ?? change.userID)} was banned
-                in <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by {new UserID(change.sender)} for <code>{change.content.reason ?? '<no reason supplied>'}</code>.<br/>
+                in <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by {renderMentionPill(change.sender, change.sender)} for <code>{change.content.reason ?? '<no reason supplied>'}</code>.<br/>
                 Would you like to add the ban to a policy list?
         <ol>
             {editablePolicyRoomIDs.map((room) => <li><a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a></li>)}

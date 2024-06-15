@@ -52,7 +52,7 @@ defineMatrixInterfaceAdaptor({
                             <code>{draupnir.clientUserID}</code>
                             <code>{draupnir.failType}</code>:
                             <br />
-                            {draupnir.cause}
+                            {String(draupnir.cause)}
                         </li>
                     })}
                 </ul>

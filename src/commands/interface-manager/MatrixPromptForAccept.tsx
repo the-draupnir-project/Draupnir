@@ -14,6 +14,7 @@ import { MatrixReactionHandler, ReactionListener } from "./MatrixReactionHandler
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { ReadItem, readCommand } from "./CommandReader";
 import { printReadably } from "./PrintReadably";
+import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
 
 const log = new Logger('MatrixPromptForAccept');
 
@@ -143,7 +144,7 @@ export async function promptDefault<PresentationType extends ReadItem>(
     const events = await renderMatrixAndSend(
         <root>
             No argument was provided for the parameter {parameter.name}, would you like to accept the default?<br/>
-            {defaultPrompt}
+            {DeadDocumentPresentationMirror.present(defaultPrompt)}
         </root>,
         this.roomID, this.event, this.client,
         this.reactionHandler.createAnnotation(
@@ -181,7 +182,7 @@ export async function promptSuggestions(
             <ol>
                 {suggestions.map((suggestion) => {
                     return <li>
-                        {suggestion}
+                        {DeadDocumentPresentationMirror.present(suggestion)}
                     </li>
                 })}
             </ol>
