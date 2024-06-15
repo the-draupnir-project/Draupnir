@@ -40,7 +40,7 @@ function renderTableHelp(table: CommandTable): DocumentNode {
     return <fragment>
         <b>Documentation: </b> <a href={DOCUMENTATION_URL}>{DOCUMENTATION_URL}</a><br/>
         <details>
-            <summary><b>{table.name} commands:</b></summary>
+            <summary><b>{table.name.toString()} commands:</b></summary>
             {table.getExportedCommands().map(renderCommandSummary)}
             {table.getImportedTables().map(renderTableHelp)}
         </details>

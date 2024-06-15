@@ -40,13 +40,13 @@ export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): D
         </summary>
         {command.description
             ? <fragment><b>Description:</b><br />{command.description}<br /></fragment>
-            : []
+            : <fragment></fragment>
         }
         {command.argumentListParser.descriptions.length > 0
             ? <fragment>
                 <b>Parameters:</b><br/>{...command.argumentListParser.descriptions.map(renderParameterDescription)}
             </fragment>
-            : []
+            : <fragment></fragment>
         }
     </details>
 }
@@ -70,7 +70,7 @@ function renderTableHelp(table: CommandTable): DocumentNode {
     }
     return <root>
         <details>
-            <summary><b>{tableName} commands:</b></summary>
+            <summary><b>{tableName.toString()} commands:</b></summary>
             {table.getExportedCommands().map(renderCommandSummary)}
             {table.getImportedTables().map(renderTableHelp)}
         </details>

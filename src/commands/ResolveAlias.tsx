@@ -31,7 +31,7 @@ import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { renderRoomPill, tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { JSXFactory } from "./interface-manager/JSXFactory";
 
@@ -62,7 +62,7 @@ defineMatrixInterfaceAdaptor({
             return;
         }
         await renderMatrixAndSend(
-            <root>{result.ok}</root>,
+            <root><code>{result.ok.toRoomIDOrAlias()}</code> - {renderRoomPill(result.ok)}</root>,
             commandRoomID,
             event,
             client

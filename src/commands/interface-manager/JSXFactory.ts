@@ -6,7 +6,7 @@
 import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNode } from "./DeadDocument";
 import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
 
-type rawJSX = DocumentNode|LeafNode|string|number|Array<rawJSX>;
+type JSXChild = DocumentNode|LeafNode|string|number|JSXChild[];
 
 export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
     const node = makeDocumentNode(tag);
@@ -15,7 +15,7 @@ export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (D
             node.attributeMap.set(key, value);
         }
     }
-    const ensureChild = (rawChild: rawJSX) => {
+    const ensureChild = (rawChild: JSXChild) => {
         if (typeof rawChild === 'string') {
             makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
         } else if (typeof rawChild === 'number') {
@@ -37,23 +37,51 @@ export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (D
     return node;
 }
 
-
-// eslint-disable-next-line no-redeclare
-namespace JSXFactory {
-    export interface IntrinsicElements {
-        [elemName: string]: any;
-    }
-}
+// TODO: For `children?` to work without allowing people to accidentally use
+// `{undefined}` then we need to enable:
+// https://www.typescriptlang.org/tsconfig/#exactOptionalPropertyTypes
+// I do not know why this is not on by default when strict is true and
+// this is really annoying AaaAaaaAaaAaaAAaaAaa.
+// To enable exactOptionalPropertyTypes, we'll have to start with MPS
+// or extract DeadDocument into a library.
+type NodeProperties = { children?: JSXChild[]|JSXChild };
+type LeafNodeProperties = { children?: never[] };
 
 /**
- * Pisses me off that tooling is too dumb to use the above
+ * Has to be global for some reason or VSCodium explodes.
  * https://www.typescriptlang.org/docs/handbook/declaration-merging.html
  * https://www.typescriptlang.org/tsconfig#jsxFactory
  */
 declare global {
     export namespace JSX {
         export interface IntrinsicElements {
-            [elemName: string]: any;
+            a: NodeProperties & { href?: string, name?: string, target?: string },
+            b: NodeProperties,
+            br: LeafNodeProperties,
+            code: NodeProperties & { class?: string },
+            details: NodeProperties,
+            em: NodeProperties,
+            font: NodeProperties & { color?: string},
+            fragment: NodeProperties,
+            h1: NodeProperties,
+            i: NodeProperties,
+            li: NodeProperties,
+            ol: NodeProperties & { 'start'?: number },
+            p: NodeProperties,
+            pre: NodeProperties,
+            root: NodeProperties,
+            span: NodeProperties & {
+                'data-mx-bg-color'?: string,
+                'data-mx-color'?: string,
+                'data-mx-spoiler'?: string | undefined
+            }
+            strong: NodeProperties,
+            summary: NodeProperties,
+            ul: NodeProperties,
+        }
+        export type Element = DocumentNode
+        export type ElementChildrenAttribute = {
+            children?: JSXChild[]|JSXChild|never[]|never
         }
     }
 }

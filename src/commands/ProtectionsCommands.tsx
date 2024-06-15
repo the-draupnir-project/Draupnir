@@ -230,7 +230,7 @@ function renderSettingChangeSummary(summary: SettingChangeSummary): DocumentNode
     const oldJSON = summary.description.toJSON({ [summary.description.key]: summary.oldValue });
     const newJSON = summary.description.toJSON({ [summary.description.key]: summary.newValue });
     return <fragment>
-        Setting {summary.description.key} changed from {oldJSON} to {newJSON}
+        Setting {summary.description.key} changed from <code>{JSON.stringify(oldJSON)}</code> to <code>{JSON.stringify(newJSON)}</code>
     </fragment>
 }
 

@@ -51,14 +51,14 @@ function renderUsersToKick(usersToKick: UsersToKick): DocumentNode {
             <summary>
                 Kicking {usersToKick.size} unique users from protected rooms.
             </summary>
-            {[...usersToKick.entries()].map(([userID, rooms]) => {
+            {[...usersToKick.entries()].map(([userID, rooms]) =>
                 <details>
                     <summary>Kicking {userID} from {rooms.length} rooms.</summary>
                     <ul>
                         {rooms.map(room => <li>{room}</li>)}
                     </ul>
                 </details>
-            })}
+            )}
         </details>
     </fragment>
 }
