@@ -28,7 +28,7 @@ limitations under the License.
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { CommandTable, defineInterfaceCommand, findCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { renderCommandSummary } from "./interface-manager/MatrixHelpRenderer";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { findPresentationType, parameters, RestDescription } from "./interface-manager/ParameterParsing";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";

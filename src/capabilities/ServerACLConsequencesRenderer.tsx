@@ -11,7 +11,7 @@
 import { ActionResult, Capability, DescriptionMeta, Ok, Permalinks, PolicyListRevision, RoomSetResult, ServerACLConsequencesContext, ServerConsequences, StringRoomID, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import { renderFailedSingularConsequence, renderRoomSetResult } from "./CommonRenderers";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { Draupnir } from "../Draupnir";
 
 class StandardServerConsequencesRenderer implements ServerConsequences {

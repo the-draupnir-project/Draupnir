@@ -5,7 +5,7 @@
 import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
 import { MatrixContext, MatrixInterfaceAdaptor, RendererSignature } from "./MatrixInterfaceAdaptor";
 import { ArgumentParseError, ParameterDescription, RestDescription } from "./ParameterParsing";
-import { JSXFactory } from "./JSXFactory";
+import { DeadDocumentJSX } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { LogService } from "matrix-bot-sdk";

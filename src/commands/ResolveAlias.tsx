@@ -33,7 +33,7 @@ import { ParsedKeywords, findPresentationType, parameters } from "./interface-ma
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderRoomPill, tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 
 async function resolveAliasCommand(
     this: DraupnirContext,

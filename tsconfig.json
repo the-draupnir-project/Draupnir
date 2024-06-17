@@ -20,7 +20,7 @@
             "mocha"
         ],
         "jsx": "react",
-        "jsxFactory": "JSXFactory"
+        "jsxFactory": "DeadDocumentJSX.JSXFactory"
     },
     "include": [
         "./src/**/*"

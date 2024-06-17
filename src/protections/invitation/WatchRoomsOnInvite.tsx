@@ -11,7 +11,7 @@
 import { ALL_RULE_TYPES, Logger, MJOLNIR_SHORTCODE_EVENT_TYPE, MatrixRoomID, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, RoomEvent, RoomStateRevision, Task, Value, isError } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
-import { JSXFactory } from "../../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import { renderActionResultToEvent, renderMentionPill, renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";

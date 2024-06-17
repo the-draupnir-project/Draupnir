@@ -7,7 +7,7 @@ import { RendererMessage, RendererMessageCollector } from "./RendererMessageColl
 import { DescriptionMeta, StringRoomID, Task } from "matrix-protection-suite";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 
 export class DraupnirRendererMessageCollector implements RendererMessageCollector {
     constructor(

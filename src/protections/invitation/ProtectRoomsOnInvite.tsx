@@ -11,7 +11,7 @@
 import { Logger, MatrixRoomID, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, RoomEvent, Task, Value, isError } from "matrix-protection-suite";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
 import { renderActionResultToEvent, renderMentionPill, renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
-import { JSXFactory } from "../../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { Draupnir } from "../../Draupnir";

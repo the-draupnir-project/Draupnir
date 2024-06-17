@@ -10,7 +10,7 @@
 
 import { ActionError, ActionException, ActionResult, DescriptionMeta, MatrixRoomReference, ResultForUsersInRoom, RoomSetResult, StringRoomID, StringUserID, isOk } from "matrix-protection-suite";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
 export function renderElaborationTrail(error: ActionError): DocumentNode {

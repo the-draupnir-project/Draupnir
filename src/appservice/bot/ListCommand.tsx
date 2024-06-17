@@ -8,7 +8,7 @@ import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-m
 import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
 import { tickCrossRenderer } from '../../commands/interface-manager/MatrixHelpRenderer';
-import { JSXFactory } from '../../commands/interface-manager/JSXFactory';
+import { DeadDocumentJSX } from '../../commands/interface-manager/JSXFactory';
 import { renderMatrixAndSend } from '../../commands/interface-manager/DeadDocumentMatrix';
 import { ActionError, ActionResult, isError, Ok, UserID } from 'matrix-protection-suite';
 import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';

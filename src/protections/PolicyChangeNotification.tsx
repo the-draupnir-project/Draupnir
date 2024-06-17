@@ -12,7 +12,7 @@ import { AbstractProtection, ActionResult, Logger, MatrixRoomReference, Ok, Poli
 import { DraupnirProtection } from "./Protection";
 import { Draupnir } from "../Draupnir";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 

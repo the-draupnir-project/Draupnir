@@ -7,36 +7,6 @@ import { DocumentNode, LeafNode, makeDocumentNode, makeLeafNode, NodeTag, TextNo
 import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
 
 type JSXChild = DocumentNode|LeafNode|string|number|JSXChild[];
-
-export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
-    const node = makeDocumentNode(tag);
-    if (properties) {
-        for (const [key, value] of Object.entries(properties)) {
-            node.attributeMap.set(key, value);
-        }
-    }
-    const ensureChild = (rawChild: JSXChild) => {
-        if (typeof rawChild === 'string') {
-            makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
-        } else if (typeof rawChild === 'number') {
-            makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
-        } else if (Array.isArray(rawChild)) {
-            rawChild.forEach(ensureChild);
-        // Then it's a DocumentNode|LeafNode
-        } else if (typeof rawChild.leafNode === 'boolean') {
-            if (rawChild.tag === NodeTag.Fragment) {
-                (rawChild as DocumentNode).getChildren().forEach(node.addChild, node);
-            } else {
-                node.addChild(rawChild);
-            }
-        } else {
-            node.addChild(DeadDocumentPresentationMirror.present(rawChild));
-        }
-    }
-    rawChildren.forEach(ensureChild);
-    return node;
-}
-
 // TODO: For `children?` to work without allowing people to accidentally use
 // `{undefined}` then we need to enable:
 // https://www.typescriptlang.org/tsconfig/#exactOptionalPropertyTypes
@@ -47,12 +17,35 @@ export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (D
 type NodeProperties = { children?: JSXChild[]|JSXChild };
 type LeafNodeProperties = { children?: never[] };
 
-/**
- * Has to be global for some reason or VSCodium explodes.
- * https://www.typescriptlang.org/docs/handbook/declaration-merging.html
- * https://www.typescriptlang.org/tsconfig#jsxFactory
- */
-declare global {
+export namespace DeadDocumentJSX {
+    export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
+        const node = makeDocumentNode(tag);
+        if (properties) {
+            for (const [key, value] of Object.entries(properties)) {
+                node.attributeMap.set(key, value);
+            }
+        }
+        const ensureChild = (rawChild: JSXChild) => {
+            if (typeof rawChild === 'string') {
+                makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
+            } else if (typeof rawChild === 'number') {
+                makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
+            } else if (Array.isArray(rawChild)) {
+                rawChild.forEach(ensureChild);
+            // Then it's a DocumentNode|LeafNode
+            } else if (typeof rawChild.leafNode === 'boolean') {
+                if (rawChild.tag === NodeTag.Fragment) {
+                    (rawChild as DocumentNode).getChildren().forEach(node.addChild, node);
+                } else {
+                    node.addChild(rawChild);
+                }
+            } else {
+                node.addChild(DeadDocumentPresentationMirror.present(rawChild));
+            }
+        }
+        rawChildren.forEach(ensureChild);
+        return node;
+    }
     export namespace JSX {
         export interface IntrinsicElements {
             a: NodeProperties & { href?: string, name?: string, target?: string },

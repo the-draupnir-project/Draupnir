@@ -31,7 +31,7 @@ import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { DocumentNode } from "./interface-manager/DeadDocument";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { ActionException, ActionExceptionKind, ActionResult, MatrixRoomID, MatrixRoomReference, Ok, isError } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";

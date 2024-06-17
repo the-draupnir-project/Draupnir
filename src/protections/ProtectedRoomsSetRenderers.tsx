@@ -11,7 +11,7 @@
 import { ActionError, ProtectionDescription, StringRoomID } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 
 export async function renderProtectionFailedToStart(
     client: MatrixSendClient,

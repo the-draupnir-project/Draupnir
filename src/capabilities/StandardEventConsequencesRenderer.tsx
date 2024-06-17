@@ -11,7 +11,7 @@
 import { ActionResult, Capability, DescriptionMeta, EventConsequences, Permalinks, RoomEventRedacter, StringEventID, StringRoomID, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import { renderFailedSingularConsequence } from "./CommonRenderers";
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { Draupnir } from "../Draupnir";
 
 class StandardEventConsequencesRenderer implements EventConsequences {

@@ -30,7 +30,7 @@ import { defineInterfaceCommand, findTableCommand } from "./interface-manager/In
 import { parameters } from "./interface-manager/ParameterParsing";
 import { DraupnirContext } from "./CommandHandler";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { ActionResult, Ok, PolicyRoomRevision, PolicyRoomWatchProfile, PolicyRuleType, isError } from "matrix-protection-suite";
