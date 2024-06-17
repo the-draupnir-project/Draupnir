@@ -6,7 +6,7 @@
 import { ReadItem } from "./CommandReader";
 import { findPresentationType, makePresentationType, simpleTypeValidator } from "./ParameterParsing";
 import { definePresentationRenderer } from "./DeadDocumentPresentation";
-import { JSXFactory } from "./JSXFactory";
+import { DeadDocumentJSX } from "./JSXFactory";
 import { DocumentNode } from "./DeadDocument";
 import { MatrixEventViaAlias, MatrixEventViaRoomID, MatrixRoomAlias, MatrixRoomID, MatrixRoomReference, UserID } from "matrix-protection-suite";
 

@@ -33,7 +33,7 @@ import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfac
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { DocumentNode } from "./interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 

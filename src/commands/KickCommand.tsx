@@ -31,7 +31,7 @@ import { ActionError, ActionResult, MatrixRoomReference, Ok, StringRoomID, Strin
 import { KeywordsDescription, ParsedKeywords, findPresentationType, parameters } from "./interface-manager/ParameterParsing";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DocumentNode } from "./interface-manager/DeadDocument";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";

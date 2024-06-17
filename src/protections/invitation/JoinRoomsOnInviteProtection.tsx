@@ -14,7 +14,7 @@ import { DraupnirProtection } from "../Protection";
 import { isInvitationForUser, isSenderJoinedInRevision } from "./inviteCore";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
-import { JSXFactory } from "../../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import { renderMentionPill, renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { renderFailedSingularConsequence } from "../../capabilities/CommonRenderers";
 import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";

@@ -6,7 +6,7 @@
 import { ClientPlatform, Logger, RoomEvent, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
-import { JSXFactory } from "./JSXFactory";
+import { DeadDocumentJSX } from "./JSXFactory";
 import { MatrixContext, findMatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
 import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";

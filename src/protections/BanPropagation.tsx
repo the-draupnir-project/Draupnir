@@ -28,7 +28,7 @@ limitations under the License.
  * a Mjolnir PR that was originally created by Gergő Fándly https://github.com/matrix-org/mjolnir/pull/223
  */
 
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { renderMentionPill, renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { ListMatches, renderListRules } from "../commands/Rules";

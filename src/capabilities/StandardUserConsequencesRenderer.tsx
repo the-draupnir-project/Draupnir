@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { JSXFactory } from "../commands/interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { ActionResult, Capability, DescriptionMeta, MatrixRoomReference, Ok, Permalinks, PolicyListRevision, ResultForUsersInRoom, ResultForUsersInSet, RoomSetResult, StandardUserConsequencesContext, StringRoomID, StringUserID, UserConsequences, describeCapabilityContextGlue, describeCapabilityRenderer, isError } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import { renderFailedSingularConsequence, renderOutcome, renderResultForUsersInRoom, renderRoomSetResult } from "./CommonRenderers";

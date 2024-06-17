@@ -29,7 +29,7 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirContext } from "./CommandHandler";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { JSXFactory } from "./interface-manager/JSXFactory";
+import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { findPresentationType, parameters, union } from "./interface-manager/ParameterParsing";
