@@ -25,7 +25,7 @@ describe("Test: The redaction command", function () {
         let mjolnirUserId = await mjolnir.getUserId();
         let moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
-        await moderator.joinRoom(this.config.managementRoom);
+        await moderator.joinRoom(this.draupnir!.managementRoomID);
         let targetRoom = await moderator.createRoom({ invite: [await badUser.getUserId(), mjolnirUserId]});
         await moderator.setUserPowerLevel(mjolnirUserId, targetRoom, 100);
         await badUser.joinRoom(targetRoom);
@@ -76,7 +76,7 @@ describe("Test: The redaction command", function () {
         let mjolnirUserId = await draupnir.client.getUserId();
         let moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
-        await moderator.joinRoom(this.config.managementRoom);
+        await moderator.joinRoom(draupnir.managementRoomID);
         let targetRooms: string[] = [];
         for (let i = 0; i < 5; i++) {
             let targetRoom = await moderator.createRoom({ invite: [await badUser.getUserId(), mjolnirUserId]});
@@ -123,7 +123,7 @@ describe("Test: The redaction command", function () {
         const draupnir = this.draupnir!;
         let moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
-        await moderator.joinRoom(this.config.managementRoom);
+        await moderator.joinRoom(draupnir.managementRoomID);
         let targetRoom = await moderator.createRoom({ invite: [await badUser.getUserId(), draupnir.clientUserID]});
         await moderator.setUserPowerLevel(draupnir.clientUserID, targetRoom, 100);
         await badUser.joinRoom(targetRoom);

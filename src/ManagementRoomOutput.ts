@@ -27,7 +27,6 @@ limitations under the License.
 
 import * as Sentry from "@sentry/node";
 import { LogLevel, LogService, MessageType, TextualMessageEventContent } from "matrix-bot-sdk";
-import { IConfig } from "./config";
 import { htmlEscape } from "./utils";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { Permalinks, StringRoomAlias, StringRoomID, StringUserID, serverName } from "matrix-protection-suite";
@@ -47,8 +46,7 @@ export default class ManagementRoomOutput {
     constructor(
         private readonly managementRoomID: StringRoomID,
         private readonly clientUserID: StringUserID,
-        private readonly client: MatrixSendClient,
-        private readonly config: IConfig,
+        private readonly client: MatrixSendClient
     ) {
 
     }
@@ -115,7 +113,7 @@ export default class ManagementRoomOutput {
         if (!additionalRoomIds) additionalRoomIds = [];
         if (!Array.isArray(additionalRoomIds)) additionalRoomIds = [additionalRoomIds];
 
-        if (this.config.verboseLogging || LogLevel.INFO.includes(level)) {
+        if (LogLevel.INFO.includes(level)) {
             let clientMessage = message;
             if (level === LogLevel.WARN) clientMessage = `⚠ | ${message}`;
             if (level === LogLevel.ERROR) clientMessage = `‼ | ${message}`;

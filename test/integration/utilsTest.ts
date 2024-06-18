@@ -1,10 +1,11 @@
 import { strict as assert } from "assert";
 import { LogLevel } from "matrix-bot-sdk";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
+import { StringRoomAlias } from "matrix-protection-suite";
 
 describe("Test: utils", function() {
     it("replaceRoomIdsWithPills correctly turns a room ID in to a pill", async function(this: DraupnirTestContext) {
-        const managementRoomAlias = this.config.managementRoom;
+        const managementRoomAlias = this.config.managementRoom as StringRoomAlias;
         const draupnir = this.draupnir!;
         const managementRoomOutput = draupnir.managementRoomOutput;
         await draupnir.client.sendStateEvent(

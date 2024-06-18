@@ -19,7 +19,7 @@ describe("Test: The rooms commands", function () {
         const draupnir = this.draupnir!;
         let moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
-        await moderator.joinRoom(this.config.managementRoom);
+        await moderator.joinRoom(draupnir.managementRoomID);
         let targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID]});
         await moderator.setUserPowerLevel(draupnir.clientUserID, targetRoom, 100);
 

@@ -28,10 +28,7 @@ limitations under the License.
 import {
     isError,
     StringUserID,
-    MatrixRoomReference,
     isStringUserID,
-    isStringRoomAlias,
-    isStringRoomID,
     StandardClientsInRoomMap,
     DefaultEventDecoder,
     setGlobalLoggerProvider,
@@ -42,8 +39,7 @@ import {
     ClientCapabilityFactory,
     MatrixSendClient,
     RoomStateManagerFactory,
-    SafeMatrixEmitter,
-    resolveRoomReferenceSafe
+    SafeMatrixEmitter
 } from 'matrix-protection-suite-for-matrix-bot-sdk';
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
@@ -74,15 +70,7 @@ export async function makeDraupnirBotModeFromConfig(
     if (!isStringUserID(clientUserId)) {
         throw new TypeError(`${clientUserId} is not a valid mxid`);
     }
-    if (!isStringRoomAlias(config.managementRoom) && !isStringRoomID(config.managementRoom)) {
-        throw new TypeError(`${config.managementRoom} is not a valid room id or alias`);
-    }
-    const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(config.managementRoom);
-    const managementRoom = await resolveRoomReferenceSafe(client, configManagementRoomReference);
-    if (isError(managementRoom)) {
-        throw managementRoom.error;
-    }
-    await client.joinRoom(managementRoom.ok.toRoomIDOrAlias(), managementRoom.ok.getViaServers());
+
     const clientsInRoomMap = new StandardClientsInRoomMap();
     const clientProvider = async (userID: StringUserID) => {
         if (userID !== clientUserId) {
@@ -103,6 +91,11 @@ export async function makeDraupnirBotModeFromConfig(
         clientProvider,
         roomStateManagerFactory
     );
+    const roomJoiner = clientCapabilityFactory.makeClientPlatform(clientUserId, client).toRoomJoiner();
+    const managementRoom = await roomJoiner.joinRoom(config.managementRoom);
+    if (isError(managementRoom)) {
+        throw managementRoom.error;
+    }
     const draupnir = await draupnirFactory.makeDraupnir(
         clientUserId,
         managementRoom.ok,

@@ -62,25 +62,14 @@ recordIgnoredInvites: false
 # (see verboseLogging to adjust this a bit.)
 managementRoom: "#moderators:example.org"
 
-# Deprecated and will be removed in a future version.
-# Running with verboseLogging is unsupported.
-# Whether Draupnir should log a lot more messages in the room,
-# mainly involves "all-OK" messages, and debugging messages for when draupnir checks bans in a room.
-verboseLogging: false
-
 # The log level of terminal (or container) output,
 # can be one of DEBUG, INFO, WARN and ERROR, in increasing order of importance and severity.
 #
-# This should be at INFO or DEBUG in order to get support for Draupnir problems.
+# This should set to INFO or DEBUG in order to get support for Draupnir issues
 logLevel: "INFO"
 
-# Whether or not Draupnir should synchronize policy lists immediately after startup.
-# Equivalent to running '!draupnir sync'.
-syncOnStartup: true
-
-# Whether or not Draupnir should check moderation permissions in all protected rooms on startup.
-# Equivalent to running `!draupnir verify`.
-verifyPermissionsOnStartup: true
+# FIXME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# WARN for these options that have been delted.
 
 # Whether or not Draupnir should actually apply bans and policy lists,
 # turn on to trial some untrusted configuration or lists.
@@ -89,12 +78,6 @@ noop: false
 # Whether or not Draupnir should apply `m.room.server_acl` events.
 # DO NOT change this to `true` unless you are very confident that you know what you are doing.
 disableServerACL: false
-
-# Whether Draupnir should check member lists quicker (by using a different endpoint),
-# keep in mind that enabling this will miss invited (but not joined) users.
-#
-# Turn on if your bot is in (very) large rooms, or in large amounts of rooms.
-fasterMembershipChecks: false
 
 # A case-insensitive list of ban reasons to have the bot also automatically redact the user's messages for.
 #
@@ -110,15 +93,6 @@ fasterMembershipChecks: false
 automaticallyRedactForReasons:
   - "spam"
   - "advertising"
-
-# A list of rooms to protect. Draupnir will add this to the list it knows from its account data.
-#
-# It won't, however, add it to the account data.
-# Manually add the room via '!draupnir rooms add' to have it stay protected regardless if this config value changes.
-#
-# Note: These must be matrix.to URLs
-protectedRooms:
-  - "https://matrix.to/#/#yourroom:example.org"
 
 # Whether or not to add all joined rooms to the "protected rooms" list
 # (excluding the management room and watched policy list rooms, see below).
