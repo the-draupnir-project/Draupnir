@@ -60,6 +60,8 @@ typings/
 # Optional REPL history
 .node_repl_history
 
+# Output of 'corepack use yarn' and possibly other commands
+*.gz
 # Output of 'npm pack'
 *.tgz
 
