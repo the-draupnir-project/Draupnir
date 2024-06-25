@@ -1,3 +1,17 @@
 lib/
 node_modules/
 .eslintrc.js
+
+# pre-commit run --all-files
+*.conf
+Dockerfile
+*.gif
+*.json
+LICENSE
+*.lock
+*.md
+NOTICE
+*.py
+*.sh
+*.yaml
+*.yml
