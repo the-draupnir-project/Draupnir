@@ -23,5 +23,5 @@ repos:
     hooks:
       - id: yarn-lint
         name: linter
-        entry: yarn lint --cache
+        entry: corepack yarn lint --cache --quiet
         language: system
