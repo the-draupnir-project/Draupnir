@@ -42,7 +42,8 @@ export async function createList(
 ): Promise<ActionResult<MatrixRoomID>> {
     const newList = await this.draupnir.policyRoomManager.createPolicyRoom(
         shortcode,
-        [this.event.sender],
+        // avoids inviting ourself and setting 50 as our own powerlevel
+        [this.event.sender].filter((sender) => sender !== this.draupnir.clientUserID),
         {
             room_alias_name: aliasName
         }
