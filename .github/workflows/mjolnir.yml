@@ -21,9 +21,10 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-    - run: yarn install
-    - run: yarn build
-    - run: yarn lint
+    - run: corepack enable
+    - run: corepack yarn install
+    - run: corepack yarn build
+    - run: corepack yarn lint
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -33,8 +34,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-    - run: yarn install
-    - run: yarn test
+    - run: corepack yarn install
+    - run: corepack yarn test
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
@@ -52,7 +53,7 @@ jobs:
     - name: Setup image
       run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
     - name: Setup dependencies
-      run: yarn install
+      run: corepack yarn install
     - name: Run tests
       run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester run
     - name: Cleanup
@@ -74,8 +75,8 @@ jobs:
     - name: Setup image
       run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
     - name: Setup dependencies
-      run: yarn install
+      run: corepack yarn install
     - name: Run tests
-      run: yarn test:appservice:integration
+      run: corepack yarn test:appservice:integration
     - name: Cleanup
       run: mx-tester down

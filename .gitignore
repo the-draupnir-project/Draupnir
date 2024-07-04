@@ -77,3 +77,8 @@ mjolnir.egg-info/
 
 # VS
 .vs
+
+# Yarn versions through corepack
+.yarn
+# Only contains possibly broken path, replaced by .yarnrc.yml in modern Yarn
+.yarnrc
