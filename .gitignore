@@ -77,3 +77,6 @@ mjolnir.egg-info/
 
 # VS
 .vs
+
+# Yarn versions through corepack
+.yarn
