@@ -268,7 +268,7 @@ function findProtectionDescriptionForCommand(protectionName: string): ActionResu
 }
 
 function findSettingDescriptionForCommand(settings: ProtectionSettings, settingName: string): ActionResult<ProtectionSetting<string, UnknownSettings<string>>> {
-    const setting = settings.descriptions[settingName];
+    const setting = settings.getDescription(settingName);
     if (setting === undefined) {
         return ActionError.Result(`Unable to find a protection setting named ${settingName}`);
     }
@@ -333,7 +333,7 @@ defineInterfaceCommand({
     designator: ["protections"],
     table: "draupnir",
     parameters: parameters([]),
-    command: async function (this: DraupnirContext, keywords: ParsedKeywords, protectionName: string): Promise<ActionResult<ProtectionsSummary[]>> {
+    command: async function (this: DraupnirContext, _keywords: ParsedKeywords, _protectionName: string): Promise<ActionResult<ProtectionsSummary[]>> {
         const enabledProtections = this.draupnir.protectedRoomsSet.protections.allProtections;
         const summaries: ProtectionsSummary[] = [];
         for (const protectionDescription of getAllProtections()) {

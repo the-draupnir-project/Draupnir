@@ -1,7 +1,7 @@
 import { MatrixClient } from "matrix-bot-sdk";
 import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
-import { ActionResult, MatrixRoomReference, Ok, Protection, ProtectionDescription, StandardProtectionSettings, StringRoomID } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomReference, Ok, Protection, ProtectionDescription, StandardProtectionSettings, StringRoomID, Task } from "matrix-protection-suite";
 
 describe("Test: Report polling", function() {
     let client: MatrixClient;
@@ -14,18 +14,18 @@ describe("Test: Report polling", function() {
         if (draupnir === undefined) {
             throw new TypeError(`Test didn't setup properly`);
         }
-        let protectedRoomId = await draupnir.client.createRoom({ invite: [await client.getUserId()] });
+        const protectedRoomId = await draupnir.client.createRoom({ invite: [await client.getUserId()] });
         await client.joinRoom(protectedRoomId);
         await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(MatrixRoomReference.fromRoomID(protectedRoomId as StringRoomID));
 
         const eventId = await client.sendMessage(protectedRoomId, {msgtype: "m.text", body: "uwNd3q"});
-        await new Promise(async resolve => {
+        await new Promise(resolve => {
             const testProtectionDescription: ProtectionDescription = {
                 name: "jYvufI",
                 description: "A test protection",
                 capabilities: {},
                 defaultCapabilities: {},
-                factory: function (description, protectedRoomsSet, context, capabilities, settings): ActionResult<Protection<ProtectionDescription>> {
+                factory: function (_description, _protectedRoomsSet, _context, _capabilities, _settings): ActionResult<Protection<ProtectionDescription>> {
                     return Ok({
                         handleEventReport(report) {
                             if (report.reason === "x5h1Je") {
@@ -44,13 +44,15 @@ describe("Test: Report polling", function() {
                     {}
                 )
             }
-            await draupnir.protectedRoomsSet.protections.addProtection(testProtectionDescription, {}, draupnir.protectedRoomsSet, draupnir);
-            await client.doRequest(
-                "POST",
-                `/_matrix/client/r0/rooms/${encodeURIComponent(protectedRoomId)}/report/${encodeURIComponent(eventId)}`, "", {
-                    reason: "x5h1Je"
-                }
-            );
+            void Task((async () => {
+                await draupnir.protectedRoomsSet.protections.addProtection(testProtectionDescription, {}, draupnir.protectedRoomsSet, draupnir);
+                await client.doRequest(
+                    "POST",
+                    `/_matrix/client/r0/rooms/${encodeURIComponent(protectedRoomId)}/report/${encodeURIComponent(eventId)}`, "", {
+                        reason: "x5h1Je"
+                    }
+                );
+            })());
         });
         // So I kid you not, it seems like we can quit before the webserver for reports sends a respond to the client (via L#26)
         // because the promise above gets resolved before we finish awaiting the report sending request on L#31,

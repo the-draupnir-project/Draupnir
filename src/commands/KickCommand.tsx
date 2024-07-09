@@ -80,7 +80,7 @@ export async function kickCommand(
     if (restrictToRoom !== undefined && isError(restrictToRoom)) {
         return restrictToRoom;
     }
-    const restrictToRoomRevision = restrictToRoom === undefined ? undefined : this.draupnir.protectedRoomsSet.setMembership.getRevision(restrictToRoom?.ok.toRoomIDOrAlias());
+    const restrictToRoomRevision = restrictToRoom === undefined ? undefined : this.draupnir.protectedRoomsSet.setMembership.getRevision(restrictToRoom.ok.toRoomIDOrAlias());
     const roomsToKickWithin = restrictToRoomRevision !== undefined ? [restrictToRoomRevision] : this.draupnir.protectedRoomsSet.setMembership.allRooms;
     const reason = reasonParts.join(' ');
     const kickRule = new MatrixGlob(user.toString());
@@ -91,7 +91,7 @@ export async function kickCommand(
                 addUserToKick(usersToKick, revision.room.toRoomIDOrAlias(), member.userID);
             }
             if (!isDryRun) {
-                this.draupnir.taskQueue.push(async () => {
+                void this.draupnir.taskQueue.push(async () => {
                     return this.client.kickUser(member.userID, revision.room.toRoomIDOrAlias(), reason);
                 });
             }

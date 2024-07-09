@@ -50,9 +50,9 @@ export type BasicFloodingProtectionDescription = ProtectionDescription<Draupnir,
 describeProtection<BasicFloodingProtectionCapabilities, Draupnir, BasicFloodingProtectionSettings>({
     name: 'BasicFloodingProtection',
     description:
-    "If a user posts more than " + DEFAULT_MAX_PER_MINUTE + " messages in 60s they'll be \
-    banned for spam. This does not publish the ban to any of your ban lists.\
-    This is a legacy protection from Mjolnir and contains bugs.",
+    `If a user posts more than ${DEFAULT_MAX_PER_MINUTE} messages in 60s they'll be
+    banned for spam. This does not publish the ban to any of your ban lists.
+    This is a legacy protection from Mjolnir and contains bugs.`,
     capabilityInterfaces: {
         userConsequences: 'UserConsequences',
         eventConsequences: 'EventConsequences',
@@ -85,10 +85,40 @@ describeProtection<BasicFloodingProtectionCapabilities, Draupnir, BasicFloodingP
     })
 });
 
+type LastEvents = { originServerTs: number, eventID: StringEventID }[];
+type LastEventsByUser = Map<StringUserID, LastEvents>
+type LastEventsByRoom = Map<StringRoomID, LastEventsByUser>;
+
+function lastEventsRoomEntry(lastEvents: LastEventsByRoom, roomID: StringRoomID): LastEventsByUser {
+    const roomEntry = lastEvents.get(roomID);
+    if (roomEntry) {
+        return roomEntry;
+    } else {
+        const nextEntry = new Map();
+        lastEvents.set(roomID, nextEntry);
+        return nextEntry;
+    }
+}
+
+function lastEventsUserEntry(eventsByUser: LastEventsByUser, userID: StringUserID): LastEvents {
+    const userEntry = eventsByUser.get(userID);
+    if (userEntry === undefined) {
+        const events: LastEvents = []
+        eventsByUser.set(userID, events);
+        return events;
+    }
+    return userEntry;
+}
+
+function lastEventsForUser(lastEventsByRoom: LastEventsByRoom, roomID: StringRoomID, userID: StringUserID): LastEvents {
+    const roomEntry = lastEventsRoomEntry(lastEventsByRoom, roomID);
+    const userEvents = lastEventsUserEntry(roomEntry, userID);
+    return userEvents;
+}
 
 export class BasicFloodingProtection extends AbstractProtection<BasicFloodingProtectionDescription> implements DraupnirProtection<BasicFloodingProtectionDescription> {
 
-    private lastEvents: { [roomID: StringRoomID]: { [userID: StringUserID]: { originServerTs: number, eventID: StringEventID }[] } } = {};
+    private lastEvents: LastEventsByRoom = new Map();
     private recentlyBanned: string[] = [];
 
     private readonly userConsequences: UserConsequences;
@@ -110,11 +140,7 @@ export class BasicFloodingProtection extends AbstractProtection<BasicFloodingPro
     }
 
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
-        if (!this.lastEvents[room.toRoomIDOrAlias()]) this.lastEvents[room.toRoomIDOrAlias()] = {};
-
-        const forRoom = this.lastEvents[room.toRoomIDOrAlias()];
-        if (!forRoom[event['sender']]) forRoom[event['sender']] = [];
-        let forUser = forRoom[event['sender']];
+        const forUser = lastEventsForUser(this.lastEvents, event.room_id, event.sender);
 
         if ((new Date()).getTime() - event['origin_server_ts'] > TIMESTAMP_THRESHOLD) {
             log.warn("BasicFlooding", `${event['event_id']} is more than ${TIMESTAMP_THRESHOLD}ms out of phase - rewriting event time to be 'now'`);
@@ -154,7 +180,7 @@ export class BasicFloodingProtection extends AbstractProtection<BasicFloodingPro
             }
 
             // Free up some memory now that we're ready to handle it elsewhere
-            forUser = forRoom[event['sender']] = []; // reset the user's list
+            forUser.splice(0, forUser.length);
         }
 
         // Trim the oldest messages off the user's history if it's getting large

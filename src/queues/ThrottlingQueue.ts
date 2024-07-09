@@ -94,7 +94,10 @@ export class ThrottlingQueue {
                     const result: T = await task(this);
                     resolve(result);
                 } catch (ex) {
-                    reject(ex);
+                    if (ex instanceof Error) {
+                        reject(ex);
+                    }
+                    throw new TypeError(`Some garbage is throwing things that are not Error ${ex}`);
                 };
             };
             this.tasks.push(wrapper);
@@ -112,11 +115,8 @@ export class ThrottlingQueue {
      * @param durationMS A number of milliseconds to wait until resuming operations.
      */
     public block(durationMS: number) {
-        if (!this.tasks) {
-            throw new TypeError("Cannot `block()` on a ThrottlingQueue that has already been disposed of.");
-        }
         this.stop();
-        this.timeout = setTimeout(async () => this.step(), durationMS);
+        this.timeout = setTimeout(() => { void this.step() }, durationMS);
     }
 
     /**
@@ -133,7 +133,7 @@ export class ThrottlingQueue {
             // Nothing to do.
             return;
         }
-        this.timeout = setTimeout(async () => this.step(), this._delayMS);
+        this.timeout = setTimeout(() => { void this.step() }, this._delayMS);
     }
 
     /**

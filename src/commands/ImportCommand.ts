@@ -29,13 +29,13 @@ import { DraupnirBaseExecutor, DraupnirContext } from "./CommandHandler";
 import { ActionResult, MatrixRoomReference, MultipleErrors, PolicyRuleType, RoomActionError, RoomUpdateError, isError } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
+import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 
 export async function importCommand(
     this: DraupnirContext,
-    _keywords: void,
+    _keywords: ParsedKeywords,
     importFromRoomReference: MatrixRoomReference,
     policyRoomReference: MatrixRoomReference
 ): Promise<ActionResult<void>> {

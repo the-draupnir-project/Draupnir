@@ -35,7 +35,7 @@ type WordListCapabilities = {
     eventConsequences: EventConsequences;
 };
 
-type WordListSettings = {};
+type WordListSettings = Record<never, never>;
 
 type WordListDescription = ProtectionDescription<Draupnir, WordListSettings, WordListCapabilities>;
 
@@ -63,8 +63,11 @@ describeProtection<WordListCapabilities, Draupnir, WordListSettings>({
     }
 });
 
+type JustJoinedUsers = Map<StringUserID, Date>;
+type JustJoinedByRoom = Map<StringRoomID, JustJoinedUsers>;
+
 export class WordListProtection extends AbstractProtection<WordListDescription> implements Protection<WordListDescription> {
-    private justJoined: { [roomID: StringRoomID]: { [username: StringUserID]: Date} } = {};
+    private justJoined: JustJoinedByRoom = new Map();
     private badWords?: RegExp;
 
     private readonly userConsequences: UserConsequences;
@@ -89,16 +92,16 @@ export class WordListProtection extends AbstractProtection<WordListDescription> 
         const minsBeforeTrusting = this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
         if (minsBeforeTrusting > 0) {
             for (const change of changes) {
-                if (!this.justJoined[roomID]) this.justJoined[roomID] = {};
-
+                const entryForRoom = this.justJoined.get(roomID)
+                    ?? ((entry) => (this.justJoined.set(roomID, entry), entry))(new Map());
                 // When a new member logs in, store the time they joined.  This will be useful
                 // when we need to check if a message was sent within 20 minutes of joining
                 if (change.membershipChangeType === MembershipChangeType.Joined) {
                     const now = new Date();
-                    this.justJoined[roomID][change.userID] = now;
+                    entryForRoom.set(change.userID, now);
                     log.debug(`${change.userID} joined ${roomID} at ${now.toDateString()}`);
                 } else if (change.membershipChangeType === MembershipChangeType.Left || change.membershipChangeType === MembershipChangeType.Banned || change.membershipChangeType === MembershipChangeType.Kicked) {
-                    delete this.justJoined[roomID][change.userID]
+                    entryForRoom.delete(change.userID);
                 }
             }
         }
@@ -111,21 +114,19 @@ export class WordListProtection extends AbstractProtection<WordListDescription> 
             if (!('msgtype' in event.content)) {
                 return Ok(undefined);
             }
-            const message = (event.content !== undefined && 'formatted_body' in event.content && event.content?.['formatted_body']) || event.content?.['body'];
-            if (!message === undefined) {
-                return Ok(undefined);
-            }
+            const message = ('formatted_body' in event.content && event.content['formatted_body']) || event.content['body'];
             const roomID = room.toRoomIDOrAlias();
 
             // Check conditions first
             if (minsBeforeTrusting > 0) {
-                const joinTime = this.justJoined[roomID][event['sender']]
-                if (joinTime) { // Disregard if the user isn't recently joined
+                const roomEntry = this.justJoined.get(roomID);
+                const joinTime = roomEntry?.get(event['sender']);
+                if (joinTime !== undefined) { // Disregard if the user isn't recently joined
 
                     // Check if they did join recently, was it within the timeframe
                     const now = new Date();
                     if (now.valueOf() - joinTime.valueOf() > minsBeforeTrusting * 60 * 1000) {
-                        delete this.justJoined[roomID][event['sender']] // Remove the user
+                        roomEntry?.delete(event['sender']) // Remove the user
                         log.info(`${event['sender']} is no longer considered suspect`);
                         return Ok(undefined);
                     }
@@ -147,7 +148,7 @@ export class WordListProtection extends AbstractProtection<WordListDescription> 
                 this.badWords = new RegExp(words.join("|"), "i");
             }
 
-            const match = this.badWords!.exec(message ?? '');
+            const match = this.badWords.exec(message);
             if (match) {
                 const reason = `bad word: ${match[0]}`;
                 await this.userConsequences.consequenceForUserInRoom(roomID, event.sender, reason);

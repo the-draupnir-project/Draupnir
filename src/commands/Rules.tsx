@@ -33,14 +33,14 @@ import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { findPresentationType, parameters, union } from "./interface-manager/ParameterParsing";
-import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, PolicyRoomWatchProfile, PolicyRule, StringRoomID, isError, UserID } from "matrix-protection-suite";
+import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, PolicyRoomWatchProfile, PolicyRule, StringRoomID, isError, UserID, RoomEvent } from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
 
 async function renderListMatches(
-    this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomID: StringRoomID, event: any, result: ActionResult<ListMatches[]>
+    this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<ListMatches[]>
 ) {
     if (isError(result)) {
-        return await tickCrossRenderer.call(this, ...arguments);
+        return await tickCrossRenderer.call(this, client, commandRoomID, event, result);
     }
     const lists = result.ok;
     if (lists.length === 0) {

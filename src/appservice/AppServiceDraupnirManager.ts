@@ -252,8 +252,8 @@ export class AppServiceDraupnirManager {
         const access = this.accessControl.getUserAccess(mjolnirRecord.owner);
         if (access.outcome !== Access.Allowed) {
             // Don't await, we don't want to clobber initialization just because we can't tell someone they're no longer allowed.
-            Task((async () => {
-                mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your draupnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
+            void Task((async () => {
+                await mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your draupnir has been disabled by the administrator: ${access.rule?.reason ?? "no reason supplied"}`);
             })());
             this.baseManager.reportUnstartedDraupnir(DraupnirFailType.Unauthorized, access.outcome, clientUserID);
             decrementGaugeValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
@@ -265,7 +265,7 @@ export class AppServiceDraupnirManager {
                 mjolnirRecord.owner,
                 mjolnirRecord.management_room,
                 mjIntent.matrixClient,
-            ).catch((e) => {
+            ).catch((e: unknown) => {
                 log.error(`Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`, e);
                 this.baseManager.reportUnstartedDraupnir(DraupnirFailType.StartError, e, clientUserID);
                 return ActionException.Result(`Could not start draupnir ${clientUserID} for owner ${mjolnirRecord.owner}`, {
@@ -275,8 +275,8 @@ export class AppServiceDraupnirManager {
             });
             if (isError(startResult)) {
                 // Don't await, we don't want to clobber initialization if this fails.
-                Task((async () => {
-                    mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your draupnir could not be started. Please alert the administrator`);
+                void Task((async () => {
+                    await mjIntent.matrixClient.sendNotice(mjolnirRecord.management_room, `Your draupnir could not be started. Please alert the administrator`);
                 })());
                 decrementGaugeValue(this.instanceCountGauge, "online", mjolnirRecord.local_part);
                 incrementGaugeValue(this.instanceCountGauge, "offline", mjolnirRecord.local_part);

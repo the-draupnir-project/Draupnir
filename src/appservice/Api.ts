@@ -32,15 +32,21 @@ export class Api {
             }, (err, homeserver_response, body) => {
                 if (err) {
                     log.error(`Error resolving openID token from ${this.homeserver}`, err);
-                    reject(null);
+                    if (err instanceof Error) {
+                        reject(err)
+                    } else {
+                        reject(new Error(`There was an error when resolving openID token from ${this.homeserver}`));
+                    }
                 }
-
                 let response: { sub: string};
                 try {
                     response = JSON.parse(body);
                 } catch (e) {
                     log.error(`Received ill formed response from ${this.homeserver} when resolving an openID token`, e);
-                    reject(null);
+                    if (err instanceof Error) {
+                        reject(err);
+                    }
+                    reject(new Error(`Received ill formed response from ${this.homeserver} when resolving an openID token ${e}`));
                     return;
                 }
 
@@ -54,7 +60,7 @@ export class Api {
             if (!this.httpServer) {
                 throw new TypeError("Server was never started");
             }
-            this.httpServer.close(error => error ? reject(error) : resolve(undefined))
+            this.httpServer.close(error => { error ? reject(error) : resolve(undefined); })
         });
     }
 

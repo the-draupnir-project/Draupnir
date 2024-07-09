@@ -5,8 +5,8 @@ describe("Test: ThrottlingQueue", function() {
         this.timeout(20000);
 
         const queue = new ThrottlingQueue(this.mjolnir, 10);
-        let state = new Map();
-        let promises: Promise<void>[] = [];
+        const state = new Map();
+        const promises: Promise<void>[] = [];
         for (let counter = 0; counter < 10; ++counter) {
             const i = counter;
             const promise = queue.push(async () => {
@@ -39,8 +39,8 @@ describe("Test: ThrottlingQueue", function() {
     it("Tasks enqueued with `push()` are executed exactly once and in the right order, even if we call `block()` at some point", async function() {
         this.timeout(20000);
         const queue = new ThrottlingQueue(this.mjolnir, 10);
-        let state = new Map();
-        let promises: Promise<void>[] = [];
+        const state = new Map();
+        const promises: Promise<void>[] = [];
         for (let counter = 0; counter < 10; ++counter) {
             const i = counter;
             promises.push(queue.push(async () => {

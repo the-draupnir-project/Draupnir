@@ -2,7 +2,7 @@ import expect from "expect";
 import { newTestUser } from "./clientHelper";
 import { getFirstEventMatching } from './commands/commandUtils';
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
-import { MatrixRoomReference, PolicyRuleType, PropagationType, StringRoomID, findProtection } from "matrix-protection-suite";
+import { MatrixRoomReference, NoticeMessageContent, PolicyRuleType, PropagationType, RoomMessage, StringRoomID, Value, findProtection } from "matrix-protection-suite";
 
 // We will need to disable this in tests that are banning people otherwise it will cause
 // mocha to hang for awhile until it times out waiting for a response to a prompt.
@@ -23,6 +23,10 @@ describe("Ban propagation test", function() {
         if (draupnir === undefined) {
             throw new TypeError(`setup didn't run properly`);
         }
+        const draupnirMatrixClient = draupnirClient();
+        if (draupnirMatrixClient === null) {
+            throw new TypeError(`setup didn't run properly`);
+        }
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         await moderator.joinRoom(draupnir.managementRoomID);
         const protectedRooms = await Promise.all([...Array(5)].map(async _ => {
@@ -40,15 +44,15 @@ describe("Ban propagation test", function() {
 
         // check for the prompt
         const promptEvent = await getFirstEventMatching({
-            matrix: draupnirClient()!,
+            matrix: draupnirMatrixClient,
             targetRoom: draupnir.managementRoomID,
             lookAfterEvent: async function () {
                 // ban a user in one of our protected rooms using the moderator
                 await moderator.banUser('@test:example.com', protectedRooms[0], "spam");
                 return undefined;
             },
-            predicate: function (event: any): boolean {
-                return (event['content']?.['body'] ?? '').startsWith('The user')
+            predicate: function (event: unknown): boolean {
+                return Value.Check(RoomMessage, event) && Value.Check(NoticeMessageContent, event.content) && (event['content']['body']).startsWith('The user')
             }
         })
         // select the prompt
@@ -66,15 +70,15 @@ describe("Ban propagation test", function() {
 
         // now unban them >:3
         const unbanPrompt = await getFirstEventMatching({
-            matrix: draupnirClient()!,
+            matrix: draupnirMatrixClient,
             targetRoom: draupnir.managementRoomID,
             lookAfterEvent: async function () {
                 // ban a user in one of our protected rooms using the moderator
                 await moderator.unbanUser('@test:example.com', protectedRooms[0]);
                 return undefined;
             },
-            predicate: function (event: any): boolean {
-                return (event['content']?.['body'] ?? '').startsWith('The user')
+            predicate: function (event: unknown): boolean {
+                return Value.Check(RoomMessage, event) && Value.Check(NoticeMessageContent, event.content) && (event['content']['body']).startsWith('The user')
             }
         });
 

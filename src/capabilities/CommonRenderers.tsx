@@ -69,7 +69,7 @@ function renderRoomOutcomeOk(roomID: StringRoomID): DocumentNode {
     return <span>{renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - {renderOutcome(true)}</span>
 }
 
-function renderUserOutcomeOk(userID: StringUserID, result: ActionResult<unknown>): DocumentNode {
+function renderUserOutcomeOk(userID: StringUserID, _result: ActionResult<unknown>): DocumentNode {
     return <span>{renderMentionPill(userID, userID)} - {renderOutcome(true)}</span>
 }
 

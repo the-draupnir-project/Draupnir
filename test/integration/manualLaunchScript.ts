@@ -9,9 +9,9 @@ import { SqliteRoomStateBackingStore } from "../../src/backingstore/better-sqlit
 import path from "path";
 import { DefaultEventDecoder } from "matrix-protection-suite";
 
-(async () => {
+void (async () => {
     const config = configRead();
-    let mjolnir = await makeMjolnir(config, new SqliteRoomStateBackingStore(path.join(config.dataPath, 'room-state-backing-store.db'), DefaultEventDecoder));
+    const mjolnir = await makeMjolnir(config, new SqliteRoomStateBackingStore(path.join(config.dataPath, 'room-state-backing-store.db'), DefaultEventDecoder));
     console.info(`management room ${mjolnir.managementRoom.toPermalink()}`);
     await mjolnir.start();
     const apis = constructWebAPIs(mjolnir);

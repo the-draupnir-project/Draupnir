@@ -133,7 +133,7 @@ export class TrustedReporters extends AbstractProtection<TrustedReportersDescrip
 
         reporters.add(report.sender);
 
-        let met: string[] = [];
+        const met: string[] = [];
         if (reporters.size === this.settings.alertThreshold) {
             met.push("alert");
             // do nothing. let the `sendMessage` call further down be the alert

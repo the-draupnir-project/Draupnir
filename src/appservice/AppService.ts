@@ -204,7 +204,7 @@ export class MjolnirAppService {
         return service;
     }
 
-    public onUserQuery(queriedUser: MatrixUser) {
+    public onUserQuery(_queriedUser: MatrixUser) {
         return {}; // auto-provision users with no additonal data
     }
 
@@ -217,14 +217,14 @@ export class MjolnirAppService {
             if (isError(result)) {
                 log.error(`Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`, result.error);
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             log.error(`Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`, e);
             // continue, we still want to reject this invitation.
         }
         try {
             // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their mjolnir.
             await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
-        } catch (e: any) {
+        } catch (e: unknown) {
             log.warn("Unable to reject an invite to a room", e);
         }
     }
@@ -275,7 +275,7 @@ export class MjolnirAppService {
             method: "GET",
             path: "/healthz",
             authenticate: false,
-            handler: async (_req, res) => {
+            handler: (_req, res) => {
                 res.status(200).send('ok');
             }
         });

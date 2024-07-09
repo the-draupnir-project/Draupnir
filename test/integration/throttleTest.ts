@@ -4,9 +4,9 @@ import { getMessagesByUserIn } from "../../src/utils";
 
 describe("Test: throttled users can function with Mjolnir.", function () {
     it('throttled users survive being throttled by synapse', async function() {
-        let throttledUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "throttled" }, isThrottled: true });
-        let throttledUserId = await throttledUser.getUserId();
-        let targetRoom = await throttledUser.createRoom();
+        const throttledUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "throttled" }, isThrottled: true });
+        const throttledUserId = await throttledUser.getUserId();
+        const targetRoom = await throttledUser.createRoom();
         // send enough messages to hit the rate limit.
         await Promise.all([...Array(25).keys()].map((i) => throttledUser.sendMessage(targetRoom, {msgtype: 'm.text.', body: `Message #${i}`})));
         let messageCount = 0;

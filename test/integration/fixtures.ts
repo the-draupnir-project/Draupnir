@@ -21,7 +21,11 @@ export const mochaHooks = {
             const config = this.config = configRead();
             this.managementRoomAlias = config.managementRoom;
             this.draupnir = await makeMjolnir(config);
-            config.RUNTIME.client = draupnirClient()!;
+            const draupnirMatrixClient = draupnirClient();
+            if (draupnirMatrixClient === null) {
+                throw new TypeError(`setup code is broken`);
+            }
+            config.RUNTIME.client = draupnirMatrixClient;
             await Promise.all([
                 this.draupnir.client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, { rooms: [] }),
                 this.draupnir.client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,  { references: [] }),
@@ -48,7 +52,7 @@ export const mochaHooks = {
                 ]);
                 const client = draupnirClient();
                 if (client !== null && this.managementRoomAlias !== undefined) {
-                    await teardownManagementRoom(client, this.draupnir.managementRoomID, this.managementRoomAlias!);
+                    await teardownManagementRoom(client, this.draupnir.managementRoomID, this.managementRoomAlias);
                 }
             }
             console.error("---- completed test", JSON.stringify(this.currentTest?.title), "\n\n"); // Makes MatrixClient error logs a bit easier to parse.

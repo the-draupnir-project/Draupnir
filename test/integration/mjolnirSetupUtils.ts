@@ -54,7 +54,7 @@ export async function ensureAliasedRoomExists(client: MatrixClient, alias: strin
     } catch (e) {
         if (e?.body?.errcode === 'M_NOT_FOUND') {
             console.info(`${alias} hasn't been created yet, so we're making it now.`)
-            let roomId = await client.createRoom({
+            const roomId = await client.createRoom({
                 visibility: "public",
             });
             await client.createRoomAlias(alias, roomId);
@@ -99,7 +99,7 @@ export async function makeMjolnir(config: IConfig, backingStore?: RoomStateBacki
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
     await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
     await ensureAliasedRoomExists(client, config.managementRoom);
-    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
+    const mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
     globalClient = client;
     globalMjolnir = mj;
     return mj;

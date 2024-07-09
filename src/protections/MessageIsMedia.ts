@@ -29,7 +29,7 @@ import { LogLevel } from "matrix-bot-sdk";
 import { AbstractProtection, ActionResult, EventConsequences, MatrixRoomID, Ok, Permalinks, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMessage, Value, describeProtection, serverName } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
-type MessageIsMediaProtectionSettings = {};
+type MessageIsMediaProtectionSettings = Record<never, never>;
 
 type MessageIsMediaCapabilities = {
     eventConsequences: EventConsequences;
@@ -72,7 +72,7 @@ export class MessageIsMediaProtection extends AbstractProtection<MessageIsMediaP
             protectedRoomsSet,
             {}
         );
-        this.eventConsequences = this.eventConsequences;
+        this.eventConsequences = capabilities.eventConsequences;
     }
 
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
@@ -80,8 +80,8 @@ export class MessageIsMediaProtection extends AbstractProtection<MessageIsMediaP
             if (!('msgtype' in event.content)) {
                 return Ok(undefined);
             }
-            const msgtype = event.content?.['msgtype'] || 'm.text';
-            const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
+            const msgtype = event.content['msgtype'];
+            const formattedBody = 'formatted_body' in event.content ? event.content['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
             if (isMedia) {
                 const roomID = room.toRoomIDOrAlias();

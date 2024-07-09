@@ -1,6 +1,7 @@
 import { Cli } from "matrix-appservice-bridge";
 import { MjolnirAppService } from "./AppService";
 import { IConfig } from "./config/config";
+import { Task } from "matrix-protection-suite";
 
 /**
  * This file provides the entrypoint for the appservice mode for mjolnir.
@@ -15,12 +16,14 @@ const cli = new Cli({
         defaults: {}
     },
     generateRegistration: MjolnirAppService.generateRegistration,
-    run: async function(port: number) {
-        const config: IConfig | null = cli.getConfig() as any;
+    run: function(port: number) {
+        const config: IConfig | null = cli.getConfig() as unknown as IConfig | null;
         if (config === null) {
             throw new Error("Couldn't load config");
         }
-        await MjolnirAppService.run(port, config, cli.getRegistrationFilePath());
+        void Task((async () => {
+            await MjolnirAppService.run(port, config, cli.getRegistrationFilePath())
+        })());
     }
 });
 

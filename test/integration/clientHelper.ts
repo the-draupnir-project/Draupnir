@@ -1,6 +1,7 @@
 import { HmacSHA1 } from "crypto-js";
 import { getRequestFn, LogService, MatrixClient, MemoryStorageProvider, PantalaimonClient } from "matrix-bot-sdk";
 import "../../src/utils"; // we need this for the patches to matrix-bot-sdk's `getRequestFn`.
+import { NoticeMessageContent, RoomMessage, Value } from "matrix-protection-suite";
 
 const REGISTRATION_ATTEMPTS = 10;
 const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
@@ -17,11 +18,15 @@ const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
  * @returns The response from synapse.
  */
 export async function registerUser(homeserver: string, username: string, displayname: string, password: string, admin: boolean): Promise<void> {
-    let registerUrl = `${homeserver}/_synapse/admin/v1/register`
+    const registerUrl = `${homeserver}/_synapse/admin/v1/register`
     const nonce: string = await new Promise((resolve, reject) => {
-        getRequestFn()({uri: registerUrl, method: "GET", timeout: 60000}, (error: any, _response: any, resBody: unknown) => {
+        getRequestFn()({uri: registerUrl, method: "GET", timeout: 60000}, (error: unknown, _response: unknown, resBody: unknown) => {
             if (error) {
-                reject(error);
+                if (error instanceof Error) {
+                    reject(error);
+                } else {
+                    throw new TypeError(`Something is throwing absoloute garbage`);
+                }
             } else if (typeof resBody === 'object' && resBody !== null && 'nonce' in resBody && typeof resBody.nonce === 'string') {
                 resolve(resBody.nonce)
             } else {
@@ -29,7 +34,7 @@ export async function registerUser(homeserver: string, username: string, display
             }
         });
     });
-    let mac = HmacSHA1(`${nonce}\0${username}\0${password}\0${admin ? 'admin' : 'notadmin'}`, 'REGISTRATION_SHARED_SECRET');
+    const mac = HmacSHA1(`${nonce}\0${username}\0${password}\0${admin ? 'admin' : 'notadmin'}`, 'REGISTRATION_SHARED_SECRET');
     for (let i = 1; i <= REGISTRATION_ATTEMPTS; ++i) {
         try {
             const params = {
@@ -46,9 +51,9 @@ export async function registerUser(homeserver: string, username: string, display
                 }),
                 timeout: 60000
             }
-            return await new Promise((resolve, reject) => {
-                getRequestFn()(params, (error: any) => error ? reject(error) : resolve());
-            });
+            await new Promise((resolve, reject) => {
+                getRequestFn()(params, (error: unknown) => { error !== undefined ? error instanceof Error ? reject(error) : resolve(new TypeError(`something is throwing garbage`)) : resolve(undefined); });
+            }); return;
         } catch (ex) {
             // In case of timeout or throttling, backoff and retry.
             if (ex?.code === 'ESOCKETTIMEDOUT' || ex?.code === 'ETIMEDOUT'
@@ -87,7 +92,7 @@ export type RegistrationOptions = {
  * @returns A string that is both the username and password of a new user.
  */
 async function registerNewTestUser(homeserver: string, options: RegistrationOptions) {
-    do {
+    while (true) {
         let username;
         if ("exact" in options.name) {
             username = options.name.exact;
@@ -110,7 +115,7 @@ async function registerNewTestUser(homeserver: string, options: RegistrationOpti
                 throw e;
             }
         }
-    } while (true);
+    }
 }
 
 /**
@@ -123,13 +128,13 @@ export async function newTestUser(homeserver: string, options: RegistrationOptio
     const pantalaimon = new PantalaimonClient(homeserver, new MemoryStorageProvider());
     const client = await pantalaimon.createClientWithCredentials(username, username);
     if (!options.isThrottled) {
-        let userId = await client.getUserId();
+        const userId = await client.getUserId();
         await overrideRatelimitForUser(homeserver, userId);
     }
     return client;
 }
 
-let _globalAdminUser: MatrixClient;
+let _globalAdminUser: MatrixClient | undefined;
 
 /**
  * Get a client that can perform synapse admin API actions.
@@ -137,7 +142,7 @@ let _globalAdminUser: MatrixClient;
  */
 async function getGlobalAdminUser(homeserver: string): Promise<MatrixClient> {
     // Initialize global admin user if needed.
-    if (!_globalAdminUser) {
+    if (_globalAdminUser === undefined) {
         const USERNAME = "mjolnir-test-internal-admin-user";
         try {
             await registerUser(homeserver, USERNAME, USERNAME, USERNAME, true);
@@ -179,10 +184,12 @@ export async function resetRatelimitForUser(homeserver: string, userId: string) 
  * @param cb The callback when a m.notice event is found in targetRoomId.
  * @returns The callback to pass to `MatrixClient.on('room.message', cb)`
  */
-export function noticeListener(targetRoomdId: string, cb: (event: any) => void) {
-    return (roomId: string, event: any) => {
+export function noticeListener(targetRoomdId: string, cb: (event: Omit<RoomMessage, 'content'> & { content: NoticeMessageContent }) => void) {
+    return (roomId: string, event: unknown) => {
         if (roomId !== targetRoomdId) return;
-        if (event?.content?.msgtype !== "m.notice") return;
-        cb(event);
+        if (!Value.Check(RoomMessage, event) || !Value.Check(NoticeMessageContent, event.content)) {
+            return;
+        }
+        cb(event as Omit<RoomMessage, 'content'> & { content: NoticeMessageContent });
     }
 }

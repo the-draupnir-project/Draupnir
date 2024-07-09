@@ -26,7 +26,7 @@ limitations under the License.
  */
 
 import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
-import { findPresentationType, parameters } from "./interface-manager/ParameterParsing";
+import { findPresentationType, parameters, ParsedKeywords } from "./interface-manager/ParameterParsing";
 import { DraupnirBaseExecutor, DraupnirContext } from "./CommandHandler";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
@@ -34,7 +34,7 @@ import { ActionError, ActionResult, MatrixRoomReference, Ok, UserID, isError } f
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 async function hijackRoomCommand(
-    this: DraupnirContext, _keywords: void, room: MatrixRoomReference, user: UserID
+    this: DraupnirContext, _keywords: ParsedKeywords, room: MatrixRoomReference, user: UserID
 ): Promise<ActionResult<void>> {
     const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
     if (!this.draupnir.config.admin?.enableMakeRoomAdminCommand || isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
@@ -47,7 +47,7 @@ async function hijackRoomCommand(
     if (isError(resolvedRoom)) {
         return resolvedRoom;
     }
-    await this.draupnir.synapseAdminClient?.makeUserRoomAdmin(resolvedRoom.ok.toRoomIDOrAlias(), user.toString());
+    await this.draupnir.synapseAdminClient.makeUserRoomAdmin(resolvedRoom.ok.toRoomIDOrAlias(), user.toString());
     return Ok(undefined);
 }
 

@@ -1,4 +1,4 @@
-const { MatrixClient } = require("matrix-bot-sdk");
+import { MatrixClient } from "matrix-bot-sdk";
 
 /**
  * This is a test for the response times for various endpoints querying the
@@ -76,7 +76,7 @@ function calculateMedian (arr: number[]): number | undefined {
     return s.length % 2 === 0 ? ((s[mid - 1] + s[mid]) / 2) : s[mid];
 };
 
-(async () => {
+void (async () => {
     for (const method of shuffledMethods) {
         const start = Date.now();
         await fetchStateWithMethod(method);
@@ -85,7 +85,10 @@ function calculateMedian (arr: number[]): number | undefined {
     }
 
     for (const method of [MemberFetchMethod.JoinedMembers, MemberFetchMethod.Members, MemberFetchMethod.State]) {
-        const nextTimes = getTimes(method)!;
+        const nextTimes = getTimes(method);
+        if (nextTimes === undefined) {
+            throw new TypeError(`Times shouldn't be undefined matey`);
+        }
         const sum = nextTimes.reduce((a, b) => a + b, 0);
         const mean = (sum / nextTimes.length) || 0;
         const median = calculateMedian(nextTimes);

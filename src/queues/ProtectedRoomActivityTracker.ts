@@ -25,6 +25,8 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
+import { RoomEvent, StringRoomID } from "matrix-protection-suite";
+
 /**
  * Used to keep track of protected rooms so they are always ordered for activity.
  *
@@ -64,12 +66,12 @@ export class ProtectedRoomActivityTracker {
      * @param event The new event.
      *
      */
-    public handleEvent(roomId: string, event: any): void {
-        const last_origin_server_ts = this.protectedRoomActivities.get(roomId);
+    public handleEvent(roomID: StringRoomID, event: RoomEvent): void {
+        const last_origin_server_ts = this.protectedRoomActivities.get(roomID);
         if (last_origin_server_ts !== undefined && Number.isInteger(event.origin_server_ts)) {
             if (event.origin_server_ts > last_origin_server_ts) {
                 this.activeRoomsCache = null;
-                this.protectedRoomActivities.set(roomId, event.origin_server_ts);
+                this.protectedRoomActivities.set(roomID, event.origin_server_ts);
             }
         }
     }

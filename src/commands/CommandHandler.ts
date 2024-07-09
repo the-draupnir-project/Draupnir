@@ -27,7 +27,7 @@ limitations under the License.
 
 import { LogService, RichReply } from "matrix-bot-sdk";
 import { readCommand } from "./interface-manager/CommandReader";
-import { BaseFunction, CommandTable, defineCommandTable, findCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
+import { CommandTable, defineCommandTable, findCommandTable, findTableCommand } from "./interface-manager/InterfaceCommand";
 import { findMatrixInterfaceAdaptor, MatrixContext } from "./interface-manager/MatrixInterfaceAdaptor";
 import { ArgumentStream } from "./interface-manager/ParameterParsing";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
@@ -39,7 +39,7 @@ export interface DraupnirContext extends MatrixContext {
     draupnir: Draupnir,
 }
 
-export type DraupnirBaseExecutor = (this: DraupnirContext, ...args: any[]) => Promise<ActionResult<unknown>>;
+export type DraupnirBaseExecutor<Args extends unknown[] = unknown[] > = (this: DraupnirContext, ...args: Args) => Promise<ActionResult<unknown>>;
 
 // Plesae keep these in alphabetical order.
 defineCommandTable("synapse admin");
@@ -73,8 +73,8 @@ export async function handleCommand(
     event: RoomMessage,
     normalisedCommand: string,
     draupnir: Draupnir,
-    commandTable: CommandTable<BaseFunction>
-) {
+    commandTable: CommandTable
+): Promise<void> {
     try {
         const readItems = readCommand(normalisedCommand)
         const stream = new ArgumentStream(readItems);
@@ -86,7 +86,7 @@ export async function handleCommand(
             event
         };
         try {
-            return await adaptor.invoke(draupnirContext, draupnirContext, ...stream.rest());
+            await adaptor.invoke(draupnirContext, draupnirContext, ...stream.rest()); return;
         } catch (e) {
             const commandError = new ActionException(ActionExceptionKind.Unknown, e, 'Unknown Unexpected Error');
             await tickCrossRenderer.call(draupnirContext, draupnir.client, roomID, event, ResultError(commandError));
@@ -96,7 +96,7 @@ export async function handleCommand(
         const text = "There was an error processing your command - see console/log for details";
         const reply = RichReply.createFor(roomID, event, text, text);
         reply["msgtype"] = "m.notice";
-        return await draupnir.client.sendMessage(roomID, reply);
+        await draupnir.client.sendMessage(roomID, reply);
     }
 }
 
@@ -127,5 +127,5 @@ export function extractCommandFromMessageBody(
     }
     // normalise the event body to make the prefix uniform (in case the bot has spaces in its display name)
     const restOfBody = body.substring(usedPrefixInMessage.length);
-    return prefix + restOfBody.startsWith(' ') ? restOfBody : ` ${restOfBody}`;
+    return prefix + (restOfBody.startsWith(' ') ? restOfBody : ` ${restOfBody}`);
 }

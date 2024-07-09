@@ -30,7 +30,7 @@ import express from "express";
 import { MatrixClient } from "matrix-bot-sdk";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
-import { StringEventID, StringRoomID } from "matrix-protection-suite";
+import { StringEventID, StringRoomID, Task } from "matrix-protection-suite";
 
 
 /**
@@ -61,7 +61,7 @@ export class WebAPIs {
         // configure /report API.
         if (this.config.web.abuseReporting.enabled) {
             console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
-            this.webController.options(`${API_PREFIX}/report/:room_id/:event_id`, async (request, response) => {
+            this.webController.options(`${API_PREFIX}/report/:room_id/:event_id`, (request, response) => {
                 // reply with CORS options
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Date");
@@ -69,13 +69,13 @@ export class WebAPIs {
                 response.status(200);
                 return response.send();
             });
-            this.webController.post(`${API_PREFIX}/report/:room_id/:event_id`, async (request, response) => {
+            this.webController.post(`${API_PREFIX}/report/:room_id/:event_id`, (request, response) => {
                 console.debug(`Received a message on ${API_PREFIX}/report/:room_id/:event_id`, request.params);
                 // set CORS headers for the response
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Date");
                 response.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-                await this.handleReport({ request, response, roomID: request.params.room_id as StringRoomID, eventID: request.params.event_id as StringEventID })
+                void Task(this.handleReport({ request, response, roomID: request.params.room_id as StringRoomID, eventID: request.params.event_id as StringEventID }));
             });
             console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
         }
@@ -115,17 +115,25 @@ export class WebAPIs {
                 let accessToken: string | undefined = undefined;
 
                 // Authentication mechanism 1: Request header.
-                let authorization = request.get('Authorization');
+                const authorization = request.get('Authorization');
 
                 if (authorization) {
-                    [, accessToken] = AUTHORIZATION.exec(authorization)!;
+                    const brearerMatch = AUTHORIZATION.exec(authorization);
+                    if (brearerMatch === null) {
+                        response.status(401).send("Missing access token");
+                        return;
+                    } else {
+                        [, accessToken] = brearerMatch;
+                    }
                 } else if (typeof(request.query["access_token"]) === 'string') {
                     // Authentication mechanism 2: Access token as query parameter.
                     accessToken = request.query["access_token"];
-                } else {
+                }
+                if (accessToken === undefined)  {
                     response.status(401).send("Missing access token");
                     return;
                 }
+
 
                 // Create a client dedicated to this report.
                 //
@@ -156,7 +164,7 @@ export class WebAPIs {
                 //    so we are not extending the abilities of Mjölnir
                 // 3. We are avoiding the use of the Synapse Admin API to ensure that
                 //    this feature can work with all homeservers, not just Synapse.
-                let reporterClient = new MatrixClient(this.config.rawHomeserverUrl, accessToken);
+                const reporterClient = new MatrixClient(this.config.rawHomeserverUrl, accessToken);
                 reporterClient.start = () => {
                     throw new Error("We MUST NEVER call start on the reporter client");
                 };
@@ -179,7 +187,7 @@ export class WebAPIs {
                 event = await reporterClient.getEvent(roomID, eventID);
             }
 
-            let reason = request.body["reason"];
+            const reason = request.body["reason"];
             await this.reportManager.handleServerAbuseReport({ roomID, reporterId, event, reason });
 
             // Match the spec behavior of `/report`: return 200 and an empty JSON.
