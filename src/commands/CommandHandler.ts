@@ -76,7 +76,8 @@ export async function handleCommand(
     commandTable: CommandTable
 ): Promise<void> {
     try {
-        const readItems = readCommand(normalisedCommand)
+        const readItemsIncludingPrefix = readCommand(normalisedCommand)
+        const readItems = readItemsIncludingPrefix.slice(1);
         const stream = new ArgumentStream(readItems);
         const command = commandTable.findAMatchingCommand(stream)
             ?? findTableCommand("draupnir", "help");
@@ -86,7 +87,7 @@ export async function handleCommand(
             event
         };
         try {
-            await adaptor.invoke(draupnirContext, draupnirContext, ...stream.rest()); return;
+            await adaptor.invoke(draupnirContext, draupnirContext, ...stream.rest());
         } catch (e) {
             const commandError = new ActionException(ActionExceptionKind.Unknown, e, 'Unknown Unexpected Error');
             await tickCrossRenderer.call(draupnirContext, draupnir.client, roomID, event, ResultError(commandError));
