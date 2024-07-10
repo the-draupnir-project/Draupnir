@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, LoggableConfigTracker, Logger, MatrixRoomID, MatrixRoomReference, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMembershipRevisionIssuer, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, isStringRoomAlias, isStringRoomID, serverName, userLocalpart } from "matrix-protection-suite";
+import { ActionResult, Client, ClientPlatform, ClientRooms, EventReport, LoggableConfigTracker, Logger, MatrixRoomID, MembershipEvent, Ok, PolicyRoomManager, ProtectedRoomsSet, RoomEvent, RoomMembershipManager, RoomMembershipRevisionIssuer, RoomMessage, RoomStateManager, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, serverName, userLocalpart } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
@@ -104,7 +104,7 @@ export class Draupnir implements Client {
     ) {
         this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
         this.managementRoomOutput = new ManagementRoomOutput(
-            this.managementRoomID, this.clientUserID, this.client, this.config
+            this.managementRoomID, this.clientUserID, this.client
         );
         this.reactionHandler = new MatrixReactionHandler(this.managementRoom.toRoomIDOrAlias(), client, clientUserID, clientPlatform);
         this.reportManager = new ReportManager(this);
@@ -154,18 +154,7 @@ export class Draupnir implements Client {
                 if (config.acceptInvitesFromSpace === undefined) {
                     throw new TypeError(`You cannot leave config.acceptInvitesFromSpace undefined if you have disabled config.autojoinOnlyIfManager`);
                 }
-                const room = (() => {
-                    if (isStringRoomID(config.acceptInvitesFromSpace) || isStringRoomAlias(config.acceptInvitesFromSpace)) {
-                        return config.acceptInvitesFromSpace;
-                    } else {
-                        const parseResult = MatrixRoomReference.fromPermalink(config.acceptInvitesFromSpace);
-                        if (isError(parseResult)) {
-                            throw new TypeError(`config.acceptInvitesFromSpace: ${config.acceptInvitesFromSpace} needs to be a room id, alias or permalink`);
-                        }
-                        return parseResult.ok;
-                    }
-                })();
-                return await clientPlatform.toRoomJoiner().joinRoom(room);
+                return await clientPlatform.toRoomJoiner().joinRoom(config.acceptInvitesFromSpace);
             }
         })();
         if (isError(acceptInvitesFromRoom)) {

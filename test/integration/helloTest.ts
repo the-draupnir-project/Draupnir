@@ -14,7 +14,7 @@ describe("Test: !help command", function() {
     it('Mjolnir responded to !mjolnir help', async function(this: DraupnirTestContext) {
         this.timeout(30000);
         // send a messgage
-        await client.joinRoom(this.config.managementRoom);
+        await client.joinRoom(this.draupnir!.managementRoomID);
         // listener for getting the event reply
         let reply = new Promise((resolve, reject) => {
             client.on('room.message', noticeListener(this.draupnir!.managementRoomID, (event) => {
