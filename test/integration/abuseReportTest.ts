@@ -2,7 +2,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
 import { ABUSE_REPORT_KEY, IReport } from "../../src/report/ReportManager";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
-import { NoticeMessageContent, ReactionContent, ReactionEvent, RoomEvent, RoomMessage, StringEventID, Value } from "matrix-protection-suite";
+import { NoticeMessageContent, ReactionContent, ReactionEvent, RoomMessage, StringEventID, Value } from "matrix-protection-suite";
 
 /**
  * Test the ability to turn abuse reports into room messages.
@@ -50,6 +50,14 @@ describe("Test: Reporting abuse", () => {
                     notices.push(event);
                 }
             });
+            const reactions: UnredactedReaction[] = [];
+            draupnirSyncClient.on("room.event", (roomId, event) => {
+                if (roomId === draupnir.managementRoomID) {
+                    if (Value.Check(ReactionContent, event.content)) {
+                        reactions.push(event)
+                    }
+                }
+            })
 
             // Create a few users and a room.
             const goodUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reporting-abuse-good-user" }});
@@ -210,20 +218,18 @@ describe("Test: Reporting abuse", () => {
 
             // Since Mjölnir is not a member of the room, the only buttons we should find
             // are `help` and `ignore`.
-            for (const event of notices) {
-                if (Value.Check(ReactionContent, event.content)) {
-                    const regexp = /\/([[^]]*)\]/;
-                    const matches = event.content["m.relates_to"]?.["key"]?.match(regexp);
-                    if (!matches) {
+            for (const event of reactions) {
+                const regexp = /\/([[^]]*)\]/;
+                const matches = event.content["m.relates_to"]?.["key"]?.match(regexp);
+                if (!matches) {
+                    continue;
+                }
+                switch (matches[1]) {
+                    case "bad-report":
+                    case "help":
                         continue;
-                    }
-                    switch (matches[1]) {
-                        case "bad-report":
-                        case "help":
-                            continue;
-                        default:
-                            throw new Error(`Didn't expect label ${matches[1]}`);
-                    }
+                    default:
+                        throw new Error(`Didn't expect label ${matches[1]}`);
                 }
             }
         } as unknown as Mocha.AsyncFunc);
@@ -237,12 +243,22 @@ describe("Test: Reporting abuse", () => {
         }
 
         // Listen for any notices that show up.
-        const notices: RoomEvent[] = [];
+        const notices: (Omit<RoomMessage, 'content'> & { content: NoticeMessageContent })[] = [];
         draupnirSyncClient.on("room.event", (roomId, event) => {
             if (roomId === draupnir.managementRoomID) {
-                notices.push(event);
+                if (Value.Check(NoticeMessageContent, event.content)) {
+                    notices.push(event);
+                }
             }
         });
+        const reactions: UnredactedReaction[] = [];
+        draupnirSyncClient.on("room.event", (roomId, event) => {
+            if (roomId === draupnir.managementRoomID) {
+                if (Value.Check(ReactionContent, event.content)) {
+                    reactions.push(event)
+                }
+            }
+        })
 
         // Create a moderator.
         const moderatorUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "reporting-abuse-moderator-user" }});
@@ -296,19 +312,10 @@ describe("Test: Reporting abuse", () => {
             }
         }
         assert.ok(noticeId, "We should have found our notice");
-        // Find the buttons.
-        const buttons: UnredactedReaction[] = [];
-        for (const event of notices) {
-            if (Value.Check(ReactionContent, event.content)) {
-                if (event.type === 'm.reaction') {
-                    buttons.push(event as UnredactedReaction);
-                }
-            }
-        }
 
         // Find the redact button... and click it.
         let redactButtonId: StringEventID | null = null;
-        for (const button of buttons) {
+        for (const button of reactions) {
             if (button.content["m.relates_to"]?.["key"]?.includes("[redact-message]")) {
                 redactButtonId = button["event_id"];
                 await moderatorUser.sendEvent(draupnir.managementRoomID, "m.reaction", button["content"]);
@@ -317,22 +324,28 @@ describe("Test: Reporting abuse", () => {
         }
         assert.ok(redactButtonId, "We should have found the redact button");
 
+        // This should have triggered a confirmation request, with more buttons!
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // This should have triggered a confirmation request, with more buttons!
+        // Find the confirmation prompt
+        const confirmationPromptEvent = notices.find((event) => event.content.body.includes('🗍 Redact'));
+        if (confirmationPromptEvent === undefined) {
+            throw new TypeError(`We should have found the confirmation prompt`);
+        }
         let confirmEventId = null;
-        for (const event of notices) {
+        for (const event of reactions) {
             console.debug("Is this the confirm button?", event);
             const content = event.content;
             if (!Value.Check(ReactionContent, content)) {
                 console.debug("Not a reaction");
                 continue;
             }
-            if (!(content["m.relates_to"]?.["key"]?.includes("[confirm]"))) {
+            if (!content["m.relates_to"]?.["key"]?.includes("[confirm]")) {
                 console.debug("Not confirm");
                 continue;
             }
-            if (!(content["m.relates_to"]["event_id"] === redactButtonId)) {
+            // HOW DID THIS EVER FUCKING WORK LMAO
+            if (content["m.relates_to"]["event_id"] !== confirmationPromptEvent.event_id) {
                 console.debug("Not reaction to redact button");
                 continue;
             }
