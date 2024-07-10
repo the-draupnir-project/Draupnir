@@ -344,7 +344,6 @@ describe("Test: Reporting abuse", () => {
                 console.debug("Not confirm");
                 continue;
             }
-            // HOW DID THIS EVER FUCKING WORK LMAO
             if (content["m.relates_to"]["event_id"] !== confirmationPromptEvent.event_id) {
                 console.debug("Not reaction to redact button");
                 continue;
