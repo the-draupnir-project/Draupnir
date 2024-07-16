@@ -17,10 +17,10 @@ describe("Test: The rooms commands", function () {
     it('Mjolnir can protect a room, show that it is protected and then stop protecting the room.', async function(this: RoomsTestContext) {
         // Create a few users and a room.
         const draupnir = this.draupnir!;
-        let moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
+        const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
-        let targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID]});
+        const targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID]});
         await moderator.setUserPowerLevel(draupnir.clientUserID, targetRoom, 100);
 
         try {

@@ -388,7 +388,7 @@ class ArgumentListParser implements IArgumentListParser {
     }
 
     public async parse(stream: IArgumentStream): Promise<ActionResult<ParsedArguments>> {
-        let hasPrompted = false;
+        const hasPrompted = false;
         const keywordsParser = this.keywords.getParser();
         for (const parameter of this.descriptions) {
             // it eats any keywords at any point in the stream

@@ -28,7 +28,7 @@ export async function getNthReply(matrix: MatrixEmitter, targetRoom: string, n: 
     if (Number.isNaN(n) || !Number.isInteger(n) || n <= 0) {
         throw new TypeError(`Invalid number of events ${n}`);
     }
-    let reactionEvents: any[] = [];
+    const reactionEvents: any[] = [];
     const addEvent = function (roomId: string, event: any) {
         if (roomId !== targetRoom) return;
         if (event.type !== 'm.room.message') return;
@@ -41,7 +41,7 @@ export async function getNthReply(matrix: MatrixEmitter, targetRoom: string, n: 
         if (typeof targetEventId !== 'string') {
             throw new TypeError();
         }
-        for (let event of reactionEvents) {
+        for (const event of reactionEvents) {
             const in_reply_to = event.content['m.relates_to']?.['m.in_reply_to'];
             if (in_reply_to?.event_id === targetEventId) {
                 n -= 1;
@@ -83,7 +83,7 @@ export async function getNthReply(matrix: MatrixEmitter, targetRoom: string, n: 
  * @returns The reaction event.
  */
 export async function getFirstReaction(matrix: MatrixEmitter, targetRoom: string, reactionKey: string, targetEventThunk: () => Promise<string>): Promise<any> {
-    let reactionEvents: any[] = [];
+    const reactionEvents: any[] = [];
     const addEvent = function (roomId: string, event: any) {
         if (roomId !== targetRoom) return;
         if (event.type !== 'm.reaction') return;
@@ -93,7 +93,7 @@ export async function getFirstReaction(matrix: MatrixEmitter, targetRoom: string
     try {
         matrix.on('room.event', addEvent)
         const targetEventId = await targetEventThunk();
-        for (let event of reactionEvents) {
+        for (const event of reactionEvents) {
             const relates_to = event.content['m.relates_to'];
             if (relates_to?.event_id === targetEventId && relates_to?.key === reactionKey) {
                 return event;

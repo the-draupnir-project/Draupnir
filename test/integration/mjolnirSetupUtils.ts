@@ -26,7 +26,7 @@ import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
 import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
-import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { SafeMatrixEmitter, SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder, RoomStateBackingStore } from "matrix-protection-suite";
 import { WebAPIs } from "../../src/webapis/WebAPIs";
 
@@ -84,8 +84,20 @@ export function draupnir(): Draupnir | null {
 export function draupnirClient(): MatrixClient | null {
     return globalClient;
 }
+export function draupnirSafeEmitter(): SafeMatrixEmitter {
+    if (globalSafeEmitter !== null) {
+        return globalSafeEmitter;
+    }
+    const client = draupnirClient();
+    if (client === null) {
+        throw new TypeError(`Setup code didn't run properly`);
+    }
+    globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
+    return globalSafeEmitter;
+}
 let globalClient: MatrixClient | null
 let globalMjolnir: Draupnir | null;
+let globalSafeEmitter: SafeMatrixEmitter | null;
 
 /**
  * Return a test instance of Mjolnir.

@@ -20,7 +20,7 @@ const log = new Logger('MatrixPromptForAccept');
 
 type PromptContext = StaticDecode<typeof PromptContext>;
 // FIXME: Remove no-redeclare entirely, it is wrong.
-// eslint-disable-next-line no-redeclare
+
 const PromptContext = Type.Object({
     command_designator: Type.Array(Type.String()),
     read_items: Type.Array(Type.String()),
@@ -28,7 +28,7 @@ const PromptContext = Type.Object({
 
 type DefaultPromptContext = StaticDecode<typeof DefaultPromptContext>;
 // FIXME: Remove no-redeclare entirely, it is wrong.
-// eslint-disable-next-line no-redeclare
+
 const DefaultPromptContext = Type.Composite([
     PromptContext,
     Type.Object({
@@ -67,7 +67,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
         event: annotatedEvent,
         ...additionalCommandContext,
     };
-    Task((async () => await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()))());
+    Task((async () => { await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()); })());
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.default_argument_prompt';
@@ -134,7 +134,7 @@ export function makeListenerForArgumentPrompt<CommandContext extends MatrixConte
 export async function promptDefault<PresentationType extends ReadItem>(
     this: MatrixContext,
     parameter: ParameterDescription,
-    command: InterfaceCommand<BaseFunction>,
+    command: InterfaceCommand,
     defaultPrompt: PresentationType,
     existingArguments: ReadItem[]
 ): Promise<void> {

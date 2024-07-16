@@ -7,7 +7,7 @@ import { MatrixRoomReference, NoticeMessageContent, PolicyRuleType, PropagationT
 // We will need to disable this in tests that are banning people otherwise it will cause
 // mocha to hang for awhile until it times out waiting for a response to a prompt.
 describe("Ban propagation test", function() {
-    it("Should be enabled by default", async function(this: DraupnirTestContext) {
+    it.only("Should be enabled by default", async function(this: DraupnirTestContext) {
         const draupnir = this.draupnir;
         if (draupnir === undefined) {
             throw new TypeError(`setup didn't run properly`);

@@ -29,7 +29,7 @@ export namespace DeadDocumentJSX {
             if (typeof rawChild === 'string') {
                 makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
             } else if (typeof rawChild === 'number') {
-                makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
+                makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild).toString());
             } else if (Array.isArray(rawChild)) {
                 rawChild.forEach(ensureChild);
             // Then it's a DocumentNode|LeafNode

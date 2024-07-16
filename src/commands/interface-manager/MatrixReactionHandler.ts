@@ -65,7 +65,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
         if (!Value.Check(ReactionEvent, event)) {
             return;
         }
-        const relatesTo = event.content?.["m.relates_to"];
+        const relatesTo = event.content["m.relates_to"];
         if (relatesTo === undefined) {
             return;
         }
@@ -174,7 +174,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
             promptEvent.room_id,
             promptEvent.event_id,
             `🚫 Cancelled by ${promptEvent.sender}`
-        ).catch(e => log.error(`Could not send cancelled reaction event for prompt ${promptEvent.event_id} in ${promptEvent.room_id}`, e));
+        ).catch(e => { log.error(`Could not send cancelled reaction event for prompt ${promptEvent.event_id} in ${promptEvent.room_id}`, e); });
         return completeResult;
     }
 

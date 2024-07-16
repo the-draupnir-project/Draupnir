@@ -1,4 +1,4 @@
-import { MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE } from "matrix-protection-suite";
+import { MatrixRoomReference, MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE } from "matrix-protection-suite";
 import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { read as configRead } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
@@ -16,6 +16,8 @@ export const mochaHooks = {
         async function(this: DraupnirTestContext) {
             console.error("---- entering test", JSON.stringify(this.currentTest?.title)); // Makes MatrixClient error logs a bit easier to parse.
             console.log("mochaHooks.beforeEach");
+            const test = MatrixRoomReference.fromPermalink('https://matrix.to/#/!JzRjamSLPHAikHkPab%3Alocalhost%3A9999?via=localhost:9999');
+            console.log(test)
             // Sometimes it takes a little longer to register users.
             this.timeout(30000);
             const config = this.config = configRead();

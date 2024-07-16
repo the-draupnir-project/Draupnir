@@ -37,7 +37,7 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
 // and be used similar to like #=1 and #1.
 defineMatrixInterfaceAdaptor({
     interfaceCommand: listUnstarted,
-    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: ActionResult<UnstartedDraupnir[]>) {
+    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomId: string, event: any, result: ActionResult<UnstartedDraupnir[]>) {
         tickCrossRenderer.call(this, client, commandRoomId, event, result); // don't await, it doesn't really matter.
         if (isError(result)) {
             return; // just let the default handler deal with it.

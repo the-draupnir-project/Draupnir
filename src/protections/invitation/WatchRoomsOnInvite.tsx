@@ -25,7 +25,7 @@ const WatchRoomsOnInvitePromptContext = Type.Object({
     invited_room: Permalink
 });
 // this rule is stupid.
-// eslint-disable-next-line no-redeclare
+
 type WatchRoomsOnInvitePromptContext = StaticDecode<typeof WatchRoomsOnInvitePromptContext>;
 
 function isRevisionContainingPolicies(revision: RoomStateRevision) {

@@ -114,7 +114,7 @@ function readItem(stream: StringStream): ReadItem {
     if (stream.peekChar() === undefined) {
         throw new TypeError('EOF');
     }
-    if (WHITESPACE.includes(stream.peekChar()!)) {
+    if (WHITESPACE.includes(stream.peekChar())) {
         throw new TypeError('whitespace should have been stripped');
     }
     const dispatchCharacter = stream.peekChar()!;
@@ -190,8 +190,8 @@ function applyPostReadTransformersToReadItem(item: ReadItem): ReadItem {
  * @returns `output`.
  */
 function readUntil(regex: RegExp, stream: StringStream, output: string[]) {
-    while (stream.peekChar() !== undefined && !regex.test(stream.peekChar()!)) {
-        output.push(stream.readChar()!);
+    while (stream.peekChar() !== undefined && !regex.test(stream.peekChar())) {
+        output.push(stream.readChar());
     }
     return output;
 }
@@ -205,7 +205,7 @@ function readUntil(regex: RegExp, stream: StringStream, output: string[]) {
 function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
     const word: string[] = [stream.readChar()!];
     readUntil(/[:\s]/, stream, word);
-    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {
+    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar())) {
         return word.join('');
     }
     readUntil(/\s/, stream, word);
@@ -228,7 +228,7 @@ defineReadItem('!', readRoomIDOrAlias);
 defineReadItem('@', (stream: StringStream): UserID|string => {
     const word: string[] = [stream.readChar()!];
     readUntil(/[:\s]/, stream, word);
-    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {
+    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar())) {
         return word.join('');
     }
     readUntil(/\s/, stream, word);

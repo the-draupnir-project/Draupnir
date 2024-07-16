@@ -25,7 +25,7 @@ const ProtectRoomsOnInvitePromptContext = Type.Object({
     invited_room: Permalink
 });
 // this rule is stupid.
-// eslint-disable-next-line no-redeclare
+
 type ProtectRoomsOnInvitePromptContext = StaticDecode<typeof ProtectRoomsOnInvitePromptContext>;
 
 export class ProtectroomsOnInvite {

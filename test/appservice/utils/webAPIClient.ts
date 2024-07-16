@@ -39,7 +39,7 @@ export class MjolnirWebAPIClient {
                     openId: this.openIDToken,
                     roomId: roomToProtectId,
                 },
-            }, (error, response) => error ? reject(error) : resolve(response.body))
+            }, (error, response) => { error ? reject(error) : resolve(response.body); })
         });
         return {
             mjolnirUserId: body.mxid,

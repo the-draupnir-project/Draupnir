@@ -233,7 +233,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         table.set(tag, renderer);
     }
 
-    public registerRenderer<T extends FringeInnerRenderFunction<Context>|FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): SimpleFringeRenderer<Context> {
+    public registerRenderer<T extends FringeInnerRenderFunction<Context>|FringeLeafRenderFunction<Context>>(type: FringeType, tag: NodeTag, renderer: T): this {
         // The casting in here is evil. Not sure how to fix it.
         switch (type) {
             case FringeType.Pre:
@@ -249,7 +249,7 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
         return this;
     }
 
-    public registerInnerNode(tag: NodeTag, pre: FringeInnerRenderFunction<Context>, post: FringeInnerRenderFunction<Context>): SimpleFringeRenderer<Context> {
+    public registerInnerNode(tag: NodeTag, pre: FringeInnerRenderFunction<Context>, post: FringeInnerRenderFunction<Context>): this {
         this.internRenderer(FringeType.Pre, tag, this.preRenderers, pre);
         this.internRenderer(FringeType.Post, tag, this.postRenderers, post);
         return this;

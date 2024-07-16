@@ -124,16 +124,16 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     }
 }
 
-const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand<BaseFunction>, MatrixInterfaceAdaptor<MatrixContext, BaseFunction>>();
+const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand, MatrixInterfaceAdaptor<MatrixContext>>();
 
-function internMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<BaseFunction>, adapator: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>): void {
+function internMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand, adapator: MatrixInterfaceAdaptor<MatrixContext>): void {
     if (MATRIX_INTERFACE_ADAPTORS.has(interfaceCommand)) {
         throw new TypeError(`An adaptor is already defined for the command ${interfaceCommand.designator}`);
     }
     MATRIX_INTERFACE_ADAPTORS.set(interfaceCommand, adapator);
 }
 
-export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<BaseFunction>): MatrixInterfaceAdaptor<MatrixContext, BaseFunction> {
+export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand): MatrixInterfaceAdaptor<MatrixContext> {
     const entry = MATRIX_INTERFACE_ADAPTORS.get(interfaceCommand);
     if (entry) {
         return entry

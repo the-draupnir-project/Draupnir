@@ -57,7 +57,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
         if (outputs.some(o => o.peekPage())) {
             // Make sure that any outputs that have buffered input start a fresh page,
             // so that the same committed nodes end up in the same message.
-            outputs.filter(o => !o.peekPage()).forEach(o => o.ensureNewPage());
+            outputs.filter(o => !o.peekPage()).forEach(o => { o.ensureNewPage(); });
             // Send the new pages as an event.
             eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
         }
@@ -66,7 +66,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
         currentHtmlNode = htmlWalker.increment();
         checkEqual(currentHtmlNode, currentMarkdownNode);
     }
-    outputs.forEach(o => o.ensureNewPage());
+    outputs.forEach(o => { o.ensureNewPage(); });
     if (outputs.some(o => o.peekPage())) {
         eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
     }

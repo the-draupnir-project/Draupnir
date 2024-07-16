@@ -15,7 +15,7 @@ describe("Test: The make admin command", function () {
         const userAId = await userA.getUserId();
 
         await moderator.joinRoom(draupnir.managementRoomID);
-        let targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID], preset: "public_chat" });
+        const targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID], preset: "public_chat" });
         await moderator.sendMessage(draupnir.managementRoomID, { msgtype: 'm.text.', body: `!draupnir rooms add ${targetRoom}` });
         await userA.joinRoom(targetRoom);
         const powerLevelsBefore = await moderator.getRoomStateEvent(targetRoom, "m.room.power_levels", "");

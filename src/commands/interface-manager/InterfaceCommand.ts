@@ -46,7 +46,7 @@ type CommandLookupEntry<ExecutorType extends BaseFunction> = {
 };
 
 export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
-    private readonly flattenedCommands = new Set<InterfaceCommand<BaseFunction>>();
+    private readonly flattenedCommands = new Set<InterfaceCommand>();
     private readonly commands: CommandLookupEntry<ExecutorType> = { };
     /** Imported tables are tables that "add commands" to this table. They are not sub commands. */
     private readonly importedTables = new Set<CommandTable>();
@@ -115,7 +115,8 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
 
     public internCommand(command: InterfaceCommand<ExecutorType>) {
         const internCommandHelper = (table: CommandLookupEntry<ExecutorType>, designator: string[]): void => {
-            if (designator.length === 0) {
+            const currentDesignator = designator.shift();
+            if (currentDesignator === undefined) {
                 if (table.current) {
                     throw new TypeError(`There is already a command for ${JSON.stringify(designator)}`)
                 }
@@ -125,9 +126,8 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
                 if (table.next === undefined) {
                     table.next = new Map();
                 }
-                const currentDesignator = designator.shift()!;
                 const nextLookupEntry = table.next.get(currentDesignator)
-                    ?? ((lookup: CommandLookupEntry<ExecutorType>) => (table.next?.set(currentDesignator, lookup), lookup))({});
+                    ?? ((lookup: CommandLookupEntry<ExecutorType>) => (table.next.set(currentDesignator, lookup), lookup))({});
                 internCommandHelper(nextLookupEntry, designator);
             }
         }
@@ -145,7 +145,7 @@ export class CommandTable<ExecutorType extends BaseFunction = BaseFunction> {
     }
 }
 
-const COMMAND_TABLE_TABLE = new Map<string|symbol, CommandTable<BaseFunction>>();
+const COMMAND_TABLE_TABLE = new Map<string|symbol, CommandTable>();
 export function defineCommandTable(name: string|symbol): CommandTable {
     if (COMMAND_TABLE_TABLE.has(name)) {
         throw new TypeError(`A table called ${name.toString()} already exists`);

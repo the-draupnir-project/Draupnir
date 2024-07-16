@@ -186,10 +186,12 @@ export async function resetRatelimitForUser(homeserver: string, userId: string) 
  */
 export function noticeListener(targetRoomdId: string, cb: (event: Omit<RoomMessage, 'content'> & { content: NoticeMessageContent }) => void) {
     return (roomId: string, event: unknown) => {
-        if (roomId !== targetRoomdId) return;
-        if (!Value.Check(RoomMessage, event) || !Value.Check(NoticeMessageContent, event.content)) {
+        if (roomId !== targetRoomdId) {
             return;
         }
-        cb(event as Omit<RoomMessage, 'content'> & { content: NoticeMessageContent });
+        if (Value.Check(RoomMessage, event) && Value.Check(NoticeMessageContent, event.content)) {
+            cb(event as Omit<RoomMessage, 'content'> & { content: NoticeMessageContent });
+            return;
+        }
     }
 }

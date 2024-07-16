@@ -1,6 +1,8 @@
 import { MatrixClient } from "matrix-bot-sdk";
 import { newTestUser, noticeListener } from "./clientHelper"
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
+import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder } from "matrix-protection-suite";
 
 describe("Test: !help command", function() {
     let client: MatrixClient;
@@ -15,13 +17,14 @@ describe("Test: !help command", function() {
         this.timeout(30000);
         // send a messgage
         const draupnir = this.draupnir;
+        const clientEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
         if (draupnir === undefined) {
             throw new TypeError(`setup code is wrong`);
         }
         await client.joinRoom(this.config.managementRoom);
         // listener for getting the event reply
         const reply = new Promise((resolve) => {
-            client.on('room.message', noticeListener(draupnir.managementRoomID, (event) => {
+            clientEmitter.on('room.message', noticeListener(draupnir.managementRoomID, (event) => {
                 if (event.content.body.includes("which can be used")) {
                     resolve(event);
                 }

@@ -31,7 +31,7 @@ export class PagedDuplexStream {
         this.pages[currentIndex] = this.pages[currentIndex] + string;
     }
 
-    public writeString(string: string): PagedDuplexStream {
+    public writeString(string: string): this {
         this.buffer += string;
         return this;
     }

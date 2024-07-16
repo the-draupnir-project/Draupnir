@@ -83,7 +83,7 @@ export function setToArray<T>(set: Set<T>): T[] {
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
 export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
-    // @ts-ignore
+    // @ts-expect-error we access a private method due to lack of a public one.
     if (!gauge._getValue({ status: status, uuid: uuid })) {
         gauge.inc({ status: status, uuid: uuid });
     }
@@ -101,7 +101,7 @@ export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "of
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
 export function decrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
-    // @ts-ignore
+    // @ts-expect-error we access a private method due to lack of a public one.
     if (gauge._getValue({ status: status, uuid: uuid })) {
         gauge.dec({ status: status, uuid: uuid });
     }
@@ -281,15 +281,15 @@ function patchMatrixClientForConciseExceptions() {
     if (isMatrixClientPatchedForConciseExceptions) {
         return;
     }
-    let originalRequestFn = getRequestFn();
+    const originalRequestFn = getRequestFn();
     setRequestFn((params: { [k: string]: any }, cb: any) => {
         // Store an error early, to maintain *some* semblance of stack.
         // We'll only throw the error if there is one.
-        let error = new Error("STACK CAPTURE");
+        const error = new Error("STACK CAPTURE");
         originalRequestFn(params, function conciseExceptionRequestFn(
             err: { [key: string]: unknown }, response: { [key: string]: any }, resBody: unknown
         ) {
-            if (!err && (response?.statusCode < 200 || response?.statusCode >= 300)) {
+            if (!err && (response.statusCode < 200 || response.statusCode >= 300)) {
                 // Normally, converting HTTP Errors into rejections is done by the caller
                 // of `requestFn` within matrix-bot-sdk. However, this always ends up rejecting
                 // with an `IncomingMessage` - exactly what we wish to avoid here.
@@ -344,7 +344,7 @@ function patchMatrixClientForConciseExceptions() {
                     // Not JSON.
                 }
             }
-            let message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${JSON.stringify(body)}`;
+            const message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${JSON.stringify(body)}`;
             error.message = message;
             if (body) {
                 // Define the property but don't make it visible during logging.
@@ -396,7 +396,7 @@ function patchMatrixClientForRetry() {
     if (isMatrixClientPatchedForRetryWhenThrottled) {
         return;
     }
-    let originalRequestFn = getRequestFn();
+    const originalRequestFn = getRequestFn();
     setRequestFn(async (params: { [k: string]: any }, cb: any) => {
         let attempt = 1;
         numberOfConcurrentRequests += 1;
@@ -406,13 +406,13 @@ function patchMatrixClientForRetry() {
         try {
             while (true) {
                 try {
-                    let result: any[] = await new Promise((resolve, reject) => {
+                    const result: any[] = await new Promise((resolve, reject) => {
                         originalRequestFn(params, function requestFnWithRetry(
                             err: { [key: string]: any }, response: { [key: string]: unknown }, resBody: unknown
                         ) {
                             // Note: There is no data race on `attempt` as we `await` before continuing
                             // to the next iteration of the loop.
-                            if (attempt < MAX_REQUEST_ATTEMPTS && err?.body?.errcode === 'M_LIMIT_EXCEEDED') {
+                            if (attempt < MAX_REQUEST_ATTEMPTS && err.body?.errcode === 'M_LIMIT_EXCEEDED') {
                                 // We need to retry.
                                 reject(err);
                             } else {
@@ -485,7 +485,7 @@ function patchMatrixClientForPrototypePollution() {
                 }
             }
 
-            if (typeof response?.body === 'string') {
+            if (typeof response.body === 'string') {
                 try {
                     response.body = JSON.parse(response.body, jsonReviver);
                 } catch (e) {
@@ -529,7 +529,7 @@ export function initializeSentry(config: IConfig) {
     }
     if (config.health.sentry) {
         // Configure error monitoring with Sentry.
-        let sentry = config.health.sentry;
+        const sentry = config.health.sentry;
         Sentry.init({
             dsn: sentry.dsn,
             tracesSampleRate: sentry.tracesSampleRate,
