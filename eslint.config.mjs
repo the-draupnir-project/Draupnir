@@ -12,7 +12,7 @@ import tsplugin from "@typescript-eslint/eslint-plugin";
 // my guess is that there is some hidden ambient config that is included
 // full of eslint defaults that we can't intercept??
 // I don't know, but it's one of the most frustraiting things ever.
-const ignores = ['**/docs/**', '**/.husky/**', '**/coverage/**', '**/dist/**'];
+const ignores = ['**/docs/**', '**/.husky/**', '**/coverage/**', '**/dist/**', '**/lib/**'];
 
 const rulesFromMPS = {
     '@typescript-eslint/explicit-function-return-type': 'off',

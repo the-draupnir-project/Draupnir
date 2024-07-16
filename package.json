@@ -12,7 +12,7 @@
     "postbuild": "corepack yarn describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
-    "lint": "corepack yarn eslint src/**/*.ts test/**/*.ts src/**/*.tsx",
+    "lint": "corepack yarn eslint",
     "start:dev": "corepack yarn build && node --async-stack-traces lib/index.js",
     "test": "ts-mocha --project ./tsconfig.json test/commands/**/*.ts",
     "test:integration": "NODE_ENV=harness ts-mocha --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\"",
