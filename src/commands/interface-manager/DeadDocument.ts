@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-import { SuperCoolStream } from "./CommandReader";
+import { StandardSuperCoolStream } from "./CommandReader";
 
 /**
  * The DeadDocument started as a universal document object model like Pandoc is.
@@ -265,7 +265,7 @@ const COMMITTABLE_NODES = new Set([
     NodeTag.Root,
 ]);
 
-class FringeStream extends SuperCoolStream<Flat> {
+class FringeStream extends StandardSuperCoolStream<AnnotatedFringeNode, Flat> {
 
 }
 
@@ -315,6 +315,9 @@ export class FringeWalker<Context> {
         }
         while (this.stream.peekItem() && !isAnnotatedNodeCommittable(this.stream.peekItem())) {
             const annotatedNode = this.stream.readItem();
+            if (annotatedNode === undefined) {
+                throw new TypeError(`Stream code is wrong`);
+            }
             switch (annotatedNode.type) {
                 case FringeType.Pre:
                     renderInnerNode(annotatedNode);

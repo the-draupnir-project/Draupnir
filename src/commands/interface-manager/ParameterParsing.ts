@@ -25,11 +25,12 @@ limitations under the License.
  */
 
 import { ActionError, ActionResult, Ok, ResultError, isError } from "matrix-protection-suite";
-import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
+import { Keyword, ReadItem, StandardSuperCoolStream, SuperCoolStream } from "./CommandReader";
 import { PromptOptions } from "./PromptForAccept";
 import { PromptRequiredError } from "./PromptRequiredError";
+import { printReadably } from "./PrintReadably";
 
-export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
+export interface IArgumentStream extends SuperCoolStream<ReadItem, ReadItem[]> {
     rest(): ReadItem[],
     // All of the read items before the current position.
     priorItems(): ReadItem[],
@@ -38,7 +39,7 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
     prompt(parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>>,
 }
 
-export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
+export class ArgumentStream extends StandardSuperCoolStream<ReadItem, ReadItem[]> implements IArgumentStream {
     public rest() {
         return this.source.slice(this.position);
     }
@@ -96,7 +97,7 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
             return Ok(result);
         } else {
             // How do we accurately denote the type when it includes spaces in its name, same for the read item?
-            return ActionError.Result(`Was expecting a match for the presentation type: ${name} but got ${readItem}.`);
+            return ActionError.Result(`Was expecting a match for the presentation type: ${name} but got ${printReadably(readItem)}.`);
         }
     }
 }
@@ -115,6 +116,7 @@ export function presentationTypeOf(presentation: unknown): PresentationType|unde
     } else {
         // until there are subtype semantics we have to fail early so that we have a chance of knowing
         // that we have a conflicting type.
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new TypeError(`presentationTypeof: There are multiple candidates for the presentation ${presentation}: ${JSON.stringify(candidates.map(c => c.name))}`)
     }
 }
@@ -166,7 +168,7 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
      */
     public async parseRest(stream: IArgumentStream, promptForRest: boolean, keywordParser: KeywordParser): Promise<ActionResult<ReadItem[]>> {
         const items: ReadItem[] = [];
-        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
+        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem(undefined) === undefined) {
             return PromptRequiredError.Result(
                 `A prompt is required for the missing argument for the ${this.name} parameter`,
                 {
@@ -175,20 +177,22 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
                 }
             );
         }
-        while (stream.peekItem() !== undefined) {
+        while (stream.peekItem(undefined) !== undefined) {
             const keywordResult = keywordParser.parseKeywords(stream);
             if (isError(keywordResult)) {
                 return keywordResult;
             }
-            if (stream.peekItem() !== undefined) {
-                const validationResult = this.acceptor.validator(stream.peekItem());
+            const keywordValue = stream.peekItem(undefined);
+            if (keywordValue !== undefined) {
+                const validationResult = this.acceptor.validator(keywordValue);
                 if (isError(validationResult)) {
                     return ArgumentParseError.Result(
                         validationResult.error.message,
                         { parameter: this, stream }
                     );
                 }
-                items.push(stream.readItem());
+                items.push(keywordValue);
+                stream.readItem(); // dispose of keyword's associated value from the stream.
             }
         }
         return Ok(items);
