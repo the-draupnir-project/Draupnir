@@ -42,7 +42,7 @@ const AUTHORIZATION = new RegExp("Bearer (.*)");
 
 export class WebAPIs {
     private webController: express.Express = express();
-    private httpServer?: Server;
+    private httpServer?: Server | undefined;
 
     constructor(private reportManager: ReportManager, private readonly config: IConfig) {
         // Setup JSON parsing.

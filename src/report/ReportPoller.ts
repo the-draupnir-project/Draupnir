@@ -130,7 +130,7 @@ export class ReportPoller {
                 roomID: report.room_id,
                 reporterId: report.sender,
                 event: event,
-                reason: report.reason ?? undefined,
+                ...report.reason ? { reason: report.reason } : {}
             });
         }
 

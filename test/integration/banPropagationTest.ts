@@ -65,8 +65,8 @@ describe("Ban propagation test", function() {
         const policyListRevisionAfterBan = draupnir.protectedRoomsSet.issuerManager.policyListRevisionIssuer.currentRevision;
         const rules = policyListRevisionAfterBan.allRulesMatchingEntity('@test:example.com', PolicyRuleType.User);
         expect(rules.length).toBe(1);
-        expect(rules[0].entity).toBe('@test:example.com');
-        expect(rules[0].reason).toBe('spam');
+        expect(rules[0]?.entity).toBe('@test:example.com');
+        expect(rules[0]?.reason).toBe('spam');
 
         // now unban them >:3
         const unbanPrompt = await getFirstEventMatching({

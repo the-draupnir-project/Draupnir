@@ -344,8 +344,9 @@ function getCommandLineOption(args: string[], optionName: string): string | unde
     const optionIndex = args.indexOf(optionName);
 
     //check if the next index is not an option
-    if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
-        return args[optionIndex + 1];
+    const associatedArgument = args[optionIndex + 1];
+    if (associatedArgument !== undefined && !associatedArgument.startsWith("--")){
+        return associatedArgument;
     }
 
     // No value was provided, or the next argument is another option

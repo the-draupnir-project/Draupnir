@@ -120,10 +120,10 @@ export class ReportManager {
             room_id: roomID,
             sender: reporterId as StringUserID,
             event: event,
-            reason: reason
+            ...reason === undefined ? {} : { reason }
         })
         if (this.draupnir.config.displayReports) {
-            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, reason, moderationroomID: this.draupnir.managementRoomID });
+            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, moderationroomID: this.draupnir.managementRoomID, ...reason === undefined ? {} : { reason } });
         }
     }
 
@@ -210,10 +210,15 @@ export class ReportManager {
                     LogService.debug("ReportManager::handleReaction", "Unknown decision", matches[2]);
                     return;
             }
+            const label = matches[1];
+            if (label === undefined) {
+                LogService.error("ReportManager::handleReaction", "Unable to find the label for an event", event);
+                return;
+            }
             if (decision) {
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "confirmed action", matches[1]);
                 await this.executeAction({
-                    label: matches[1],
+                    label,
                     report: confirmationReport,
                     successEventId: confirmationReport.notification_event_id as StringEventID,
                     failureEventId: relation.event_id,
@@ -233,7 +238,10 @@ export class ReportManager {
                 return;
             }
 
-            const label: string = matches[1];
+            const label = matches[1];
+            if (label === undefined) {
+                return;
+            }
             const action: IUIAction | undefined = ACTIONS.get(label);
             if (!action) {
                 return;
@@ -854,9 +862,11 @@ class DisplayManager {
             ['event-shortcut', eventShortcut],
             ['room-shortcut', room.toPermalink()],
         ]) {
-            const node = document.getElementById(key);
-            if (node !== null) {
-                (node as HTMLAnchorElement).href = value;
+            if (key !== undefined) {
+                const node = document.getElementById(key);
+                if (node !== null && value !== undefined) {
+                    (node as HTMLAnchorElement).href = value;
+                }
             }
         }
 

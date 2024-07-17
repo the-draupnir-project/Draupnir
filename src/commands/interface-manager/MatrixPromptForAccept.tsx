@@ -5,7 +5,7 @@
 
 import { ClientPlatform, Logger, RoomEvent, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
-import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
+import { CommandTable, InterfaceCommand } from "./InterfaceCommand";
 import { DeadDocumentJSX } from "./JSXFactory";
 import { MatrixContext, findMatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
 import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
@@ -157,6 +157,9 @@ export async function promptDefault<PresentationType extends ReadItem>(
             }
         )
     );
+    if (events[0] === undefined) {
+        throw new TypeError(`We should have got at least one event, the one that we just sent`);
+    }
     await this.reactionHandler.addReactionsToEvent(
         this.client,
         this.roomID,
@@ -197,6 +200,9 @@ export async function promptSuggestions(
             }
         )
     );
+    if (events[0] === undefined) {
+        throw new TypeError(`We should have got at least one event, the one that we just sent`);
+    }
     await this.reactionHandler.addReactionsToEvent(
         this.client,
         this.roomID,

@@ -231,10 +231,11 @@ export class AppServiceDraupnirManager {
 
     public async startDraupnirFromMXID(draupnirClientID: StringUserID): Promise<ActionResult<void>> {
         const records = await this.dataStore.lookupByLocalPart(userLocalpart(draupnirClientID));
-        if (records.length === 0) {
+        const firstRecord = records[0];
+        if (firstRecord === undefined) {
             return ActionError.Result(`There is no record of a draupnir with the mxid ${draupnirClientID}`);
         } else {
-            return await this.startDraupnirFromRecord(records[0]);
+            return await this.startDraupnirFromRecord(firstRecord);
         }
     }
 

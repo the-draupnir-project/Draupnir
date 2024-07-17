@@ -51,7 +51,7 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
         return false;
     }
 
-    prompt(parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>> {
+    prompt(_parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>> {
         throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
     }
 }
@@ -346,7 +346,7 @@ export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: Para
 
 export interface ParameterDescription<ExecutorContext = unknown> {
     name: string,
-    description?: string,
+    description?: string | undefined,
     acceptor: PresentationType,
     /**
      * Prompt the interface for an argument that was not provided.
@@ -354,7 +354,7 @@ export interface ParameterDescription<ExecutorContext = unknown> {
      * @param description The parameter description being accepted.
      * @returns PromptOptions, to be handled by the interface adaptor.
      */
-    prompt?: Prompt<ExecutorContext>,
+    prompt?: Prompt<ExecutorContext> | undefined,
 }
 
 export type ParameterParser = (stream: IArgumentStream) => Promise<ActionResult<ParsedArguments>>;
@@ -371,7 +371,7 @@ export function parameters(descriptions: ParameterDescription[], rest: undefined
 export interface IArgumentListParser {
     readonly parse: ParameterParser,
     readonly descriptions: ParameterDescription[],
-    readonly rest?: RestDescription,
+    readonly rest?: RestDescription | undefined,
     readonly keywords: KeywordsDescription,
 }
 
@@ -383,7 +383,7 @@ class ArgumentListParser implements IArgumentListParser {
     constructor(
         public readonly descriptions: ParameterDescription[],
         public readonly keywords: KeywordsDescription,
-        public readonly rest?: RestDescription,
+        public readonly rest?: RestDescription | undefined,
     ) {
     }
 
@@ -424,13 +424,13 @@ class ArgumentListParser implements IArgumentListParser {
             return restResult;
         }
         const immediateArguments = restResult.ok === undefined
-            || restResult.ok.length === 0
+            || restResult.ok.length === 0 || restResult.ok[0] === undefined
             ? stream.source
             : stream.source.slice(0, stream.source.indexOf(restResult.ok[0]))
         return Ok({
             immediateArguments: immediateArguments,
             keywords: keywordsParser.getKeywords(),
-            rest: restResult.ok
+            rest: restResult.ok ?? []
         });
     }
 }

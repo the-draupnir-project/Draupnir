@@ -34,7 +34,6 @@ import {
     MatrixError,
 } from "matrix-bot-sdk";
 import { ClientRequest, IncomingMessage } from "http";
-import { default as parseDuration } from "parse-duration";
 import * as Sentry from '@sentry/node';
 import * as _ from '@sentry/tracing'; // Performing the import activates tracing.
 
@@ -43,25 +42,11 @@ import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 
-// Define a few aliases to simplify parsing durations.
-
-parseDuration["days"] = parseDuration["day"];
-parseDuration["weeks"] = parseDuration["week"] = parseDuration["wk"];
-parseDuration["months"] = parseDuration["month"];
-parseDuration["years"] = parseDuration["year"];
-
-// ... and reexport it
-export { parseDuration };
-
-
 export function htmlEscape(input: string): string {
-    return input.replace(/["&<>]/g, (char: string) => ({
-        ['"'.charCodeAt(0)]: "&quot;",
-        ["&".charCodeAt(0)]: "&amp;",
-        ["<".charCodeAt(0)]: "&lt;",
-        [">".charCodeAt(0)]: "&gt;"
-    })[char.charCodeAt(0)]);
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    return input.replace(/[<&"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
 }
+
 
 export function setToArray<T>(set: Set<T>): T[] {
     const arr: T[] = [];
@@ -368,7 +353,9 @@ function patchMatrixClientForConciseExceptions() {
             // when there are errors in the response.
             if (isMatrixError(path)) {
                 const matrixError = new MatrixError(body as any, err.statusCode as any);
-                matrixError.stack = error.stack;
+                if (error.stack !== undefined) {
+                    matrixError.stack = error.stack;
+                }
                 return cb(matrixError, response, resBody)
             } else {
                 return cb(error, response, resBody);

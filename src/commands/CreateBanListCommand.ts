@@ -87,13 +87,13 @@ defineMatrixInterfaceAdaptor({
 export async function findPolicyRoomIDFromShortcode(draupnir: Draupnir, shortcode: string): Promise<ActionResult<MatrixRoomID>> {
     const info = await listInfo(draupnir);
     const matchingRevisions = info.filter(list => list.revision.shortcode === shortcode);
-    if (matchingRevisions.length === 0) {
+    if (matchingRevisions.length === 0 || matchingRevisions[0] === undefined) {
         return ActionError.Result(`Could not find a policy room from the shortcode: ${shortcode}`);
     } else if (matchingRevisions.length === 1) {
         return Ok(matchingRevisions[0].revision.room);
     } else {
         const remainingRevisions = matchingRevisions.filter(revision => revision.revision.isAbleToEdit(draupnir.clientUserID, PolicyRuleType.User));
-        if (remainingRevisions.length !== 1) {
+        if (remainingRevisions.length !== 1 || remainingRevisions[0] === undefined) {
             return ActionError.Result(`The shortcode ${shortcode} is ambiguous and is currently used by ${remainingRevisions.length} lists.`)
         } else {
             return Ok(remainingRevisions[0].revision.room)

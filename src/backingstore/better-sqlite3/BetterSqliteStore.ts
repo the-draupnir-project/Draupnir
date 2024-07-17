@@ -110,6 +110,9 @@ export abstract class BetterSqliteStore {
         while (this.schemas[currentVersion]) {
             log.info(`Updating schema to v${currentVersion + 1}`);
             const runSchema = this.schemas[currentVersion];
+            if (runSchema === undefined) {
+                throw new TypeError(`there is no schema defined for the schema version: ${currentVersion}`);
+            }
             try {
                 runSchema(this.db);
                 currentVersion++;

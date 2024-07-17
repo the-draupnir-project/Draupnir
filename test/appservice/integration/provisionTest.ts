@@ -41,6 +41,9 @@ describe("Test that the app service can provision a mjolnir on invite of the app
         });
         await Promise.all(roomsInvitedTo.map(roomId => moderator.joinRoom(roomId)));
         const managementRoomId = roomsInvitedTo.filter(async roomId => !(await isPolicyRoom(moderator, roomId)))[0];
+        if (managementRoomId === undefined) {
+            throw new TypeError(`Unable to find management room`);
+        }
         // Check that the newly provisioned mjolnir is actually responsive.
         await getFirstReply(moderator, managementRoomId, () => {
             return moderator.sendMessage(managementRoomId, { body: `!draupnir status`, msgtype: 'm.text' });

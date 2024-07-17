@@ -4,7 +4,7 @@
  */
 
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from '../../commands/interface-manager/MatrixInterfaceAdaptor';
-import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
+import { defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
 import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
 import { tickCrossRenderer } from '../../commands/interface-manager/MatrixHelpRenderer';

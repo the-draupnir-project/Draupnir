@@ -140,7 +140,10 @@ export default class ManagementRoomOutput {
                 Sentry.captureException(ex);
             }
         }
-
-        levelToFn[level.toString()](module, message);
+        const logFunction = levelToFn[level.toString()];
+        if (logFunction === undefined) {
+            throw new TypeError(`Unable to find logFunction for log level: ${level.toString()}`);
+        }
+        logFunction(module, message);
     }
 }

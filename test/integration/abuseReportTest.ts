@@ -202,7 +202,7 @@ describe("Test: Reporting abuse", () => {
                             assert.equal(matches.get("content")?.groups?.eventContent, toFind.text, "The report should contain the text we inserted in the event");
                         }
                         if (toFind.text_prefix) {
-                            assert.ok(matches.get("content")?.groups?.eventContent.startsWith(toFind.text_prefix), `The report should contain a prefix of the long text we inserted in the event: ${toFind.text_prefix} in? ${matches.get("content")?.groups?.eventContent}`);
+                            assert.ok(matches.get("content")?.groups?.eventContent?.startsWith(toFind.text_prefix), `The report should contain a prefix of the long text we inserted in the event: ${toFind.text_prefix} in? ${matches.get("content")?.groups?.eventContent}`);
                         }
                         if (toFind.comment) {
                             assert.equal(matches.get("comments")?.groups?.comments, toFind.comment, "The report should contain the comment we added");
