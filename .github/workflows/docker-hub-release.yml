@@ -60,6 +60,6 @@ jobs:
         uses: actions/attest-build-provenance@v1
         id: attest
         with:
-          subject-name: ${{ env.DOCKER_NAMESPACE }}/draupnir:${{ env.RELEASE_VERSION }}
+          subject-name: index.docker.io/${{ env.DOCKER_NAMESPACE }}/draupnir:${{ env.RELEASE_VERSION }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
