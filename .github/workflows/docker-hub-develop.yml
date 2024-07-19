@@ -54,11 +54,3 @@ jobs:
           push: ${{ env.PUSH }}
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
-
-      - name: Attest
-        uses: actions/attest-build-provenance@v1
-        id: attest
-        with:
-          subject-name: index.docker.io/${{ env.DOCKER_NAMESPACE }}/draupnir:develop
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
