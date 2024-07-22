@@ -241,7 +241,7 @@ export class KeywordsDescription {
 export class ParsedKeywords {
     constructor (
         private readonly descriptions: KeywordArgumentsDescription,
-        private readonly keywords: ReadonlyMap<string, ReadItem>
+        private readonly keywords: ReadonlyMap<string, ReadItem|true>
     ) {
 
     }
@@ -265,7 +265,7 @@ export class ParsedKeywords {
  * the map representing the association between keywords and their properties.
  */
 class KeywordParser {
-    private readonly arguments = new Map<string, ReadItem>();
+    private readonly arguments = new Map<string, ReadItem | true>();
 
     constructor(
         public readonly description: KeywordsDescription
@@ -277,7 +277,7 @@ class KeywordParser {
     }
 
 
-    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): ActionResult<any, ArgumentParseError> {
+    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): ActionResult<ReadItem | true, ArgumentParseError> {
         if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
             const validationResult = keyword.acceptor.validator(itemStream.peekItem());
             if (validationResult.isOkay) {

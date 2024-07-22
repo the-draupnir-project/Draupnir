@@ -39,7 +39,7 @@ export class MjolnirWebAPIClient {
                     openId: this.openIDToken,
                     roomId: roomToProtectId,
                 },
-            }, (error, response) => { error ? reject(error) : resolve(response.body); })
+            }, (error, response) => { error instanceof Error? reject(error) : error !== undefined ? reject(new TypeError(`Someone is throwing things that aren't errors`)) : resolve(response.body); })
         });
         return {
             mjolnirUserId: body.mxid,

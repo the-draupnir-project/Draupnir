@@ -6,7 +6,7 @@ import { MjolnirAppService } from "../../../src/appservice/AppService";
 
 interface Context extends Mocha.Context {
     moderator?: MatrixClient,
-    appservice?:  MjolnirAppService
+    appservice?:  MjolnirAppService | undefined
 }
 
 describe("Test that the app service can provision a mjolnir on invite of the appservice bot", function () {
@@ -22,22 +22,25 @@ describe("Test that the app service can provision a mjolnir on invite of the app
     it("A moderator that requests a mjolnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
         const config = readTestConfig();
         this.appservice = await setupHarness();
+        const appservice = this.appservice;
         // create a user to act as the moderator
         const moderator = await newTestUser(config.homeserver.url, { name: { contains: "test" } });
         const roomWeWantProtecting = await moderator.createRoom();
         // have the moderator invite the appservice bot in order to request a new mjolnir
         this.moderator = moderator;
         const roomsInvitedTo: string[] = [];
-        await new Promise(async resolve => {
-            moderator.on('room.invite', (roomId: string) => {
-                roomsInvitedTo.push(roomId)
-                // the appservice should invite the moderator to a policy room and a management room.
-                if (roomsInvitedTo.length === 2) {
-                    resolve(null);
-                }
-            });
-            await moderator.start();
-            await moderator.inviteUser(this.appservice!.bridge.getBot().getUserId(), roomWeWantProtecting);
+        await new Promise(resolve => {
+            void (async () => {
+                moderator.on('room.invite', (roomId: string) => {
+                    roomsInvitedTo.push(roomId)
+                    // the appservice should invite the moderator to a policy room and a management room.
+                    if (roomsInvitedTo.length === 2) {
+                        resolve(null);
+                    }
+                });
+                await moderator.start();
+                await moderator.inviteUser(appservice.bridge.getBot().getUserId(), roomWeWantProtecting);
+            })();
         });
         await Promise.all(roomsInvitedTo.map(roomId => moderator.joinRoom(roomId)));
         const managementRoomId = roomsInvitedTo.filter(async roomId => !(await isPolicyRoom(moderator, roomId)))[0];

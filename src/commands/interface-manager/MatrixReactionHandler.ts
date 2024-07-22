@@ -10,10 +10,10 @@ const log = new Logger("MatrixReactionHandler");
 
 const REACTION_ANNOTATION_KEY = 'ge.applied-langua.ge.draupnir.reaction_handler';
 
-type ItemByReactionKey = Map<string/*reaction key*/, any/*serialized presentation*/>;
+type ItemByReactionKey = Map<string/*reaction key*/, string/*serialized presentation*/>;
 export type ReactionListener = (
     key: string,
-    item: any,
+    item: string,
     additionalContext: unknown,
     reactionMap: ItemByReactionKey,
     annotatedEvent: RoomEvent
@@ -104,7 +104,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
      * @param additionalContext Any additional context that should be associated with a matrix event for the listener.
      * @returns An object that should be deep copied into a the content of a new Matrix event.
      */
-    public createAnnotation(listenerName: string, reactionMap: ItemByReactionKey, additionalContext: any = undefined): any {
+    public createAnnotation(listenerName: string, reactionMap: ItemByReactionKey, additionalContext: Record<string, unknown> | undefined = undefined): Record<typeof REACTION_ANNOTATION_KEY, unknown> {
         return {
             [REACTION_ANNOTATION_KEY]: {
                 name: listenerName,
@@ -125,7 +125,15 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
         await [...reactionMap.keys()]
             .reduce((acc, key) => acc.then(_ => client.unstableApis.addReactionToEvent(roomId, eventId, key)),
                 Promise.resolve()
-            ).catch(e => (log.error( `Could not add reaction to event ${eventId}`, e), Promise.reject(e)));
+            ).catch((e: unknown) => {
+                if (e instanceof Error) {
+                    log.error( `Could not add reaction to event ${eventId}`, e)
+                    return Promise.reject(e)
+                } else {
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                    return Promise.reject(new TypeError(`Something is throwing rubbish ${e}`))
+                }
+            });
     }
 
     public async completePrompt(
@@ -147,9 +155,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
                     if (key === '✅' || key === '❌') {
                         return;
                     }
-                    void Task((async function () {
-                        redacter.redactEvent(roomID, event.event_id, reason)
-                    })())
+                    void Task(redacter.redactEvent(roomID, event.event_id, reason) as Promise<ActionResult<void>>)
                 }
             }
         );
@@ -174,7 +180,7 @@ export class MatrixReactionHandler extends EventEmitter implements MatrixReactio
             promptEvent.room_id,
             promptEvent.event_id,
             `🚫 Cancelled by ${promptEvent.sender}`
-        ).catch(e => { log.error(`Could not send cancelled reaction event for prompt ${promptEvent.event_id} in ${promptEvent.room_id}`, e); });
+        ).catch((e: unknown) => { log.error(`Could not send cancelled reaction event for prompt ${promptEvent.event_id} in ${promptEvent.room_id}`, e); });
         return completeResult;
     }
 

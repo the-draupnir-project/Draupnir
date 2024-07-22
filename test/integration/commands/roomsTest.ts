@@ -16,7 +16,10 @@ describe("Test: The rooms commands", function () {
 
     it('Mjolnir can protect a room, show that it is protected and then stop protecting the room.', async function(this: RoomsTestContext) {
         // Create a few users and a room.
-        const draupnir = this.draupnir!;
+        const draupnir = this.draupnir;
+        if (draupnir === undefined) {
+            throw new TypeError(`Test isn't setup correctly`);
+        }
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
@@ -31,14 +34,14 @@ describe("Test: The rooms commands", function () {
             let protectedRoomsMessage = await getFirstReply(moderator, draupnir.managementRoomID, async () => {
                 return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
             })
-            assert.equal(protectedRoomsMessage['content']?.['body']?.includes('2'), true, "There should be two protected rooms (including the management room)");
+            assert.equal(protectedRoomsMessage['content']['body'].includes('2'), true, "There should be two protected rooms (including the management room)");
             await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
                 return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms remove ${targetRoom}`});
             });
             protectedRoomsMessage = await getFirstReply(moderator, draupnir.managementRoomID, async () => {
                 return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
             })
-            assert.equal(protectedRoomsMessage['content']?.['body']?.includes('1'), true, "Only the management room should be protected.");
+            assert.equal(protectedRoomsMessage['content']['body'].includes('1'), true, "Only the management room should be protected.");
         } finally {
             moderator.stop();
         }

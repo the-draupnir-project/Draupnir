@@ -2,6 +2,7 @@ import { strict as assert } from "assert";
 
 import { newTestUser } from "./clientHelper";
 import { getMessagesByUserIn } from "../../src/utils";
+import { TextMessageContent } from "matrix-protection-suite";
 
 /**
  * Ensure that Mjolnir paginates only the necessary segment of the room timeline when backfilling.
@@ -90,7 +91,7 @@ describe("Test: timeline pagination", function () {
             await moderator.sendMessage(targetRoom, {msgtype: 'm.text.', body: `${i}`})
         }
         await getMessagesByUserIn(moderator, moderatorId, targetRoom, 5, (events) => {
-            const messageNumbers = events.map(event => parseInt(event.content.body, 10));
+            const messageNumbers = events.map(event => parseInt((event.content as TextMessageContent).body, 10));
             messageNumbers.map(n => { assert.equal(n >= 15, true, "The youngest events should be given to the callback first."); })
         });
     })

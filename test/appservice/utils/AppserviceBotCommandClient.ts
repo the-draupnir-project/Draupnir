@@ -9,7 +9,7 @@ export class AppservideBotCommandClient {
 
     }
 
-    public async sendCommand<CommandReturnType extends ActionResult<any>>(...items: ReadItem[]): Promise<CommandReturnType> {
+    public async sendCommand<CommandReturnType extends ActionResult<unknown>>(...items: ReadItem[]): Promise<CommandReturnType> {
         const stream = new ArgumentStream(items);
         const matchingCommand = findCommandTable("appservice bot").findAMatchingCommand(stream);
         if (!matchingCommand) {

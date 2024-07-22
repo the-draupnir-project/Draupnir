@@ -38,6 +38,7 @@ export const DeadDocumentPresentationMirror = Object.freeze({
                 const renderer = findPresentationRenderer(presentationType);
                 return renderer(object);
             } else {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 throw new TypeError(`Unable to present: ${object}`);
             }
         }

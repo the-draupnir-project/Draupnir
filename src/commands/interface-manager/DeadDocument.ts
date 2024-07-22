@@ -34,7 +34,7 @@ export interface AbstractNode {
 
 export interface DocumentNode extends AbstractNode {
     readonly leafNode: false;
-    attributeMap: Map<string, any>,
+    attributeMap: Map<string, string>,
     addChild<Node extends DocumentNode|LeafNode>(node: Node): Node
     getChildren(): (DocumentNode|LeafNode)[]
     getFirstChild(): DocumentNode|LeafNode|undefined;
@@ -81,7 +81,7 @@ export enum NodeTag {
  */
 interface DeadDocumentNode extends DocumentNode {
     children: (DocumentNode|LeafNode)[];
-    attributeMap: Map<string, any>,
+    attributeMap: Map<string, string>,
 }
 
 export function addChild<Node extends DocumentNode|LeafNode>(this: DeadDocumentNode, node: Node): Node {
@@ -202,9 +202,6 @@ export class SimpleFringeRenderer<Context> implements FringeRenderer<Context> {
     private readonly preRenderers = new Map<NodeTag, FringeInnerRenderFunction<Context>>();
     private readonly leafRenderers = new Map<NodeTag, FringeLeafRenderFunction<Context>>();
     private readonly postRenderers = new Map<NodeTag, FringeInnerRenderFunction<Context>>();
-    constructor() {
-
-    }
 
     private getRenderer<T>(table: Map<NodeTag, T>, type: FringeType, tag: NodeTag): T {
         const entry = table.get(tag);
@@ -326,11 +323,10 @@ export class FringeWalker<Context> {
                     postNode(annotatedNode);
                     break;
                 case FringeType.Leaf:
-                    if (annotatedNode.node.leafNode !== true) {
+                    if (!annotatedNode.node.leafNode) {
                         throw new TypeError("Leaf nodes should not be marked as an inner node");
                     }
-                    this.renderer.getLeafRenderer(annotatedNode.node.tag)
-                    (annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
+                    this.renderer.getLeafRenderer(annotatedNode.node.tag)(annotatedNode.node.tag, annotatedNode.node as unknown as LeafNode, this.context);
                     break;
                 default:
                     throw new TypeError(`Uknown fringe type ${annotatedNode.type}`);
@@ -348,7 +344,7 @@ export class FringeWalker<Context> {
 export class TagDynamicEnvironmentEntry {
     constructor(
         public readonly node: DocumentNode,
-        public value: any,
+        public value: unknown,
         public readonly previous: undefined|TagDynamicEnvironmentEntry,
     ) {
 
@@ -376,16 +372,16 @@ export class TagDynamicEnvironmentEntry {
 export class TagDynamicEnvironment {
     private readonly environments = new Map<string, TagDynamicEnvironmentEntry|undefined>();
 
-    public read(variableName: string): any {
+    public read<T = unknown>(variableName: string): T {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
-            return variableEntry.value;
+            return variableEntry.value as T;
         } else {
             throw new TypeError(`The variable ${variableName} is unbound.`);
         }
     }
 
-    public write(variableName: string, value: any): any {
+    public write<T = unknown>(variableName: string, value: T): T {
         const variableEntry = this.environments.get(variableName);
         if (variableEntry) {
             return variableEntry.value = value;
@@ -394,7 +390,7 @@ export class TagDynamicEnvironment {
         }
     }
 
-    public bind(variableName: string, node: DocumentNode, value: any): any {
+    public bind<T = unknown>(variableName: string, node: DocumentNode, value: T): T {
         const entry = this.environments.get(variableName);
         const newEntry = new TagDynamicEnvironmentEntry(node, value, entry);
         this.environments.set(variableName, newEntry);

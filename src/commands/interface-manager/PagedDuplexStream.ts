@@ -23,12 +23,16 @@ export class PagedDuplexStream {
     }
 
     private get currentPage(): string {
-        return this.pages.at(this.pages.length - 1)!;
+        const page =  this.pages.at(this.pages.length - 1);
+        if (page === undefined) {
+            throw new TypeError(`The code tracking this page is all wrong`);
+        }
+        return page;
     }
 
     private appendToCurrentPage(string: string) {
         const currentIndex = this.pages.length - 1;
-        this.pages[currentIndex] = this.pages[currentIndex] + string;
+        this.pages[currentIndex] = this.currentPage + string;
     }
 
     public writeString(string: string): this {

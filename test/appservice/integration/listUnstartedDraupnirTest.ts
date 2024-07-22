@@ -21,7 +21,11 @@ describe("Just test some commands innit", function() {
         }
     });
     it("Can list any unstarted draupnir", async function(this: Context) {
-        const commandClient = new AppservideBotCommandClient(this.appservice!);
+        const appservice = this.appservice;
+        if (appservice === undefined) {
+            throw new TypeError(`Test setup failed`);
+        }
+        const commandClient = new AppservideBotCommandClient(appservice);
         const result = await commandClient.sendCommand("list", "unstarted");
         if (isError(result)) {
             throw new TypeError(`Command should have succeeded`);

@@ -67,7 +67,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
         event: annotatedEvent,
         ...additionalCommandContext,
     };
-    Task((async () => { await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()); })());
+    void Task((async () => { await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()); })());
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.default_argument_prompt';

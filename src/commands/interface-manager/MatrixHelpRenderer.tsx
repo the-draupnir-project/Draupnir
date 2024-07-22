@@ -12,6 +12,7 @@ import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ActionError, ActionException, ActionExceptionKind, ActionResult, MatrixRoomReference, Ok, RoomEvent, StringRoomID, Task, isError, isOk } from "matrix-protection-suite";
 import { renderDetailsNotice, renderElaborationTrail, renderExceptionTrail } from "../../capabilities/CommonRenderers";
+import { printReadably } from "./PrintReadably";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -77,7 +78,7 @@ function renderTableHelp(table: CommandTable): DocumentNode {
     </root>
 }
 
-export async function renderHelp(client: MatrixSendClient, commandRoomID: StringRoomID, event: any, result: ActionResult<CommandTable>): Promise<void> {
+export async function renderHelp(client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<CommandTable>): Promise<void> {
     if (isError(result)) {
         throw new TypeError("This command isn't supposed to fail");
     }
@@ -176,7 +177,7 @@ function formattedArgumentHint(command: InterfaceCommand, error: ArgumentParseEr
     for (const argument of argumentsUpToError) {
         commandContext += ` ${JSON.stringify(argument)}`;
     }
-    const badArgument = ` ${error.stream.peekItem()}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.parameter.acceptor.name} here`;
+    const badArgument = ` ${printReadably(error.stream.peekItem())}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.parameter.acceptor.name} here`;
     return commandContext + badArgument;
 }
 

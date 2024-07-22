@@ -31,8 +31,8 @@ export function blank() { }
 export function incrementDynamicEnvironment(_fringe: FringeType, node: DocumentNode, _context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
     const value = (() => {
         try {
-            return environment.read(MarkdownVariables.IndentationLevel);
-        } catch (_e: any) {
+            return environment.read<undefined | number>(MarkdownVariables.IndentationLevel);
+        } catch (_e: unknown) {
             return environment.bind(MarkdownVariables.IndentationLevel, node, 0);
         }
     })();
@@ -75,8 +75,8 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     staticString('**'),
     staticString('**')
 ).registerInnerNode(NodeTag.UnorderedList,
-    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
-        incrementDynamicEnvironment.apply(undefined, arguments);
+    function(fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        incrementDynamicEnvironment(fringe, node, context, environment);
         environment.bind(MarkdownVariables.ListType, node, NodeTag.UnorderedList);
         environment.bind(MarkdownVariables.ListItemCount, node, 0);
     },
@@ -84,7 +84,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
 ).registerInnerNode(NodeTag.ListItem,
     function(_fringe, node, context, environment) {
         const indentationLevel: number = (() => {
-            const value = environment.read(MarkdownVariables.IndentationLevel);
+            const value = environment.read<number>(MarkdownVariables.IndentationLevel);
             if (!Number.isInteger(value)) {
                 throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment, should only have integers. Did you forget to enclose in <ul> or <ol>?`)
             } else {
@@ -92,7 +92,7 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
             }
         })();
         const listItemCount = (() => {
-            const currentCount = environment.read(MarkdownVariables.ListItemCount);
+            const currentCount = environment.read<number>(MarkdownVariables.ListItemCount);
             if (!Number.isInteger(currentCount)) {
                 throw new TypeError(`Cannot render the list ${node.tag} because someone clobbered the dynamic environment.`);
             }
@@ -111,8 +111,8 @@ MARKDOWN_RENDERER.registerRenderer<FringeLeafRenderFunction<TransactionalOutputC
     },
     staticString('\n')
 ).registerInnerNode(NodeTag.OrderedList,
-    function(_fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
-        incrementDynamicEnvironment.apply(undefined, arguments);
+    function(fringe: FringeType, node: DocumentNode, context: TransactionalOutputContext, environment: TagDynamicEnvironment) {
+        incrementDynamicEnvironment(fringe, node, context, environment);
         environment.bind(MarkdownVariables.ListType, node, NodeTag.OrderedList);
         environment.bind(MarkdownVariables.ListItemCount, node, 0);
     },

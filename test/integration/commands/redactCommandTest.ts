@@ -3,7 +3,7 @@ import { newTestUser } from "../clientHelper";
 import { getMessagesByUserIn } from "../../../src/utils";
 import { LogService } from "matrix-bot-sdk";
 import { getFirstReaction } from "./commandUtils";
-import { DraupnirTestContext } from "../mjolnirSetupUtils";
+import { draupnirClient, DraupnirTestContext } from "../mjolnirSetupUtils";
 import { MatrixClient } from "matrix-bot-sdk";
 
 interface RedactionTestContext extends DraupnirTestContext {
@@ -21,8 +21,12 @@ describe("Test: The redaction command", function () {
         // Create a few users and a room.
         const badUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "spammer-needs-redacting" } });
         const badUserId = await badUser.getUserId();
-        const mjolnir = this.config.RUNTIME.client!
-        const mjolnirUserId = await mjolnir.getUserId();
+        const draupnirMatrixClient = draupnirClient();
+        const draupnir = this.draupnir;
+        if (draupnirMatrixClient === null || draupnir === undefined) {
+            throw new TypeError(`Test isn't setup correctly`);
+        }
+        const mjolnirUserId = await draupnirMatrixClient.getUserId();
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
@@ -31,8 +35,8 @@ describe("Test: The redaction command", function () {
         await badUser.joinRoom(targetRoom);
         try {
             await moderator.start();
-            await getFirstReaction(moderator, this.draupnir!.managementRoomID, '✅', async () => {
-                return moderator.sendMessage(this.draupnir!.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
+            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
+                return moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
             });
         } finally {
             moderator.stop();
@@ -49,8 +53,8 @@ describe("Test: The redaction command", function () {
 
         try {
             await moderator.start();
-            await getFirstReaction(moderator, this.draupnir!.managementRoomID, '✅', async () => {
-                return await moderator.sendMessage(this.draupnir!.managementRoomID, { msgtype: 'm.text', body: `!draupnir redact ${badUserId} --room ${targetRoom}` });
+            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
+                return await moderator.sendMessage(draupnir.managementRoomID, { msgtype: 'm.text', body: `!draupnir redact ${badUserId} --room ${targetRoom}` });
             });
         } finally {
             moderator.stop();
@@ -72,7 +76,10 @@ describe("Test: The redaction command", function () {
         // Create a few users and a room.
         const badUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "spammer-needs-redacting" } });
         const badUserId = await badUser.getUserId();
-        const draupnir = this.draupnir!;
+        const draupnir = this.draupnir;
+        if (draupnir === undefined) {
+            throw new TypeError(`Test isn't setup correctly`);
+        }
         const mjolnirUserId = await draupnir.client.getUserId();
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
@@ -104,7 +111,7 @@ describe("Test: The redaction command", function () {
             moderator.stop();
         }
 
-        targetRooms.map(async targetRoom => {
+        await Promise.all(targetRooms.map(async targetRoom => {
             await getMessagesByUserIn(moderator, badUserId, targetRoom, 1000, function(events) {
                 events.map(e => {
                     if (e.type === 'm.room.member') {
@@ -114,20 +121,23 @@ describe("Test: The redaction command", function () {
                     }
                 })
             })
-        });
+        }));
     } as unknown as Mocha.AsyncFunc);
     it("Redacts a single event when instructed to.", async function (this: RedactionTestContext) {
         this.timeout(60000);
         // Create a few users and a room.
         const badUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "spammer-needs-redacting" } });
-        const draupnir = this.draupnir!;
+        const draupnir = this.draupnir;
+        if (draupnir === undefined) {
+            throw new TypeError(`Test isn't setup correctly`);
+        }
         const moderator = await newTestUser(this.config.homeserverUrl, { name: { contains: "moderator" } });
         this.moderator = moderator;
         await moderator.joinRoom(this.config.managementRoom);
         const targetRoom = await moderator.createRoom({ invite: [await badUser.getUserId(), draupnir.clientUserID]});
         await moderator.setUserPowerLevel(draupnir.clientUserID, targetRoom, 100);
         await badUser.joinRoom(targetRoom);
-        moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
+        await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
         const eventToRedact = await badUser.sendMessage(targetRoom, {msgtype: 'm.text', body: "Very Bad Stuff"});
 
         try {
