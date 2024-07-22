@@ -40,7 +40,7 @@ import ManagementRoomOutput from "./ManagementRoomOutput";
 import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { RoomEvent, Task } from "matrix-protection-suite";
+import { RoomEvent } from "matrix-protection-suite";
 
 export function htmlEscape(input: string): string {
     // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
@@ -109,19 +109,17 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
         await managementRoom.logMessage(LogLevel.DEBUG, "utils#redactUserMessagesIn", `Fetching sent messages for ${userIdOrGlob} in ${targetRoomId} to redact...`, targetRoomId);
 
         try {
-            await getMessagesByUserIn(client, userIdOrGlob, targetRoomId, limit, (eventsToRedact) => {
-                void Task((async () => {
-                    for (const victimEvent of eventsToRedact) {
-                        await managementRoom.logMessage(LogLevel.DEBUG, "utils#redactUserMessagesIn", `Redacting ${victimEvent['event_id']} in ${targetRoomId}`, targetRoomId);
-                        if (!noop) {
-                            await client.redactEvent(targetRoomId, victimEvent['event_id']).catch((error: unknown) => {
-                                LogService.error("utils#redactUserMessagesIn", `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}:`, error, targetRoomId);
-                            });
-                        } else {
-                            await managementRoom.logMessage(LogLevel.WARN, "utils#redactUserMessagesIn", `Tried to redact ${victimEvent['event_id']} in ${targetRoomId} but Mjolnir is running in no-op mode`, targetRoomId);
-                        }
+            await getMessagesByUserIn(client, userIdOrGlob, targetRoomId, limit, async (eventsToRedact) => {
+                for (const victimEvent of eventsToRedact) {
+                    await managementRoom.logMessage(LogLevel.DEBUG, "utils#redactUserMessagesIn", `Redacting ${victimEvent['event_id']} in ${targetRoomId}`, targetRoomId);
+                    if (!noop) {
+                        await client.redactEvent(targetRoomId, victimEvent['event_id']).catch((error: unknown) => {
+                            LogService.error("utils#redactUserMessagesIn", `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}:`, error, targetRoomId);
+                        });
+                    } else {
+                        await managementRoom.logMessage(LogLevel.WARN, "utils#redactUserMessagesIn", `Tried to redact ${victimEvent['event_id']} in ${targetRoomId} but Mjolnir is running in no-op mode`, targetRoomId);
                     }
-                })());
+                }
             });
         } catch (error) {
             await managementRoom.logMessage(LogLevel.ERROR, "utils#redactUserMessagesIn", `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}: ${error}`, targetRoomId);
@@ -145,7 +143,7 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
  * The callback will only be called if there are any relevant events.
  * @returns {Promise<void>} Resolves when either: the limit has been reached, no relevant events could be found or there is no more timeline to paginate.
  */
-export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: RoomEvent[]) => void): Promise<void> {
+export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: RoomEvent[]) => Promise<void> | void): Promise<void> {
     const isGlob = sender.includes("*");
     const roomEventFilter = {
         rooms: [roomId],
@@ -218,7 +216,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
         const events = filterEvents(bfMessages['chunk'] || []);
         // If we are using a glob, there may be no relevant events in this chunk.
         if (events.length > 0) {
-            cb(events);
+            await cb(events);
         }
         // This check exists only because of a Synapse compliance bug https://github.com/matrix-org/synapse/issues/12102.
         // We also check after processing events as the `previousToken` can be 'null' if we are at the start of the steam
