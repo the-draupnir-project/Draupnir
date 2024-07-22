@@ -16,18 +16,16 @@ export interface SuperCoolStream<Item, Sequence> {
     setPosition(n: number): void;
     clone(): SuperCoolStream<Item, Sequence>;
     savingPositionIf<Result>(description: {
-      predicate: (t: Result) => boolean;
-      body: (stream: SuperCoolStream<Item, Sequence>) => Result;
+        predicate: (t: Result) => boolean;
+        body: (stream: SuperCoolStream<Item, Sequence>) => Result;
     }): Result;
-  }
+}
 
-  interface Indexable<Item> {
+interface Indexable<Item> {
     at(position: number): Item | undefined;
-  }
+}
 
-  export class StandardSuperCoolStream<Item, Sequence extends Indexable<Item>>
-    implements SuperCoolStream<Item, Sequence>
-  {
+export class StandardSuperCoolStream<Item, Sequence extends Indexable<Item>> implements SuperCoolStream<Item, Sequence> {
     protected position: number;
     /**
      * Makes the super cool string stream.
@@ -35,64 +33,64 @@ export interface SuperCoolStream<Item, Sequence> {
      * @param start Where in the string we should start reading.
      */
     constructor(
-      public readonly source: Sequence,
-      start = 0
+        public readonly source: Sequence,
+        start = 0
     ) {
-      this.position = start;
+        this.position = start;
     }
 
     public peekItem<EOF = undefined>(eof?: EOF): Item | EOF {
-      return this.source.at(this.position) ?? (eof as EOF);
+        return this.source.at(this.position) ?? (eof as EOF);
     }
 
     public readItem<EOF = undefined>(eof?: EOF) {
-      return this.source.at(this.position++) ?? (eof as EOF);
+        return this.source.at(this.position++) ?? (eof as EOF);
     }
 
     public getPosition(): number {
-      return this.position;
+        return this.position;
     }
 
     public setPosition(n: number) {
-      this.position = n;
+        this.position = n;
     }
 
     public clone(): SuperCoolStream<Item, Sequence> {
-      return new StandardSuperCoolStream(this.source, this.position);
+        return new StandardSuperCoolStream(this.source, this.position);
     }
 
     savingPositionIf<Result>(description: {
-      predicate: (t: Result) => boolean;
-      body: (stream: SuperCoolStream<Item, Sequence>) => Result;
+        predicate: (t: Result) => boolean;
+        body: (stream: SuperCoolStream<Item, Sequence>) => Result;
     }): Result {
-      const previousPosition = this.position;
-      const bodyResult = description.body(this);
-      if (description.predicate(bodyResult)) {
-        this.position = previousPosition;
-      }
-      return bodyResult;
+        const previousPosition = this.position;
+        const bodyResult = description.body(this);
+        if (description.predicate(bodyResult)) {
+            this.position = previousPosition;
+        }
+        return bodyResult;
     }
-  }
+}
 
-  /**
-   * Helper for peeking and reading character by character.
-   */
-  export class StringStream extends StandardSuperCoolStream<
+/**
+ * Helper for peeking and reading character by character.
+ */
+export class StringStream extends StandardSuperCoolStream<
     string,
     Indexable<string>
-  > {
+> {
     public peekChar<EOF = undefined>(eof?: EOF) {
-      return this.peekItem(eof);
+        return this.peekItem(eof);
     }
 
     public readChar<EOF = undefined>(eof?: EOF) {
-      return this.readItem(eof);
+        return this.readItem(eof);
     }
 
     public clone(): StringStream {
-      return new StringStream(this.source, this.position);
+        return new StringStream(this.source, this.position);
     }
-  }
+}
 
 /** Whitespace we want to nom. */
 const WHITESPACE = [' ', '\r', '\f', '\v', '\n', '\t'];
