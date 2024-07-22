@@ -8,25 +8,31 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionError, ProtectionDescription, StringRoomID } from "matrix-protection-suite";
+import {
+  ActionError,
+  ProtectionDescription,
+  StringRoomID,
+} from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 
 export async function renderProtectionFailedToStart(
-    client: MatrixSendClient,
-    managementRoomID: StringRoomID,
-    error: ActionError,
-    protectionName: string,
-    _protectionDescription?: ProtectionDescription
+  client: MatrixSendClient,
+  managementRoomID: StringRoomID,
+  error: ActionError,
+  protectionName: string,
+  _protectionDescription?: ProtectionDescription
 ): Promise<void> {
-    await renderMatrixAndSend(
-        <root>
-            <span>A protection {protectionName} failed to start for the following reason:</span>
-            <span>{error.message}</span>
-        </root>,
-        managementRoomID,
-        undefined,
-        client
-    )
+  await renderMatrixAndSend(
+    <root>
+      <span>
+        A protection {protectionName} failed to start for the following reason:
+      </span>
+      <span>{error.message}</span>
+    </root>,
+    managementRoomID,
+    undefined,
+    client
+  );
 }

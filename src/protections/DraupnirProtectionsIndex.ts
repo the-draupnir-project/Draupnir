@@ -5,16 +5,16 @@
  */
 
 // keep alphabetical please.
-import './BanPropagation';
-import './BasicFlooding';
-import './FirstMessageIsImage';
-import './JoinWaveShortCircuit';
-import './RedactionSynchronisation';
-import './MessageIsMedia';
-import './MessageIsVoice';
-import './PolicyChangeNotification';
-import './TrustedReporters';
-import './WordList';
+import "./BanPropagation";
+import "./BasicFlooding";
+import "./FirstMessageIsImage";
+import "./JoinWaveShortCircuit";
+import "./RedactionSynchronisation";
+import "./MessageIsMedia";
+import "./MessageIsVoice";
+import "./PolicyChangeNotification";
+import "./TrustedReporters";
+import "./WordList";
 
 // import capability renderers and glue too.
 import "../capabilities/capabilityIndex";

@@ -1,4 +1,3 @@
-
 homeserver:
   domain: "localhost:9999"
   url: http://localhost:8081

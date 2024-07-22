@@ -9,22 +9,28 @@ import { Task } from "matrix-protection-suite";
  * and the appservice can be started with `ts-node src/appservice/cli -p 9000 -c your-confg.yaml`.
  */
 const cli = new Cli({
-    registrationPath: "mjolnir-registration.yaml",
-    bridgeConfig: {
-        schema: {},
-        affectsRegistration: false,
-        defaults: {}
-    },
-    generateRegistration: MjolnirAppService.generateRegistration,
-    run: function(port: number) {
-        const config: IConfig | null = cli.getConfig() as unknown as IConfig | null;
-        if (config === null) {
-            throw new Error("Couldn't load config");
-        }
-        void Task((async () => {
-            await MjolnirAppService.run(port, config, cli.getRegistrationFilePath())
-        })());
+  registrationPath: "mjolnir-registration.yaml",
+  bridgeConfig: {
+    schema: {},
+    affectsRegistration: false,
+    defaults: {},
+  },
+  generateRegistration: MjolnirAppService.generateRegistration,
+  run: function (port: number) {
+    const config: IConfig | null = cli.getConfig() as unknown as IConfig | null;
+    if (config === null) {
+      throw new Error("Couldn't load config");
     }
+    void Task(
+      (async () => {
+        await MjolnirAppService.run(
+          port,
+          config,
+          cli.getRegistrationFilePath()
+        );
+      })()
+    );
+  },
 });
 
 cli.run();

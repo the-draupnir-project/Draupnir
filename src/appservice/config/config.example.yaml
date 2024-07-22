@@ -1,4 +1,3 @@
-
 homeserver:
   # The Matrix server name, this will be the name of the server in your matrix id.
   domain: "localhost:9999"

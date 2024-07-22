@@ -31,25 +31,34 @@ import { IConfig } from "../config";
 // allowed to use the global configuration since this is only intended to be used by `src/index.ts`.
 
 export class Healthz {
-    private healthCode: number;
+  private healthCode: number;
 
-    constructor(private config: IConfig) { }
+  constructor(private config: IConfig) {}
 
-    public set isHealthy(val: boolean) {
-        this.healthCode = val ? this.config.health.healthz.healthyStatus : this.config.health.healthz.unhealthyStatus;
-    }
+  public set isHealthy(val: boolean) {
+    this.healthCode = val
+      ? this.config.health.healthz.healthyStatus
+      : this.config.health.healthz.unhealthyStatus;
+  }
 
-    public get isHealthy(): boolean {
-        return this.healthCode === this.config.health.healthz.healthyStatus;
-    }
+  public get isHealthy(): boolean {
+    return this.healthCode === this.config.health.healthz.healthyStatus;
+  }
 
-    public listen() {
-        const server = http.createServer((req, res) => {
-            res.writeHead(this.healthCode);
-            res.end(`health code: ${this.healthCode}`);
-        });
-        server.listen(this.config.health.healthz.port, this.config.health.healthz.address, () => {
-            LogService.info("Healthz", `Listening for health requests on ${this.config.health.healthz.address}:${this.config.health.healthz.port}`);
-        });
-    }
+  public listen() {
+    const server = http.createServer((req, res) => {
+      res.writeHead(this.healthCode);
+      res.end(`health code: ${this.healthCode}`);
+    });
+    server.listen(
+      this.config.health.healthz.port,
+      this.config.health.healthz.address,
+      () => {
+        LogService.info(
+          "Healthz",
+          `Listening for health requests on ${this.config.health.healthz.address}:${this.config.health.healthz.port}`
+        );
+      }
+    );
+  }
 }

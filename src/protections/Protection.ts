@@ -30,8 +30,12 @@ import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { ParsedKeywords } from "../commands/interface-manager/ParameterParsing";
 import { ReadItem } from "../commands/interface-manager/CommandReader";
 
-export interface DraupnirProtection<TProtectionDescription> extends Protection<TProtectionDescription> {
-    // FIXME: Protections need their own command tables
-    // https://github.com/Gnuxie/Draupnir/issues/21/
-    status?(keywords: ParsedKeywords, ...items: ReadItem[]): Promise<DocumentNode>
+export interface DraupnirProtection<TProtectionDescription>
+  extends Protection<TProtectionDescription> {
+  // FIXME: Protections need their own command tables
+  // https://github.com/Gnuxie/Draupnir/issues/21/
+  status?(
+    keywords: ParsedKeywords,
+    ...items: ReadItem[]
+  ): Promise<DocumentNode>;
 }

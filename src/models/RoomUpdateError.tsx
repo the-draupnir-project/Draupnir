@@ -28,13 +28,23 @@ limitations under the License.
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
-import { ActionException, ActionExceptionKind, ActionResult, Ok, RoomUpdateError, StringRoomID } from "matrix-protection-suite";
+import {
+  ActionException,
+  ActionExceptionKind,
+  ActionResult,
+  Ok,
+  RoomUpdateError,
+  StringRoomID,
+} from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 function renderErrorItem(error: RoomUpdateError): DocumentNode {
-    return <li>
-        <a href={error.room.toPermalink()}>{error.room.toRoomIDOrAlias()}</a> - {error.message}
+  return (
+    <li>
+      <a href={error.room.toPermalink()}>{error.room.toRoomIDOrAlias()}</a> -{" "}
+      {error.message}
     </li>
+  );
 }
 
 /**
@@ -47,27 +57,36 @@ function renderErrorItem(error: RoomUpdateError): DocumentNode {
  * @returns A `DocumentNode` fragment that can be sent to Matrix or incorperated into another message.
  */
 export async function renderActionResult(
-    errors: RoomUpdateError[],
-    { title = 'There were errors updating protected rooms.', noErrorsText = 'Done updating rooms - no errors.'}: { title?: string, noErrorsText?: string } = {}
+  errors: RoomUpdateError[],
+  {
+    title = "There were errors updating protected rooms.",
+    noErrorsText = "Done updating rooms - no errors.",
+  }: { title?: string; noErrorsText?: string } = {}
 ): Promise<DocumentNode> {
-    if (errors.length === 0) {
-        return <fragment><font color="#00cc00">{noErrorsText}</font></fragment>
-    }
-    return <fragment>
-        <font color="#ff0000">
-            {title}<br/>
-        </font>
-        <details>
-            <summary>
-                <font color="#ff0000">
-                    <b>{errors.length} errors updating protected rooms!</b><br/>
-                </font>
-            </summary>
-            <ul>
-                {errors.map(error => renderErrorItem(error))}
-            </ul>
-        </details>
+  if (errors.length === 0) {
+    return (
+      <fragment>
+        <font color="#00cc00">{noErrorsText}</font>
+      </fragment>
+    );
+  }
+  return (
+    <fragment>
+      <font color="#ff0000">
+        {title}
+        <br />
+      </font>
+      <details>
+        <summary>
+          <font color="#ff0000">
+            <b>{errors.length} errors updating protected rooms!</b>
+            <br />
+          </font>
+        </summary>
+        <ul>{errors.map((error) => renderErrorItem(error))}</ul>
+      </details>
     </fragment>
+  );
 }
 
 /**
@@ -80,23 +99,25 @@ export async function renderActionResult(
  * @returns
  */
 export async function printActionResult(
-    client: MatrixSendClient,
-    roomID: StringRoomID,
-    errors: RoomUpdateError[],
-    renderOptions: { title?: string, noErrorsText?: string } = {}
+  client: MatrixSendClient,
+  roomID: StringRoomID,
+  errors: RoomUpdateError[],
+  renderOptions: { title?: string; noErrorsText?: string } = {}
 ): Promise<ActionResult<void>> {
-    return await renderMatrixAndSend(
-        <root>{await renderActionResult(errors, renderOptions)}</root>,
-        roomID,
-        undefined,
-        client,
-    ).then(
-        (_) => Ok(undefined),
-        (exception) => ActionException.Result(
-            `Could not printActionResult to the management room.`,
-            {
-                exception, exceptionKind: ActionExceptionKind.Unknown
-            }
-        )
-    )
+  return await renderMatrixAndSend(
+    <root>{await renderActionResult(errors, renderOptions)}</root>,
+    roomID,
+    undefined,
+    client
+  ).then(
+    (_) => Ok(undefined),
+    (exception) =>
+      ActionException.Result(
+        `Could not printActionResult to the management room.`,
+        {
+          exception,
+          exceptionKind: ActionExceptionKind.Unknown,
+        }
+      )
+  );
 }

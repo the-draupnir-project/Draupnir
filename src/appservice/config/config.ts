@@ -30,31 +30,31 @@ import { load } from "js-yaml";
 import { LoggingOpts } from "matrix-appservice-bridge";
 
 export interface IConfig {
-    /** Details for the homeserver the appservice will be serving */
-    homeserver: {
-        /** The domain of the homeserver that is found at the end of mxids */
-        domain: string,
-        /** The url to use to acccess the client server api e.g. "https://matrix-client.matrix.org" */
-        url: string
-    },
-    /** Details for the database backend */
-    db: {
-        /** Postgres connection string  */
-        connectionString: string
-    },
-    /** Config for the web api used to access the appservice via the widget */
-    webAPI: {
-        port: number
-    },
-    /** The admin room for the appservice bot. Not called managementRoom like mjolnir on purpose, so they're not mixed in code somehow. */
-    adminRoom: string,
-    /** configuration for matrix-appservice-bridge's Logger */
-    logging?: LoggingOpts,
+  /** Details for the homeserver the appservice will be serving */
+  homeserver: {
+    /** The domain of the homeserver that is found at the end of mxids */
+    domain: string;
+    /** The url to use to acccess the client server api e.g. "https://matrix-client.matrix.org" */
+    url: string;
+  };
+  /** Details for the database backend */
+  db: {
+    /** Postgres connection string  */
+    connectionString: string;
+  };
+  /** Config for the web api used to access the appservice via the widget */
+  webAPI: {
+    port: number;
+  };
+  /** The admin room for the appservice bot. Not called managementRoom like mjolnir on purpose, so they're not mixed in code somehow. */
+  adminRoom: string;
+  /** configuration for matrix-appservice-bridge's Logger */
+  logging?: LoggingOpts;
 }
 
 export function read(configPath: string): IConfig {
-    const content = fs.readFileSync(configPath, "utf8");
-    const parsed = load(content);
-    const config = (parsed as object) as IConfig;
-    return config;
+  const content = fs.readFileSync(configPath, "utf8");
+  const parsed = load(content);
+  const config = parsed as object as IConfig;
+  return config;
 }

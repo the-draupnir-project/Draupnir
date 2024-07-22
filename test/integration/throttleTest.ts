@@ -3,19 +3,39 @@ import { newTestUser } from "./clientHelper";
 import { getMessagesByUserIn } from "../../src/utils";
 
 describe("Test: throttled users can function with Mjolnir.", function () {
-    it('throttled users survive being throttled by synapse', async function() {
-        const throttledUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "throttled" }, isThrottled: true });
-        const throttledUserId = await throttledUser.getUserId();
-        const targetRoom = await throttledUser.createRoom();
-        // send enough messages to hit the rate limit.
-        await Promise.all([...Array(25).keys()].map((i) => throttledUser.sendMessage(targetRoom, {msgtype: 'm.text.', body: `Message #${i}`})));
-        let messageCount = 0;
-        await getMessagesByUserIn(throttledUser, throttledUserId, targetRoom, 25, (events) => {
-            messageCount += events.length;
-        });
-        assert.equal(messageCount, 25, "There should have been 25 messages in this room");
-    })
-})
+  it("throttled users survive being throttled by synapse", async function () {
+    const throttledUser = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "throttled" },
+      isThrottled: true,
+    });
+    const throttledUserId = await throttledUser.getUserId();
+    const targetRoom = await throttledUser.createRoom();
+    // send enough messages to hit the rate limit.
+    await Promise.all(
+      [...Array(25).keys()].map((i) =>
+        throttledUser.sendMessage(targetRoom, {
+          msgtype: "m.text.",
+          body: `Message #${i}`,
+        })
+      )
+    );
+    let messageCount = 0;
+    await getMessagesByUserIn(
+      throttledUser,
+      throttledUserId,
+      targetRoom,
+      25,
+      (events) => {
+        messageCount += events.length;
+      }
+    );
+    assert.equal(
+      messageCount,
+      25,
+      "There should have been 25 messages in this room"
+    );
+  });
+});
 
 /**
  * We used to have a test here that tested whether Mjolnir was going to carry out a redact order the default limits in a reasonable time scale.
