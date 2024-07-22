@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
- * All rights reserved.
- */
+// Copyright 2023 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
 
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {

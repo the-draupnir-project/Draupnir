@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
- * All rights reserved.
- */
+// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: AFL-3.0
 
 import { WeakEvent } from "matrix-appservice-bridge";
 import { readCommand } from "../../commands/interface-manager/CommandReader";
