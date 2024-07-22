@@ -25,7 +25,12 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import { Permalinks, RoomEvent, StringRoomID, StringUserID } from "matrix-protection-suite";
+import {
+  Permalinks,
+  RoomEvent,
+  StringRoomID,
+  StringUserID,
+} from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
 /**
@@ -36,34 +41,49 @@ import { Draupnir } from "../Draupnir";
  * to view a room until a moderator can investigate.
  */
 export class UnlistedUserRedactionQueue {
-    private usersToRedact = new Set<StringUserID>();
+  private usersToRedact = new Set<StringUserID>();
 
-    public addUser(userID: StringUserID) {
-        this.usersToRedact.add(userID);
-    }
+  public addUser(userID: StringUserID) {
+    this.usersToRedact.add(userID);
+  }
 
-    public removeUser(userID: StringUserID) {
-        this.usersToRedact.delete(userID);
-    }
+  public removeUser(userID: StringUserID) {
+    this.usersToRedact.delete(userID);
+  }
 
-    public isUserQueued(userID: StringUserID): boolean {
-        return this.usersToRedact.has(userID);
-    }
+  public isUserQueued(userID: StringUserID): boolean {
+    return this.usersToRedact.has(userID);
+  }
 
-    public async handleEvent(roomID: StringRoomID, event: RoomEvent, draupnir: Draupnir) {
-        if (this.isUserQueued(event['sender'])) {
-            const permalink = Permalinks.forEvent(roomID, event['event_id']);
-            try {
-                LogService.info("AutomaticRedactionQueue", `Redacting event because the user is listed as bad: ${permalink}`)
-                if (!draupnir.config.noop) {
-                    await draupnir.client.redactEvent(roomID, event['event_id']);
-                } else {
-                    await draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Tried to redact ${permalink} but Mjolnir is running in no-op mode`);
-                }
-            } catch (e) {
-                await draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Unable to redact message: ${permalink}`);
-                LogService.warn("AutomaticRedactionQueue", e);
-            }
+  public async handleEvent(
+    roomID: StringRoomID,
+    event: RoomEvent,
+    draupnir: Draupnir
+  ) {
+    if (this.isUserQueued(event["sender"])) {
+      const permalink = Permalinks.forEvent(roomID, event["event_id"]);
+      try {
+        LogService.info(
+          "AutomaticRedactionQueue",
+          `Redacting event because the user is listed as bad: ${permalink}`
+        );
+        if (!draupnir.config.noop) {
+          await draupnir.client.redactEvent(roomID, event["event_id"]);
+        } else {
+          await draupnir.managementRoomOutput.logMessage(
+            LogLevel.WARN,
+            "AutomaticRedactionQueue",
+            `Tried to redact ${permalink} but Mjolnir is running in no-op mode`
+          );
         }
+      } catch (e) {
+        await draupnir.managementRoomOutput.logMessage(
+          LogLevel.WARN,
+          "AutomaticRedactionQueue",
+          `Unable to redact message: ${permalink}`
+        );
+        LogService.warn("AutomaticRedactionQueue", e);
+      }
     }
+  }
 }

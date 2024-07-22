@@ -28,42 +28,42 @@ limitations under the License.
 import { StringRoomID, StringUserID } from "matrix-protection-suite";
 
 export interface MjolnirRecord {
-    local_part: string,
-    owner: StringUserID,
-    management_room: StringRoomID,
+  local_part: string;
+  owner: StringUserID;
+  management_room: StringRoomID;
 }
 
 /**
  * Used to persist mjolnirs that have been provisioned by the mjolnir manager.
  */
 export interface DataStore {
-    /**
-     * Initialize any resources that the datastore needs to function.
-     */
-    init(): Promise<void>;
+  /**
+   * Initialize any resources that the datastore needs to function.
+   */
+  init(): Promise<void>;
 
-    /**
-     * Close any resources that the datastore is using.
-     */
-    close(): Promise<void>;
+  /**
+   * Close any resources that the datastore is using.
+   */
+  close(): Promise<void>;
 
-    /**
-     * List all of the mjolnirs we have provisioned.
-     */
-    list(): Promise<MjolnirRecord[]>;
+  /**
+   * List all of the mjolnirs we have provisioned.
+   */
+  list(): Promise<MjolnirRecord[]>;
 
-    /**
-     * Persist a new `MjolnirRecord`.
-     */
-    store(mjolnirRecord: MjolnirRecord): Promise<void>;
+  /**
+   * Persist a new `MjolnirRecord`.
+   */
+  store(mjolnirRecord: MjolnirRecord): Promise<void>;
 
-    /**
-     * @param owner The mxid of the user who provisioned this mjolnir.
-     */
-    lookupByOwner(owner: string): Promise<MjolnirRecord[]>;
+  /**
+   * @param owner The mxid of the user who provisioned this mjolnir.
+   */
+  lookupByOwner(owner: string): Promise<MjolnirRecord[]>;
 
-    /**
-     * @param localPart the mxid of the provisioned mjolnir.
-     */
-    lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]>;
+  /**
+   * @param localPart the mxid of the provisioned mjolnir.
+   */
+  lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]>;
 }

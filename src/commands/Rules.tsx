@@ -28,118 +28,170 @@ limitations under the License.
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirContext } from "./CommandHandler";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { defineInterfaceCommand, findTableCommand } from "./interface-manager/InterfaceCommand";
+import {
+  defineInterfaceCommand,
+  findTableCommand,
+} from "./interface-manager/InterfaceCommand";
 import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { findPresentationType, parameters, union } from "./interface-manager/ParameterParsing";
-import { ActionResult, MatrixRoomID, MatrixRoomReference, Ok, PolicyRoomWatchProfile, PolicyRule, StringRoomID, isError, UserID, RoomEvent } from "matrix-protection-suite";
+import {
+  defineMatrixInterfaceAdaptor,
+  MatrixContext,
+  MatrixInterfaceAdaptor,
+} from "./interface-manager/MatrixInterfaceAdaptor";
+import {
+  findPresentationType,
+  parameters,
+  union,
+} from "./interface-manager/ParameterParsing";
+import {
+  ActionResult,
+  MatrixRoomID,
+  MatrixRoomReference,
+  Ok,
+  PolicyRoomWatchProfile,
+  PolicyRule,
+  StringRoomID,
+  isError,
+  UserID,
+  RoomEvent,
+} from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
 
 async function renderListMatches(
-    this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<ListMatches[]>
+  this: MatrixInterfaceAdaptor<MatrixContext>,
+  client: MatrixSendClient,
+  commandRoomID: StringRoomID,
+  event: RoomEvent,
+  result: ActionResult<ListMatches[]>
 ) {
-    if (isError(result)) {
-        return await tickCrossRenderer.call(this, client, commandRoomID, event, result);
-    }
-    const lists = result.ok;
-    if (lists.length === 0) {
-        return await renderMatrixAndSend(
-            <root>No policy lists configured</root>,
-            commandRoomID, event, client
-        )
-    }
+  if (isError(result)) {
+    return await tickCrossRenderer.call(
+      this,
+      client,
+      commandRoomID,
+      event,
+      result
+    );
+  }
+  const lists = result.ok;
+  if (lists.length === 0) {
     return await renderMatrixAndSend(
-        <root>
-            <b>Rules currently in use:</b><br/>
-            {lists.map(list => renderListRules(list))}
-        </root>,
-        commandRoomID, event, client
-    )
+      <root>No policy lists configured</root>,
+      commandRoomID,
+      event,
+      client
+    );
+  }
+  return await renderMatrixAndSend(
+    <root>
+      <b>Rules currently in use:</b>
+      <br />
+      {lists.map((list) => renderListRules(list))}
+    </root>,
+    commandRoomID,
+    event,
+    client
+  );
 }
 
 export function renderListRules(list: ListMatches) {
-    const renderRuleSummary = (rule: PolicyRule) => {
-        return <li>
-            {rule.kind} (<code>{rule.recommendation}</code>): <code>{rule.entity}</code> ({rule.reason})
-        </li>
-    };
-    return <fragment>
-        <a href={list.room.toPermalink()}>{list.roomID}</a> propagation: <code>{list.profile.propagation}</code><br/>
-        <ul>
-            {list.matches.length === 0
-                ? <li><i>No rules</i></li>
-                : list.matches.map(rule => renderRuleSummary(rule))}
-        </ul>
+  const renderRuleSummary = (rule: PolicyRule) => {
+    return (
+      <li>
+        {rule.kind} (<code>{rule.recommendation}</code>):{" "}
+        <code>{rule.entity}</code> ({rule.reason})
+      </li>
+    );
+  };
+  return (
+    <fragment>
+      <a href={list.room.toPermalink()}>{list.roomID}</a> propagation:{" "}
+      <code>{list.profile.propagation}</code>
+      <br />
+      <ul>
+        {list.matches.length === 0 ? (
+          <li>
+            <i>No rules</i>
+          </li>
+        ) : (
+          list.matches.map((rule) => renderRuleSummary(rule))
+        )}
+      </ul>
     </fragment>
+  );
 }
 
 export interface ListMatches {
-    room: MatrixRoomID,
-    roomID: StringRoomID,
-    profile: PolicyRoomWatchProfile,
-    matches: PolicyRule[]
+  room: MatrixRoomID;
+  roomID: StringRoomID;
+  profile: PolicyRoomWatchProfile;
+  matches: PolicyRule[];
 }
 
 defineInterfaceCommand({
-    designator: ["rules"],
-    table: "draupnir",
-    parameters: parameters([]),
-    command: async function (this: DraupnirContext): Promise<ActionResult<ListMatches[]>> {
-        const infoResult = await listInfo(this.draupnir);
-        return Ok(
-            infoResult.map(
-                policyRoom => ({
-                    room: policyRoom.revision.room,
-                    roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-                    profile: policyRoom.watchedListProfile,
-                    matches: policyRoom.revision.allRules()
-                })
-            )
-        );
-    },
-    summary: "Lists the rules currently in use by Mjolnir."
-})
+  designator: ["rules"],
+  table: "draupnir",
+  parameters: parameters([]),
+  command: async function (
+    this: DraupnirContext
+  ): Promise<ActionResult<ListMatches[]>> {
+    const infoResult = await listInfo(this.draupnir);
+    return Ok(
+      infoResult.map((policyRoom) => ({
+        room: policyRoom.revision.room,
+        roomID: policyRoom.revision.room.toRoomIDOrAlias(),
+        profile: policyRoom.watchedListProfile,
+        matches: policyRoom.revision.allRules(),
+      }))
+    );
+  },
+  summary: "Lists the rules currently in use by Mjolnir.",
+});
 
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("draupnir", "rules"),
-    renderer: renderListMatches
-})
+  interfaceCommand: findTableCommand("draupnir", "rules"),
+  renderer: renderListMatches,
+});
 
 defineInterfaceCommand({
-    designator: ["rules", "matching"],
-    table: "draupnir",
-    parameters: parameters([
-        {
-            name: "entity",
-            acceptor: union(
-                findPresentationType("UserID"),
-                findPresentationType("MatrixRoomReference"),
-                findPresentationType("string"),
-            )
-        }
-    ]),
-    command: async function (
-        this: DraupnirContext, _keywords, entity: string|UserID|MatrixRoomReference
-    ): Promise<ActionResult<ListMatches[]>> {
-        const policyRooms = await listInfo(this.draupnir);
-        return Ok(
-            policyRooms
-                .map(policyRoom => {
-                    return {
-                        room: policyRoom.revision.room,
-                        roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-                        matches: policyRoom.revision.allRulesMatchingEntity(entity.toString()),
-                        profile: policyRoom.watchedListProfile
-                    }
-                })
-        );
+  designator: ["rules", "matching"],
+  table: "draupnir",
+  parameters: parameters([
+    {
+      name: "entity",
+      acceptor: union(
+        findPresentationType("UserID"),
+        findPresentationType("MatrixRoomReference"),
+        findPresentationType("string")
+      ),
     },
-    summary: "Lists the rules in use that will match this entity e.g. `!rules matching @foo:example.com` will show all the user and server rules, including globs, that match this user"
-})
+  ]),
+  command: async function (
+    this: DraupnirContext,
+    _keywords,
+    entity: string | UserID | MatrixRoomReference
+  ): Promise<ActionResult<ListMatches[]>> {
+    const policyRooms = await listInfo(this.draupnir);
+    return Ok(
+      policyRooms.map((policyRoom) => {
+        return {
+          room: policyRoom.revision.room,
+          roomID: policyRoom.revision.room.toRoomIDOrAlias(),
+          matches: policyRoom.revision.allRulesMatchingEntity(
+            entity.toString()
+          ),
+          profile: policyRoom.watchedListProfile,
+        };
+      })
+    );
+  },
+  summary:
+    "Lists the rules in use that will match this entity e.g. `!rules matching @foo:example.com` will show all the user and server rules, including globs, that match this user",
+});
 
 // I'm pretty sure that both commands could merge and use the same rendeer.
 defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand("draupnir", "rules", "matching"),
-    renderer: renderListMatches
-})
+  interfaceCommand: findTableCommand("draupnir", "rules", "matching"),
+  renderer: renderListMatches,
+});

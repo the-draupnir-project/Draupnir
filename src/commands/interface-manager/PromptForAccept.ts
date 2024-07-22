@@ -7,8 +7,8 @@ import { ReadItem } from "./CommandReader";
 import { ArgumentStream } from "./ParameterParsing";
 
 export interface PromptOptions<PresentationType = ReadItem> {
-    readonly suggestions: PresentationType[]
-    readonly default?: PresentationType
+  readonly suggestions: PresentationType[];
+  readonly default?: PresentationType;
 }
 
 /**
@@ -16,22 +16,22 @@ export interface PromptOptions<PresentationType = ReadItem> {
  * to derive the prompt, or use the prompt given by the ParameterDescription.
  */
 export interface InterfaceAcceptor {
-    readonly isPromptable: boolean
+  readonly isPromptable: boolean;
 }
 
 export class PromptableArgumentStream extends ArgumentStream {
-    constructor(
-        source: ReadItem[],
-        private readonly interfaceAcceptor: InterfaceAcceptor,
-        start = 0,
-    ) {
-        super([...source], start);
-    }
-    public rest() {
-        return this.source.slice(this.position);
-    }
+  constructor(
+    source: ReadItem[],
+    private readonly interfaceAcceptor: InterfaceAcceptor,
+    start = 0
+  ) {
+    super([...source], start);
+  }
+  public rest() {
+    return this.source.slice(this.position);
+  }
 
-    public isPromptable(): boolean {
-        return this.interfaceAcceptor.isPromptable
-    }
+  public isPromptable(): boolean {
+    return this.interfaceAcceptor.isPromptable;
+  }
 }

@@ -5,31 +5,31 @@ import { setupHarness } from "../utils/harness";
 import { isError } from "matrix-protection-suite";
 
 interface Context extends Mocha.Context {
-    appservice?:  MjolnirAppService
+  appservice?: MjolnirAppService;
 }
 
-describe("Just test some commands innit", function() {
-    beforeEach(async function(this: Context) {
-        this.appservice = await setupHarness();
-    });
-    afterEach(function(this: Context) {
-        if (this.appservice) {
-            return this.appservice.close();
-        } else {
-            console.warn("Missing Appservice in this context, so cannot stop it.")
-            return Promise.resolve(); // TS7030: Not all code paths return a value.
-        }
-    });
-    it("Can list any unstarted draupnir", async function(this: Context) {
-        const appservice = this.appservice;
-        if (appservice === undefined) {
-            throw new TypeError(`Test setup failed`);
-        }
-        const commandClient = new AppservideBotCommandClient(appservice);
-        const result = await commandClient.sendCommand("list", "unstarted");
-        if (isError(result)) {
-            throw new TypeError(`Command should have succeeded`);
-        }
-        expect(result.ok).toBeInstanceOf(Array);
-    });
-})
+describe("Just test some commands innit", function () {
+  beforeEach(async function (this: Context) {
+    this.appservice = await setupHarness();
+  });
+  afterEach(function (this: Context) {
+    if (this.appservice) {
+      return this.appservice.close();
+    } else {
+      console.warn("Missing Appservice in this context, so cannot stop it.");
+      return Promise.resolve(); // TS7030: Not all code paths return a value.
+    }
+  });
+  it("Can list any unstarted draupnir", async function (this: Context) {
+    const appservice = this.appservice;
+    if (appservice === undefined) {
+      throw new TypeError(`Test setup failed`);
+    }
+    const commandClient = new AppservideBotCommandClient(appservice);
+    const result = await commandClient.sendCommand("list", "unstarted");
+    if (isError(result)) {
+      throw new TypeError(`Command should have succeeded`);
+    }
+    expect(result.ok).toBeInstanceOf(Array);
+  });
+});
