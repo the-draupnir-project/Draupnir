@@ -10,7 +10,7 @@ import { defineMatrixInterfaceAdaptor, findMatrixInterfaceAdaptor, MatrixContext
 import { ArgumentStream, RestDescription, findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { MjolnirAppService } from '../AppService';
 import { renderHelp } from '../../commands/interface-manager/MatrixHelpRenderer';
-import { ActionResult, ClientPlatform, Ok, RoomMessage, StringRoomID, StringUserID, Value, isError } from 'matrix-protection-suite';
+import { ActionResult, ClientPlatform, Ok, RoomMessage, StringRoomID, StringUserID, Task, Value, isError } from 'matrix-protection-suite';
 import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';
 import { MatrixReactionHandler } from '../../commands/interface-manager/MatrixReactionHandler';
 import { ARGUMENT_PROMPT_LISTENER, DEFAUILT_ARGUMENT_PROMPT_LISTENER, makeListenerForArgumentPrompt, makeListenerForPromptDefault } from '../../commands/interface-manager/MatrixPromptForAccept';
@@ -105,7 +105,7 @@ export class AppserviceCommandHandler {
                     ...this.commandContext,
                     event: parsedEvent,
                 };
-                adaptor.invoke(context, context, ...argumentStream.rest());
+                void Task(adaptor.invoke(context, context, ...argumentStream.rest()));
                 return;
             }
         }

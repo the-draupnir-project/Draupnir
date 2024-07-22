@@ -12,6 +12,7 @@ import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ActionError, ActionException, ActionExceptionKind, ActionResult, MatrixRoomReference, Ok, RoomEvent, StringRoomID, Task, isError, isOk } from "matrix-protection-suite";
 import { renderDetailsNotice, renderElaborationTrail, renderExceptionTrail } from "../../capabilities/CommonRenderers";
+import { printReadably } from "./PrintReadably";
 
 function requiredArgument(argumentName: string): string {
     return `<${argumentName}>`;
@@ -33,7 +34,7 @@ export function renderParameterDescription(description: ParameterDescription): D
     </fragment>
 }
 
-export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): DocumentNode {
+export function renderCommandSummary(command: InterfaceCommand): DocumentNode {
     return <details>
         <summary>
             <code>{renderCommandHelp(command)}</code> - {command.summary}
@@ -51,7 +52,7 @@ export function renderCommandSummary(command: InterfaceCommand<BaseFunction>): D
     </details>
 }
 
-export function renderCommandHelp(command: InterfaceCommand<BaseFunction>): string {
+export function renderCommandHelp(command: InterfaceCommand): string {
     const rest = command.argumentListParser.rest;
     const keywords = command.argumentListParser.keywords;
     return [
@@ -77,7 +78,7 @@ function renderTableHelp(table: CommandTable): DocumentNode {
     </root>
 }
 
-export async function renderHelp(client: MatrixSendClient, commandRoomID: StringRoomID, event: any, result: ActionResult<CommandTable>): Promise<void> {
+export async function renderHelp(client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<CommandTable>): Promise<void> {
     if (isError(result)) {
         throw new TypeError("This command isn't supposed to fail");
     }
@@ -142,7 +143,7 @@ export function renderActionResultToEvent(client: MatrixSendClient, event: RoomE
     void Task(reactToEventWithResult(client, event, result));
 }
 
-export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
+export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =  async function tickCrossRenderer(this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomID: StringRoomID, event: RoomEvent, result: ActionResult<unknown>): Promise<void> {
     void Task(reactToEventWithResult(client, event, result));
     if (isError(result)) {
         if (result.error instanceof ArgumentParseError) {
@@ -167,7 +168,7 @@ export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =
 
 // Maybe we need something like the MatrixInterfaceAdaptor but for Error types?
 
-function formattedArgumentHint(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): string {
+function formattedArgumentHint(command: InterfaceCommand, error: ArgumentParseError): string {
     const argumentsUpToError = error.stream.source.slice(0, error.stream.getPosition());
     let commandContext = 'Command context:';
     for (const designator of command.designator) {
@@ -176,11 +177,11 @@ function formattedArgumentHint(command: InterfaceCommand<BaseFunction>, error: A
     for (const argument of argumentsUpToError) {
         commandContext += ` ${JSON.stringify(argument)}`;
     }
-    let badArgument = ` ${error.stream.peekItem()}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.parameter.acceptor.name} here`;
+    const badArgument = ` ${printReadably(error.stream.peekItem())}\n${Array(commandContext.length + 1).join(' ')} ^ expected ${error.parameter.acceptor.name} here`;
     return commandContext + badArgument;
 }
 
-function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error: ArgumentParseError): DocumentNode {
+function renderArgumentParseError(command: InterfaceCommand, error: ArgumentParseError): DocumentNode {
     return <root>
         There was a problem when parsing the <code>{error.parameter.name}</code> parameter for this command.<br />
         {renderCommandHelp(command)}<br />
@@ -189,7 +190,7 @@ function renderArgumentParseError(command: InterfaceCommand<BaseFunction>, error
     </root>
 }
 
-function renderCommandException(command: InterfaceCommand<BaseFunction>, error: ActionException): DocumentNode {
+function renderCommandException(command: InterfaceCommand, error: ActionException): DocumentNode {
     return <root>
         There was an unexpected error when processing this command:<br />
         {error.message}<br />

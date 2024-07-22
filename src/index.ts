@@ -49,7 +49,7 @@ import { WebAPIs } from "./webapis/WebAPIs";
 import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
 
-(async function () {
+void (async function () {
     const config = configRead();
 
     config.RUNTIME = {};

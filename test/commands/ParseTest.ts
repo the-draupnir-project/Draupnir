@@ -28,9 +28,6 @@ it('A command that fookin parses mxids', async function() {
         summary: "Mimicks the unban command"
     });
     const command = findTableCommand(tableName, "unban");
-    if (command === undefined) {
-        throw new TypeError(`Command table has gone missing this asin't good guys`);
-    }
     const result = await command.parseThenInvoke(undefined, new ArgumentStream(readCommand("@spam:example.com")));
     if (isError(result)) {
         throw new TypeError(`Not supposed to be error mate`);

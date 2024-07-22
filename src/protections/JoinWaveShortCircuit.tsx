@@ -42,7 +42,7 @@ type JoinWaveShortCircuitProtectionSettings = {
 }
 
 // TODO: Add join rule capability.
-type JoinWaveShortCircuitProtectionCapabilities = {}
+type JoinWaveShortCircuitProtectionCapabilities = Record<never, never>;
 
 type JoinWaveShortCircuitProtectionDescription = ProtectionDescription<Draupnir, JoinWaveShortCircuitProtectionSettings, JoinWaveShortCircuitProtectionCapabilities>;
 
@@ -85,7 +85,7 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveS
         [roomID: StringRoomID]: {
             lastBucketStart: Date,
             numberOfJoins: number,
-        }
+        } | undefined
     } = {};
 
     constructor(
@@ -107,7 +107,7 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveS
     public async handleMembershipChange(revision: RoomMembershipRevision, changes: MembershipChange[]): Promise<ActionResult<void>> {
         const roomID = revision.room.toRoomIDOrAlias();
         for (const change of changes) {
-            await this.handleMembership(roomID, change).catch(e => log.error(`Unexpected error handling memebership change`, e));
+            await this.handleMembership(roomID, change).catch((e: unknown) => { log.error(`Unexpected error handling memebership change`, e); });
         }
         return Ok(undefined);
     }
@@ -126,7 +126,7 @@ export class JoinWaveShortCircuitProtection extends AbstractProtection<JoinWaveS
         }
 
         if (++this.joinBuckets[roomID].numberOfJoins >= this.settings.maxPer) {
-            await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "JoinWaveShortCircuit", `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes (since ${this.joinBuckets[roomID].lastBucketStart})`, roomID);
+            await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "JoinWaveShortCircuit", `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes (since ${this.joinBuckets[roomID].lastBucketStart.toString()})`, roomID);
 
             if (!this.draupnir.config.noop) {
                 await this.draupnir.client.sendStateEvent(roomID, "m.room.join_rules", "", {"join_rule": "invite"})

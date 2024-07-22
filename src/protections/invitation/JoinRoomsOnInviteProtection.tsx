@@ -20,9 +20,10 @@ import { renderFailedSingularConsequence } from "../../capabilities/CommonRender
 import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";
 import { WatchRoomsOnInvite } from "./WatchRoomsOnInvite";
 
-export type JoinRoomsOnInviteProtectionCapabilities = {};
+export type JoinRoomsOnInviteProtectionCapabilities = Record<string, never>;
+export type JoinRoomsOnInviteProtectionSettings = Record<string, unknown>;
 
-export type JoinRoomsOnInviteProtectionDescription = ProtectionDescription<Draupnir, {}, JoinRoomsOnInviteProtectionCapabilities>;
+export type JoinRoomsOnInviteProtectionDescription = ProtectionDescription<Draupnir, JoinRoomsOnInviteProtectionSettings, JoinRoomsOnInviteProtectionCapabilities>;
 
 export class JoinRoomsOnInviteProtection
     extends AbstractProtection<JoinRoomsOnInviteProtectionDescription>
@@ -89,13 +90,13 @@ export class JoinRoomsOnInviteProtection
             </root>
         }
         void Task((async () => {
-            renderMatrixAndSend(
+            await renderMatrixAndSend(
                 renderUnknownInvite(),
                 this.draupnir.managementRoomID,
                 undefined,
                 this.draupnir.client
             );
-            return Ok(undefined)
+            return Ok(undefined);
         })());
     }
 
@@ -124,16 +125,16 @@ export class JoinRoomsOnInviteProtection
         if (isError(joinResult)) {
             return joinResult;
         }
-        void this.watchRoomsOnInvite.promptIfPossiblePolicyRoom(invitedRoomReference, event);
+        this.watchRoomsOnInvite.promptIfPossiblePolicyRoom(invitedRoomReference, event);
         if (!this.draupnir.config.protectAllJoinedRooms && !this.protectedRoomsSet.isProtectedRoom(event.room_id)) {
-            void this.protectRoomsOnInvite.promptToProtect(invitedRoomReference, event);
+            this.protectRoomsOnInvite.promptToProtect(invitedRoomReference, event);
         }
         return Ok(undefined);
     }
 
 }
 
-describeProtection<{}, Draupnir>({
+describeProtection<JoinRoomsOnInviteProtectionCapabilities, Draupnir>({
     name: JoinRoomsOnInviteProtection.name,
     description: "Automatically joins rooms when invited by members of the management room and offers to protect them",
     capabilityInterfaces: {},

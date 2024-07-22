@@ -21,6 +21,7 @@ function getSchema(): SchemaUpdateFunction[] {
     const nSchema = 2;
     const schema = [];
     for (let schemaID = 1; schemaID < nSchema + 1; schemaID++) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         schema.push(require(`./schema/v${schemaID}`).runSchema);
     }
     return schema;

@@ -17,6 +17,8 @@ type JSXChild = DocumentNode|LeafNode|string|number|JSXChild[];
 type NodeProperties = { children?: JSXChild[]|JSXChild };
 type LeafNodeProperties = { children?: never[] };
 
+// We need to use a namespace here for the JSXFactory, at least i think.
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace DeadDocumentJSX {
     export function JSXFactory(tag: NodeTag, properties: unknown, ...rawChildren: (DocumentNode|LeafNode|string)[]) {
         const node = makeDocumentNode(tag);
@@ -29,13 +31,13 @@ export namespace DeadDocumentJSX {
             if (typeof rawChild === 'string') {
                 makeLeafNode<TextNode>(NodeTag.TextNode, node, rawChild);
             } else if (typeof rawChild === 'number') {
-                makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild as number).toString());
+                makeLeafNode<TextNode>(NodeTag.TextNode, node, (rawChild).toString());
             } else if (Array.isArray(rawChild)) {
                 rawChild.forEach(ensureChild);
             // Then it's a DocumentNode|LeafNode
             } else if (typeof rawChild.leafNode === 'boolean') {
                 if (rawChild.tag === NodeTag.Fragment) {
-                    (rawChild as DocumentNode).getChildren().forEach(node.addChild, node);
+                    (rawChild as DocumentNode).getChildren().forEach(node.addChild.bind(node));
                 } else {
                     node.addChild(rawChild);
                 }
@@ -46,6 +48,7 @@ export namespace DeadDocumentJSX {
         rawChildren.forEach(ensureChild);
         return node;
     }
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     export namespace JSX {
         export interface IntrinsicElements {
             a: NodeProperties & { href?: string, name?: string, target?: string },
@@ -74,7 +77,7 @@ export namespace DeadDocumentJSX {
         }
         export type Element = DocumentNode
         export type ElementChildrenAttribute = {
-            children?: JSXChild[]|JSXChild|never[]|never
+            children?: JSXChild[]|JSXChild|never[]
         }
     }
 }

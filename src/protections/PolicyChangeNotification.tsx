@@ -18,7 +18,7 @@ import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentM
 
 const log = new Logger('PolicyChangeNotification');
 
-export type PolicyChangeNotificationCapabilitites = {};
+export type PolicyChangeNotificationCapabilitites = Record<never, never>;
 
 export type PolicyChangeNotificationProtectionDescription = ProtectionDescription<
     Draupnir,

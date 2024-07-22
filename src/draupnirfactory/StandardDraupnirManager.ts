@@ -25,7 +25,7 @@ limitations under the License.
  * are NOT distributed, contributed, committed, or licensed under the Apache License.
  */
 
-import { ActionError, ActionResult, MatrixRoomID, StringUserID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, MatrixRoomID, StringUserID, Task, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -104,7 +104,9 @@ export class StandardDraupnirManager {
         if (draupnir === undefined) {
             throw new TypeError(`Trying to start a draupnir that hasn't been created ${clientUserID}`);
         }
-        draupnir.start();
+        // FIXME: This is a little more than suspect that there are no handlers if starting fails?
+        // unclear to me what can fail though.
+        void Task(draupnir.start());
         this.listeningDraupnirs.set(clientUserID, draupnir);
         this.readyDraupnirs.delete(clientUserID);
     }

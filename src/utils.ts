@@ -34,34 +34,19 @@ import {
     MatrixError,
 } from "matrix-bot-sdk";
 import { ClientRequest, IncomingMessage } from "http";
-import { default as parseDuration } from "parse-duration";
 import * as Sentry from '@sentry/node';
-import * as _ from '@sentry/tracing'; // Performing the import activates tracing.
 
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-
-// Define a few aliases to simplify parsing durations.
-
-parseDuration["days"] = parseDuration["day"];
-parseDuration["weeks"] = parseDuration["week"] = parseDuration["wk"];
-parseDuration["months"] = parseDuration["month"];
-parseDuration["years"] = parseDuration["year"];
-
-// ... and reexport it
-export { parseDuration };
-
+import { RoomEvent } from "matrix-protection-suite";
 
 export function htmlEscape(input: string): string {
-    return input.replace(/["&<>]/g, (char: string) => ({
-        ['"'.charCodeAt(0)]: "&quot;",
-        ["&".charCodeAt(0)]: "&amp;",
-        ["<".charCodeAt(0)]: "&lt;",
-        [">".charCodeAt(0)]: "&gt;"
-    })[char.charCodeAt(0)]);
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    return input.replace(/[<&"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
 }
+
 
 export function setToArray<T>(set: Set<T>): T[] {
     const arr: T[] = [];
@@ -83,7 +68,7 @@ export function setToArray<T>(set: Set<T>): T[] {
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
 export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
-    // @ts-ignore
+    // @ts-expect-error we access a private method due to lack of a public one.
     if (!gauge._getValue({ status: status, uuid: uuid })) {
         gauge.inc({ status: status, uuid: uuid });
     }
@@ -101,21 +86,10 @@ export function incrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "of
  * @param uuid The UUID of the instance. (Usually the localPart)
  */
 export function decrementGaugeValue(gauge: Gauge<"status" | "uuid">, status: "offline" | "disabled" | "online", uuid: string) {
-    // @ts-ignore
+    // @ts-expect-error we access a private method due to lack of a public one.
     if (gauge._getValue({ status: status, uuid: uuid })) {
         gauge.dec({ status: status, uuid: uuid });
     }
-}
-
-export function isTrueJoinEvent(event: any): boolean {
-    const membership = event['content']['membership'] || 'join';
-    let prevMembership = "leave";
-    if (event['unsigned'] && event['unsigned']['prev_content']) {
-        prevMembership = event['unsigned']['prev_content']['membership'] || 'leave';
-    }
-
-    // We look at the previous membership to filter out profile changes
-    return membership === 'join' && prevMembership !== "join";
 }
 
 /**
@@ -139,7 +113,9 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
                 for (const victimEvent of eventsToRedact) {
                     await managementRoom.logMessage(LogLevel.DEBUG, "utils#redactUserMessagesIn", `Redacting ${victimEvent['event_id']} in ${targetRoomId}`, targetRoomId);
                     if (!noop) {
-                        await client.redactEvent(targetRoomId, victimEvent['event_id']);
+                        await client.redactEvent(targetRoomId, victimEvent['event_id']).catch((error: unknown) => {
+                            LogService.error("utils#redactUserMessagesIn", `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}:`, error, targetRoomId);
+                        });
                     } else {
                         await managementRoom.logMessage(LogLevel.WARN, "utils#redactUserMessagesIn", `Tried to redact ${victimEvent['event_id']} in ${targetRoomId} but Mjolnir is running in no-op mode`, targetRoomId);
                     }
@@ -167,7 +143,7 @@ export async function redactUserMessagesIn(client: MatrixSendClient, managementR
  * The callback will only be called if there are any relevant events.
  * @returns {Promise<void>} Resolves when either: the limit has been reached, no relevant events could be found or there is no more timeline to paginate.
  */
-export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: any[]) => void): Promise<void> {
+export async function getMessagesByUserIn(client: MatrixSendClient, sender: string, roomId: string, limit: number, cb: (events: RoomEvent[]) => Promise<void> | void): Promise<void> {
     const isGlob = sender.includes("*");
     const roomEventFilter = {
         rooms: [roomId],
@@ -193,7 +169,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * The `start` is a token for the beginning of the `chunk` (where the most recent events are).
      */
     interface BackfillResponse {
-        chunk?: any[],
+        chunk?: RoomEvent[],
         end?: string,
         start: string
     }
@@ -210,7 +186,7 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
             dir: "b",
             ...from ? { from } : {}
         };
-        LogService.info("utils", "Backfilling with token: " + from);
+        LogService.info("utils", "Backfilling with token: ", from);
         return client.doRequest("GET", `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`, qs);
     }
 
@@ -220,8 +196,8 @@ export async function getMessagesByUserIn(client: MatrixSendClient, sender: stri
      * @param events Events from the room timeline.
      * @returns Events that can safely be processed by the callback.
      */
-    function filterEvents(events: any[]) {
-        const messages: any[] = [];
+    function filterEvents(events: RoomEvent[]) {
+        const messages: RoomEvent[] = [];
         for (const event of events) {
             if (processed >= limit) return messages; // we have provided enough events.
             processed++;
@@ -264,6 +240,19 @@ function isMatrixError(path: string): boolean {
     return /^\/_matrix/.test(path)
 }
 
+interface RequestOptions {
+    method?: string | undefined;
+    uri: string | undefined;
+    [k: string]: unknown;
+}
+
+type RequestError = {
+    body?: {
+        [key: string]: unknown
+    },
+    [key: string]: unknown } | undefined;
+type RequestResponse = { statusCode: number, [key: string]: unknown };
+
 /**
  * Patch `MatrixClient` into something that throws concise exceptions.
  *
@@ -281,15 +270,15 @@ function patchMatrixClientForConciseExceptions() {
     if (isMatrixClientPatchedForConciseExceptions) {
         return;
     }
-    let originalRequestFn = getRequestFn();
-    setRequestFn((params: { [k: string]: any }, cb: any) => {
+    const originalRequestFn = getRequestFn();
+    setRequestFn((params: RequestOptions, cb: typeof originalRequestFn) => {
         // Store an error early, to maintain *some* semblance of stack.
         // We'll only throw the error if there is one.
-        let error = new Error("STACK CAPTURE");
+        const error = new Error("STACK CAPTURE");
         originalRequestFn(params, function conciseExceptionRequestFn(
-            err: { [key: string]: unknown }, response: { [key: string]: any }, resBody: unknown
+            err: RequestError, response: RequestResponse, resBody: unknown
         ) {
-            if (!err && (response?.statusCode < 200 || response?.statusCode >= 300)) {
+            if (!err && (response.statusCode < 200 || response.statusCode >= 300)) {
                 // Normally, converting HTTP Errors into rejections is done by the caller
                 // of `requestFn` within matrix-bot-sdk. However, this always ends up rejecting
                 // with an `IncomingMessage` - exactly what we wish to avoid here.
@@ -344,7 +333,7 @@ function patchMatrixClientForConciseExceptions() {
                     // Not JSON.
                 }
             }
-            let message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${JSON.stringify(body)}`;
+            const message = `Error during MatrixClient request ${method} ${path}: ${err.statusCode} ${err.statusMessage} -- ${JSON.stringify(body)}`;
             error.message = message;
             if (body) {
                 // Define the property but don't make it visible during logging.
@@ -367,8 +356,10 @@ function patchMatrixClientForConciseExceptions() {
             // we wrote this, matrix-bot-sdk has updated so that there is now a MatrixError that is thrown
             // when there are errors in the response.
             if (isMatrixError(path)) {
-                const matrixError = new MatrixError(body as any, err.statusCode as any);
-                matrixError.stack = error.stack;
+                const matrixError = new MatrixError(body as MatrixError['body'], err.statusCode as number);
+                if (error.stack !== undefined) {
+                    matrixError.stack = error.stack;
+                }
                 return cb(matrixError, response, resBody)
             } else {
                 return cb(error, response, resBody);
@@ -381,8 +372,6 @@ function patchMatrixClientForConciseExceptions() {
 const MAX_REQUEST_ATTEMPTS = 15;
 const REQUEST_RETRY_BASE_DURATION_MS = 100;
 
-const TRACE_CONCURRENT_REQUESTS = false;
-let numberOfConcurrentRequests = 0;
 let isMatrixClientPatchedForRetryWhenThrottled = false;
 /**
  * Patch instances of MatrixClient to make sure that it retries requests
@@ -396,24 +385,21 @@ function patchMatrixClientForRetry() {
     if (isMatrixClientPatchedForRetryWhenThrottled) {
         return;
     }
-    let originalRequestFn = getRequestFn();
-    setRequestFn(async (params: { [k: string]: any }, cb: any) => {
+    const originalRequestFn = getRequestFn();
+    setRequestFn(async (params: RequestOptions, cb: typeof originalRequestFn) => {
         let attempt = 1;
-        numberOfConcurrentRequests += 1;
-        if (TRACE_CONCURRENT_REQUESTS) {
-            console.trace("Current number of concurrent requests", numberOfConcurrentRequests);
-        }
-        try {
             while (true) {
                 try {
-                    let result: any[] = await new Promise((resolve, reject) => {
+                    const result: [RequestError, RequestResponse, unknown] = await new Promise((resolve, reject) => {
                         originalRequestFn(params, function requestFnWithRetry(
-                            err: { [key: string]: any }, response: { [key: string]: unknown }, resBody: unknown
+                            err: RequestError, response: RequestResponse, resBody: unknown
                         ) {
                             // Note: There is no data race on `attempt` as we `await` before continuing
                             // to the next iteration of the loop.
                             if (attempt < MAX_REQUEST_ATTEMPTS && err?.body?.errcode === 'M_LIMIT_EXCEEDED') {
                                 // We need to retry.
+                                // We're not able to refactor away from thsis now, pretty unfortunatley.
+                                // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                                 reject(err);
                             } else {
                                 if (attempt >= MAX_REQUEST_ATTEMPTS) {
@@ -443,17 +429,13 @@ function patchMatrixClientForRetry() {
                     await new Promise(resolve => setTimeout(resolve, retryAfterMs));
                     attempt += 1;
                 }
-            }
-        } finally {
-            numberOfConcurrentRequests -= 1;
-        }
-    });
+            }});
     isMatrixClientPatchedForRetryWhenThrottled = true;
 }
 
 let isMatrixClientPatchedForPrototypePollution = false;
 
-export function jsonReviver(key: string, value: any): any {
+export function jsonReviver<T = unknown>(key: string, value: T): T | undefined {
     if (key === '__proto__' || key === 'constructor') {
         return undefined;
     } else {
@@ -471,9 +453,9 @@ function patchMatrixClientForPrototypePollution() {
         return;
     }
     const originalRequestFn = getRequestFn();
-    setRequestFn((params: { [k: string]: any }, cb: any) => {
+    setRequestFn((params: RequestOptions, cb: typeof originalRequestFn) => {
         originalRequestFn(params, function conciseExceptionRequestFn(
-            error: { [key: string]: any }, response: { [key: string]: any }, resBody: unknown
+            error: RequestError, response: RequestResponse, resBody: unknown
         ) {
             // https://github.com/turt2live/matrix-bot-sdk/blob/c7d16776502c26bbb547a3d667ec92eb50e7026c/src/http.ts#L77-L101
             // bring forwards this step and do it safely.
@@ -485,7 +467,7 @@ function patchMatrixClientForPrototypePollution() {
                 }
             }
 
-            if (typeof response?.body === 'string') {
+            if (typeof response.body === 'string') {
                 try {
                     response.body = JSON.parse(response.body, jsonReviver);
                 } catch (e) {
@@ -529,7 +511,7 @@ export function initializeSentry(config: IConfig) {
     }
     if (config.health.sentry) {
         // Configure error monitoring with Sentry.
-        let sentry = config.health.sentry;
+        const sentry = config.health.sentry;
         Sentry.init({
             dsn: sentry.dsn,
             tracesSampleRate: sentry.tracesSampleRate,

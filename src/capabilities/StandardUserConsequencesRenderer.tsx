@@ -113,7 +113,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
         this.messageCollector.addMessage(this.description, renderResultForUsersInRoom(resultMap,
             {
                 summary: <fragment>
-                    {this.description === undefined ? '' : <fragment><code>{this.description.name}</code>:</fragment>}
+                    {<fragment><code>{this.description.name}</code>:</fragment>}
                     {resultMap.map.size} will be banned from {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} - &#32;
                     {renderOutcome(resultMap.isEveryResultOk)}.
                 </fragment>

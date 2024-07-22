@@ -1,42 +1,68 @@
-/**
- * Copyright (C) 2022 Gnuxie <Gnuxie@protonmail.com>
- * All rights reserved.
- */
+// SPDX-FileCopyrightText: 2022 - 2024 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-FileAttributionText: <text>
+// This modified file incorporates work from super-cool-stream
+// https://github.com/Gnuxie/super-cool-stream
+// </text>
 
 import { MatrixEventReference, MatrixRoomReference, Permalinks, UserID, isError, isStringRoomAlias, isStringRoomID } from "matrix-protection-suite";
-
-export interface ISuperCoolStream<T> {
-    readonly source: T
-    peekItem(eof?: any): T|any,
-    readItem(eof?: any): T|any,
-    getPosition(): number,
-    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean, body: (stream: ISuperCoolStream<T>) => Result}): Result;
+export interface SuperCoolStream<Item, Sequence> {
+    readonly source: Sequence;
+    peekItem<EOF = undefined>(eof?: EOF): Item | EOF;
+    readItem<EOF = undefined>(eof?: EOF): Item | EOF;
+    getPosition(): number;
+    setPosition(n: number): void;
+    clone(): SuperCoolStream<Item, Sequence>;
+    savingPositionIf<Result>(description: {
+        predicate: (t: Result) => boolean;
+        body: (stream: SuperCoolStream<Item, Sequence>) => Result;
+    }): Result;
 }
 
-export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> implements ISuperCoolStream<T> {
-    protected position: number
+interface Indexable<Item> {
+    at(position: number): Item | undefined;
+}
+
+export class StandardSuperCoolStream<Item, Sequence extends Indexable<Item>> implements SuperCoolStream<Item, Sequence> {
+    protected position: number;
     /**
      * Makes the super cool string stream.
      * @param source A string to act as the source of the stream.
      * @param start Where in the string we should start reading.
      */
-    constructor(public readonly source: T, start = 0) {
+    constructor(
+        public readonly source: Sequence,
+        start = 0
+    ) {
         this.position = start;
     }
 
-    public peekItem(eof = undefined) {
-        return this.source.at(this.position) ?? eof;
+    public peekItem<EOF = undefined>(eof?: EOF): Item | EOF {
+        return this.source.at(this.position) ?? (eof as EOF);
     }
 
-    public readItem(eof = undefined) {
-        return this.source.at(this.position++) ?? eof;
+    public readItem<EOF = undefined>(eof?: EOF) {
+        return this.source.at(this.position++) ?? (eof as EOF);
     }
 
     public getPosition(): number {
         return this.position;
     }
 
-    savingPositionIf<Result>(description: { predicate: (t: Result) => boolean; body: (stream: SuperCoolStream<T>) => Result; }): Result {
+    public setPosition(n: number) {
+        this.position = n;
+    }
+
+    public clone(): SuperCoolStream<Item, Sequence> {
+        return new StandardSuperCoolStream(this.source, this.position);
+    }
+
+    savingPositionIf<Result>(description: {
+        predicate: (t: Result) => boolean;
+        body: (stream: SuperCoolStream<Item, Sequence>) => Result;
+    }): Result {
         const previousPosition = this.position;
         const bodyResult = description.body(this);
         if (description.predicate(bodyResult)) {
@@ -49,13 +75,20 @@ export class SuperCoolStream<T extends { at: (...args: any) => any|undefined}> i
 /**
  * Helper for peeking and reading character by character.
  */
-class StringStream extends SuperCoolStream<string> {
-    public peekChar(...args: any[]) {
-        return this.peekItem(...args);
+export class StringStream extends StandardSuperCoolStream<
+    string,
+    Indexable<string>
+> {
+    public peekChar<EOF = undefined>(eof?: EOF) {
+        return this.peekItem(eof);
     }
 
-    public readChar(...args: any[]) {
-        return this.readItem(...args);
+    public readChar<EOF = undefined>(eof?: EOF) {
+        return this.readItem(eof);
+    }
+
+    public clone(): StringStream {
+        return new StringStream(this.source, this.position);
     }
 }
 
@@ -95,8 +128,10 @@ export function readCommand(string: string): ReadItem[] {
 
 function readCommandFromStream(stream: StringStream): ReadItem[] {
     const words: ReadItem[] = [];
-    while (stream.peekChar() !== undefined && (eatWhitespace(stream), true) && stream.peekChar() !== undefined) {
+    eatWhitespace(stream);
+    while (stream.peekChar() !== undefined) {
         words.push(readItem(stream));
+        eatWhitespace(stream);
     }
     return words.map(applyPostReadTransformersToReadItem);
 }
@@ -114,16 +149,19 @@ function readItem(stream: StringStream): ReadItem {
     if (stream.peekChar() === undefined) {
         throw new TypeError('EOF');
     }
-    if (WHITESPACE.includes(stream.peekChar()!)) {
+    if (WHITESPACE.includes(stream.peekChar())) {
         throw new TypeError('whitespace should have been stripped');
     }
-    const dispatchCharacter = stream.peekChar()!;
+    const dispatchCharacter = stream.peekChar();
+    if (dispatchCharacter === undefined) {
+        throw new TypeError(`There should be a dispatch character and if there isn't then the code is wrong`);
+    }
     const macro = WORD_DISPATCH_CHARACTERS.get(dispatchCharacter);
     if (macro) {
         return macro(stream);
     } else {
         // Then read a normal word.
-        const word: string[] = [stream.readChar()!];
+        const word: string[] = [stream.readChar()];
         readUntil(/\s/, stream, word);
         return word.join('');
     }
@@ -173,7 +211,7 @@ function definePostReadReplace(regex: RegExp, transformer: PostReadStringReplace
 
 function applyPostReadTransformersToReadItem(item: ReadItem): ReadItem {
     if (typeof item === 'string') {
-        for (const [_key, { regex, transformer }] of POST_READ_TRANSFORMERS) {
+        for (const [, { regex, transformer }] of POST_READ_TRANSFORMERS) {
             if (regex.test(item)) {
                 return transformer(item);
             }
@@ -190,8 +228,8 @@ function applyPostReadTransformersToReadItem(item: ReadItem): ReadItem {
  * @returns `output`.
  */
 function readUntil(regex: RegExp, stream: StringStream, output: string[]) {
-    while (stream.peekChar() !== undefined && !regex.test(stream.peekChar()!)) {
-        output.push(stream.readChar()!);
+    while (stream.peekChar() !== undefined && !regex.test(stream.peekChar())) {
+        output.push(stream.readChar());
     }
     return output;
 }
@@ -203,9 +241,9 @@ function readUntil(regex: RegExp, stream: StringStream, output: string[]) {
  * @returns A MatrixRoomReference or string if what has been read does not represent a room.
  */
 function readRoomIDOrAlias(stream: StringStream): MatrixRoomReference|string {
-    const word: string[] = [stream.readChar()!];
+    const word: string[] = [stream.readChar()];
     readUntil(/[:\s]/, stream, word);
-    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {
+    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar())) {
         return word.join('');
     }
     readUntil(/\s/, stream, word);
@@ -226,9 +264,9 @@ defineReadItem('!', readRoomIDOrAlias);
  * Read the word as a UserID, otherwise return a string if what has been read doesn not represent a user.
  */
 defineReadItem('@', (stream: StringStream): UserID|string => {
-    const word: string[] = [stream.readChar()!];
+    const word: string[] = [stream.readChar()];
     readUntil(/[:\s]/, stream, word);
-    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar()!)) {
+    if (stream.peekChar() === undefined || WHITESPACE.includes(stream.peekChar())) {
         return word.join('');
     }
     readUntil(/\s/, stream, word);
@@ -260,7 +298,7 @@ function readKeyword(stream: StringStream): Keyword {
     if (stream.peekChar() === undefined) {
         return new Keyword('');
     }
-    const word: string[] = [stream.readChar()!]
+    const word: string[] = [stream.readChar()]
     readUntil(/[\s]/, stream, word)
     return new Keyword(word.join(''));
 }

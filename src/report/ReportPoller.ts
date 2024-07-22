@@ -30,7 +30,7 @@ import { ReportManager } from './ReportManager';
 import { LogLevel, LogService } from "matrix-bot-sdk";
 import ManagementRoomOutput from "../ManagementRoomOutput";
 import { Draupnir } from "../Draupnir";
-import { ActionException, ActionExceptionKind, Ok, SynapseReport, Value, isError } from "matrix-protection-suite";
+import { ActionException, ActionExceptionKind, Ok, SynapseReport, Task, Value, isError } from "matrix-protection-suite";
 
 /**
  * Synapse will tell us where we last got to on polling reports, so we need
@@ -82,12 +82,12 @@ export class ReportPoller {
     }
 
     private async getAbuseReports() {
-        let response_: {
+        let response: {
             event_reports: unknown[],
             next_token: number | undefined
         } | undefined;
         try {
-            response_ = await this.draupnir.client.doRequest(
+            response = await this.draupnir.client.doRequest(
                 "GET",
                 "/_synapse/admin/v1/event_reports",
                 {
@@ -100,8 +100,9 @@ export class ReportPoller {
             await this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to poll events: ${ex}`);
             return;
         }
-
-        const response = response_!;
+        if (response === undefined) {
+            throw new TypeError(`we should have got a response from /event_reports/, code is wrong.`);
+        }
         for (const rawReport of response.event_reports) {
             const reportResult = Value.Decode(SynapseReport, rawReport);
             if (isError(reportResult)) {
@@ -120,7 +121,7 @@ export class ReportPoller {
                 (exception) => ActionException.Result(`Failed to retrieve the context for an event ${report.event_id}`, { exception, exceptionKind: ActionExceptionKind.Unknown })
             )
             if (isError(eventContext)) {
-                this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${eventContext.error.uuid}`);
+                void Task(this.draupnir.managementRoomOutput.logMessage(LogLevel.ERROR, "getAbuseReports", `failed to get context: ${eventContext.error.uuid}`));
                 continue;
             }
             const event = eventContext.ok.event;
@@ -129,7 +130,7 @@ export class ReportPoller {
                 roomID: report.room_id,
                 reporterId: report.sender,
                 event: event,
-                reason: report.reason ?? undefined,
+                ...report.reason ? { reason: report.reason } : {}
             });
         }
 
@@ -167,7 +168,7 @@ export class ReportPoller {
             if (err.body?.errcode !== "M_NOT_FOUND") {
                 throw err;
             } else {
-                managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "report poll setting does not exist yet");
+                void Task(managementRoomOutput.logMessage(LogLevel.INFO, "Mjolnir@startup", "report poll setting does not exist yet"));
             }
         }
         return reportPollSetting;

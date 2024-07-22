@@ -25,11 +25,12 @@ limitations under the License.
  */
 
 import { ActionError, ActionResult, Ok, ResultError, isError } from "matrix-protection-suite";
-import { ISuperCoolStream, Keyword, ReadItem, SuperCoolStream } from "./CommandReader";
+import { Keyword, ReadItem, StandardSuperCoolStream, SuperCoolStream } from "./CommandReader";
 import { PromptOptions } from "./PromptForAccept";
 import { PromptRequiredError } from "./PromptRequiredError";
+import { printReadably } from "./PrintReadably";
 
-export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
+export interface IArgumentStream extends SuperCoolStream<ReadItem, ReadItem[]> {
     rest(): ReadItem[],
     // All of the read items before the current position.
     priorItems(): ReadItem[],
@@ -38,7 +39,7 @@ export interface IArgumentStream extends ISuperCoolStream<ReadItem[]> {
     prompt(parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>>,
 }
 
-export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgumentStream {
+export class ArgumentStream extends StandardSuperCoolStream<ReadItem, ReadItem[]> implements IArgumentStream {
     public rest() {
         return this.source.slice(this.position);
     }
@@ -51,7 +52,7 @@ export class ArgumentStream extends SuperCoolStream<ReadItem[]> implements IArgu
         return false;
     }
 
-    prompt(parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>> {
+    prompt(_parameterDescription: ParameterDescription): Promise<ActionResult<ReadItem>> {
         throw new TypeError("This argument stream is NOT promptable, did you even check isPromptable().");
     }
 }
@@ -96,7 +97,7 @@ export function simpleTypeValidator(name: string, predicate: (readItem: ReadItem
             return Ok(result);
         } else {
             // How do we accurately denote the type when it includes spaces in its name, same for the read item?
-            return ActionError.Result(`Was expecting a match for the presentation type: ${name} but got ${readItem}.`);
+            return ActionError.Result(`Was expecting a match for the presentation type: ${name} but got ${printReadably(readItem)}.`);
         }
     }
 }
@@ -115,6 +116,7 @@ export function presentationTypeOf(presentation: unknown): PresentationType|unde
     } else {
         // until there are subtype semantics we have to fail early so that we have a chance of knowing
         // that we have a conflicting type.
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new TypeError(`presentationTypeof: There are multiple candidates for the presentation ${presentation}: ${JSON.stringify(candidates.map(c => c.name))}`)
     }
 }
@@ -166,7 +168,7 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
      */
     public async parseRest(stream: IArgumentStream, promptForRest: boolean, keywordParser: KeywordParser): Promise<ActionResult<ReadItem[]>> {
         const items: ReadItem[] = [];
-        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem() === undefined) {
+        if (this.prompt && promptForRest && stream.isPromptable() && stream.peekItem(undefined) === undefined) {
             return PromptRequiredError.Result(
                 `A prompt is required for the missing argument for the ${this.name} parameter`,
                 {
@@ -175,20 +177,22 @@ export class RestDescription<ExecutorContext = unknown> implements ParameterDesc
                 }
             );
         }
-        while (stream.peekItem() !== undefined) {
+        while (stream.peekItem(undefined) !== undefined) {
             const keywordResult = keywordParser.parseKeywords(stream);
             if (isError(keywordResult)) {
                 return keywordResult;
             }
-            if (stream.peekItem() !== undefined) {
-                const validationResult = this.acceptor.validator(stream.peekItem());
+            const keywordValue = stream.peekItem(undefined);
+            if (keywordValue !== undefined) {
+                const validationResult = this.acceptor.validator(keywordValue);
                 if (isError(validationResult)) {
                     return ArgumentParseError.Result(
                         validationResult.error.message,
                         { parameter: this, stream }
                     );
                 }
-                items.push(stream.readItem());
+                items.push(keywordValue);
+                stream.readItem(); // dispose of keyword's associated value from the stream.
             }
         }
         return Ok(items);
@@ -237,7 +241,7 @@ export class KeywordsDescription {
 export class ParsedKeywords {
     constructor (
         private readonly descriptions: KeywordArgumentsDescription,
-        private readonly keywords: ReadonlyMap<string, ReadItem>
+        private readonly keywords: ReadonlyMap<string, ReadItem|true>
     ) {
 
     }
@@ -261,7 +265,7 @@ export class ParsedKeywords {
  * the map representing the association between keywords and their properties.
  */
 class KeywordParser {
-    private readonly arguments = new Map<string, ReadItem>();
+    private readonly arguments = new Map<string, ReadItem | true>();
 
     constructor(
         public readonly description: KeywordsDescription
@@ -273,7 +277,7 @@ class KeywordParser {
     }
 
 
-    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): ActionResult<any, ArgumentParseError> {
+    private readKeywordAssociatedProperty(keyword: KeywordPropertyDescription, itemStream: IArgumentStream): ActionResult<ReadItem | true, ArgumentParseError> {
         if (itemStream.peekItem() !== undefined && !(itemStream.peekItem() instanceof Keyword)) {
             const validationResult = keyword.acceptor.validator(itemStream.peekItem());
             if (validationResult.isOkay) {
@@ -346,7 +350,7 @@ export type Prompt<ExecutorContext> =  (this: ExecutorContext, description: Para
 
 export interface ParameterDescription<ExecutorContext = unknown> {
     name: string,
-    description?: string,
+    description?: string | undefined,
     acceptor: PresentationType,
     /**
      * Prompt the interface for an argument that was not provided.
@@ -354,7 +358,7 @@ export interface ParameterDescription<ExecutorContext = unknown> {
      * @param description The parameter description being accepted.
      * @returns PromptOptions, to be handled by the interface adaptor.
      */
-    prompt?: Prompt<ExecutorContext>,
+    prompt?: Prompt<ExecutorContext> | undefined,
 }
 
 export type ParameterParser = (stream: IArgumentStream) => Promise<ActionResult<ParsedArguments>>;
@@ -371,7 +375,7 @@ export function parameters(descriptions: ParameterDescription[], rest: undefined
 export interface IArgumentListParser {
     readonly parse: ParameterParser,
     readonly descriptions: ParameterDescription[],
-    readonly rest?: RestDescription,
+    readonly rest?: RestDescription | undefined,
     readonly keywords: KeywordsDescription,
 }
 
@@ -383,12 +387,12 @@ class ArgumentListParser implements IArgumentListParser {
     constructor(
         public readonly descriptions: ParameterDescription[],
         public readonly keywords: KeywordsDescription,
-        public readonly rest?: RestDescription,
+        public readonly rest?: RestDescription | undefined,
     ) {
     }
 
     public async parse(stream: IArgumentStream): Promise<ActionResult<ParsedArguments>> {
-        let hasPrompted = false;
+        const hasPrompted = false;
         const keywordsParser = this.keywords.getParser();
         for (const parameter of this.descriptions) {
             // it eats any keywords at any point in the stream
@@ -424,13 +428,13 @@ class ArgumentListParser implements IArgumentListParser {
             return restResult;
         }
         const immediateArguments = restResult.ok === undefined
-            || restResult.ok.length === 0
+            || restResult.ok.length === 0 || restResult.ok[0] === undefined
             ? stream.source
             : stream.source.slice(0, stream.source.indexOf(restResult.ok[0]))
         return Ok({
             immediateArguments: immediateArguments,
             keywords: keywordsParser.getKeywords(),
-            rest: restResult.ok
+            rest: restResult.ok ?? []
         });
     }
 }

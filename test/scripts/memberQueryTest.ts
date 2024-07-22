@@ -1,4 +1,4 @@
-const { MatrixClient } = require("matrix-bot-sdk");
+import { MatrixClient } from "matrix-bot-sdk";
 
 /**
  * This is a test for the response times for various endpoints querying the
@@ -34,7 +34,10 @@ const shuffledMethods =
 // shuffle https://stackoverflow.com/a/12646864
 for (let i = shuffledMethods.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffledMethods[i], shuffledMethods[j]] = [shuffledMethods[j], shuffledMethods[i]];
+    const [methodJ, methodI] = [shuffledMethods[j], shuffledMethods[i]];
+    if (methodJ && methodI) {
+        [shuffledMethods[i], shuffledMethods[j]] = [methodJ, methodI];
+    }
 }
 
 async function fetchStateWithMethod(method: MemberFetchMethod) {
@@ -68,15 +71,24 @@ function getTimes(method: MemberFetchMethod) {
     return times.get(method);
 }
 
+function evenMedian(s: number[], mid: number): number | undefined {
+    const leftMid = s[mid - 1];
+    const rightMid = s[mid];
+    if (leftMid === undefined || rightMid === undefined) {
+        throw new TypeError(`Code is wrong bozo`)
+    }
+    return ((leftMid + rightMid) / 2);
+}
+
 // https://stackoverflow.com/a/70806192
 function calculateMedian (arr: number[]): number | undefined {
     if (!arr.length) return undefined;
     const s = [...arr].sort((a, b) => a - b);
     const mid = Math.floor(s.length / 2);
-    return s.length % 2 === 0 ? ((s[mid - 1] + s[mid]) / 2) : s[mid];
+    return s.length % 2 === 0 ? evenMedian(s, mid) : s[mid];
 };
 
-(async () => {
+void (async () => {
     for (const method of shuffledMethods) {
         const start = Date.now();
         await fetchStateWithMethod(method);
@@ -85,7 +97,10 @@ function calculateMedian (arr: number[]): number | undefined {
     }
 
     for (const method of [MemberFetchMethod.JoinedMembers, MemberFetchMethod.Members, MemberFetchMethod.State]) {
-        const nextTimes = getTimes(method)!;
+        const nextTimes = getTimes(method);
+        if (nextTimes === undefined) {
+            throw new TypeError(`Times shouldn't be undefined matey`);
+        }
         const sum = nextTimes.reduce((a, b) => a + b, 0);
         const mean = (sum / nextTimes.length) || 0;
         const median = calculateMedian(nextTimes);

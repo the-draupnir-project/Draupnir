@@ -33,9 +33,11 @@ type MessageIsVoiceCapabilities = {
     eventConsequences: EventConsequences;
 };
 
-type MessageIsVoiceDescription = ProtectionDescription<Draupnir, {}, MessageIsVoiceCapabilities>;
+type MessageIsVoiceSettings = Record<never, never>;
 
-describeProtection<MessageIsVoiceCapabilities, Draupnir, {}>({
+type MessageIsVoiceDescription = ProtectionDescription<Draupnir, MessageIsVoiceSettings, MessageIsVoiceCapabilities>;
+
+describeProtection<MessageIsVoiceCapabilities, Draupnir, MessageIsVoiceSettings>({
     name: 'MessageIsVoiceProtection',
     description: 'If a user posts a voice message, that message will be redacted',
     capabilityInterfaces: {
@@ -75,7 +77,7 @@ export class MessageIsVoiceProtection extends AbstractProtection<MessageIsVoiceD
     public async handleTimelineEvent(room: MatrixRoomID, event: RoomEvent): Promise<ActionResult<void>> {
         const roomID = room.toRoomIDOrAlias();
         if (Value.Check(RoomMessage, event)) {
-            if (!('msgtype' in event.content) || event.content?.msgtype !== 'm.audio') {
+            if (!('msgtype' in event.content) || event.content.msgtype !== 'm.audio') {
                 return Ok(undefined);
             }
             await this.draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "MessageIsVoice", `Redacting event from ${event['sender']} for posting a voice message. ${Permalinks.forEvent(roomID, event['event_id'], [serverName(this.draupnir.clientUserID)])}`);

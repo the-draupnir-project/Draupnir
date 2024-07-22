@@ -4,13 +4,13 @@
  */
 
 import { defineMatrixInterfaceAdaptor, MatrixContext, MatrixInterfaceAdaptor } from '../../commands/interface-manager/MatrixInterfaceAdaptor';
-import { BaseFunction, defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
+import { defineInterfaceCommand } from '../../commands/interface-manager/InterfaceCommand';
 import { findPresentationType, parameters } from '../../commands/interface-manager/ParameterParsing';
 import { AppserviceBaseExecutor } from './AppserviceCommandHandler';
 import { tickCrossRenderer } from '../../commands/interface-manager/MatrixHelpRenderer';
 import { DeadDocumentJSX } from '../../commands/interface-manager/JSXFactory';
 import { renderMatrixAndSend } from '../../commands/interface-manager/DeadDocumentMatrix';
-import { ActionError, ActionResult, isError, Ok, UserID } from 'matrix-protection-suite';
+import { ActionError, ActionResult, isError, Ok, RoomEvent, UserID } from 'matrix-protection-suite';
 import { MatrixSendClient } from 'matrix-protection-suite-for-matrix-bot-sdk';
 import { UnstartedDraupnir } from '../../draupnirfactory/StandardDraupnirManager';
 
@@ -37,7 +37,7 @@ const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
 // and be used similar to like #=1 and #1.
 defineMatrixInterfaceAdaptor({
     interfaceCommand: listUnstarted,
-    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>, client: MatrixSendClient, commandRoomId: string, event: any, result: ActionResult<UnstartedDraupnir[]>) {
+    renderer: async function (this: MatrixInterfaceAdaptor<MatrixContext>, client: MatrixSendClient, commandRoomId: string, event: RoomEvent, result: ActionResult<UnstartedDraupnir[]>) {
         tickCrossRenderer.call(this, client, commandRoomId, event, result); // don't await, it doesn't really matter.
         if (isError(result)) {
             return; // just let the default handler deal with it.
@@ -82,7 +82,7 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
         const draupnirManager = this.appservice.draupnirManager;
         const draupnir = draupnirManager.findUnstartedDraupnir(draupnirUser.toString());
         if (draupnir !== undefined) {
-            return ActionError.Result(`We can't find the unstarted draupnir ${draupnirUser}, is it already running?`);
+            return ActionError.Result(`We can't find the unstarted draupnir ${draupnirUser.toString()}, is it already running?`);
         }
         return await draupnirManager.startDraupnirFromMXID(draupnirUser.toString());
     },

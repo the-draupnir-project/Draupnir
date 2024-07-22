@@ -34,20 +34,24 @@ describe("Test that the app service can provision a mjolnir when requested from 
         // have the moderator invite the appservice bot in order to request a new mjolnir
         this.moderator = moderator;
         const roomsInvitedTo: string[] = [];
-        const mjolnirDetails: CreateMjolnirResponse = await new Promise(async resolve => {
-            const mjolnirDetailsPromise = apiClient.createMjolnir(roomToProtectId);
-            moderator.on('room.invite', (roomId: string) => {
-                roomsInvitedTo.push(roomId)
-                // the appservice should invite it to a policy room and a management room.
-                if (roomsInvitedTo.length === 2) {
-                    mjolnirDetailsPromise.then(resolve);
-                }
-            });
-            await moderator.start();
+        const mjolnirDetails: CreateMjolnirResponse = await new Promise(resolve => {
+            void (async () => {
+                const mjolnirDetailsPromise = apiClient.createMjolnir(roomToProtectId);
+                moderator.on('room.invite', (roomId: string) => {
+                    roomsInvitedTo.push(roomId)
+                    // the appservice should invite it to a policy room and a management room.
+                    if (roomsInvitedTo.length === 2) {
+                        void mjolnirDetailsPromise.then(resolve);
+                    }
+                });
+                await moderator.start();
+            })();
         });
         await Promise.all(roomsInvitedTo.map(roomId => moderator.joinRoom(roomId)));
         const managementRoomId = roomsInvitedTo.filter(async roomId => !(await isPolicyRoom(moderator, roomId)))[0];
-        expect(managementRoomId).toBe(mjolnirDetails.managementRoomId);
+        if (managementRoomId !== mjolnirDetails.managementRoomId) {
+            throw new TypeError(`Unable to find the management room`);
+        }
         // Check that the newly provisioned mjolnir is actually responsive.
         const event = await getFirstReply(moderator, managementRoomId, () => {
             return moderator.sendMessage(managementRoomId, { body: `!draupnir status`, msgtype: 'm.text' });

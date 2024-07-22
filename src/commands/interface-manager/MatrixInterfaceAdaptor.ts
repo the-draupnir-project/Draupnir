@@ -37,7 +37,7 @@ import { InterfaceAcceptor, PromptOptions, PromptableArgumentStream } from "./Pr
 import { ParameterDescription } from "./ParameterParsing";
 import { promptDefault, promptSuggestions } from "./MatrixPromptForAccept";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionError, ActionResult, ClientPlatform, ResultError, RoomEvent, StringRoomID, isError } from "matrix-protection-suite";
+import { ActionError, ActionResult, ClientPlatform, ResultError, RoomEvent, StringRoomID, Task, isError } from "matrix-protection-suite";
 import { MatrixReactionHandler } from "./MatrixReactionHandler";
 import { PromptRequiredError } from "./PromptRequiredError";
 
@@ -100,7 +100,7 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
                 }
                 return;
             } else {
-                this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error);
+                void Task(this.reportValidationError(matrixContext.client, matrixContext.roomID, matrixContext.event, executorResult.error));
                 return;
             }
         }
@@ -117,28 +117,28 @@ export class MatrixInterfaceAdaptor<C extends MatrixContext, ExecutorType extend
     private async reportValidationError(client: MatrixSendClient, roomID: StringRoomID, event: RoomEvent, validationError: ActionError): Promise<void> {
         LogService.info("MatrixInterfaceCommand", `User input validation error when parsing command ${JSON.stringify(this.interfaceCommand.designator)}: ${validationError.message}`);
         if (this.validationErrorHandler) {
-            await this.validationErrorHandler.apply(this, arguments);
+            await this.validationErrorHandler(client, roomID, event, validationError);
             return;
         }
         await tickCrossRenderer.call(this, client, roomID, event, ResultError(validationError));
     }
 }
 
-const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand<BaseFunction>, MatrixInterfaceAdaptor<MatrixContext, BaseFunction>>();
+const MATRIX_INTERFACE_ADAPTORS = new Map<InterfaceCommand, MatrixInterfaceAdaptor<MatrixContext>>();
 
-function internMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<BaseFunction>, adapator: MatrixInterfaceAdaptor<MatrixContext, BaseFunction>): void {
+function internMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand, adapator: MatrixInterfaceAdaptor<MatrixContext>): void {
     if (MATRIX_INTERFACE_ADAPTORS.has(interfaceCommand)) {
-        throw new TypeError(`An adaptor is already defined for the command ${interfaceCommand.designator}`);
+        throw new TypeError(`An adaptor is already defined for the command ${interfaceCommand.designator.toString()}`);
     }
     MATRIX_INTERFACE_ADAPTORS.set(interfaceCommand, adapator);
 }
 
-export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<BaseFunction>): MatrixInterfaceAdaptor<MatrixContext, BaseFunction> {
+export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand): MatrixInterfaceAdaptor<MatrixContext> {
     const entry = MATRIX_INTERFACE_ADAPTORS.get(interfaceCommand);
     if (entry) {
         return entry
     }
-    throw new TypeError(`Couldn't find an adaptor for the command ${interfaceCommand.designator}`);
+    throw new TypeError(`Couldn't find an adaptor for the command ${interfaceCommand.designator.toString()}`);
 }
 
 /**
@@ -148,7 +148,7 @@ export function findMatrixInterfaceAdaptor(interfaceCommand: InterfaceCommand<Ba
  * @param applicationCommmand The ApplicationCommand this is an interface wrapper for.
  * @param renderer Render the result of the application command back to a room.
  */
-export function defineMatrixInterfaceAdaptor<ExecutorType extends (...args: any) => Promise<any>>(details: {
+export function defineMatrixInterfaceAdaptor<ExecutorType extends BaseFunction>(details: {
     interfaceCommand: InterfaceCommand<ExecutorType>,
     renderer: RendererSignature<MatrixContext, ExecutorType>
 }) {

@@ -38,9 +38,6 @@ import { Draupnir } from "../Draupnir";
 export class UnlistedUserRedactionQueue {
     private usersToRedact = new Set<StringUserID>();
 
-    constructor() {
-    }
-
     public addUser(userID: StringUserID) {
         this.usersToRedact.add(userID);
     }
@@ -64,7 +61,7 @@ export class UnlistedUserRedactionQueue {
                     await draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Tried to redact ${permalink} but Mjolnir is running in no-op mode`);
                 }
             } catch (e) {
-                draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Unable to redact message: ${permalink}`);
+                await draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "AutomaticRedactionQueue", `Unable to redact message: ${permalink}`);
                 LogService.warn("AutomaticRedactionQueue", e);
             }
         }

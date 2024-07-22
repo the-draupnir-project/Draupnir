@@ -175,7 +175,7 @@ export class BanPropagationProtection
             this.handleBan(ban);
         }
         for (const unban of unbans) {
-            Task(this.handleUnban(unban, this.draupnir));
+            void Task(this.handleUnban(unban, this.draupnir));
         }
         return Ok(undefined);
     }
@@ -186,7 +186,7 @@ export class BanPropagationProtection
         if (rulesMatchingUser.length > 0) {
             return; // user is already banned.
         }
-        Task(promptBanPropagation(this.draupnir, change));
+        void Task(promptBanPropagation(this.draupnir, change));
     }
 
     private async handleUnban(change: MembershipChange, draupnir: Draupnir): Promise<void> {
@@ -277,20 +277,21 @@ export class BanPropagationProtection
                 }
             }
             if (errors.length > 0) {
-                Task(printActionResult(
+                void Task(printActionResult(
                     this.draupnir.client,
                     this.draupnir.managementRoomID,
                     errors,
                     { title: `There were errors unbanning ${context.target} from all lists.`}
                 ));
             } else {
-                this.userConsequences.unbanUserFromRoomSet(
+                void Task((async () => {
+                    await this.userConsequences.unbanUserFromRoomSet(
                     context.target as StringUserID,
                     '<no reason supplied>'
-                )
+                )})())
             }
         } else {
-            log.error(`unban reaction map is malformed got item ${item} for key ${key}`);
+            log.error(`unban reaction map is malformed got item for key ${key}:`, item);
         }
     }
 }

@@ -64,7 +64,7 @@ export class RedactionSynchronisationProtection extends AbstractProtection<Redac
         } else if (relevantChanges.length === 0) {
             return Ok(undefined);
         } else {
-            relevantChanges.forEach(change => this.redactForNewUserPolicy(change.rule));
+            relevantChanges.forEach(change => { this.redactForNewUserPolicy(change.rule); });
             return Ok(undefined);
         }
     }
@@ -88,7 +88,7 @@ export class RedactionSynchronisationProtection extends AbstractProtection<Redac
     }
 }
 
-describeProtection<{}, Draupnir>({
+describeProtection<Record<never, never>, Draupnir>({
     name: RedactionSynchronisationProtection.name,
     description: 'Redacts messages when a new ban policy has been issued that matches config.automaticallyRedactForReasons. Work in progress.',
     capabilityInterfaces: {},

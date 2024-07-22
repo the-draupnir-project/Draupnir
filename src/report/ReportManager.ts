@@ -31,7 +31,7 @@ import { htmlToText } from "html-to-text";
 import { htmlEscape } from "../utils";
 import { JSDOM } from 'jsdom';
 import { Draupnir } from "../Draupnir";
-import { ReactionContent, RoomEvent, StringEventID, StringRoomID, StringUserID, Task, Value, isError } from "matrix-protection-suite";
+import { MatrixRoomReference, ReactionContent, RoomEvent, RoomMessage, StringEventID, StringRoomID, StringUserID, Task, TextMessageContent, Value, isError, serverName } from "matrix-protection-suite";
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -93,7 +93,7 @@ export class ReportManager {
 
     public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
         if (roomID === this.draupnir.managementRoomID && event.type === 'm.reaction') {
-            Task(this.handleReaction({ roomID, event }));
+            void Task(this.handleReaction({ roomID, event }));
         }
     }
 
@@ -120,10 +120,10 @@ export class ReportManager {
             room_id: roomID,
             sender: reporterId as StringUserID,
             event: event,
-            reason: reason
+            ...reason === undefined ? {} : { reason }
         })
         if (this.draupnir.config.displayReports) {
-            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, reason, moderationroomID: this.draupnir.managementRoomID });
+            return this.displayManager.displayReportAndUI({ kind: Kind.SERVER_ABUSE_REPORT, event, reporterId, moderationroomID: this.draupnir.managementRoomID, ...reason === undefined ? {} : { reason } });
         }
     }
 
@@ -158,7 +158,7 @@ export class ReportManager {
         // Get the original event.
         let initialNoticeReport: IReport | undefined, confirmationReport: IReportWithAction | undefined;
         try {
-            let originalEvent = await this.draupnir.client.getEvent(roomID, relation.event_id);
+            const originalEvent = await this.draupnir.client.getEvent(roomID, relation.event_id);
             if (originalEvent.sender !== this.draupnir.clientUserID) {
                 // Let's not handle reactions to events we didn't send as
                 // some setups have two or more Mjolnir's in the same management room.
@@ -167,11 +167,11 @@ export class ReportManager {
             if (!("content" in originalEvent)) {
                 return;
             }
-            let content = originalEvent["content"];
+            const content = originalEvent["content"];
             if (ABUSE_REPORT_KEY in content) {
-                initialNoticeReport = content[ABUSE_REPORT_KEY]!;
+                initialNoticeReport = content[ABUSE_REPORT_KEY];
             } else if (ABUSE_ACTION_CONFIRMATION_KEY in content) {
-                confirmationReport = content[ABUSE_ACTION_CONFIRMATION_KEY]!;
+                confirmationReport = content[ABUSE_ACTION_CONFIRMATION_KEY];
             }
         } catch (ex) {
             return;
@@ -191,7 +191,7 @@ export class ReportManager {
 
         if (confirmationReport) {
             // Extract the action and the decision.
-            let matches = relation.key?.match(REACTION_CONFIRMATION);
+            const matches = relation.key?.match(REACTION_CONFIRMATION);
             if (!matches) {
                 // Invalid key.
                 return;
@@ -210,10 +210,15 @@ export class ReportManager {
                     LogService.debug("ReportManager::handleReaction", "Unknown decision", matches[2]);
                     return;
             }
+            const label = matches[1];
+            if (label === undefined) {
+                LogService.error("ReportManager::handleReaction", "Unable to find the label for an event", event);
+                return;
+            }
             if (decision) {
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "confirmed action", matches[1]);
                 await this.executeAction({
-                    label: matches[1],
+                    label,
                     report: confirmationReport,
                     successEventId: confirmationReport.notification_event_id as StringEventID,
                     failureEventId: relation.event_id,
@@ -222,19 +227,22 @@ export class ReportManager {
                 })
             } else {
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "cancelled action", matches[1]);
-                this.draupnir.client.redactEvent(this.draupnir.managementRoomID, relation.event_id, "Action cancelled");
+                await this.draupnir.client.redactEvent(this.draupnir.managementRoomID, relation.event_id, "Action cancelled");
             }
 
             return;
         } else if (initialNoticeReport) {
-            let matches = relation.key?.match(REACTION_ACTION);
+            const matches = relation.key?.match(REACTION_ACTION);
             if (!matches) {
                 // Invalid key.
                 return;
             }
 
-            let label: string = matches[1]!;
-            let action: IUIAction | undefined = ACTIONS.get(label);
+            const label = matches[1];
+            if (label === undefined) {
+                return;
+            }
+            const action: IUIAction | undefined = ACTIONS.get(label);
             if (!action) {
                 return;
             }
@@ -246,7 +254,7 @@ export class ReportManager {
             LogService.info("ReportManager::handleReaction", "User", event["sender"], "picked action", label, initialNoticeReport);
             if (action.needsConfirmation) {
                 // Send a confirmation request.
-                let confirmation = {
+                const confirmation = {
                     msgtype: "m.notice",
                     body: `${action.emoji} ${await action.title(this, initialNoticeReport)}?`,
                     "m.relationship": {
@@ -256,7 +264,7 @@ export class ReportManager {
                     [ABUSE_ACTION_CONFIRMATION_KEY]: confirmationReport
                 };
 
-                let requestConfirmationEventId = await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, confirmation);
+                const requestConfirmationEventId = await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, confirmation);
                 await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                     "m.relates_to": {
                         "rel_type": "m.annotation",
@@ -275,7 +283,7 @@ export class ReportManager {
             } else {
                 // Execute immediately.
                 LogService.info("ReportManager::handleReaction", "User", event["sender"], "executed (no confirmation needed) action", matches[1]);
-                this.executeAction({
+                void this.executeAction({
                     label,
                     report: confirmationReport,
                     successEventId: relation.event_id,
@@ -315,12 +323,10 @@ export class ReportManager {
         onSuccessRemoveEventId?: StringEventID,
         moderationRoomId: StringRoomID
     }) {
-        let action: IUIAction | undefined = ACTIONS.get(label);
+        const action: IUIAction | undefined = ACTIONS.get(label);
         if (!action) {
             return;
         }
-        let error: any = null;
-        let response;
         try {
             // Check security.
             if (moderationRoomId === this.draupnir.managementRoomID) {
@@ -328,27 +334,8 @@ export class ReportManager {
             } else {
                 throw new Error("Security error: Cannot execute this action.");
             }
-            response = await action.execute(this, report, moderationRoomId, this.displayManager);
-        } catch (ex) {
-            error = ex;
-        }
-        if (error) {
-            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
-                "m.relates_to": {
-                    "rel_type": "m.annotation",
-                    "event_id": failureEventId,
-                    "key": `${action.emoji} ❌`
-                }
-            });
-            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.notice", {
-                "body": error.message || "<unknown error>",
-                "m.relationship": {
-                    "rel_type": "m.reference",
-                    "event_id": failureEventId,
-                }
-            })
-        } else {
-            this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
+            const response = await action.execute(this, report, moderationRoomId, this.displayManager);
+            await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
                 "m.relates_to": {
                     "rel_type": "m.annotation",
                     "event_id": successEventId,
@@ -356,10 +343,10 @@ export class ReportManager {
                 }
             });
             if (onSuccessRemoveEventId) {
-                this.draupnir.client.redactEvent(this.draupnir.managementRoomID, onSuccessRemoveEventId, "Action complete");
+                await this.draupnir.client.redactEvent(this.draupnir.managementRoomID, onSuccessRemoveEventId, "Action complete");
             }
             if (response) {
-                this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
+                await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
                     msgtype: "m.notice",
                     "formatted_body": response,
                     format: "org.matrix.custom.html",
@@ -370,6 +357,26 @@ export class ReportManager {
                     }
                 })
             }
+        } catch (ex) {
+            if (ex instanceof Error) {
+                await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.reaction", {
+                    "m.relates_to": {
+                        "rel_type": "m.annotation",
+                        "event_id": failureEventId,
+                        "key": `${action.emoji} ❌`
+                    }
+                });
+                await this.draupnir.client.sendEvent(this.draupnir.managementRoomID, "m.notice", {
+                    "body": ex.message || "<unknown error>",
+                    "m.relationship": {
+                        "rel_type": "m.reference",
+                        "event_id": failureEventId,
+                    }
+                })
+            } else {
+                throw new TypeError(`Something is throwing absoloute garbage ${ex}`);
+            }
+
         }
     }
 }
@@ -380,7 +387,7 @@ export class ReportManager {
  * Note: These reports end up embedded in Matrix messages, behind key `ABUSE_REPORT_KEY`,
  * so we're using Matrix naming conventions rather than JS/TS naming conventions.
  */
-interface IReport {
+export interface IReport {
     /**
      * The user who sent the abuse report.
      */
@@ -636,16 +643,16 @@ class Help implements IUIAction {
     }
     public async execute(manager: ReportManager, report: IReport, moderationroomID: string): Promise<string | undefined> {
         // Produce a html list of actions, in the order specified by ACTION_LIST.
-        let list: string[] = [];
-        for (let action of ACTION_LIST) {
+        const list: string[] = [];
+        for (const action of ACTION_LIST) {
             if (await action.canExecute(manager, report, moderationroomID)) {
                 list.push(`<li>${action.emoji} ${await action.help(manager, report)}</li>`);
             }
         }
-        if (!await ACTIONS.get("ban-accused")!.canExecute(manager, report, moderationroomID)) {
+        if (!await ACTIONS.get("ban-accused")?.canExecute(manager, report, moderationroomID)) {
             list.push(`<li>Some actions were disabled because Mjölnir is not moderator in room ${htmlEscape(report.room_alias_or_id)}</li>`)
         }
-        let body = `<ul>${list.join("\n")}</ul>`;
+        const body = `<ul>${list.join("\n")}</ul>`;
         return body;
     }
 }
@@ -677,7 +684,7 @@ class EscalateToServerModerationRoom implements IUIAction {
         return `Escalate report to ${getHomeserver(await manager.draupnir.client.getUserId())} server moderators`;
     }
     public async execute(manager: ReportManager, report: IReport, _moderationroomID: string, displayManager: DisplayManager): Promise<string | undefined> {
-        let event = await manager.draupnir.client.getEvent(report.room_id, report.event_id);
+        const event = await manager.draupnir.client.getEvent(report.room_id, report.event_id);
 
         // Display the report and UI directly in the management room, as if it had been
         // received from /report.
@@ -712,41 +719,37 @@ class DisplayManager {
      * @param reason A user-provided comment. Low-security.
      * @param moderationroomID The room in which the report and ui will be displayed. MUST be checked.
      */
-    public async displayReportAndUI(args: { kind: Kind, event: any, reporterId: string, reason?: string, nature?: string, moderationroomID: string, error?: string }) {
-        let { kind, event, reporterId, reason, nature, moderationroomID, error } = args;
+    public async displayReportAndUI(args: { kind: Kind, event: RoomEvent, reporterId: string, reason?: string, nature?: string, moderationroomID: string, error?: string }) {
+        const { kind, event, reporterId, reason, nature, moderationroomID, error } = args;
 
-        let roomID = event["room_id"]!;
-        let eventId = event["event_id"]!;
-
-        let roomAliasOrId = roomID;
-        try {
-            roomAliasOrId = await this.owner.draupnir.client.getPublishedAlias(roomID) || roomID;
-        } catch (ex) {
-            // Ignore.
-        }
-
+        const roomID = event["room_id"];
+        const room = MatrixRoomReference.fromRoomID(roomID, [serverName(this.owner.draupnir.clientUserID)])
+        const eventId = event["event_id"];
+        const MAX_EVENT_CONTENT_LENGTH = 2048;
+        const MAX_NEWLINES = 64;
         let eventContent: { msg: string} | { html: string } | { text: string };
+        const unknownEvent = () => {
+            return { text: this.limitLength(JSON.stringify(event["content"], null, 2), MAX_EVENT_CONTENT_LENGTH, MAX_NEWLINES) };
+        };
         try {
             if (event["type"] === "m.room.encrypted") {
                 eventContent = { msg: "<encrypted content>" };
-            } else if ("content" in event) {
-                const MAX_EVENT_CONTENT_LENGTH = 2048;
-                const MAX_NEWLINES = 64;
-                if ("formatted_body" in event.content) {
+            } else if (Value.Check(RoomMessage, event)) {
+                if (Value.Check(TextMessageContent, event.content) && event.content.formatted_body !== undefined) {
                     eventContent = { html: this.limitLength(event.content.formatted_body, MAX_EVENT_CONTENT_LENGTH, MAX_NEWLINES) };
-                } else if ("body" in event.content) {
+                } else if ("body" in event.content && typeof event.content.body === 'string') {
                     eventContent = { text: this.limitLength(event.content.body, MAX_EVENT_CONTENT_LENGTH, MAX_NEWLINES) };
                 } else {
-                    eventContent = { text: this.limitLength(JSON.stringify(event["content"], null, 2), MAX_EVENT_CONTENT_LENGTH, MAX_NEWLINES) };
+                    eventContent = unknownEvent();
                 }
             } else {
-                eventContent = { msg: "Malformed event, cannot read content." };
+                eventContent = unknownEvent();
             }
         } catch (ex) {
-            eventContent = { msg: `<Cannot extract event. Please verify that Mjölnir has been invited to room ${roomAliasOrId} and made room moderator or administrator>.` };
+            eventContent = { msg: `<Cannot extract event. Please verify that Mjölnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.` };
         }
 
-        let accusedId = event["sender"];
+        const accusedId = event["sender"];
 
         let reporterDisplayName: string, accusedDisplayName: string;
         try {
@@ -759,15 +762,13 @@ class DisplayManager {
         } catch (ex) {
             accusedDisplayName = "<Error: Cannot extract accused display name>";
         }
-
-        let eventShortcut = `https://matrix.to/#/${encodeURIComponent(roomID)}/${encodeURIComponent(eventId)}`;
-        let roomShortcut = `https://matrix.to/#/${encodeURIComponent(roomAliasOrId)}`;
+        const eventShortcut = `https://matrix.to/#/${encodeURIComponent(roomID)}/${encodeURIComponent(eventId)}`;
 
         let eventTimestamp;
         try {
             eventTimestamp = new Date(event["origin_server_ts"]).toUTCString();
         } catch (ex) {
-            eventTimestamp = `<Cannot extract event. Please verify that Mjölnir has been invited to room ${roomAliasOrId} and made room moderator or administrator>.`;
+            eventTimestamp = `<Cannot extract event. Please verify that Mjölnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`;
         }
 
         let title;
@@ -835,41 +836,45 @@ class DisplayManager {
         </body>`).window.document;
 
         // ...insert text content
-        for (let [key, value] of [
+        for (const [key, value] of [
             ['title', title],
             ['reporter-display-name', reporterDisplayName],
             ['reporter-id', reporterId],
             ['accused-display-name', accusedDisplayName],
             ['accused-id', accusedId],
             ['event-id', eventId],
-            ['room-alias-or-id', roomAliasOrId],
+            ['room-alias-or-id', roomID],
             ['reason-content', reason || "<no reason given>"],
             ['nature-display', readableNature],
             ['nature-source', nature || "<no nature provided>"],
             ['event-timestamp', eventTimestamp],
             ['details-or-error', kind === Kind.ERROR ? error : null]
         ]) {
-            let node = document.getElementById(key);
-            if (node && value) {
-                node.textContent = value;
+            if (key !== null && key !== undefined) {
+                const node = document.getElementById(key);
+                if (node && value) {
+                    node.textContent = value;
+                }
             }
         }
         // ...insert links
-        for (let [key, value] of [
+        for (const [key, value] of [
             ['event-shortcut', eventShortcut],
-            ['room-shortcut', roomShortcut],
+            ['room-shortcut', room.toPermalink()],
         ]) {
-            let node = document.getElementById(key) as HTMLAnchorElement;
-            if (node) {
-                node.href = value;
+            if (key !== undefined) {
+                const node = document.getElementById(key);
+                if (node !== null && value !== undefined) {
+                    (node as HTMLAnchorElement).href = value;
+                }
             }
         }
 
         // ...insert HTML content
-        for (let {key, value} of [
+        for (const {key, value} of [
             { key: 'event-content', value: eventContent },
         ]) {
-            let node = document.getElementById(key);
+            const node = document.getElementById(key);
             if (node) {
                 if ("msg" in value) {
                     node.textContent = value.msg;
@@ -884,20 +889,22 @@ class DisplayManager {
         // ...set presentation
         if (!("msg" in eventContent)) {
             // If there's some event content, mark it as a spoiler.
-            document.getElementById('event-container')!.
-                setAttribute("data-mx-spoiler", "");
+            const eventContainer = document.getElementById('event-container');
+            if (eventContainer !== null) {
+                eventContainer.setAttribute("data-mx-spoiler", "");
+            }
         }
 
         // Embed additional information in the notice, for use by the
         // action buttons.
-        let report: IReport = {
+        const report: IReport = {
             accused_id: accusedId,
             reporter_id: reporterId,
             event_id: eventId,
             room_id: roomID,
-            room_alias_or_id: roomAliasOrId,
+            room_alias_or_id: roomID,
         };
-        let notice = {
+        const notice = {
             msgtype: "m.notice",
             body: htmlToText(document.body.outerHTML, { wordwrap: false }),
             format: "org.matrix.custom.html",
@@ -905,10 +912,10 @@ class DisplayManager {
             [ABUSE_REPORT_KEY]: report
         };
 
-        let noticeEventId = await this.owner.draupnir.client.sendMessage(this.owner.draupnir.managementRoomID, notice);
+        const noticeEventId = await this.owner.draupnir.client.sendMessage(this.owner.draupnir.managementRoomID, notice);
         if (kind !== Kind.ERROR) {
             // Now let's display buttons.
-            for (let [label, action] of ACTIONS) {
+            for (const [label, action] of ACTIONS) {
                 // Display buttons for actions that can be executed.
                 if (!await action.canExecute(this.owner, report, moderationroomID)) {
                     continue;
@@ -925,7 +932,7 @@ class DisplayManager {
     }
 
     private limitLength(text: string, maxLength: number, maxNewlines: number): string {
-        let originalLength = text.length
+        const originalLength = text.length
         // Shorten text if it is too long.
         if (text.length > maxLength) {
             text = text.substring(0, maxLength);

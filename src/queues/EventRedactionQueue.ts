@@ -96,7 +96,7 @@ export class EventRedactionQueue {
         if (this.has(redaction)) {
             return false;
         } else {
-            let entry = this.toRedact.get(redaction.roomID);
+            const entry = this.toRedact.get(redaction.roomID);
             if (entry) {
                 entry.push(redaction);
             } else {
@@ -136,7 +136,7 @@ export class EventRedactionQueue {
         }
         if (limitToRoomID) {
             // There might not actually be any queued redactions for this room.
-            let queuedRedactions = this.toRedact.get(limitToRoomID);
+            const queuedRedactions = this.toRedact.get(limitToRoomID);
             if (queuedRedactions) {
                 this.toRedact.delete(limitToRoomID);
                 await redact(queuedRedactions);

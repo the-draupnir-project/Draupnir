@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ALL_RULE_TYPES, Logger, MJOLNIR_SHORTCODE_EVENT_TYPE, MatrixRoomID, MembershipEvent, Ok, Permalink, ProtectedRoomsSet, RoomEvent, RoomStateRevision, Task, Value, isError } from "matrix-protection-suite";
+import { ALL_RULE_TYPES, Logger, MJOLNIR_SHORTCODE_EVENT_TYPE, MatrixRoomID, MembershipEvent, Ok, Permalink, PropagationType, ProtectedRoomsSet, RoomEvent, RoomStateRevision, Task, Value, isError } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
 import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
@@ -25,7 +25,7 @@ const WatchRoomsOnInvitePromptContext = Type.Object({
     invited_room: Permalink
 });
 // this rule is stupid.
-// eslint-disable-next-line no-redeclare
+
 type WatchRoomsOnInvitePromptContext = StaticDecode<typeof WatchRoomsOnInvitePromptContext>;
 
 function isRevisionContainingPolicies(revision: RoomStateRevision) {
@@ -91,6 +91,9 @@ export class WatchRoomsOnInvite {
                 }
             )
         ))[0];
+        if (promptEventID === undefined) {
+            throw new TypeError(`We should have an eventID for the event that we just sent...`);
+        }
         await this.draupnir.reactionHandler.addReactionsToEvent(this.draupnir.client, this.draupnir.managementRoomID, promptEventID, reactionMap);
         return Ok(undefined);
     }
@@ -116,7 +119,7 @@ export class WatchRoomsOnInvite {
                 renderActionResultToEvent(this.draupnir.client, promptEvent, resolvedRoom);
                 return;
             }
-            const addResult = await this.protectedRoomsSet.issuerManager.watchList('direct', resolvedRoom.ok, {});
+            const addResult = await this.protectedRoomsSet.issuerManager.watchList(PropagationType.Direct, resolvedRoom.ok, {});
             if (isError(addResult)) {
                 addResult.elaborate(`Could not watch the policy room: ${resolvedRoom.ok.toPermalink()}`);
                 renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);

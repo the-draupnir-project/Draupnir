@@ -37,7 +37,7 @@ import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 
 async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
-    await draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", "Unbanning users that match glob: " + rule.regex);
+    await draupnir.managementRoomOutput.logMessage(LogLevel.INFO, "Unban", `Unbanning users that match glob: ${rule.regex}`);
     for (const revision of draupnir.protectedRoomsSet.setMembership.allRooms) {
         for (const member of revision.members()) {
             if (member.membership !== 'ban') {

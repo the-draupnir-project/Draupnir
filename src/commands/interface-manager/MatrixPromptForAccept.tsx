@@ -5,7 +5,7 @@
 
 import { ClientPlatform, Logger, RoomEvent, StringRoomID, Task, Value, isError } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "./DeadDocumentMatrix";
-import { BaseFunction, CommandTable, InterfaceCommand } from "./InterfaceCommand";
+import { CommandTable, InterfaceCommand } from "./InterfaceCommand";
 import { DeadDocumentJSX } from "./JSXFactory";
 import { MatrixContext, findMatrixInterfaceAdaptor } from "./MatrixInterfaceAdaptor";
 import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
@@ -20,7 +20,7 @@ const log = new Logger('MatrixPromptForAccept');
 
 type PromptContext = StaticDecode<typeof PromptContext>;
 // FIXME: Remove no-redeclare entirely, it is wrong.
-// eslint-disable-next-line no-redeclare
+
 const PromptContext = Type.Object({
     command_designator: Type.Array(Type.String()),
     read_items: Type.Array(Type.String()),
@@ -28,7 +28,7 @@ const PromptContext = Type.Object({
 
 type DefaultPromptContext = StaticDecode<typeof DefaultPromptContext>;
 // FIXME: Remove no-redeclare entirely, it is wrong.
-// eslint-disable-next-line no-redeclare
+
 const DefaultPromptContext = Type.Composite([
     PromptContext,
     Type.Object({
@@ -67,7 +67,7 @@ function continueCommandAcceptingPrompt<CommandContext extends MatrixContext = M
         event: annotatedEvent,
         ...additionalCommandContext,
     };
-    Task((async () => await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()))());
+    void Task((async () => { await adaptor.invoke(commandContext, commandContext, ...itemStream.rest()); })());
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER = 'ge.applied-langua.ge.draupnir.default_argument_prompt';
@@ -134,7 +134,7 @@ export function makeListenerForArgumentPrompt<CommandContext extends MatrixConte
 export async function promptDefault<PresentationType extends ReadItem>(
     this: MatrixContext,
     parameter: ParameterDescription,
-    command: InterfaceCommand<BaseFunction>,
+    command: InterfaceCommand,
     defaultPrompt: PresentationType,
     existingArguments: ReadItem[]
 ): Promise<void> {
@@ -157,6 +157,9 @@ export async function promptDefault<PresentationType extends ReadItem>(
             }
         )
     );
+    if (events[0] === undefined) {
+        throw new TypeError(`We should have got at least one event, the one that we just sent`);
+    }
     await this.reactionHandler.addReactionsToEvent(
         this.client,
         this.roomID,
@@ -197,6 +200,9 @@ export async function promptSuggestions(
             }
         )
     );
+    if (events[0] === undefined) {
+        throw new TypeError(`We should have got at least one event, the one that we just sent`);
+    }
     await this.reactionHandler.addReactionsToEvent(
         this.client,
         this.roomID,

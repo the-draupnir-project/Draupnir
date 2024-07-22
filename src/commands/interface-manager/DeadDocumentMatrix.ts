@@ -8,6 +8,7 @@ import { AbstractNode, DocumentNode, FringeWalker, NodeTag } from "./DeadDocumen
 import { HTML_RENDERER } from "./DeadDocumentHtml";
 import { MARKDOWN_RENDERER } from "./DeadDocumentMarkdown";
 import { PagedDuplexStream } from "./PagedDuplexStream";
+import { RoomEvent } from "matrix-protection-suite";
 
 function checkEqual(node1: AbstractNode|undefined, node2: AbstractNode|undefined): true {
     if (!Object.is(node1, node2)) {
@@ -57,18 +58,26 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
         if (outputs.some(o => o.peekPage())) {
             // Make sure that any outputs that have buffered input start a fresh page,
             // so that the same committed nodes end up in the same message.
-            outputs.filter(o => !o.peekPage()).forEach(o => o.ensureNewPage());
+            outputs.filter(o => !o.peekPage()).forEach(o => { o.ensureNewPage(); });
             // Send the new pages as an event.
-            eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
+            const [nextMakrdownPage, nextHtmlPage] = [markdownOutput.readPage(), htmlOutput.readPage()];
+            if (nextMakrdownPage === undefined || nextHtmlPage === undefined) {
+                throw new TypeError(`The code is wrong!!`);
+            }
+            eventIds.push(await cb(nextMakrdownPage, nextHtmlPage));
         }
         // prepare next iteration
         currentMarkdownNode = markdownWalker.increment();
         currentHtmlNode = htmlWalker.increment();
         checkEqual(currentHtmlNode, currentMarkdownNode);
     }
-    outputs.forEach(o => o.ensureNewPage());
+    outputs.forEach(o => { o.ensureNewPage(); });
     if (outputs.some(o => o.peekPage())) {
-        eventIds.push(await cb(markdownOutput.readPage()!, htmlOutput.readPage()!));
+        const [nextMakrdownPage, nextHtmlPage] = [markdownOutput.readPage(), htmlOutput.readPage()];
+        if (nextMakrdownPage === undefined || nextHtmlPage === undefined) {
+            throw new TypeError(`The code is wrong!!`);
+        }
+        eventIds.push(await cb(nextMakrdownPage, nextHtmlPage));
     }
     return eventIds;
 }
@@ -80,7 +89,7 @@ export async function renderMatrix(node: DocumentNode, cb: SendMatrixEventCB): P
  * @param event An event to reply to, if any.
  * @param client A MatrixClient to send the events with.
  */
-export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: any|undefined, client: MatrixSendClient, additionalContent = {}): Promise<string[]> {
+export async function renderMatrixAndSend(node: DocumentNode, roomId: string, event: RoomEvent | undefined, client: MatrixSendClient, additionalContent = {}): Promise<string[]> {
     const baseContent = (text: string, html: string) => {
         return {
             msgtype: "m.notice",

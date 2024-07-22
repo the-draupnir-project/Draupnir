@@ -55,7 +55,7 @@ export interface IConfig {
      */
     autojoinOnlyIfManager: boolean;
     /** Mjolnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
-    acceptInvitesFromSpace: string;
+    acceptInvitesFromSpace: string | undefined;
     recordIgnoredInvites: boolean;
     managementRoom: string;
     verboseLogging: boolean;
@@ -281,7 +281,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     }
     const config = Config.util.extendDeep(
         getDefaultConfig(),
-        allowedKeys.reduce((existingConfig: any, key: string) => {
+        allowedKeys.reduce((existingConfig, key) => {
             return { ...existingConfig, [key]: configTemplate[key as keyof IConfig] }
         }, {})
     );
@@ -344,8 +344,9 @@ function getCommandLineOption(args: string[], optionName: string): string | unde
     const optionIndex = args.indexOf(optionName);
 
     //check if the next index is not an option
-    if (args[optionIndex + 1] && !args[optionIndex + 1].startsWith("--")){
-        return args[optionIndex + 1];
+    const associatedArgument = args[optionIndex + 1];
+    if (associatedArgument !== undefined && !associatedArgument.startsWith("--")){
+        return associatedArgument;
     }
 
     // No value was provided, or the next argument is another option

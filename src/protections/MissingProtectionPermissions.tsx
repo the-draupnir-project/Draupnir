@@ -70,7 +70,7 @@ export function makeHandleMissingProtectionPermissions(
         protectionPermissions
     ) {
         void Task((async () => {
-            renderMatrixAndSend(
+            await renderMatrixAndSend(
                 <root>{renderMissingProtectionsPermissions(
                     roomID,
                     protectionPermissions

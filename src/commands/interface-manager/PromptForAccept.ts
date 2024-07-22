@@ -6,7 +6,7 @@
 import { ReadItem } from "./CommandReader";
 import { ArgumentStream } from "./ParameterParsing";
 
-export interface PromptOptions<PresentationType = any> {
+export interface PromptOptions<PresentationType = ReadItem> {
     readonly suggestions: PresentationType[]
     readonly default?: PresentationType
 }
@@ -15,7 +15,7 @@ export interface PromptOptions<PresentationType = any> {
  * The idea is that the InterfaceAcceptor can use the presentation type
  * to derive the prompt, or use the prompt given by the ParameterDescription.
  */
-export interface InterfaceAcceptor<PresentationType = any> {
+export interface InterfaceAcceptor {
     readonly isPromptable: boolean
 }
 

@@ -60,7 +60,7 @@ function renderProtectedRooms(rooms: MatrixRoomID[]): DocumentNode {
 defineMatrixInterfaceAdaptor({
     interfaceCommand: findTableCommand("draupnir", "rooms"),
     renderer: async function (client, commandRoomId, event, result: ActionResult<MatrixRoomID[]>) {
-        tickCrossRenderer.call(this, ...arguments);
+        tickCrossRenderer.call(this, client, commandRoomId, event, result);
         if (isError(result)) {
             return; // tickCrossRenderer will handle it.
         }

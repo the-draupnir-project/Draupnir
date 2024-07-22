@@ -127,13 +127,16 @@ export class TrustedReporters extends AbstractProtection<TrustedReportersDescrip
             if (this.recentReported.size > MAX_REPORTED_EVENT_BACKLOG) {
                 // queue too big. push the oldest reported event off the queue
                 const oldest = Array.from(this.recentReported.keys())[0];
+                if (oldest === undefined) {
+                    throw new TypeError(`There should be a key in this queue if it's at max size`);
+                }
                 this.recentReported.delete(oldest);
             }
         }
 
         reporters.add(report.sender);
 
-        let met: string[] = [];
+        const met: string[] = [];
         if (reporters.size === this.settings.alertThreshold) {
             met.push("alert");
             // do nothing. let the `sendMessage` call further down be the alert

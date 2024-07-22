@@ -25,7 +25,7 @@ const ProtectRoomsOnInvitePromptContext = Type.Object({
     invited_room: Permalink
 });
 // this rule is stupid.
-// eslint-disable-next-line no-redeclare
+
 type ProtectRoomsOnInvitePromptContext = StaticDecode<typeof ProtectRoomsOnInvitePromptContext>;
 
 export class ProtectroomsOnInvite {
@@ -64,6 +64,9 @@ export class ProtectroomsOnInvite {
                     }
                 )
             ))[0];
+            if (promptEventID === undefined) {
+                throw new TypeError(`We should have an eventID for the event that we just sent...`);
+            }
             await this.draupnir.reactionHandler.addReactionsToEvent(this.draupnir.client, this.draupnir.managementRoomID, promptEventID, reactionMap);
             return Ok(undefined);
         })())

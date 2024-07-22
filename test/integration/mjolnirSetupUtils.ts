@@ -26,7 +26,7 @@ import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
 import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
-import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { SafeMatrixEmitter, SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder, RoomStateBackingStore } from "matrix-protection-suite";
 import { WebAPIs } from "../../src/webapis/WebAPIs";
 
@@ -54,7 +54,7 @@ export async function ensureAliasedRoomExists(client: MatrixClient, alias: strin
     } catch (e) {
         if (e?.body?.errcode === 'M_NOT_FOUND') {
             console.info(`${alias} hasn't been created yet, so we're making it now.`)
-            let roomId = await client.createRoom({
+            const roomId = await client.createRoom({
                 visibility: "public",
             });
             await client.createRoomAlias(alias, roomId);
@@ -84,8 +84,15 @@ export function draupnir(): Draupnir | null {
 export function draupnirClient(): MatrixClient | null {
     return globalClient;
 }
+export function draupnirSafeEmitter(): SafeMatrixEmitter {
+    if (globalSafeEmitter !== undefined) {
+        return globalSafeEmitter;
+    }
+    throw new TypeError(`Setup code didn't run properly`);
+}
 let globalClient: MatrixClient | null
 let globalMjolnir: Draupnir | null;
+let globalSafeEmitter: SafeMatrixEmitter | undefined;
 
 /**
  * Return a test instance of Mjolnir.
@@ -99,9 +106,10 @@ export async function makeMjolnir(config: IConfig, backingStore?: RoomStateBacki
     const client = await pantalaimon.createClientWithCredentials(config.pantalaimon.username, config.pantalaimon.password);
     await overrideRatelimitForUser(config.homeserverUrl, await client.getUserId());
     await ensureAliasedRoomExists(client, config.managementRoom);
-    let mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
+    const mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
     globalClient = client;
     globalMjolnir = mj;
+    globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
     return mj;
 }
 

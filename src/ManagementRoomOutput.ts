@@ -75,7 +75,7 @@ export default class ManagementRoomOutput {
 
         // Though spec doesn't say so, room ids that have slashes in them are accepted by Synapse and Dendrite unfortunately for us.
         const escapeRegex = (v: string): string => {
-            return v.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            return v.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
         };
 
         const viaServers = [serverName(this.clientUserID)];
@@ -108,7 +108,7 @@ export default class ManagementRoomOutput {
      * @param additionalRoomIds The roomIds in the message that we want to be replaced by room pills.
      * @param isRecursive Whether logMessage is being called from logMessage.
      */
-    public async logMessage(level: LogLevel, module: string, message: string | any, additionalRoomIds: string[] | string | null = null, isRecursive = false): Promise<any> {
+    public async logMessage(level: LogLevel, module: string, message: string, additionalRoomIds: string[] | string | null = null, isRecursive = false): Promise<void> {
         if (level === LogLevel.ERROR) {
             Sentry.captureMessage(`${module}: ${message}`, 'error');
         }
@@ -140,7 +140,10 @@ export default class ManagementRoomOutput {
                 Sentry.captureException(ex);
             }
         }
-
-        levelToFn[level.toString()](module, message);
+        const logFunction = levelToFn[level.toString()];
+        if (logFunction === undefined) {
+            throw new TypeError(`Unable to find logFunction for log level: ${level.toString()}`);
+        }
+        logFunction(module, message);
     }
 }

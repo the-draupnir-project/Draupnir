@@ -236,7 +236,7 @@ export class Draupnir implements Client {
             this.protectedRoomsSet.handleExternalInvite(roomID, event);
         }
         this.managementRoomMessageListener(roomID, event);
-        this.reactionHandler.handleEvent(roomID, event);
+        void Task((async () => { await this.reactionHandler.handleEvent(roomID, event); })());
         if (this.protectedRoomsSet.isProtectedRoom(roomID)) {
             this.protectedRoomsSet.handleTimelineEvent(roomID, event);
         }
@@ -248,10 +248,10 @@ export class Draupnir implements Client {
         }
         if (Value.Check(RoomMessage, event) && Value.Check(TextMessageContent, event.content)) {
             if (event.content.body === "** Unable to decrypt: The sender's device has not sent us the keys for this message. **") {
-                log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom}.`);
-                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
-                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
-                Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
+                log.info(`Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom.toPermalink()}.`);
+                void Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '⚠').then(_ => Ok(undefined)));
+                void Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, 'UISI').then(_ => Ok(undefined)));
+                void Task(this.client.unstableApis.addReactionToEvent(roomID, event.event_id, '🚨').then(_ => Ok(undefined)));
                 return;
             }
             const commandBeingRun = extractCommandFromMessageBody(
@@ -268,8 +268,8 @@ export class Draupnir implements Client {
                 return;
             }
             log.info(`Command being run by ${event.sender}: ${commandBeingRun}`);
-            Task(this.client.sendReadReceipt(roomID, event.event_id).then((_) => Ok(undefined)))
-            Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
+            void Task(this.client.sendReadReceipt(roomID, event.event_id).then((_) => Ok(undefined)))
+            void Task(handleCommand(roomID, event, commandBeingRun, this, this.commandTable).then((_) => Ok(undefined)));
         }
         this.reportManager.handleTimelineEvent(roomID, event);
     }

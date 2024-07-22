@@ -29,7 +29,7 @@ import { LogLevel, LogService } from "matrix-bot-sdk";
 import { AbstractProtection, ActionResult, EventConsequences, MatrixRoomID, MembershipChange, MembershipChangeType, Ok, ProtectedRoomsSet, Protection, ProtectionDescription, RoomEvent, RoomMembershipRevision, RoomMessage, StringRoomID, StringUserID, UserConsequences, Value, describeProtection } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 
-type FirstMessageIsImageProtectionSettings = {};
+type FirstMessageIsImageProtectionSettings = Record<never, never>;
 
 export type FirstMessageIsImageProtectionCapabilities ={
     userConsequences: UserConsequences;
@@ -64,7 +64,7 @@ describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir, FirstMes
 
 export class FirstMessageIsImageProtection extends AbstractProtection<FirstMessageIsImageProtectionDescription> implements Protection<FirstMessageIsImageProtectionDescription> {
 
-    private justJoined: { [roomID: StringRoomID]: StringUserID[] } = {};
+    private justJoined: { [roomID: StringRoomID]: StringUserID[] | undefined } = {};
     private recentlyBanned: StringUserID[] = [];
 
     private readonly userConsequences: UserConsequences;
@@ -103,8 +103,8 @@ export class FirstMessageIsImageProtection extends AbstractProtection<FirstMessa
             if (!('msgtype' in event.content)) {
                 return Ok(undefined);
             }
-            const msgtype = event.content['msgtype'] || 'm.text';
-            const formattedBody = event.content !== undefined && 'formatted_body' in event.content ? event.content?.['formatted_body'] || '' : '';
+            const msgtype = event.content['msgtype'];
+            const formattedBody = 'formatted_body' in event.content ? event.content['formatted_body'] || '' : '';
             const isMedia = msgtype === 'm.image' || msgtype === 'm.video' || formattedBody.toLowerCase().includes('<img');
             if (isMedia && this.justJoined[roomID].includes(event['sender'])) {
                 await this.draupnir.managementRoomOutput.logMessage(LogLevel.WARN, "FirstMessageIsImage", `Banning ${event['sender']} for posting an image as the first thing after joining in ${roomID}.`);
