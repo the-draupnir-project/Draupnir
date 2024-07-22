@@ -29,6 +29,6 @@ describe("Test: The make admin command", function () {
 
         const powerLevelsAfter = await moderator.getRoomStateEvent(targetRoom, "m.room.power_levels", "");
         assert.equal(powerLevelsAfter["users"][draupnir.clientUserID], 100, "Bot should be a room admin.");
-        assert.equal(powerLevelsAfter["users"][userAId], 0, "User A is not supposed to be a room admin.");
+        assert.equal(powerLevelsAfter["users"][userAId], undefined, "User A is not supposed to be a room admin.");
     } as unknown as Mocha.AsyncFunc);
 });

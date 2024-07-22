@@ -88,12 +88,7 @@ export function draupnirSafeEmitter(): SafeMatrixEmitter {
     if (globalSafeEmitter !== undefined) {
         return globalSafeEmitter;
     }
-    const client = draupnirClient();
-    if (client === null) {
-        throw new TypeError(`Setup code didn't run properly`);
-    }
-    globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
-    return globalSafeEmitter;
+    throw new TypeError(`Setup code didn't run properly`);
 }
 let globalClient: MatrixClient | null
 let globalMjolnir: Draupnir | null;
@@ -114,6 +109,7 @@ export async function makeMjolnir(config: IConfig, backingStore?: RoomStateBacki
     const mj = await makeDraupnirBotModeFromConfig(client, new SafeMatrixEmitterWrapper(client, DefaultEventDecoder), config, backingStore);
     globalClient = client;
     globalMjolnir = mj;
+    globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
     return mj;
 }
 

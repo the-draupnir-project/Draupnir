@@ -1,7 +1,7 @@
 import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction, getFirstReply } from "./commandUtils";
-import { DraupnirTestContext } from "../mjolnirSetupUtils";
+import { draupnirSafeEmitter, DraupnirTestContext } from "../mjolnirSetupUtils";
 import { MatrixClient } from 'matrix-bot-sdk';
 
 interface RoomsTestContext extends DraupnirTestContext {
@@ -26,24 +26,19 @@ describe("Test: The rooms commands", function () {
         const targetRoom = await moderator.createRoom({ invite: [draupnir.clientUserID]});
         await moderator.setUserPowerLevel(draupnir.clientUserID, targetRoom, 100);
 
-        try {
-            await moderator.start();
-            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
-                return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
-            });
-            let protectedRoomsMessage = await getFirstReply(moderator, draupnir.managementRoomID, async () => {
-                return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
-            })
-            assert.equal(protectedRoomsMessage['content']['body'].includes('2'), true, "There should be two protected rooms (including the management room)");
-            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
-                return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms remove ${targetRoom}`});
-            });
-            protectedRoomsMessage = await getFirstReply(moderator, draupnir.managementRoomID, async () => {
-                return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
-            })
-            assert.equal(protectedRoomsMessage['content']['body'].includes('1'), true, "Only the management room should be protected.");
-        } finally {
-            moderator.stop();
-        }
+        await getFirstReaction(draupnirSafeEmitter(), draupnir.managementRoomID, '✅', async () => {
+            return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
+        });
+        let protectedRoomsMessage = await getFirstReply(draupnirSafeEmitter(), draupnir.managementRoomID, async () => {
+            return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
+        })
+        assert.equal(protectedRoomsMessage['content']['body'].includes('2'), true, "There should be two protected rooms (including the management room)");
+        await getFirstReaction(draupnirSafeEmitter(), draupnir.managementRoomID, '✅', async () => {
+            return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms remove ${targetRoom}`});
+        });
+        protectedRoomsMessage = await getFirstReply(draupnirSafeEmitter(), draupnir.managementRoomID, async () => {
+            return await moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms`});
+        })
+        assert.equal(protectedRoomsMessage['content']['body'].includes('1'), true, "Only the management room should be protected.");
     } as unknown as Mocha.AsyncFunc)
 })
