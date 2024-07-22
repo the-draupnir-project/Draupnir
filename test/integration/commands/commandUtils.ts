@@ -134,11 +134,11 @@ export async function getFirstReaction(matrix: MatrixEmitter, targetRoom: string
             matrix.on('room.event', targetCb);
         });
     } finally {
-        matrix.removeListener('room.event', addEvent);
+        matrix.off('room.event', addEvent);
         // idk why the type checker can't detect that this condition is necessary.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (targetCb) {
-            matrix.removeListener('room.event', targetCb);
+            matrix.off('room.event', targetCb);
         }
     }
 }

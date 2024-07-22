@@ -85,7 +85,7 @@ export function draupnirClient(): MatrixClient | null {
     return globalClient;
 }
 export function draupnirSafeEmitter(): SafeMatrixEmitter {
-    if (globalSafeEmitter !== null) {
+    if (globalSafeEmitter !== undefined) {
         return globalSafeEmitter;
     }
     const client = draupnirClient();
@@ -97,7 +97,7 @@ export function draupnirSafeEmitter(): SafeMatrixEmitter {
 }
 let globalClient: MatrixClient | null
 let globalMjolnir: Draupnir | null;
-let globalSafeEmitter: SafeMatrixEmitter | null;
+let globalSafeEmitter: SafeMatrixEmitter | undefined;
 
 /**
  * Return a test instance of Mjolnir.

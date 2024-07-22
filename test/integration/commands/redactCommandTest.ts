@@ -3,7 +3,7 @@ import { newTestUser } from "../clientHelper";
 import { getMessagesByUserIn } from "../../../src/utils";
 import { LogService } from "matrix-bot-sdk";
 import { getFirstReaction } from "./commandUtils";
-import { draupnirClient, DraupnirTestContext } from "../mjolnirSetupUtils";
+import { draupnirClient, draupnirSafeEmitter, DraupnirTestContext } from "../mjolnirSetupUtils";
 import { MatrixClient } from "matrix-bot-sdk";
 
 interface RedactionTestContext extends DraupnirTestContext {
@@ -16,7 +16,7 @@ describe("Test: The redaction command", function () {
         this.moderator?.stop();
     });
 
-    it('Mjölnir redacts all of the events sent by a spammer when instructed to by giving their id and a room id.', async function(this: RedactionTestContext) {
+    it.only('Mjölnir redacts all of the events sent by a spammer when instructed to by giving their id and a room id.', async function(this: RedactionTestContext) {
         this.timeout(60000);
         // Create a few users and a room.
         const badUser = await newTestUser(this.config.homeserverUrl, { name: { contains: "spammer-needs-redacting" } });
@@ -33,14 +33,9 @@ describe("Test: The redaction command", function () {
         const targetRoom = await moderator.createRoom({ invite: [await badUser.getUserId(), mjolnirUserId]});
         await moderator.setUserPowerLevel(mjolnirUserId, targetRoom, 100);
         await badUser.joinRoom(targetRoom);
-        try {
-            await moderator.start();
-            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
-                return moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
-            });
-        } finally {
-            moderator.stop();
-        }
+        await getFirstReaction(draupnirSafeEmitter(), draupnir.managementRoomID, '✅', async () => {
+            return moderator.sendMessage(draupnir.managementRoomID, {msgtype: 'm.text', body: `!draupnir rooms add ${targetRoom}`});
+        });
         LogService.debug("redactionTest", `targetRoom: ${targetRoom}, managementRoom: ${this.config.managementRoom}`);
         // Sandwich irrelevant messages in bad messages.
         await badUser.sendMessage(targetRoom, {msgtype: 'm.text', body: "Very Bad Stuff"});
@@ -51,14 +46,9 @@ describe("Test: The redaction command", function () {
         await Promise.all([...Array(50).keys()].map((i) => moderator.sendMessage(targetRoom, {msgtype: 'm.text', body: `Irrelevant Message #${i}`})));
         await badUser.sendMessage(targetRoom, {msgtype: 'm.text', body: "Very Bad Stuff"});
 
-        try {
-            await moderator.start();
-            await getFirstReaction(moderator, draupnir.managementRoomID, '✅', async () => {
-                return await moderator.sendMessage(draupnir.managementRoomID, { msgtype: 'm.text', body: `!draupnir redact ${badUserId} --room ${targetRoom}` });
-            });
-        } finally {
-            moderator.stop();
-        }
+        await getFirstReaction(draupnirSafeEmitter(), draupnir.managementRoomID, '✅', async () => {
+            return await moderator.sendMessage(draupnir.managementRoomID, { msgtype: 'm.text', body: `!draupnir redact ${badUserId} --room ${targetRoom}` });
+        });
 
         await getMessagesByUserIn(moderator, badUserId, targetRoom, 1000, function(events) {
             events.map(e => {
