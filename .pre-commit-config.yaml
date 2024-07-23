@@ -23,6 +23,10 @@ repos:
     hooks:
       - id: editorconfig-checker
         alias: ec
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v4.0.3
+    hooks:
+      - id: reuse
   - repo: local
     hooks:
       - id: yarn-lint
