@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2024 Aminda Suomalainen <suomalainen+git@mikaela.info>
 #
-# SPDX-License-Identifier: CC0-1.0--merge-copyrights
+# SPDX-License-Identifier: CC0-1.0
 
 * text=auto eol=lf
 *.gif filter=lfs diff=lfs merge=lfs -text
