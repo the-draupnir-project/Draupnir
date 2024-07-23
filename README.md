@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 
-SPDX-License-Identifier: CC BY-SA 4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # Draupnir
