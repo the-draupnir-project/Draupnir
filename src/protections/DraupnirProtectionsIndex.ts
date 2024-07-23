@@ -1,3 +1,7 @@
+// Copyright 2024 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: AFL-3.0
+
 /**
  * This file exists as a way to register all protections.
  * In future, we should maybe try to dogfood the dynamic plugin load sytem
