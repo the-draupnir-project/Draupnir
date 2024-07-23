@@ -12,7 +12,7 @@ charset = utf-8
 indent_style = space
 indent_size = 2
 
-[{LICENSE,NOTICE,*.{md,yml,yaml,json}}]
+[{LICENSE,NOTICE,*.{md,yml,yaml,json,txt}}]
 trim_trailing_whitespace = false
 indent_style = space
 indent_size = unset
