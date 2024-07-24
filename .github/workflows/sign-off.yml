@@ -1,9 +1,12 @@
-# Copyright 2022 - 2024 The Matrix.org Foundation C.I.C.
 # Copyright 2024 Catalan Lover <catalanlover@protonmail.com>
-# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+# Copyright 2022 - 2024 The Matrix.org Foundation C.I.C.
 #
 # SPDX-License-Identifier: Apache-2.0
-# SPDX-License-Identifier: CC0-1.0
+#
+# SPDX-FileAttributionText: <text>
+# This modified file incorporates work from matrix-org/backend-meta
+# https://github.com/matrix-org/backend-meta
+# </text>
 
 name: Contribution requirements
 
