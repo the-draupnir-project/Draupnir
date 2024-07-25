@@ -1,3 +1,7 @@
+// Copyright 2023 Marcel <MTRNord@users.noreply.github.com>
+//
+// SPDX-License-Identifier: AFL-3.0
+
 import {
   defineInterfaceCommand,
   findTableCommand,

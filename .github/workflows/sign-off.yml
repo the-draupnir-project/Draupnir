@@ -7,6 +7,7 @@
 # This modified file incorporates work from matrix-org/backend-meta
 # https://github.com/matrix-org/backend-meta
 # </text>
+
 name: Contribution requirements
 
 on:

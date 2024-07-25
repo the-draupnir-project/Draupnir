@@ -1,3 +1,7 @@
+// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: AFL-3.0
+
 import { ActionResult } from "matrix-protection-suite";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
 import { ReadItem } from "../../../src/commands/interface-manager/CommandReader";

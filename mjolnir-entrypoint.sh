@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+# SPDX-FileCopyrightText: 2022 The Matrix.org Foundation C.I.C.
+#
+# SPDX-License-Identifier: Apache-2.0 AND AFL-3.0
+
 # This is used as the entrypoint in the mjolnir Dockerfile.
 # We want to transition away form people running the image without specifying `bot` or `appservice`.
 # So if eventually cli arguments are provided for the bot version, we want this to be the opportunity to move to `bot`.

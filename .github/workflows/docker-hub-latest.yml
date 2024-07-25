@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Copied from https://github.com/matrix-org/matrix-bifrost/blob/develop/.github/workflows/docker-hub-release.yml
 # This is duplicated with docker-hub-release.yml the only difference is the tag and hook
 

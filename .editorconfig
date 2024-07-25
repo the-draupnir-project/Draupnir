@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Aminda Suomalainen <suomalainen+git@mikaela.info>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 root = true
 
 [*]
@@ -8,7 +12,7 @@ charset = utf-8
 indent_style = space
 indent_size = 2
 
-[{LICENSE,NOTICE,*.{md,yml,yaml,json}}]
+[{LICENSE,NOTICE,*.{md,yml,yaml,json,txt}}]
 trim_trailing_whitespace = false
 indent_style = space
 indent_size = unset
