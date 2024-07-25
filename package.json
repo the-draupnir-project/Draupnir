@@ -35,7 +35,7 @@
     "@types/jsdom": "21.1.6",
     "@types/mocha": "^10.0.7",
     "@types/nedb": "^1.8.16",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.14.12",
     "@types/pg": "^8.6.5",
     "@types/request": "^2.48.12",
     "@types/shell-quote": "1.7.1",
@@ -45,8 +45,8 @@
     "mocha": "^10.7.0",
     "prettier": "^3.3.3",
     "ts-mocha": "^10.0.0",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^7.16.1",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^7.17.0",
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
