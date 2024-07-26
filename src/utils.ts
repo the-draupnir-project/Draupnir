@@ -297,7 +297,9 @@ type RequestError =
       [key: string]: unknown;
     }
   | undefined;
-type RequestResponse = { statusCode: number; [key: string]: unknown };
+type RequestResponse =
+  | { statusCode: number; [key: string]: unknown }
+  | undefined;
 
 /**
  * Patch `MatrixClient` into something that throws concise exceptions.
@@ -328,7 +330,11 @@ function patchMatrixClientForConciseExceptions() {
         response: RequestResponse,
         resBody: unknown
       ) {
-        if (!err && (response.statusCode < 200 || response.statusCode >= 300)) {
+        if (
+          !err &&
+          response !== undefined &&
+          (response.statusCode < 200 || response.statusCode >= 300)
+        ) {
           // Normally, converting HTTP Errors into rejections is done by the caller
           // of `requestFn` within matrix-bot-sdk. However, this always ends up rejecting
           // with an `IncomingMessage` - exactly what we wish to avoid here.
@@ -543,7 +549,7 @@ function patchMatrixClientForPrototypePollution() {
           }
         }
 
-        if (typeof response.body === "string") {
+        if (typeof response?.body === "string") {
           try {
             response.body = JSON.parse(response.body, jsonReviver);
           } catch (e) {
