@@ -80,6 +80,10 @@ export interface IConfig {
       words: string[];
       minutesBeforeTrusting: number;
     };
+    newJoinerProtection: {
+      serverNames: string[];
+      banMessage: string;
+    };
   };
   health: {
     healthz: {
@@ -168,6 +172,11 @@ const defaultConfig: IConfig = {
     wordlist: {
       words: [],
       minutesBeforeTrusting: 20,
+    },
+    newJoinerProtection: {
+      serverNames: [],
+      banMessage:
+        "Unfortunately we cannot accept new users from your homeserver at this time.",
     },
   },
   health: {

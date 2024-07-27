@@ -16,6 +16,7 @@ import "./JoinWaveShortCircuit";
 import "./RedactionSynchronisation";
 import "./MessageIsMedia";
 import "./MessageIsVoice";
+import "./NewJoinerProtection";
 import "./PolicyChangeNotification";
 import "./TrustedReporters";
 import "./WordList";
