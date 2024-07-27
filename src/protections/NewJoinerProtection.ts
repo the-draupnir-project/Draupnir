@@ -88,7 +88,8 @@ export type NewJoinerProtectionCapabilities = {
 describeProtection<NewJoinerProtectionCapabilities, Draupnir>({
   name: "NewJoinerProtection",
   description: `Highly experimental protection that will ban all new joiners from configured homeservers.
-    Will not ban existing users from those servers, and unbanning users will allow them to join normally.`,
+    Will not ban existing users from those servers, and unbanning users will allow them to join normally.
+    Please read the documentation https://the-draupnir-project.github.io/draupnir-documentation/protections/new-joiner-protection.`,
   capabilityInterfaces: {
     userConsequences: "UserConsequences",
   },
