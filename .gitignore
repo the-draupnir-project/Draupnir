@@ -2,8 +2,16 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
+# Draupnir config
 config/*
 !config/default.yaml
+
+# Draupnir test data
+mjolnir-registration.yaml
+test/harness/mjolnir-data/*
+
+# Misc
+
 lib/
 storage/
 venv/
