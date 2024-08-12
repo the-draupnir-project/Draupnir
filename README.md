@@ -147,8 +147,10 @@ keep that in mind throughout.
 
 ### NLnet foundation
 
-![](https://nlnet.nl/logo/banner.svg)
-![](https://nlnet.nl/image/logos/NGI0Core_tag.svg)
+<p>
+   <img src="https://nlnet.nl/logo/banner.svg" width="25%" hspace="10">
+   <img src="https://nlnet.nl/image/logos/NGI0Core_tag.svg" width="25%" hspace="10">
+</p>
 
 Draupnir is supported by the NLnet foundation and
 [NGI Zero](https://nlnet.nl/NGI0/) under the
