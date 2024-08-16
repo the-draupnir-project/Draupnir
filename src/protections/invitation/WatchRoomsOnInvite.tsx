@@ -12,10 +12,9 @@ import {
   ALL_RULE_TYPES,
   Logger,
   MJOLNIR_SHORTCODE_EVENT_TYPE,
-  MatrixRoomID,
   MembershipEvent,
   Ok,
-  Permalink,
+  PermalinkSchema,
   PropagationType,
   ProtectedRoomsSet,
   RoomEvent,
@@ -34,6 +33,7 @@ import {
 } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("WatchRoomsOnInvite");
 
@@ -42,7 +42,7 @@ const WATCH_LISTS_ON_INVITE_PROMPT_LISTENER =
 
 // would be nice to be able to use presentation types here idk.
 const WatchRoomsOnInvitePromptContext = Type.Object({
-  invited_room: Permalink,
+  invited_room: PermalinkSchema,
 });
 // this rule is stupid.
 

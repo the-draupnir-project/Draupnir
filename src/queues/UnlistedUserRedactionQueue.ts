@@ -8,13 +8,13 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import {
-  Permalinks,
-  RoomEvent,
-  StringRoomID,
-  StringUserID,
-} from "matrix-protection-suite";
+import { RoomEvent } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  StringUserID,
+  StringRoomID,
+  Permalinks,
+} from "@the-draupnir-project/matrix-basic-types";
 
 /**
  * A queue of users who have been flagged for redaction typically by the flooding or image protection.

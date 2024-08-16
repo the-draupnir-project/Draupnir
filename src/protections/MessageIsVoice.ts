@@ -14,9 +14,7 @@ import {
   ActionResult,
   CapabilitySet,
   EventConsequences,
-  MatrixRoomID,
   Ok,
-  Permalinks,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -24,9 +22,13 @@ import {
   RoomMessage,
   Value,
   describeProtection,
-  serverName,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  MatrixRoomID,
+  Permalinks,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 type MessageIsVoiceCapabilities = {
   eventConsequences: EventConsequences;
@@ -100,7 +102,7 @@ export class MessageIsVoiceProtection
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.INFO,
         "MessageIsVoice",
-        `Redacting event from ${event["sender"]} for posting a voice message. ${Permalinks.forEvent(roomID, event["event_id"], [serverName(this.draupnir.clientUserID)])}`
+        `Redacting event from ${event["sender"]} for posting a voice message. ${Permalinks.forEvent(roomID, event["event_id"], [userServerName(this.draupnir.clientUserID)])}`
       );
       // Redact the event
       if (!this.draupnir.config.noop) {

@@ -13,7 +13,6 @@ import {
   AbstractProtection,
   ActionResult,
   EventConsequences,
-  MatrixRoomID,
   MembershipChange,
   MembershipChangeType,
   Ok,
@@ -23,13 +22,16 @@ import {
   RoomEvent,
   RoomMembershipRevision,
   RoomMessage,
-  StringRoomID,
-  StringUserID,
   UserConsequences,
   Value,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  MatrixRoomID,
+  StringRoomID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 type FirstMessageIsImageProtectionSettings = Record<never, never>;
 
@@ -83,8 +85,7 @@ export class FirstMessageIsImageProtection
   extends AbstractProtection<FirstMessageIsImageProtectionDescription>
   implements Protection<FirstMessageIsImageProtectionDescription>
 {
-  private justJoined: { [roomID: StringRoomID]: StringUserID[] | undefined } =
-    {};
+  private justJoined: { [roomID: StringRoomID]: StringUserID[] } = {};
   private recentlyBanned: StringUserID[] = [];
 
   private readonly userConsequences: UserConsequences;

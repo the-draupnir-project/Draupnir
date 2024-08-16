@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MatrixRoomAlias, MatrixRoomID } from "matrix-protection-suite";
+import {
+  MatrixRoomID,
+  MatrixRoomAlias,
+} from "@the-draupnir-project/matrix-basic-types";
 import { DocumentNode } from "./DeadDocument";
 import {
   PresentationType,

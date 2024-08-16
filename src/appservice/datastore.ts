@@ -8,7 +8,10 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { StringRoomID, StringUserID } from "matrix-protection-suite";
+import {
+  StringUserID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export interface MjolnirRecord {
   local_part: string;

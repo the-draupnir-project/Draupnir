@@ -21,13 +21,13 @@ import {
   RoomMembershipRevision,
   SafeIntegerProtectionSetting,
   StandardProtectionSettings,
-  StringRoomID,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
 import { LogLevel } from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("JoinWaveShortCircuitProtection");
 

@@ -11,7 +11,6 @@
 import { DraupnirBaseExecutor, DraupnirContext } from "./CommandHandler";
 import {
   ActionResult,
-  MatrixRoomReference,
   MultipleErrors,
   PolicyRuleType,
   RoomActionError,
@@ -30,6 +29,7 @@ import {
 } from "./interface-manager/ParameterParsing";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 
 export async function importCommand(
   this: DraupnirContext,

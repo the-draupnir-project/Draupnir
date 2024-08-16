@@ -17,14 +17,14 @@ import {
   MatrixRoomAlias,
   MatrixRoomID,
   MatrixRoomReference,
-  UserID,
-} from "matrix-protection-suite";
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 makePresentationType({
-  name: "UserID",
+  name: "MatrixUserID",
   validator: simpleTypeValidator(
-    "UserID",
-    (item: ReadItem) => item instanceof UserID
+    "MatrixUserID",
+    (item: ReadItem) => item instanceof MatrixUserID
   ),
 });
 
@@ -64,8 +64,8 @@ makePresentationType({
 
 // Wouldn't this be better as a custom document node so that we could render the plain text version differently?
 definePresentationRenderer(
-  findPresentationType("UserID"),
-  function (presentation: UserID): DocumentNode {
+  findPresentationType("MatrixUserID"),
+  function (presentation: MatrixUserID): DocumentNode {
     return (
       <a href={`https://matrix.to/#/${presentation.toString()}`}>
         {presentation.toString()}

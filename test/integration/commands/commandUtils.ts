@@ -16,9 +16,9 @@ import {
   NoticeMessageContent,
   ReactionEvent,
   RoomEvent,
-  StringEventID,
   TextMessageContent,
   Value,
+  StringEventIDSchema,
 } from "matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
 
@@ -26,7 +26,7 @@ export const ReplyContent = Type.Intersect([
   Type.Object({
     "m.relates_to": Type.Object({
       "m.in_reply_to": Type.Object({
-        event_id: StringEventID,
+        event_id: StringEventIDSchema,
       }),
     }),
   }),

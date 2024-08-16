@@ -4,9 +4,7 @@
 
 import {
   HandleMissingProtectionPermissions,
-  MatrixRoomReference,
   ProtectionPermissionsChange,
-  StringRoomID,
   Task,
 } from "matrix-protection-suite";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
@@ -14,6 +12,10 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  StringRoomID,
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 function renderPermissions(
   title: DocumentNode,

@@ -22,15 +22,10 @@ import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
-  MatrixRoomReference,
   Ok,
   PropagationType,
-  StringRoomID,
-  StringUserID,
   Task,
   isError,
-  isStringRoomID,
-  userLocalpart,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
@@ -44,6 +39,13 @@ import {
   UnstartedDraupnir,
 } from "../draupnirfactory/StandardDraupnirManager";
 import { DraupnirFactory } from "../draupnirfactory/DraupnirFactory";
+import {
+  StringUserID,
+  StringRoomID,
+  MatrixRoomReference,
+  userLocalpart,
+  isStringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("AppServiceDraupnirManager");
 

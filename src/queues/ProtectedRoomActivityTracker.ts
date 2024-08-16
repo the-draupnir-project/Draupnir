@@ -8,7 +8,8 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { RoomEvent, StringRoomID } from "matrix-protection-suite";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import { RoomEvent } from "matrix-protection-suite";
 
 /**
  * Used to keep track of protected rooms so they are always ordered for activity.

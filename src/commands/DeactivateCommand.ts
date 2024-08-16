@@ -24,9 +24,9 @@ import {
   ActionError,
   ActionResult,
   Ok,
-  UserID,
   isError,
 } from "matrix-protection-suite";
+import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   table: "synapse admin",
@@ -36,13 +36,13 @@ defineInterfaceCommand({
   parameters: parameters([
     {
       name: "user",
-      acceptor: findPresentationType("UserID"),
+      acceptor: findPresentationType("MatrixUserID"),
     },
   ]),
   command: async function (
     this: DraupnirContext,
     _keywords: ParsedKeywords,
-    targetUser: UserID
+    targetUser: MatrixUserID
   ): Promise<ActionResult<void>> {
     const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
     if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {

@@ -9,13 +9,15 @@
 // </text>
 
 import {
+  MatrixRoomID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
+import {
   ActionResult,
   EntityAccess,
-  MatrixRoomID,
   Ok,
   PolicyListRevisionIssuer,
   PolicyRoomManager,
-  StringUserID,
   isError,
   AccessControl as MPSAccess,
   PolicyRoomEditor,

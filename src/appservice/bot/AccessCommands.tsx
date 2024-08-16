@@ -12,9 +12,10 @@ import {
   ParsedKeywords,
 } from "../../commands/interface-manager/ParameterParsing";
 import { AppserviceContext } from "./AppserviceCommandHandler";
-import { UserID, ActionResult } from "matrix-protection-suite";
+import { ActionResult } from "matrix-protection-suite";
 import { defineMatrixInterfaceAdaptor } from "../../commands/interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "../../commands/interface-manager/MatrixHelpRenderer";
+import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   designator: ["allow"],
@@ -22,14 +23,14 @@ defineInterfaceCommand({
   parameters: parameters([
     {
       name: "user",
-      acceptor: findPresentationType("UserID"),
+      acceptor: findPresentationType("MatrixUserID"),
       description: "The user that should be allowed to provision a bot",
     },
   ]),
   command: async function (
     this: AppserviceContext,
     _keywords: ParsedKeywords,
-    user: UserID
+    user: MatrixUserID
   ): Promise<ActionResult<void>> {
     return await this.appservice.accessControl.allow(user.toString());
   },
@@ -48,7 +49,7 @@ defineInterfaceCommand({
   parameters: parameters([
     {
       name: "user",
-      acceptor: findPresentationType("UserID"),
+      acceptor: findPresentationType("MatrixUserID"),
       description:
         "The user which shall not be allowed to provision bots anymore",
     },
@@ -56,7 +57,7 @@ defineInterfaceCommand({
   command: async function (
     this: AppserviceContext,
     _keywords: ParsedKeywords,
-    user: UserID
+    user: MatrixUserID
   ): Promise<ActionResult<void>> {
     return await this.appservice.accessControl.remove(user.toString());
   },

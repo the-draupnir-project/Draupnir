@@ -22,10 +22,10 @@ import {
   isError,
   Ok,
   RoomEvent,
-  UserID,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { UnstartedDraupnir } from "../../draupnirfactory/StandardDraupnirManager";
+import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
 
 /**
  * There is ovbiously something we're doing very wrong here,
@@ -95,14 +95,14 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
   parameters: parameters([
     {
       name: "draupnir",
-      acceptor: findPresentationType("UserID"),
+      acceptor: findPresentationType("MatrixUserID"),
       description: "The userid of the draupnir to restart",
     },
   ]),
   command: async function (
     this,
     _keywords,
-    draupnirUser: UserID
+    draupnirUser: MatrixUserID
   ): Promise<ActionResult<void>> {
     const draupnirManager = this.appservice.draupnirManager;
     const draupnir = draupnirManager.findUnstartedDraupnir(

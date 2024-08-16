@@ -16,8 +16,6 @@ import {
   EventReport,
   LoggableConfigTracker,
   Logger,
-  MatrixRoomID,
-  MatrixRoomReference,
   MembershipEvent,
   Ok,
   PolicyRoomManager,
@@ -27,16 +25,10 @@ import {
   RoomMembershipRevisionIssuer,
   RoomMessage,
   RoomStateManager,
-  StringRoomID,
-  StringUserID,
   Task,
   TextMessageContent,
   Value,
   isError,
-  isStringRoomAlias,
-  isStringRoomID,
-  serverName,
-  userLocalpart,
 } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
@@ -69,6 +61,16 @@ import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRe
 import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
 import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 import { isInvitationForUser } from "./protections/invitation/inviteCore";
+import {
+  StringRoomID,
+  StringUserID,
+  MatrixRoomID,
+  isStringRoomID,
+  isStringRoomAlias,
+  MatrixRoomReference,
+  userLocalpart,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("Draupnir");
 
@@ -403,7 +405,7 @@ export class Draupnir implements Client {
   }
 
   public createRoomReference(roomID: StringRoomID): MatrixRoomID {
-    return new MatrixRoomID(roomID, [serverName(this.clientUserID)]);
+    return new MatrixRoomID(roomID, [userServerName(this.clientUserID)]);
   }
   public handleEventReport(report: EventReport): void {
     this.protectedRoomsSet.handleEventReport(report);

@@ -13,9 +13,7 @@ import {
   AbstractProtection,
   ActionResult,
   EventConsequences,
-  MatrixRoomID,
   Ok,
-  Permalinks,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -23,9 +21,13 @@ import {
   RoomMessage,
   Value,
   describeProtection,
-  serverName,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  MatrixRoomID,
+  Permalinks,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 type MessageIsMediaProtectionSettings = Record<never, never>;
 
@@ -108,7 +110,7 @@ export class MessageIsMediaProtection
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "MessageIsMedia",
-          `Redacting event from ${event["sender"]} for posting an image/video. ${Permalinks.forEvent(roomID, event["event_id"], [serverName(this.draupnir.clientUserID)])}`
+          `Redacting event from ${event["sender"]} for posting an image/video. ${Permalinks.forEvent(roomID, event["event_id"], [userServerName(this.draupnir.clientUserID)])}`
         );
         // Redact the event
         if (this.draupnir.config.noop) {

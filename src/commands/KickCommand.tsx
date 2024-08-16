@@ -13,11 +13,7 @@ import { DraupnirContext } from "./CommandHandler";
 import {
   ActionError,
   ActionResult,
-  MatrixRoomReference,
   Ok,
-  StringRoomID,
-  StringUserID,
-  UserID,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -36,6 +32,12 @@ import {
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import {
+  StringUserID,
+  StringRoomID,
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 type UsersToKick = Map<StringUserID, StringRoomID[]>;
 
@@ -77,7 +79,7 @@ function renderUsersToKick(usersToKick: UsersToKick): DocumentNode {
 export async function kickCommand(
   this: DraupnirContext,
   keywords: ParsedKeywords,
-  user: UserID,
+  user: MatrixUserID,
   ...reasonParts: string[]
 ): Promise<ActionResult<UsersToKick>> {
   const restrictToRoomReference = keywords.getKeyword<MatrixRoomReference>(
@@ -143,7 +145,7 @@ defineInterfaceCommand({
     [
       {
         name: "user",
-        acceptor: findPresentationType("string"),
+        acceptor: findPresentationType("MatrixUserID"),
       },
     ],
     undefined,

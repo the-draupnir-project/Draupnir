@@ -10,13 +10,15 @@ import {
   Logger,
   ReactionEvent,
   RoomEvent,
-  StringEventID,
-  StringRoomID,
-  StringUserID,
   Task,
   Value,
   isError,
 } from "matrix-protection-suite";
+import {
+  StringRoomID,
+  StringUserID,
+  StringEventID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("MatrixReactionHandler");
 

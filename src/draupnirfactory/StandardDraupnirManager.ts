@@ -11,14 +11,16 @@
 import {
   ActionError,
   ActionResult,
-  MatrixRoomID,
-  StringUserID,
   Task,
   isError,
 } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
+import {
+  StringUserID,
+  MatrixRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export class StandardDraupnirManager {
   private readonly readyDraupnirs = new Map<StringUserID, Draupnir>();

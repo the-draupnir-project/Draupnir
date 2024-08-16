@@ -5,9 +5,7 @@
 import {
   ActionResult,
   ClientsInRoomMap,
-  MatrixRoomID,
   StandardLoggableConfigTracker,
-  StringUserID,
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
@@ -19,6 +17,10 @@ import {
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
 import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
+import {
+  StringUserID,
+  MatrixRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export class DraupnirFactory {
   public constructor(

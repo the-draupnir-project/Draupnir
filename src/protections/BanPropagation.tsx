@@ -20,8 +20,6 @@ import {
   AbstractProtection,
   ActionResult,
   Logger,
-  MatrixRoomID,
-  MatrixRoomReference,
   MembershipChange,
   MembershipChangeType,
   Ok,
@@ -34,12 +32,9 @@ import {
   RoomActionError,
   RoomMembershipRevision,
   RoomUpdateError,
-  StringRoomID,
-  StringUserID,
   Task,
   describeProtection,
   isError,
-  serverName,
   UnknownSettings,
   UserConsequences,
   Membership,
@@ -49,6 +44,13 @@ import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot
 import { DraupnirProtection } from "./Protection";
 import { listInfo } from "../commands/StatusCommand";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
+import {
+  MatrixRoomID,
+  StringRoomID,
+  MatrixRoomReference,
+  StringUserID,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("BanPropagationProtection");
 
@@ -410,7 +412,7 @@ export class BanPropagationProtection
         );
         if (editablePolicyRoom === undefined) {
           const roomID = MatrixRoomReference.fromRoomID(roomIDWithPolicy, [
-            serverName(this.draupnir.clientUserID),
+            userServerName(this.draupnir.clientUserID),
           ]);
           errors.push(
             new PermissionError(

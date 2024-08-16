@@ -7,15 +7,17 @@ import { newTestUser } from "./clientHelper";
 import { getFirstEventMatching } from "./commands/commandUtils";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 import {
-  MatrixRoomReference,
   NoticeMessageContent,
   PolicyRuleType,
   PropagationType,
   RoomMessage,
-  StringRoomID,
   Value,
   findProtection,
 } from "matrix-protection-suite";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 // We will need to disable this in tests that are banning people otherwise it will cause
 // mocha to hang for awhile until it times out waiting for a response to a prompt.

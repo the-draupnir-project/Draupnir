@@ -8,14 +8,11 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionError,
-  ProtectionDescription,
-  StringRoomID,
-} from "matrix-protection-suite";
+import { ActionError, ProtectionDescription } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 export async function renderProtectionFailedToStart(
   client: MatrixSendClient,

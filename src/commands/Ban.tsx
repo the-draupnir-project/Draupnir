@@ -28,15 +28,17 @@ import { PromptOptions } from "./interface-manager/PromptForAccept";
 import { Draupnir } from "../Draupnir";
 import {
   ActionResult,
-  MatrixRoomReference,
   PolicyRoomEditor,
   PolicyRuleType,
   isError,
-  UserID,
   Ok,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
+import {
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export async function findPolicyRoomEditorFromRoomReference(
   draupnir: Draupnir,
@@ -55,7 +57,7 @@ export async function findPolicyRoomEditorFromRoomReference(
 async function ban(
   this: DraupnirContext,
   _keywords: ParsedKeywords,
-  entity: UserID | MatrixRoomReference | string,
+  entity: MatrixUserID | MatrixRoomReference | string,
   policyRoomDesignator: MatrixRoomReference | string,
   ...reasonParts: string[]
 ): Promise<ActionResult<string>> {
@@ -75,7 +77,7 @@ async function ban(
   }
   const policyListEditor = policyListEditorResult.ok;
   const reason = reasonParts.join(" ");
-  if (entity instanceof UserID) {
+  if (entity instanceof MatrixUserID) {
     return await policyListEditor.banEntity(
       PolicyRuleType.User,
       entity.toString(),
@@ -111,7 +113,7 @@ defineInterfaceCommand({
       {
         name: "entity",
         acceptor: union(
-          findPresentationType("UserID"),
+          findPresentationType("MatrixUserID"),
           findPresentationType("MatrixRoomReference"),
           findPresentationType("string")
         ),

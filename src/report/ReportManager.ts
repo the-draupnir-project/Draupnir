@@ -15,19 +15,21 @@ import { htmlEscape } from "../utils";
 import { JSDOM } from "jsdom";
 import { Draupnir } from "../Draupnir";
 import {
-  MatrixRoomReference,
   ReactionContent,
   RoomEvent,
   RoomMessage,
-  StringEventID,
-  StringRoomID,
-  StringUserID,
   Task,
   TextMessageContent,
   Value,
   isError,
-  serverName,
 } from "matrix-protection-suite";
+import {
+  StringRoomID,
+  StringUserID,
+  StringEventID,
+  MatrixRoomReference,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -967,7 +969,7 @@ class DisplayManager {
 
     const roomID = event["room_id"];
     const room = MatrixRoomReference.fromRoomID(roomID, [
-      serverName(this.owner.draupnir.clientUserID),
+      userServerName(this.owner.draupnir.clientUserID),
     ]);
     const eventId = event["event_id"];
     const MAX_EVENT_CONTENT_LENGTH = 2048;

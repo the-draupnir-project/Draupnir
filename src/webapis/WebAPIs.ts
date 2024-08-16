@@ -13,7 +13,11 @@ import express from "express";
 import { MatrixClient } from "matrix-bot-sdk";
 import { ReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
-import { StringEventID, StringRoomID, Task } from "matrix-protection-suite";
+import {
+  StringRoomID,
+  StringEventID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { Task } from "matrix-protection-suite";
 
 /**
  * A common prefix for all web-exposed APIs.

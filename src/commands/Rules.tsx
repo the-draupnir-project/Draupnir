@@ -29,17 +29,19 @@ import {
 } from "./interface-manager/ParameterParsing";
 import {
   ActionResult,
-  MatrixRoomID,
-  MatrixRoomReference,
   Ok,
   PolicyRoomWatchProfile,
   PolicyRule,
-  StringRoomID,
   isError,
-  UserID,
   RoomEvent,
 } from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
+import {
+  StringRoomID,
+  MatrixRoomID,
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 async function renderListMatches(
   this: MatrixInterfaceAdaptor<MatrixContext>,
@@ -144,7 +146,7 @@ defineInterfaceCommand({
     {
       name: "entity",
       acceptor: union(
-        findPresentationType("UserID"),
+        findPresentationType("MatrixUserID"),
         findPresentationType("MatrixRoomReference"),
         findPresentationType("string")
       ),
@@ -153,7 +155,7 @@ defineInterfaceCommand({
   command: async function (
     this: DraupnirContext,
     _keywords,
-    entity: string | UserID | MatrixRoomReference
+    entity: string | MatrixUserID | MatrixRoomReference
   ): Promise<ActionResult<ListMatches[]>> {
     const policyRooms = await listInfo(this.draupnir);
     return Ok(

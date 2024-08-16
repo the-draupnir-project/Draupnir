@@ -13,11 +13,8 @@ import {
   ActionException,
   ActionResult,
   DescriptionMeta,
-  MatrixRoomReference,
   ResultForUsersInRoom,
   RoomSetResult,
-  StringRoomID,
-  StringUserID,
   isOk,
 } from "matrix-protection-suite";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
@@ -26,6 +23,11 @@ import {
   renderMentionPill,
   renderRoomPill,
 } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  StringRoomID,
+  MatrixRoomReference,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export function renderElaborationTrail(error: ActionError): DocumentNode {
   return (
