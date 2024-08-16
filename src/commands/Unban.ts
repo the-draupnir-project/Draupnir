@@ -27,14 +27,16 @@ import { Draupnir } from "../Draupnir";
 import {
   ActionResult,
   isError,
-  isStringUserID,
-  MatrixRoomReference,
   Ok,
   PolicyRuleType,
-  UserID,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
+import {
+  isStringUserID,
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
   await draupnir.managementRoomOutput.logMessage(
@@ -75,7 +77,7 @@ async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
 async function unban(
   this: DraupnirContext,
   keywords: ParsedKeywords,
-  entity: UserID | MatrixRoomReference | string,
+  entity: MatrixUserID | MatrixRoomReference | string,
   policyRoomDesignator: MatrixRoomReference | string
 ): Promise<ActionResult<void>> {
   const policyRoomReference =
@@ -98,7 +100,7 @@ async function unban(
     return policyRoomEditor;
   }
   const policyRoomUnban =
-    entity instanceof UserID
+    entity instanceof MatrixUserID
       ? await policyRoomEditor.ok.unbanEntity(
           PolicyRuleType.User,
           entity.toString()
@@ -121,7 +123,7 @@ async function unban(
   if (isError(policyRoomUnban)) {
     return policyRoomUnban;
   }
-  if (typeof entity === "string" || entity instanceof UserID) {
+  if (typeof entity === "string" || entity instanceof MatrixUserID) {
     const rawEnttiy = typeof entity === "string" ? entity : entity.toString();
     const isGlob = (string: string) =>
       string.includes("*") ? true : string.includes("?");
@@ -154,7 +156,7 @@ defineInterfaceCommand({
       {
         name: "entity",
         acceptor: union(
-          findPresentationType("UserID"),
+          findPresentationType("MatrixUserID"),
           findPresentationType("MatrixRoomReference"),
           findPresentationType("string")
         ),

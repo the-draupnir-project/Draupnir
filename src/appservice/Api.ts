@@ -14,7 +14,8 @@ import * as bodyParser from "body-parser";
 import * as http from "http";
 import { Logger } from "matrix-appservice-bridge";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
-import { isError, isStringUserID } from "matrix-protection-suite";
+import { isError } from "matrix-protection-suite";
+import { isStringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("Api");
 /**

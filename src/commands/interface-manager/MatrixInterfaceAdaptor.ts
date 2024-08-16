@@ -31,12 +31,12 @@ import {
   ClientPlatform,
   ResultError,
   RoomEvent,
-  StringRoomID,
   Task,
   isError,
 } from "matrix-protection-suite";
 import { MatrixReactionHandler } from "./MatrixReactionHandler";
 import { PromptRequiredError } from "./PromptRequiredError";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 export interface MatrixContext {
   reactionHandler: MatrixReactionHandler;

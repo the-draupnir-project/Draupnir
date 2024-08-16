@@ -24,11 +24,11 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import {
   ActionError,
   ActionResult,
-  MatrixRoomReference,
   Ok,
   isError,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   table: "synapse admin",

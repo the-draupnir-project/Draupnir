@@ -11,7 +11,6 @@
 import {
   ActionError,
   ActionResult,
-  MatrixRoomID,
   Ok,
   PolicyRuleType,
   PropagationType,
@@ -31,6 +30,7 @@ import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfac
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { listInfo } from "./StatusCommand";
 import { Draupnir } from "../Draupnir";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 export async function createList(
   this: DraupnirContext,

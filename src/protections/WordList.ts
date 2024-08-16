@@ -13,7 +13,6 @@ import {
   ActionResult,
   EventConsequences,
   Logger,
-  MatrixRoomID,
   MembershipChange,
   MembershipChangeType,
   Ok,
@@ -23,13 +22,16 @@ import {
   RoomEvent,
   RoomMembershipRevision,
   RoomMessage,
-  StringRoomID,
-  StringUserID,
   UserConsequences,
   Value,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  StringUserID,
+  StringRoomID,
+  MatrixRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("WordList");
 

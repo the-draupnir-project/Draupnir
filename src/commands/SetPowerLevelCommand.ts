@@ -8,14 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionResult,
-  MatrixRoomID,
-  MatrixRoomReference,
-  Ok,
-  UserID,
-  isError,
-} from "matrix-protection-suite";
+import { ActionResult, Ok, isError } from "matrix-protection-suite";
 import { DraupnirContext } from "./CommandHandler";
 import {
   ParsedKeywords,
@@ -25,11 +18,16 @@ import {
 } from "./interface-manager/ParameterParsing";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { defineInterfaceCommand } from "./interface-manager/InterfaceCommand";
+import {
+  MatrixRoomID,
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 async function setPowerLevelCommand(
   this: DraupnirContext,
   _keywords: ParsedKeywords,
-  user: UserID,
+  user: MatrixUserID,
   powerLevel: string,
   ...givenRooms: MatrixRoomReference[]
 ): Promise<ActionResult<void>> {
@@ -64,7 +62,7 @@ defineInterfaceCommand({
     [
       {
         name: "user",
-        acceptor: findPresentationType("UserID"),
+        acceptor: findPresentationType("MatrixUserID"),
       },
       {
         name: "power level",

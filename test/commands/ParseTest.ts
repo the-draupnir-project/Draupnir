@@ -17,7 +17,7 @@ import {
 import { readCommand } from "../../src/commands/interface-manager/CommandReader";
 import "../../src/commands/interface-manager/MatrixPresentations";
 
-it("A command that fookin parses mxids", async function () {
+it("A command that parses mxids", async function () {
   const tableName = Symbol("ParseTest");
   defineCommandTable(tableName);
   defineInterfaceCommand({
@@ -28,7 +28,7 @@ it("A command that fookin parses mxids", async function () {
         {
           name: "entity",
           acceptor: union(
-            findPresentationType("UserID"),
+            findPresentationType("MatrixUserID"),
             findPresentationType("MatrixRoomReference"),
             findPresentationType("string")
           ),

@@ -10,11 +10,6 @@
 
 import {
   isError,
-  StringUserID,
-  MatrixRoomReference,
-  isStringUserID,
-  isStringRoomAlias,
-  isStringRoomID,
   StandardClientsInRoomMap,
   DefaultEventDecoder,
   setGlobalLoggerProvider,
@@ -32,6 +27,13 @@ import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
 import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
 import { WebAPIs } from "./webapis/WebAPIs";
+import {
+  isStringUserID,
+  isStringRoomAlias,
+  isStringRoomID,
+  MatrixRoomReference,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 

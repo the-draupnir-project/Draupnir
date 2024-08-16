@@ -11,7 +11,6 @@ import {
   AbstractProtection,
   ActionResult,
   CapabilitySet,
-  MatrixGlob,
   MembershipChange,
   MembershipChangeType,
   Ok,
@@ -26,13 +25,16 @@ import {
   Recommendation,
   RoomMembershipRevision,
   SimpleChangeType,
-  StringRoomID,
-  StringUserID,
   Task,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { redactUserMessagesIn } from "../utils";
+import {
+  MatrixGlob,
+  StringRoomID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 type RedactionSynchronisationProtectionDescription =
   ProtectionDescription<Draupnir>;

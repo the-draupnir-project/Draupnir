@@ -13,12 +13,10 @@ import {
   Capability,
   DescriptionMeta,
   Ok,
-  Permalinks,
   PolicyListRevision,
   RoomSetResult,
   ServerACLConsequencesContext,
   ServerConsequences,
-  StringRoomID,
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
   isError,
@@ -30,6 +28,10 @@ import {
 } from "./CommonRenderers";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { Draupnir } from "../Draupnir";
+import {
+  StringRoomID,
+  Permalinks,
+} from "@the-draupnir-project/matrix-basic-types";
 
 class StandardServerConsequencesRenderer implements ServerConsequences {
   constructor(

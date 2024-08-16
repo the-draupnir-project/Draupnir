@@ -12,17 +12,14 @@ import {
   AbstractProtection,
   ActionError,
   ActionResult,
-  MatrixRoomReference,
   MembershipEvent,
   Ok,
   ProtectedRoomsSet,
   ProtectionDescription,
   StandardDeduplicator,
-  StringRoomID,
   Task,
   describeProtection,
   isError,
-  serverName,
 } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
@@ -37,6 +34,11 @@ import {
 import { renderFailedSingularConsequence } from "../../capabilities/CommonRenderers";
 import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";
 import { WatchRoomsOnInvite } from "./WatchRoomsOnInvite";
+import {
+  StringRoomID,
+  MatrixRoomReference,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export type JoinRoomsOnInviteProtectionCapabilities = Record<string, never>;
 export type JoinRoomsOnInviteProtectionSettings = Record<string, unknown>;
@@ -165,8 +167,8 @@ export class JoinRoomsOnInviteProtection
     event: MembershipEvent
   ): Promise<ActionResult<void>> {
     const invitedRoomReference = MatrixRoomReference.fromRoomID(event.room_id, [
-      serverName(event.sender),
-      serverName(event.state_key),
+      userServerName(event.sender),
+      userServerName(event.state_key),
     ]);
     const joinResult = await this.joinInvitedRoom(event, invitedRoomReference);
     if (isError(joinResult)) {

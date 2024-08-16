@@ -13,16 +13,12 @@ import {
   ActionResult,
   Capability,
   DescriptionMeta,
-  MatrixRoomReference,
   Ok,
-  Permalinks,
   PolicyListRevision,
   ResultForUsersInRoom,
   ResultForUsersInSet,
   RoomSetResult,
   StandardUserConsequencesContext,
-  StringRoomID,
-  StringUserID,
   UserConsequences,
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
@@ -38,6 +34,12 @@ import {
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { Draupnir } from "../Draupnir";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  StringUserID,
+  StringRoomID,
+  Permalinks,
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 // yeah i know this is a bit insane but whatever, it can be our secret.
 function renderResultForUserInSetMap(

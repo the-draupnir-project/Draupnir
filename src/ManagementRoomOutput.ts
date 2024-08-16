@@ -19,12 +19,12 @@ import { IConfig } from "./config";
 import { htmlEscape } from "./utils";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
-  Permalinks,
-  StringRoomAlias,
   StringRoomID,
   StringUserID,
-  serverName,
-} from "matrix-protection-suite";
+  Permalinks,
+  StringRoomAlias,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const levelToFn = {
   [LogLevel.DEBUG.toString()]: LogService.debug,
@@ -73,7 +73,7 @@ export default class ManagementRoomOutput {
       return v.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
     };
 
-    const viaServers = [serverName(this.clientUserID)];
+    const viaServers = [userServerName(this.clientUserID)];
     for (const roomId of roomIds) {
       let alias = roomId;
       try {

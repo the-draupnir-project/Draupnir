@@ -10,15 +10,14 @@
 
 import {
   Logger,
-  MatrixRoomID,
   MembershipEvent,
   Ok,
-  Permalink,
   ProtectedRoomsSet,
   RoomEvent,
   Task,
   Value,
   isError,
+  PermalinkSchema,
 } from "matrix-protection-suite";
 import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
 import {
@@ -30,6 +29,7 @@ import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { Draupnir } from "../../Draupnir";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("ProtectRoomsOnInvite");
 
@@ -38,7 +38,7 @@ const PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER =
 
 // would be nice to be able to use presentation types here idk.
 const ProtectRoomsOnInvitePromptContext = Type.Object({
-  invited_room: Permalink,
+  invited_room: PermalinkSchema,
 });
 // this rule is stupid.
 

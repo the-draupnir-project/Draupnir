@@ -19,14 +19,16 @@ import {
   ProtectionDescription,
   SafeIntegerProtectionSetting,
   StandardProtectionSettings,
-  StringEventID,
-  StringUserID,
   StringUserIDSetProtectionSettings,
   UserConsequences,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import {
+  StringUserID,
+  StringEventID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
 

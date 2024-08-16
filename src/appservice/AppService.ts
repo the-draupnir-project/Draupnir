@@ -36,16 +36,18 @@ import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
-  MatrixRoomReference,
   StandardClientsInRoomMap,
-  StringRoomID,
-  StringUserID,
   Task,
   isError,
-  isStringRoomAlias,
-  isStringRoomID,
 } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+  StringUserID,
+  isStringRoomAlias,
+  isStringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("AppService");
 /**

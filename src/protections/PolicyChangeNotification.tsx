@@ -12,7 +12,6 @@ import {
   AbstractProtection,
   ActionResult,
   Logger,
-  MatrixRoomReference,
   Ok,
   PolicyListRevision,
   PolicyRoomManager,
@@ -20,7 +19,6 @@ import {
   PolicyRuleChange,
   ProtectedRoomsSet,
   ProtectionDescription,
-  StringRoomID,
   UnknownSettings,
   describeProtection,
   isError,
@@ -34,6 +32,10 @@ import {
   renderRoomPill,
 } from "../commands/interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
+import {
+  StringRoomID,
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("PolicyChangeNotification");
 

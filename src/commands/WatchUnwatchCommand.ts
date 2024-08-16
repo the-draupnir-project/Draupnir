@@ -22,11 +22,11 @@ import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import {
   ActionResult,
-  MatrixRoomReference,
   PropagationType,
   isError,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   table: "draupnir",

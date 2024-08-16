@@ -29,9 +29,9 @@ import {
   ActionResult,
   ResultError,
   RoomMessage,
-  StringRoomID,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 export interface DraupnirContext extends MatrixContext {
   draupnir: Draupnir;

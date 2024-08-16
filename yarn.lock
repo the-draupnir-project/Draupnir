@@ -93,6 +93,11 @@
   resolved "https://registry.yarnpkg.com/@eslint/object-schema/-/object-schema-2.1.4.tgz#9e69f8bb4031e11df79e03db09f9dbbae1740843"
   integrity sha512-BsWiH1yFGjXXS2yvrf5LyuoSIIbPrGUWob917o+BTKuZ7qJdxX8aJLRxs1fS9n6r7vESrq1OUqb68dANcFXuQQ==
 
+"@gnuxie/typescript-result@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/typescript-result/-/typescript-result-0.2.0.tgz#870e29d079341c32a7cae7e0ee77ffdd09aad60f"
+  integrity sha512-V5VZUpl21fRNTBHqdigWVkkXhoue/6MVfpWLBOMVgi5unR4ePoXjzNXc9diNmnmDe+mrQfXGPT8LiB18Cc+0Ig==
+
 "@humanwhocodes/module-importer@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@humanwhocodes/module-importer/-/module-importer-1.0.1.tgz#af5b2691a22b44be847b0ca81641c5fb6ad0172c"
@@ -220,6 +225,14 @@
   version "0.27.8"
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
+
+"@the-draupnir-project/matrix-basic-types@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-0.1.1.tgz#27a131e2f92d6d25b377f7339177d8ac204d95a2"
+  integrity sha512-g5CDAdQMe1dxbVlzPvrrPPluZCFKaBqJ2iAarspGHkr0V3YBBCdz9v3Yb6TY8e2d/eXz5gSWDKzeZElWD33oeA==
+  dependencies:
+    "@gnuxie/typescript-result" "^0.2.0"
+    glob-to-regexp "^0.4.1"
 
 "@types/better-sqlite3@^7.6.9":
   version "7.6.9"
@@ -2405,16 +2418,17 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@0.23.4":
-  version "0.23.4"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-0.23.4.tgz#7c5bafa045382a4d4c27f1c30a4420a32f05859e"
-  integrity sha512-P9jIj17aunodVZ7AghszKxR7zH+fLDaWZdWyFnKR9YRLIG5trMBh5rcCKPUpLnhTCe4apSFHyLXDnmb4zZW08w==
+"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-1.0.0.tgz#7d303359cd1d2a676c4968b7de4e5d9993405159"
+  integrity sha512-/vY0TjQEcupFqOZplLMCCwY24XRmkIYOEaYKrQeLmjj1aN1nniXwaLWwCd3aQHBDzcxsw8agRQuy46JcAhTPpw==
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@0.23.4":
-  version "0.23.4"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-0.23.4.tgz#1f4b1089888ad9d512b3eca8c4b9cb4c4111ec58"
-  integrity sha512-hC2DVGwgZLpYjKtPHCTxqap/8QeZ3W3KyHoic/9oWnlAx0FLaz7WLNGUqtTuFpmU+NWX6H0TmX2szaMHoTTqXw==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-1.0.0.tgz#7e1eb2cd5df818c736d83b217998b77dc9667160"
+  integrity sha512-XoNRzJnRgU0qgdHhId2IMvrnvaW7jx884DEh/3NssKv0Bmyccbr0DBAq7aNbXWO2T0L88aYyPENYL+j9oZKmuQ==
   dependencies:
+    "@gnuxie/typescript-result" "^0.2.0"
     await-lock "^2.2.2"
     crypto-js "^4.2.0"
     glob-to-regexp "^0.4.1"

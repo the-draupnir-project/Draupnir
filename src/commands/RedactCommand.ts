@@ -8,16 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionResult,
-  MatrixEventReference,
-  MatrixEventViaAlias,
-  MatrixEventViaRoomID,
-  MatrixRoomReference,
-  Ok,
-  UserID,
-  isError,
-} from "matrix-protection-suite";
+import { ActionResult, Ok, isError } from "matrix-protection-suite";
 import { redactUserMessagesIn } from "../utils";
 import {
   KeywordsDescription,
@@ -36,6 +27,13 @@ import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot
 import { Draupnir } from "../Draupnir";
 import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
 import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import {
+  MatrixEventReference,
+  MatrixEventViaAlias,
+  MatrixEventViaRoomID,
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export async function redactEvent(
   draupnir: Draupnir,
@@ -60,7 +58,7 @@ export async function redactEvent(
 export async function redactCommand(
   this: DraupnirContext,
   keywords: ParsedKeywords,
-  reference: UserID | MatrixEventReference,
+  reference: MatrixUserID | MatrixEventReference,
   ...reasonParts: string[]
 ): Promise<ActionResult<void>> {
   const reason = reasonParts.join(" ");
@@ -106,7 +104,7 @@ defineInterfaceCommand({
       {
         name: "entity",
         acceptor: union(
-          findPresentationType("UserID"),
+          findPresentationType("MatrixUserID"),
           findPresentationType("MatrixEventReference")
         ),
       },

@@ -10,12 +10,14 @@
 import {
   MatrixEventReference,
   MatrixRoomReference,
+  MatrixUserID,
   Permalinks,
-  UserID,
-  isError,
   isStringRoomAlias,
   isStringRoomID,
-} from "matrix-protection-suite";
+  isStringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { isError } from "matrix-protection-suite";
+
 export interface SuperCoolStream<Item, Sequence> {
   readonly source: Sequence;
   peekItem<EOF = undefined>(eof?: EOF): Item | EOF;
@@ -189,7 +191,7 @@ const WORD_DISPATCH_CHARACTERS = new Map<string, ReadMacro>();
 export type ReadItem =
   | string
   | MatrixRoomReference
-  | UserID
+  | MatrixUserID
   | Keyword
   | MatrixEventReference;
 
@@ -292,7 +294,7 @@ defineReadItem("!", readRoomIDOrAlias);
 /**
  * Read the word as a UserID, otherwise return a string if what has been read doesn not represent a user.
  */
-defineReadItem("@", (stream: StringStream): UserID | string => {
+defineReadItem("@", (stream: StringStream): MatrixUserID | string => {
   const word: string[] = [stream.readChar()];
   readUntil(/[:\s]/, stream, word);
   if (
@@ -302,7 +304,11 @@ defineReadItem("@", (stream: StringStream): UserID | string => {
     return word.join("");
   }
   readUntil(/\s/, stream, word);
-  return new UserID(word.join(""));
+  const protoUserID = word.join("");
+  if (!isStringUserID(protoUserID)) {
+    return protoUserID;
+  }
+  return new MatrixUserID(protoUserID);
 });
 
 /**
@@ -353,7 +359,7 @@ definePostReadReplace(/^https:\/\/matrix\.to/, (input) => {
       return eventResult.ok;
     }
   } else if (url.userID !== undefined) {
-    return new UserID(url.userID);
+    return new MatrixUserID(url.userID);
   } else {
     const roomResult = MatrixRoomReference.fromPermalink(input);
     if (isError(roomResult)) {

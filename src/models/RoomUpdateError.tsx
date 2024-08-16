@@ -8,6 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
@@ -17,7 +18,6 @@ import {
   ActionResult,
   Ok,
   RoomUpdateError,
-  StringRoomID,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 

@@ -23,18 +23,20 @@ import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfac
 import {
   ActionError,
   ActionResult,
-  MatrixRoomReference,
   Ok,
-  UserID,
   isError,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  MatrixRoomReference,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 async function hijackRoomCommand(
   this: DraupnirContext,
   _keywords: ParsedKeywords,
   room: MatrixRoomReference,
-  user: UserID
+  user: MatrixUserID
 ): Promise<ActionResult<void>> {
   const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
   if (
@@ -71,7 +73,7 @@ defineInterfaceCommand<DraupnirBaseExecutor>({
     },
     {
       name: "user",
-      acceptor: findPresentationType("UserID"),
+      acceptor: findPresentationType("MatrixUserID"),
     },
   ]),
   command: hijackRoomCommand,

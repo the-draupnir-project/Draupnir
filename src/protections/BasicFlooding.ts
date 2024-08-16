@@ -8,6 +8,12 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import {
+  StringEventID,
+  StringUserID,
+  StringRoomID,
+  MatrixRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
 import { LogLevel } from "matrix-bot-sdk";
@@ -16,16 +22,12 @@ import {
   ActionResult,
   EventConsequences,
   Logger,
-  MatrixRoomID,
   Ok,
   ProtectedRoomsSet,
   ProtectionDescription,
   RoomEvent,
   SafeIntegerProtectionSetting,
   StandardProtectionSettings,
-  StringEventID,
-  StringRoomID,
-  StringUserID,
   UserConsequences,
   describeProtection,
   isError,

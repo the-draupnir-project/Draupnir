@@ -9,7 +9,6 @@
 // </text>
 
 import {
-  MatrixRoomReference,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
 } from "matrix-protection-suite";
@@ -22,6 +21,7 @@ import {
   makeMjolnir,
   teardownManagementRoom,
 } from "./mjolnirSetupUtils";
+import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 

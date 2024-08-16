@@ -28,8 +28,6 @@ import {
   ClientPlatform,
   Ok,
   RoomMessage,
-  StringRoomID,
-  StringUserID,
   Task,
   Value,
   isError,
@@ -57,6 +55,10 @@ export type AppserviceBaseExecutor = (
 import "../../commands/interface-manager/MatrixPresentations";
 import "./ListCommand";
 import "./AccessCommands";
+import {
+  StringUserID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   parameters: parameters(

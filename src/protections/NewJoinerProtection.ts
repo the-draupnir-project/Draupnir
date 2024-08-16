@@ -18,10 +18,10 @@ import {
   UserConsequences,
   describeProtection,
   isError,
-  serverName,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { IConfig } from "../config";
+import { userServerName } from "@the-draupnir-project/matrix-basic-types";
 
 export type NewJoinerProtectionDescription = ProtectionDescription<
   unknown,
@@ -57,7 +57,7 @@ export class NewJoinerProtection
     const errors: ActionError[] = [];
     for (const change of changes) {
       if (change.membershipChangeType === MembershipChangeType.Joined) {
-        if (this.bannedServers.has(serverName(change.userID))) {
+        if (this.bannedServers.has(userServerName(change.userID))) {
           const banResult =
             await this.userConsequences.consequenceForUserInRoom(
               revision.room.toRoomIDOrAlias(),

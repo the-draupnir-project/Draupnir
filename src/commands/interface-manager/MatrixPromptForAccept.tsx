@@ -6,7 +6,6 @@ import {
   ClientPlatform,
   Logger,
   RoomEvent,
-  StringRoomID,
   Task,
   Value,
   isError,
@@ -28,6 +27,7 @@ import { StaticDecode, Type } from "@sinclair/typebox";
 import { ReadItem, readCommand } from "./CommandReader";
 import { printReadably } from "./PrintReadably";
 import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("MatrixPromptForAccept");
 

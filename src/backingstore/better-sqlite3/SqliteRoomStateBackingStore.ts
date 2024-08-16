@@ -13,11 +13,11 @@ import {
   RoomStateRevision,
   StateChange,
   StateEvent,
-  StringRoomID,
   isError,
 } from "matrix-protection-suite";
 import { BetterSqliteStore } from "./BetterSqliteStore";
 import { jsonReviver } from "../../utils";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("SqliteRoomStateBackingStore");
 

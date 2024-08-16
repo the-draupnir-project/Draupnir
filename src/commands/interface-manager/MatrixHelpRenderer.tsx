@@ -27,10 +27,8 @@ import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
-  MatrixRoomReference,
   Ok,
   RoomEvent,
-  StringRoomID,
   Task,
   isError,
   isOk,
@@ -41,6 +39,10 @@ import {
   renderExceptionTrail,
 } from "../../capabilities/CommonRenderers";
 import { printReadably } from "./PrintReadably";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 function requiredArgument(argumentName: string): string {
   return `<${argumentName}>`;

@@ -24,11 +24,13 @@ import {
   ActionError,
   ActionResult,
   isError,
-  MatrixRoomAlias,
-  MatrixRoomReference,
   Ok,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  MatrixRoomAlias,
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 // TODO: we should probably add an --admin keyword to these commands
 // since they don't actually need admin. Mjolnir had them as admin though.

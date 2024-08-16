@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import {
+  MatrixRoomID,
+  MatrixRoomAlias,
   MatrixEventViaAlias,
   MatrixEventViaRoomID,
-  MatrixRoomAlias,
-  MatrixRoomID,
   Permalinks,
-  UserID,
-} from "matrix-protection-suite";
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 import { ReadItem } from "./CommandReader";
 
 export function printReadably(item: ReadItem): string {
   if (item instanceof MatrixRoomID || item instanceof MatrixRoomAlias) {
     return item.toPermalink();
-  } else if (item instanceof UserID) {
+  } else if (item instanceof MatrixUserID) {
     return item.toString();
   } else if (
     item instanceof MatrixEventViaAlias ||

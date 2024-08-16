@@ -13,10 +13,7 @@ import {
   Capability,
   DescriptionMeta,
   EventConsequences,
-  Permalinks,
   RoomEventRedacter,
-  StringEventID,
-  StringRoomID,
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
   isError,
@@ -25,6 +22,11 @@ import { RendererMessageCollector } from "./RendererMessageCollector";
 import { renderFailedSingularConsequence } from "./CommonRenderers";
 import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { Draupnir } from "../Draupnir";
+import {
+  Permalinks,
+  StringEventID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 class StandardEventConsequencesRenderer implements EventConsequences {
   constructor(

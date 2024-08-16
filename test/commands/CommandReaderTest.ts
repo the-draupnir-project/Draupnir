@@ -7,7 +7,11 @@ import {
   Keyword,
   readCommand,
 } from "../../src/commands/interface-manager/CommandReader";
-import { MatrixRoomAlias, MatrixRoomID, UserID } from "matrix-protection-suite";
+import {
+  MatrixRoomAlias,
+  MatrixRoomID,
+  MatrixUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 describe("Can read", function () {
   it("Can read a simple command with only strings", function () {
@@ -56,8 +60,8 @@ describe("Can read", function () {
   it("Can parse userID's", function () {
     const command = "@spam:example.com";
     const readItems = readCommand(command);
-    expect(readItems.at(0)).toBeInstanceOf(UserID);
-    const user = readItems.at(0) as UserID;
+    expect(readItems.at(0)).toBeInstanceOf(MatrixUserID);
+    const user = readItems.at(0) as MatrixUserID;
     expect(user.localpart).toBe("spam");
   });
 });

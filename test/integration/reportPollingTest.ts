@@ -13,14 +13,16 @@ import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import {
   ActionResult,
-  MatrixRoomReference,
   Ok,
   Protection,
   ProtectionDescription,
   StandardProtectionSettings,
-  StringRoomID,
   Task,
 } from "matrix-protection-suite";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 describe("Test: Report polling", function () {
   let client: MatrixClient;

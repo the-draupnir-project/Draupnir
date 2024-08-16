@@ -14,12 +14,14 @@ import ManagementRoomOutput from "../ManagementRoomOutput";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ActionExceptionKind,
-  MatrixRoomReference,
   RoomUpdateError,
   RoomUpdateException,
+} from "matrix-protection-suite";
+import {
   StringRoomID,
   StringUserID,
-} from "matrix-protection-suite";
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export interface QueuedRedaction {
   /** The room which the redaction will take place in. */

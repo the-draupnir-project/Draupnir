@@ -17,9 +17,9 @@ import {
   ReactionContent,
   ReactionEvent,
   RoomMessage,
-  StringEventID,
   Value,
 } from "matrix-protection-suite";
+import { StringEventID } from "@the-draupnir-project/matrix-basic-types";
 
 /**
  * Test the ability to turn abuse reports into room messages.

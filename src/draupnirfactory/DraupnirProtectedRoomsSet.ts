@@ -15,7 +15,6 @@ import {
   Logger,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
-  MatrixRoomID,
   MissingProtectionCB,
   MjolnirEnabledProtectionsEvent,
   MjolnirEnabledProtectionsEventType,
@@ -40,7 +39,6 @@ import {
   StandardProtectionsManager,
   StandardSetMembership,
   StandardSetRoomState,
-  StringUserID,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -53,6 +51,10 @@ import "../protections/DraupnirProtectionsIndex";
 import { IConfig } from "../config";
 import { runProtectionConfigHooks } from "../protections/ConfigHooks";
 import { makeHandleMissingProtectionPermissions } from "../protections/MissingProtectionPermissions";
+import {
+  MatrixRoomID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("DraupnirProtectedRoomsSet");
 

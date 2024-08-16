@@ -8,12 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionResult,
-  MatrixRoomAlias,
-  MatrixRoomID,
-  isError,
-} from "matrix-protection-suite";
+import { ActionResult, isError } from "matrix-protection-suite";
 import { DraupnirContext } from "./CommandHandler";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
@@ -32,6 +27,10 @@ import {
 } from "./interface-manager/MatrixHelpRenderer";
 import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
+import {
+  MatrixRoomAlias,
+  MatrixRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 async function resolveAliasCommand(
   this: DraupnirContext,

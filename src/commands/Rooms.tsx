@@ -26,12 +26,14 @@ import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
-  MatrixRoomID,
-  MatrixRoomReference,
   Ok,
   isError,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  MatrixRoomID,
+  MatrixRoomReference,
+} from "@the-draupnir-project/matrix-basic-types";
 
 defineInterfaceCommand({
   table: "draupnir",
