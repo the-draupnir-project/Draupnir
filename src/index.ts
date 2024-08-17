@@ -30,7 +30,7 @@ import {
 } from "./DraupnirBotMode";
 import { Draupnir } from "./Draupnir";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { DefaultEventDecoder, Task } from "matrix-protection-suite";
 import { WebAPIs } from "./webapis/WebAPIs";
 import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
@@ -120,6 +120,7 @@ void (async function () {
   try {
     await bot.start();
     await config.RUNTIME.client.start();
+    void Task(bot.startupComplete());
     await apis.start();
     healthz.isHealthy = true;
   } catch (err) {

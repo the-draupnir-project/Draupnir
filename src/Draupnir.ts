@@ -275,11 +275,15 @@ export class Draupnir implements Client {
     if (isError(managementRoomProtectResult)) {
       return managementRoomProtectResult;
     }
-    void Task(draupnir.startupComplete());
     return Ok(draupnir);
   }
 
-  private async startupComplete(): Promise<void> {
+  /**
+   * Note: This is only public due to having to first start the syncloop before sending events
+   * when we use encryption.
+   * This means this is only used in the index.ts.
+   */
+  public async startupComplete(): Promise<void> {
     const statusInfo = await draupnirStatusInfo(this);
     try {
       await this.managementRoomOutput.logMessage(
