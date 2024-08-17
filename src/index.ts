@@ -97,12 +97,13 @@ void (async function () {
     }
     patchMatrixClient();
     config.RUNTIME.client = client;
+    await config.RUNTIME.client.start();
     const eventDecoder = DefaultEventDecoder;
     const store = config.roomStateBackingStore.enabled
       ? new SqliteRoomStateBackingStore(
-          path.join(config.dataPath, "room-state-backing-store.db"),
-          eventDecoder
-        )
+        path.join(config.dataPath, "room-state-backing-store.db"),
+        eventDecoder
+      )
       : undefined;
     bot = await makeDraupnirBotModeFromConfig(
       client,
@@ -119,7 +120,6 @@ void (async function () {
   }
   try {
     await bot.start();
-    await config.RUNTIME.client.start();
     await apis.start();
     healthz.isHealthy = true;
   } catch (err) {

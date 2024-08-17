@@ -94,3 +94,6 @@ mjolnir.egg-info/
 .yarn
 # Only contains possibly broken path, replaced by .yarnrc.yml in modern Yarn
 .yarnrc
+
+# VS Code workspace settings
+/.vscode
