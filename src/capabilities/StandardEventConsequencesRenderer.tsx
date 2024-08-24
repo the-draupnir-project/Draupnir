@@ -71,7 +71,7 @@ class StandardEventConsequencesRenderer implements EventConsequences {
 }
 
 describeCapabilityRenderer<EventConsequences, Draupnir>({
-  name: "StandardEventConsequencesRenderer",
+  name: "StandardEventConsequences",
   description: "Renders the standard event consequences capability",
   interface: "EventConsequences",
   factory(description, draupnir, capability) {
@@ -84,7 +84,7 @@ describeCapabilityRenderer<EventConsequences, Draupnir>({
 });
 
 describeCapabilityContextGlue<Draupnir, { eventRedacter: RoomEventRedacter }>({
-  name: "StandardEventConsequencesRenderer",
+  name: "StandardEventConsequences",
   glueMethod: function (
     protectionDescription,
     draupnir,
