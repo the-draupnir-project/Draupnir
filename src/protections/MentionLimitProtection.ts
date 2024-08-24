@@ -57,26 +57,32 @@ export class MentionLimitProtection
       draupnirConfig.protections.mentionLimitProtection.redactReason;
   }
   public async handleTimelineEvent(
-    room: MatrixRoomID,
+    _room: MatrixRoomID,
     event: RoomEvent
   ): Promise<ActionResult<void>> {
-    const numberOfMentions = (() => {
-      if (Value.Check(MentionsContentSchema, event.content)) {
-        return event.content["m.mentions"].user_ids.length;
-      } else if (Value.Check(NewContentMentionsSchema, event.content)) {
-        return event.content["m.new_content"]["m.mentions"].user_ids.length;
-      } else {
-        return 0;
-      }
-    })();
-    if (numberOfMentions > this.maxMentions) {
+    const isOverLimit = (user_ids: string[]): boolean =>
+      user_ids.length > this.maxMentions;
+    if (
+      Value.Check(NewContentMentionsSchema, event.content) &&
+      isOverLimit(event.content["m.new_content"]["m.mentions"].user_ids)
+    ) {
       return await this.eventConsequences.consequenceForEvent(
         event.room_id,
         event.event_id,
         this.redactReason
       );
+    } else if (
+      Value.Check(MentionsContentSchema, event.content) &&
+      isOverLimit(event.content["m.mentions"].user_ids)
+    ) {
+      return await this.eventConsequences.consequenceForEvent(
+        event.room_id,
+        event.event_id,
+        this.redactReason
+      );
+    } else {
+      return Ok(undefined);
     }
-    return Ok(undefined);
   }
 }
 
