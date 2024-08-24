@@ -84,6 +84,10 @@ export interface IConfig {
       serverNames: string[];
       banMessage: string;
     };
+    mentionLimitProtection: {
+      maxMentions: number;
+      redactReason: string;
+    };
   };
   health: {
     healthz: {
@@ -177,6 +181,11 @@ const defaultConfig: IConfig = {
       serverNames: [],
       banMessage:
         "Unfortunately we cannot accept new users from your homeserver at this time.",
+    },
+    mentionLimitProtection: {
+      maxMentions: 3,
+      redactReason:
+        "You have mentioned too many users in this message, so we have had to redact it.",
     },
   },
   health: {
