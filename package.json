@@ -50,6 +50,7 @@
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
+    "@gnuxie/typescript-result": "^0.2.0",
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "@sinclair/typebox": "0.32.34",
