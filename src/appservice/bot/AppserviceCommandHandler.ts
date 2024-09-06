@@ -1,38 +1,34 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2024 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
 
 import { WeakEvent } from "matrix-appservice-bridge";
-import { readCommand } from "../../commands/interface-manager/CommandReader";
-import {
-  defineCommandTable,
-  defineInterfaceCommand,
-  findCommandTable,
-  findTableCommand,
-} from "../../commands/interface-manager/InterfaceCommand";
-import {
-  defineMatrixInterfaceAdaptor,
-  findMatrixInterfaceAdaptor,
-  MatrixContext,
-} from "../../commands/interface-manager/MatrixInterfaceAdaptor";
-import {
-  ArgumentStream,
-  RestDescription,
-  findPresentationType,
-  parameters,
-} from "../../commands/interface-manager/ParameterParsing";
 import { MjolnirAppService } from "../AppService";
-import { renderHelp } from "../../commands/interface-manager/MatrixHelpRenderer";
 import {
   ActionResult,
   ClientPlatform,
-  Ok,
   RoomMessage,
-  Task,
   Value,
   isError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  StringUserID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
+import {
+  makeAppserviceBotCommandDispatcher,
+  makeAppserviceJSCommandDispatcher,
+} from "./AppserviceBotCommandDispatcher";
+import {
+  MatrixInterfaceCommandDispatcher,
+  JSInterfaceCommandDispatcher,
+  BasicInvocationInformation,
+  StandardPresentationArgumentStream,
+  Presentation,
+} from "@the-draupnir-project/interface-manager";
+import { MatrixEventContext } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { MatrixReactionHandler } from "../../commands/interface-manager/MatrixReactionHandler";
 import {
   ARGUMENT_PROMPT_LISTENER,
@@ -40,48 +36,18 @@ import {
   makeListenerForArgumentPrompt,
   makeListenerForPromptDefault,
 } from "../../commands/interface-manager/MatrixPromptForAccept";
-
-defineCommandTable("appservice bot");
-
-export interface AppserviceContext extends MatrixContext {
-  appservice: MjolnirAppService;
-}
+import "./AppserviceBotCommands";
 
 export type AppserviceBaseExecutor = (
-  this: AppserviceContext,
+  this: AppserviceAdaptorContext,
   ...args: unknown[]
 ) => Promise<ActionResult<unknown>>;
 
-import "../../commands/interface-manager/MatrixPresentations";
-import "./ListCommand";
-import "./AccessCommands";
-import {
-  StringUserID,
-  StringRoomID,
-} from "@the-draupnir-project/matrix-basic-types";
-
-defineInterfaceCommand({
-  parameters: parameters(
-    [],
-    new RestDescription("command parts", findPresentationType("any"))
-  ),
-  table: "appservice bot",
-  command: async function () {
-    return Ok(findCommandTable("appservice bot"));
-  },
-  designator: ["help"],
-  summary: "Display this message",
-});
-
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("appservice bot", "help"),
-  renderer: renderHelp,
-});
-
 export class AppserviceCommandHandler {
-  private readonly commandTable = findCommandTable("appservice bot");
-  private commandContext: Omit<AppserviceContext, "event">;
+  private readonly appserviceContext: AppserviceAdaptorContext;
+  private readonly commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>;
   private readonly reactionHandler: MatrixReactionHandler;
+  private readonly JSInterfaceDispatcher: JSInterfaceCommandDispatcher<BasicInvocationInformation>;
 
   constructor(
     public readonly clientUserID: StringUserID,
@@ -96,34 +62,27 @@ export class AppserviceCommandHandler {
       this.appservice.botUserID,
       clientPlatform
     );
-    this.commandContext = {
+    this.appserviceContext = {
       appservice: this.appservice,
+      commandRoomID: this.adminRoomID,
       client: this.client,
       clientPlatform: this.clientPlatform,
+      clientUserID: this.clientUserID,
       reactionHandler: this.reactionHandler,
-      roomID: this.appservice.accessControlRoomID,
     };
+    this.commandDispatcher = makeAppserviceBotCommandDispatcher(
+      this.appserviceContext
+    );
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(
-        this.commandContext.client,
-        this.clientPlatform,
-        this.appservice.accessControlRoomID,
-        this.reactionHandler,
-        this.commandTable,
-        this.commandContext
-      )
+      makeListenerForArgumentPrompt(this.commandDispatcher)
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(
-        this.commandContext.client,
-        this.clientPlatform,
-        this.appservice.accessControlRoomID,
-        this.reactionHandler,
-        this.commandTable,
-        this.commandContext
-      )
+      makeListenerForPromptDefault(this.commandDispatcher)
+    );
+    this.JSInterfaceDispatcher = makeAppserviceJSCommandDispatcher(
+      this.appserviceContext
     );
   }
 
@@ -140,19 +99,32 @@ export class AppserviceCommandHandler {
       typeof mxEvent.content["body"] === "string"
         ? mxEvent.content["body"]
         : "";
-    if (body.startsWith(this.appservice.bridge.getBot().getUserId())) {
-      const readItems = readCommand(body).slice(1); // remove "!mjolnir"
-      const argumentStream = new ArgumentStream(readItems);
-      const command = this.commandTable.findAMatchingCommand(argumentStream);
-      if (command) {
-        const adaptor = findMatrixInterfaceAdaptor(command);
-        const context: AppserviceContext = {
-          ...this.commandContext,
-          event: parsedEvent,
-        };
-        void Task(adaptor.invoke(context, context, ...argumentStream.rest()));
-        return;
-      }
-    }
+    this.commandDispatcher.handleCommandMessageEvent(
+      {
+        event: parsedEvent,
+        roomID: parsedEvent.room_id,
+      },
+      body
+    );
+  }
+
+  public async sendTextCommand<CommandReturn>(
+    sender: StringUserID,
+    command: string
+  ): Promise<ActionResult<CommandReturn>> {
+    return await this.JSInterfaceDispatcher.invokeCommandFromBody(
+      { commandSender: sender },
+      command
+    );
+  }
+
+  public async sendPresentationCommand<CommandReturn>(
+    sender: StringUserID,
+    ...items: Presentation[]
+  ): Promise<ActionResult<CommandReturn>> {
+    return await this.JSInterfaceDispatcher.invokeCommandFromPresentationStream(
+      { commandSender: sender },
+      new StandardPresentationArgumentStream(items)
+    );
   }
 }

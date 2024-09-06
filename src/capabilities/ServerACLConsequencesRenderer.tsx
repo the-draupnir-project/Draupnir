@@ -26,12 +26,12 @@ import {
   renderFailedSingularConsequence,
   renderRoomSetResult,
 } from "./CommonRenderers";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import { Draupnir } from "../Draupnir";
 import {
   StringRoomID,
   Permalinks,
 } from "@the-draupnir-project/matrix-basic-types";
+import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 class StandardServerConsequencesRenderer implements ServerConsequences {
   constructor(

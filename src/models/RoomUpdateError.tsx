@@ -8,18 +8,19 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import {
-  ActionException,
-  ActionExceptionKind,
-  ActionResult,
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
   Ok,
+  RoomMessageSender,
   RoomUpdateError,
+  isError,
 } from "matrix-protection-suite";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { Result } from "@gnuxie/typescript-result";
 
 function renderErrorItem(error: RoomUpdateError): DocumentNode {
   return (
@@ -82,25 +83,21 @@ export async function renderActionResult(
  * @returns
  */
 export async function printActionResult(
-  client: MatrixSendClient,
+  messageSender: RoomMessageSender,
   roomID: StringRoomID,
   errors: RoomUpdateError[],
   renderOptions: { title?: string; noErrorsText?: string } = {}
-): Promise<ActionResult<void>> {
-  return await renderMatrixAndSend(
-    <root>{await renderActionResult(errors, renderOptions)}</root>,
+): Promise<Result<void>> {
+  const sendResult = await sendMatrixEventsFromDeadDocument(
+    messageSender,
     roomID,
-    undefined,
-    client
-  ).then(
-    (_) => Ok(undefined),
-    (exception) =>
-      ActionException.Result(
-        `Could not printActionResult to the management room.`,
-        {
-          exception,
-          exceptionKind: ActionExceptionKind.Unknown,
-        }
-      )
+    <root>{await renderActionResult(errors, renderOptions)}</root>,
+    {}
   );
+  if (isError(sendResult)) {
+    return sendResult.elaborate(
+      "Could not printActionResult to the management room."
+    );
+  }
+  return Ok(undefined);
 }

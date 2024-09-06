@@ -24,16 +24,18 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
-import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
-import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import {
   renderActionResultToEvent,
   renderMentionPill,
   renderRoomPill,
 } from "../../commands/interface-manager/MatrixHelpRenderer";
-import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("WatchRoomsOnInvite");
 
@@ -133,21 +135,30 @@ export class WatchRoomsOnInvite {
     const reactionMap = new Map<string, string>(
       Object.entries({ OK: "OK", Cancel: "Cancel" })
     );
-    const promptEventID = (
-      await renderMatrixAndSend(
-        renderPromptWatch(),
-        this.draupnir.managementRoomID,
-        undefined,
-        this.draupnir.client,
-        this.draupnir.reactionHandler.createAnnotation(
+    const promptSendResult = await sendMatrixEventsFromDeadDocument(
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.draupnir.managementRoomID,
+      renderPromptWatch(),
+      {
+        additionalContent: this.draupnir.reactionHandler.createAnnotation(
           WATCH_LISTS_ON_INVITE_PROMPT_LISTENER,
           reactionMap,
           {
             invited_room: candidateRoom.toPermalink(),
           }
-        )
-      )
-    )[0];
+        ),
+      }
+    );
+    if (isError(promptSendResult)) {
+      log.error(
+        `Could not send the prompt to watch the policy room: ${candidateRoom.toPermalink()}`,
+        promptSendResult.error
+      );
+      return promptSendResult.elaborate(
+        "Could not send the prompt to watch the policy room"
+      );
+    }
+    const promptEventID = promptSendResult.ok.at(0);
     if (promptEventID === undefined) {
       throw new TypeError(
         `We should have an eventID for the event that we just sent...`
@@ -179,7 +190,12 @@ export class WatchRoomsOnInvite {
     const context = Value.Decode(WatchRoomsOnInvitePromptContext, rawContext);
     if (isError(context)) {
       log.error(`Could not decode context from prompt event`, context.error);
-      renderActionResultToEvent(this.draupnir.client, promptEvent, context);
+      renderActionResultToEvent(
+        this.draupnir.clientPlatform.toRoomMessageSender(),
+        this.draupnir.client,
+        promptEvent,
+        context
+      );
       return;
     }
     void Task(
@@ -192,6 +208,7 @@ export class WatchRoomsOnInvite {
             `Could not resolve the policy room to watch from the MatrixRoomReference: ${context.ok.invited_room.toPermalink()}.`
           );
           renderActionResultToEvent(
+            this.draupnir.clientPlatform.toRoomMessageSender(),
             this.draupnir.client,
             promptEvent,
             resolvedRoom
@@ -208,13 +225,19 @@ export class WatchRoomsOnInvite {
             `Could not watch the policy room: ${resolvedRoom.ok.toPermalink()}`
           );
           renderActionResultToEvent(
+            this.draupnir.clientPlatform.toRoomMessageSender(),
             this.draupnir.client,
             promptEvent,
             addResult
           );
           return;
         }
-        renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);
+        renderActionResultToEvent(
+          this.draupnir.clientPlatform.toRoomMessageSender(),
+          this.draupnir.client,
+          promptEvent,
+          addResult
+        );
         void Task(
           this.draupnir.reactionHandler.completePrompt(
             promptEvent.room_id,

@@ -17,7 +17,7 @@ import { read as configRead } from "../../src/config";
 import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { SqliteRoomStateBackingStore } from "../../src/backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import path from "path";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { DefaultEventDecoder, Task } from "matrix-protection-suite";
 
 void (async () => {
   const config = configRead();
@@ -33,4 +33,5 @@ void (async () => {
   const apis = constructWebAPIs(mjolnir);
   await draupnirClient()?.start();
   await apis.start();
+  void Task(mjolnir.startupComplete());
 })();

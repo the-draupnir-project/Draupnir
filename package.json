@@ -50,9 +50,11 @@
     "typescript-formatter": "^7.2"
   },
   "dependencies": {
+    "@gnuxie/typescript-result": "^0.2.0",
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "@sinclair/typebox": "0.32.34",
+    "@the-draupnir-project/interface-manager": "1.0.2",
     "@the-draupnir-project/matrix-basic-types": "^0.1.1",
     "await-lock": "^2.2.2",
     "better-sqlite3": "^9.4.3",
@@ -65,8 +67,8 @@
     "js-yaml": "^4.1.0",
     "jsdom": "^24.0.0",
     "matrix-appservice-bridge": "^9.0.1",
-    "matrix-protection-suite": "npm:@gnuxie/matrix-protection-suite@1.0.0",
-    "matrix-protection-suite-for-matrix-bot-sdk": "npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.0.0",
+    "matrix-protection-suite": "npm:@gnuxie/matrix-protection-suite@1.1.0",
+    "matrix-protection-suite-for-matrix-bot-sdk": "npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.1.0",
     "parse-duration": "^1.0.2",
     "pg": "^8.8.0",
     "shell-quote": "^1.7.3",

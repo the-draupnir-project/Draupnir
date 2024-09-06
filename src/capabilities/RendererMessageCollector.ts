@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
+import { DocumentNode } from "@the-draupnir-project/interface-manager";
 import { DescriptionMeta } from "matrix-protection-suite";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 
 export enum MessageType {
   Document = "Document",

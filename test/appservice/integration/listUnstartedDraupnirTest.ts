@@ -4,9 +4,9 @@
 
 import expect from "expect";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
-import { AppservideBotCommandClient } from "../utils/AppserviceBotCommandClient";
 import { setupHarness } from "../utils/harness";
 import { isError } from "matrix-protection-suite";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {
   appservice?: MjolnirAppService;
@@ -29,8 +29,10 @@ describe("Just test some commands innit", function () {
     if (appservice === undefined) {
       throw new TypeError(`Test setup failed`);
     }
-    const commandClient = new AppservideBotCommandClient(appservice);
-    const result = await commandClient.sendCommand("list", "unstarted");
+    const result = await appservice.commands.sendTextCommand(
+      "@test:localhost:9999" as StringUserID,
+      "!admin list unstarted"
+    );
     if (isError(result)) {
       throw new TypeError(`Command should have succeeded`);
     }

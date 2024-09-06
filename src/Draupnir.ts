@@ -31,7 +31,6 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
-import { findCommandTable } from "./commands/interface-manager/InterfaceCommand";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
@@ -42,12 +41,6 @@ import {
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
-import {
-  COMMAND_PREFIX,
-  DraupnirContext,
-  extractCommandFromMessageBody,
-  handleCommand,
-} from "./commands/CommandHandler";
 import { LogLevel } from "matrix-bot-sdk";
 import {
   ARGUMENT_PROMPT_LISTENER,
@@ -59,7 +52,6 @@ import { RendererMessageCollector } from "./capabilities/RendererMessageCollecto
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
 import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
-import { renderMatrixAndSend } from "./commands/interface-manager/DeadDocumentMatrix";
 import { isInvitationForUser } from "./protections/invitation/inviteCore";
 import {
   StringRoomID,
@@ -68,9 +60,13 @@ import {
   isStringRoomID,
   isStringRoomAlias,
   MatrixRoomReference,
-  userLocalpart,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixAdaptorContext,
+  sendMatrixEventsFromDeadDocument,
+} from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { makeDraupnirCommandDispatcher } from "./commands/DraupnirCommandDispatcher";
 
 const log = new Logger("Draupnir");
 
@@ -80,14 +76,14 @@ const log = new Logger("Draupnir");
 // to Mjolnir because it needs to be started after Mjolnir started and not before.
 // And giving it to the class was a dumb easy way of doing that.
 
-export class Draupnir implements Client {
+export class Draupnir implements Client, MatrixAdaptorContext {
   /**
    * This is for users who are not listed on a watchlist,
    * but have been flagged by the automatic spam detection as suispicous
    */
   public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
-  private readonly commandTable = findCommandTable("draupnir");
+  private readonly commandDispatcher = makeDraupnirCommandDispatcher(this);
   public taskQueue: ThrottlingQueue;
   /**
    * Reporting back to the management room.
@@ -105,8 +101,6 @@ export class Draupnir implements Client {
   public readonly reportManager: ReportManager;
 
   public readonly reactionHandler: MatrixReactionHandler;
-
-  public readonly commandContext: Omit<DraupnirContext, "event">;
 
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
 
@@ -146,38 +140,16 @@ export class Draupnir implements Client {
     if (config.pollReports) {
       this.reportPoller = new ReportPoller(this, this.reportManager);
     }
-
-    this.commandContext = {
-      draupnir: this,
-      roomID: this.managementRoomID,
-      client: this.client,
-      reactionHandler: this.reactionHandler,
-      clientPlatform: this.clientPlatform,
-    };
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(
-        this.client,
-        this.clientPlatform,
-        this.managementRoomID,
-        this.reactionHandler,
-        this.commandTable,
-        this.commandContext
-      )
+      makeListenerForArgumentPrompt(this.commandDispatcher)
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(
-        this.client,
-        this.clientPlatform,
-        this.managementRoomID,
-        this.reactionHandler,
-        this.commandTable,
-        this.commandContext
-      )
+      makeListenerForPromptDefault(this.commandDispatcher)
     );
     this.capabilityMessageRenderer = new DraupnirRendererMessageCollector(
-      this.client,
+      this.clientPlatform.toRoomMessageSender(),
       this.managementRoomID
     );
   }
@@ -256,7 +228,7 @@ export class Draupnir implements Client {
       draupnir,
       (error, protectionName, description) =>
         renderProtectionFailedToStart(
-          client,
+          clientPlatform.toRoomMessageSender(),
           managementRoom.toRoomIDOrAlias(),
           error,
           protectionName,
@@ -291,11 +263,11 @@ export class Draupnir implements Client {
         "Mjolnir@startup",
         "Startup complete. Now monitoring rooms."
       );
-      await renderMatrixAndSend(
-        renderStatusInfo(statusInfo),
+      await sendMatrixEventsFromDeadDocument(
+        this.clientPlatform.toRoomMessageSender(),
         this.managementRoomID,
-        undefined,
-        this.client
+        renderStatusInfo(statusInfo),
+        {}
       );
     } catch (ex) {
       log.error(`Caught an error when trying to show status at startup`, ex);
@@ -355,33 +327,12 @@ export class Draupnir implements Client {
         );
         return;
       }
-      const commandBeingRun = extractCommandFromMessageBody(
-        event.content.body,
+      this.commandDispatcher.handleCommandMessageEvent(
         {
-          prefix: COMMAND_PREFIX,
-          localpart: userLocalpart(this.clientUserID),
-          userId: this.clientUserID,
-          additionalPrefixes: this.config.commands.additionalPrefixes,
-          allowNoPrefix: this.config.commands.allowNoPrefix,
-        }
-      );
-      if (commandBeingRun === undefined) {
-        return;
-      }
-      log.info(`Command being run by ${event.sender}: ${commandBeingRun}`);
-      void Task(
-        this.client
-          .sendReadReceipt(roomID, event.event_id)
-          .then((_) => Ok(undefined))
-      );
-      void Task(
-        handleCommand(
-          roomID,
           event,
-          commandBeingRun,
-          this,
-          this.commandTable
-        ).then((_) => Ok(undefined))
+          roomID,
+        },
+        event.content.body
       );
     }
     this.reportManager.handleTimelineEvent(roomID, event);
@@ -413,5 +364,12 @@ export class Draupnir implements Client {
   }
   public handleEventReport(report: EventReport): void {
     this.protectedRoomsSet.handleEventReport(report);
+  }
+
+  /**
+   * This is needed to implement the MatrixInterfaceAdaptor interface.
+   */
+  public get commandRoomID() {
+    return this.managementRoomID;
   }
 }

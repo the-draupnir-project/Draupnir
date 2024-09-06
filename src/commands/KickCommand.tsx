@@ -9,35 +9,24 @@
 // </text>
 
 import { MatrixGlob } from "matrix-bot-sdk";
-import { DraupnirContext } from "./CommandHandler";
-import {
-  ActionError,
-  ActionResult,
-  Ok,
-  isError,
-} from "matrix-protection-suite";
-import {
-  KeywordsDescription,
-  ParsedKeywords,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DocumentNode } from "./interface-manager/DeadDocument";
-import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
-import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
+import { ActionError, Ok, isError } from "matrix-protection-suite";
 import {
   StringUserID,
   StringRoomID,
   MatrixRoomReference,
-  MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+  MatrixRoomReferencePresentationSchema,
+  MatrixUserIDPresentationType,
+  StringPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
 type UsersToKick = Map<StringUserID, StringRoomID[]>;
 
@@ -76,126 +65,106 @@ function renderUsersToKick(usersToKick: UsersToKick): DocumentNode {
   );
 }
 
-export async function kickCommand(
-  this: DraupnirContext,
-  keywords: ParsedKeywords,
-  user: MatrixUserID,
-  ...reasonParts: string[]
-): Promise<ActionResult<UsersToKick>> {
-  const restrictToRoomReference = keywords.getKeyword<MatrixRoomReference>(
-    "room",
-    undefined
-  );
-  const isDryRun =
-    this.draupnir.config.noop ||
-    keywords.getKeyword<string>("dry-run", "false") === "true";
-  const allowGlob = keywords.getKeyword<string>("glob", "false");
-  const isGlob = user.toString().includes("*") || user.toString().includes("?");
-  if (isGlob && !allowGlob) {
-    return ActionError.Result(
-      "Wildcard bans require an additional argument `--glob` to confirm"
-    );
-  }
-  const restrictToRoom = restrictToRoomReference
-    ? await resolveRoomReferenceSafe(this.client, restrictToRoomReference)
-    : undefined;
-  if (restrictToRoom !== undefined && isError(restrictToRoom)) {
-    return restrictToRoom;
-  }
-  const restrictToRoomRevision =
-    restrictToRoom === undefined
-      ? undefined
-      : this.draupnir.protectedRoomsSet.setMembership.getRevision(
-          restrictToRoom.ok.toRoomIDOrAlias()
-        );
-  const roomsToKickWithin =
-    restrictToRoomRevision !== undefined
-      ? [restrictToRoomRevision]
-      : this.draupnir.protectedRoomsSet.setMembership.allRooms;
-  const reason = reasonParts.join(" ");
-  const kickRule = new MatrixGlob(user.toString());
-  const usersToKick: UsersToKick = new Map();
-  for (const revision of roomsToKickWithin) {
-    for (const member of revision.members()) {
-      if (kickRule.test(member.userID)) {
-        addUserToKick(
-          usersToKick,
-          revision.room.toRoomIDOrAlias(),
-          member.userID
-        );
-      }
-      if (!isDryRun) {
-        void this.draupnir.taskQueue.push(async () => {
-          return this.client.kickUser(
-            member.userID,
-            revision.room.toRoomIDOrAlias(),
-            reason
-          );
-        });
-      }
-    }
-  }
-  return Ok(usersToKick);
-}
-
-defineInterfaceCommand({
-  designator: ["kick"],
-  table: "draupnir",
-  parameters: parameters(
-    [
-      {
-        name: "user",
-        acceptor: findPresentationType("MatrixUserID"),
-      },
-    ],
-    undefined,
-    new KeywordsDescription({
+export const DraupnirKickCommand = describeCommand({
+  summary:
+    "Kicks a user or all of those matching a glob in a particular room or all protected rooms. `--glob` must be provided to use globs. Can be scoped to a specific room with `--room`. Can be dry run with `--dry-run`.",
+  parameters: tuple({
+    name: "user",
+    acceptor: MatrixUserIDPresentationType,
+  }),
+  keywords: {
+    keywordDescriptions: {
       "dry-run": {
-        name: "dry-run",
         isFlag: true,
-        acceptor: findPresentationType("boolean"),
         description:
           "Runs the kick command without actually removing any users.",
       },
       glob: {
-        name: "glob",
         isFlag: true,
-        acceptor: findPresentationType("boolean"),
         description:
           "Allows globs to be used to kick several users from rooms.",
       },
       room: {
-        name: "room",
-        isFlag: false,
-        acceptor: findPresentationType("MatrixRoomReference"),
+        acceptor: MatrixRoomReferencePresentationSchema,
         description:
           "Allows the command to be scoped to just one protected room.",
       },
-    })
-  ),
-  command: kickCommand,
-  summary:
-    "Kicks a user or all of those matching a glob in a particular room or all protected rooms. `--glob` must be provided to use globs. Can be scoped to a specific room with `--room`. Can be dry run with `--dry-run`.",
+    },
+  },
+  rest: {
+    name: "reason",
+    acceptor: StringPresentationType,
+  },
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    keywords,
+    reasonParts,
+    user
+  ): Promise<Result<UsersToKick>> {
+    const restrictToRoomReference =
+      keywords.getKeywordValue<MatrixRoomReference>("room", undefined);
+    const isDryRun =
+      draupnir.config.noop ||
+      keywords.getKeywordValue<boolean>("dry-run", false);
+    const allowGlob = keywords.getKeywordValue<boolean>("glob", false);
+    const isGlob =
+      user.toString().includes("*") || user.toString().includes("?");
+    if (isGlob && !allowGlob) {
+      return ActionError.Result(
+        "Wildcard bans require an additional argument `--glob` to confirm"
+      );
+    }
+    const restrictToRoom = restrictToRoomReference
+      ? await draupnir.clientPlatform
+          .toRoomResolver()
+          .resolveRoom(restrictToRoomReference)
+      : undefined;
+    if (restrictToRoom !== undefined && isError(restrictToRoom)) {
+      return restrictToRoom;
+    }
+    const restrictToRoomRevision =
+      restrictToRoom === undefined
+        ? undefined
+        : draupnir.protectedRoomsSet.setMembership.getRevision(
+            restrictToRoom.ok.toRoomIDOrAlias()
+          );
+    const roomsToKickWithin =
+      restrictToRoomRevision !== undefined
+        ? [restrictToRoomRevision]
+        : draupnir.protectedRoomsSet.setMembership.allRooms;
+    const reason = reasonParts.join(" ");
+    const kickRule = new MatrixGlob(user.toString());
+    const usersToKick: UsersToKick = new Map();
+    for (const revision of roomsToKickWithin) {
+      for (const member of revision.members()) {
+        if (kickRule.test(member.userID)) {
+          addUserToKick(
+            usersToKick,
+            revision.room.toRoomIDOrAlias(),
+            member.userID
+          );
+        }
+        if (!isDryRun) {
+          void draupnir.taskQueue.push(async () => {
+            return draupnir.client.kickUser(
+              member.userID,
+              revision.room.toRoomIDOrAlias(),
+              reason
+            );
+          });
+        }
+      }
+    }
+    return Ok(usersToKick);
+  },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "kick"),
-  renderer: async function (
-    this,
-    client,
-    commandRoomdID,
-    event,
-    result: ActionResult<UsersToKick>
-  ) {
-    tickCrossRenderer.call(this, client, commandRoomdID, event, result);
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirKickCommand, {
+  JSXRenderer(result) {
     if (isError(result)) {
-      return;
+      return Ok(undefined);
     }
-    await renderMatrixAndSend(
-      <root>{renderUsersToKick(result.ok)}</root>,
-      commandRoomdID,
-      event,
-      client
-    );
+    return Ok(<root>{renderUsersToKick(result.ok)}</root>);
   },
 });

@@ -12,6 +12,7 @@ import {
   AbstractProtection,
   ActionError,
   ActionResult,
+  Logger,
   MembershipEvent,
   Ok,
   ProtectedRoomsSet,
@@ -24,9 +25,6 @@ import {
 import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
 import { isInvitationForUser, isSenderJoinedInRevision } from "./inviteCore";
-import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
-import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
-import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
 import {
   renderMentionPill,
   renderRoomPill,
@@ -39,6 +37,13 @@ import {
   MatrixRoomReference,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+
+const log = new Logger("JoinRoomsOnInviteProtection");
 
 export type JoinRoomsOnInviteProtectionCapabilities = Record<string, never>;
 export type JoinRoomsOnInviteProtectionSettings = Record<string, unknown>;
@@ -119,15 +124,12 @@ export class JoinRoomsOnInviteProtection
       );
     };
     void Task(
-      (async () => {
-        await renderMatrixAndSend(
-          renderUnknownInvite(),
-          this.draupnir.managementRoomID,
-          undefined,
-          this.draupnir.client
-        );
-        return Ok(undefined);
-      })()
+      sendMatrixEventsFromDeadDocument(
+        this.draupnir.clientPlatform.toRoomMessageSender(),
+        this.draupnir.managementRoomID,
+        renderUnknownInvite(),
+        {}
+      ) as Promise<ActionResult<undefined>>
     );
   }
 
@@ -153,12 +155,18 @@ export class JoinRoomsOnInviteProtection
       .toRoomJoiner()
       .joinRoom(room);
     if (isError(joinResult)) {
-      await renderMatrixAndSend(
-        renderFailedTojoin(joinResult.error),
+      const sendResult = await sendMatrixEventsFromDeadDocument(
+        this.draupnir.clientPlatform.toRoomMessageSender(),
         this.draupnir.managementRoomID,
-        undefined,
-        this.draupnir.client
+        renderFailedTojoin(joinResult.error),
+        {}
       );
+      if (isError(sendResult)) {
+        log.error(
+          `couldn't send join failure to management room`,
+          sendResult.error
+        );
+      }
     }
     return joinResult;
   }

@@ -3,70 +3,42 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import {
-  defineMatrixInterfaceAdaptor,
-  MatrixContext,
-  MatrixInterfaceAdaptor,
-} from "../../commands/interface-manager/MatrixInterfaceAdaptor";
-import { defineInterfaceCommand } from "../../commands/interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  parameters,
-} from "../../commands/interface-manager/ParameterParsing";
-import { AppserviceBaseExecutor } from "./AppserviceCommandHandler";
-import { tickCrossRenderer } from "../../commands/interface-manager/MatrixHelpRenderer";
-import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
-import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
-import {
   ActionError,
   ActionResult,
   isError,
   Ok,
-  RoomEvent,
 } from "matrix-protection-suite";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { UnstartedDraupnir } from "../../draupnirfactory/StandardDraupnirManager";
-import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
+import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
+import {
+  DeadDocumentJSX,
+  describeCommand,
+  MatrixUserIDPresentationType,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotCommandDispatcher";
 
-/**
- * There is ovbiously something we're doing very wrong here,
- * all just to satisfy type contstraints.
- * Really there should only be `defineApplicationCommand`
- * and `defineMatrixInterfaceCommand` but we have to do this
- * long winded dance just to make type contstraints work.
- * There might be a better way, but at what cost.
- */
-
-const listUnstarted = defineInterfaceCommand<AppserviceBaseExecutor>({
-  designator: ["list", "unstarted"],
-  table: "appservice bot",
-  parameters: parameters([]),
-  command: async function () {
-    return Ok(this.appservice.draupnirManager.getUnstartedDraupnirs());
-  },
+export const AppserviceListUnstartedCommand = describeCommand({
   summary: "List any Draupnir that failed to start.",
+  async executor(
+    context: AppserviceAdaptorContext
+  ): Promise<ActionResult<UnstartedDraupnir[]>> {
+    return Ok(context.appservice.draupnirManager.getUnstartedDraupnirs());
+  },
+  parameters: [],
 });
 
-// Hmm what if leter on we used OL and the numbers could be a presentation type
-// and be used similar to like #=1 and #1.
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: listUnstarted,
-  renderer: async function (
-    this: MatrixInterfaceAdaptor<MatrixContext>,
-    client: MatrixSendClient,
-    commandRoomId: string,
-    event: RoomEvent,
-    result: ActionResult<UnstartedDraupnir[]>
-  ) {
-    tickCrossRenderer.call(this, client, commandRoomId, event, result); // don't await, it doesn't really matter.
+AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceListUnstartedCommand, {
+  JSXRenderer: function (result) {
     if (isError(result)) {
-      return; // just let the default handler deal with it.
+      return Ok(undefined);
     }
-    const unstarted = result.ok;
-    await renderMatrixAndSend(
+    const draupnirs = result.ok;
+    return Ok(
       <root>
-        <b>Unstarted Mjolnir: {unstarted.length}</b>
+        <b>Unstarted Draupnir: {draupnirs.length}</b>
         <ul>
-          {unstarted.map((draupnir) => {
+          {draupnirs.map((draupnir) => {
             return (
               <li>
                 <code>{draupnir.clientUserID}</code>
@@ -77,34 +49,26 @@ defineMatrixInterfaceAdaptor({
             );
           })}
         </ul>
-      </root>,
-      commandRoomId,
-      event,
-      client
+      </root>
     );
   },
 });
 
-// We need a "default" adaptor that needs to be explicitly defined still
-// (since you need to know if you have not created an adaptor)
-// but can be composed onto the end of existing adaptors easily
-// e.g. read recipt and tick vs cross.
-const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
-  designator: ["restart"],
-  table: "appservice bot",
-  parameters: parameters([
-    {
-      name: "draupnir",
-      acceptor: findPresentationType("MatrixUserID"),
-      description: "The userid of the draupnir to restart",
-    },
-  ]),
-  command: async function (
-    this,
+export const AppserviceRestartDraupnirCommand = describeCommand({
+  summary: "Restart a Draupnir.",
+  parameters: tuple({
+    name: "draupnir",
+    acceptor: MatrixUserIDPresentationType,
+    description: "The userid of the draupnir to restart",
+  }),
+  async executor(
+    context: AppserviceAdaptorContext,
+    _info,
     _keywords,
-    draupnirUser: MatrixUserID
+    _rest,
+    draupnirUser
   ): Promise<ActionResult<void>> {
-    const draupnirManager = this.appservice.draupnirManager;
+    const draupnirManager = context.appservice.draupnirManager;
     const draupnir = draupnirManager.findUnstartedDraupnir(
       draupnirUser.toString()
     );
@@ -115,10 +79,11 @@ const restart = defineInterfaceCommand<AppserviceBaseExecutor>({
     }
     return await draupnirManager.startDraupnirFromMXID(draupnirUser.toString());
   },
-  summary: "Attempt to restart a Mjolnir.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: restart,
-  renderer: tickCrossRenderer,
-});
+AppserviceBotInterfaceAdaptor.describeRenderer(
+  AppserviceRestartDraupnirCommand,
+  {
+    isAlwaysSupposedToUseDefaultRenderer: true,
+  }
+);

@@ -8,7 +8,6 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import {
   ActionResult,
   Capability,
@@ -31,7 +30,6 @@ import {
   renderResultForUsersInRoom,
   renderRoomSetResult,
 } from "./CommonRenderers";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { Draupnir } from "../Draupnir";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import {
@@ -40,6 +38,10 @@ import {
   Permalinks,
   MatrixRoomReference,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
 
 // yeah i know this is a bit insane but whatever, it can be our secret.
 function renderResultForUserInSetMap(

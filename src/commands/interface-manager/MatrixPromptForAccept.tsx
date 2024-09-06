@@ -2,32 +2,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  ClientPlatform,
-  Logger,
-  RoomEvent,
-  Task,
-  Value,
-  isError,
-} from "matrix-protection-suite";
-import { renderMatrixAndSend } from "./DeadDocumentMatrix";
-import { CommandTable, InterfaceCommand } from "./InterfaceCommand";
-import { DeadDocumentJSX } from "./JSXFactory";
-import {
-  MatrixContext,
-  findMatrixInterfaceAdaptor,
-} from "./MatrixInterfaceAdaptor";
-import { ArgumentStream, ParameterDescription } from "./ParameterParsing";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { Logger, Value, isError } from "matrix-protection-suite";
 import {
   MatrixReactionHandler,
   ReactionListener,
 } from "./MatrixReactionHandler";
 import { StaticDecode, Type } from "@sinclair/typebox";
-import { ReadItem, readCommand } from "./CommandReader";
-import { printReadably } from "./PrintReadably";
-import { DeadDocumentPresentationMirror } from "./DeadDocumentPresentation";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixAdaptorContext,
+  MatrixEventContext,
+  sendMatrixEventsFromDeadDocument,
+} from "./MPSMatrixInterfaceAdaptor";
+import {
+  DeadDocumentJSX,
+  MatrixInterfaceCommandDispatcher,
+  ParameterDescription,
+  PartialCommand,
+  Presentation,
+  StandardPresentationArgumentStream,
+  TextPresentationRenderer,
+  readCommand,
+} from "@the-draupnir-project/interface-manager";
+import { Ok, Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("MatrixPromptForAccept");
 
@@ -49,22 +45,13 @@ const DefaultPromptContext = Type.Composite([
   }),
 ]);
 
-function continueCommandAcceptingPrompt<
-  CommandContext extends MatrixContext = MatrixContext,
->(
+function continueCommandAcceptingPrompt(
+  eventContext: MatrixEventContext,
   promptContext: PromptContext,
   serializedPrompt: string,
-  commandTable: CommandTable,
-  client: MatrixSendClient,
-  clientPlatform: ClientPlatform,
-  commandRoomID: StringRoomID,
-  reactionHandler: MatrixReactionHandler,
-  annotatedEvent: RoomEvent,
-  additionalCommandContext: Omit<CommandContext, keyof MatrixContext>
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
 ): void {
-  // TODO: We do this because we don't have a way to deserialize the individual serialized
-  // read items. Well we probably should.
-  const itemStream = new ArgumentStream(
+  const stream = new StandardPresentationArgumentStream(
     readCommand(
       [
         ...promptContext.command_designator,
@@ -73,45 +60,13 @@ function continueCommandAcceptingPrompt<
       ].join(" ")
     )
   );
-  const command = commandTable.findAMatchingCommand(itemStream);
-  if (command === undefined) {
-    log.error(
-      `couldn't find the associated command for a default prompt`,
-      promptContext.command_designator
-    );
-    return;
-  }
-  const adaptor = findMatrixInterfaceAdaptor(command);
-  const commandContext = {
-    roomID: commandRoomID,
-    client,
-    clientPlatform,
-    reactionHandler: reactionHandler,
-    event: annotatedEvent,
-    ...additionalCommandContext,
-  };
-  void Task(
-    (async () => {
-      await adaptor.invoke(
-        commandContext,
-        commandContext,
-        ...itemStream.rest()
-      );
-    })()
-  );
+  commandDispatcher.handleCommandFromPresentationStream(eventContext, stream);
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.default_argument_prompt";
-export function makeListenerForPromptDefault<
-  CommandContext extends MatrixContext = MatrixContext,
->(
-  client: MatrixSendClient,
-  clientPlatform: ClientPlatform,
-  commandRoomID: StringRoomID,
-  reactionHandler: MatrixReactionHandler,
-  commandTable: CommandTable,
-  additionalCommandContext: Omit<CommandContext, keyof MatrixContext>
+export function makeListenerForPromptDefault(
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
     if (item !== "ok") {
@@ -126,30 +81,18 @@ export function makeListenerForPromptDefault<
       return;
     }
     continueCommandAcceptingPrompt(
+      { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
-      promptContext.ok.default,
-      commandTable,
-      client,
-      clientPlatform,
-      commandRoomID,
-      reactionHandler,
-      annotatedEvent,
-      additionalCommandContext
+      item,
+      commandDispatcher
     );
   };
 }
 
 export const ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.argument_prompt";
-export function makeListenerForArgumentPrompt<
-  CommandContext extends MatrixContext = MatrixContext,
->(
-  client: MatrixSendClient,
-  clientPlatform: ClientPlatform,
-  commandRoomID: StringRoomID,
-  reactionHandler: MatrixReactionHandler,
-  commandTable: CommandTable,
-  additionalCommandContext: Omit<CommandContext, keyof MatrixContext>
+export function makeListenerForArgumentPrompt(
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
     const promptContext = Value.Decode(PromptContext, context);
@@ -161,107 +104,116 @@ export function makeListenerForArgumentPrompt<
       return;
     }
     continueCommandAcceptingPrompt(
+      { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
       item,
-      commandTable,
-      client,
-      clientPlatform,
-      commandRoomID,
-      reactionHandler,
-      annotatedEvent,
-      additionalCommandContext
+      commandDispatcher
     );
   };
 }
 
-export async function promptDefault<PresentationType extends ReadItem>(
-  this: MatrixContext,
+export async function promptDefault<TPresentation extends Presentation>(
+  { client, clientPlatform, reactionHandler }: MatrixAdaptorContext,
+  eventContext: MatrixEventContext,
   parameter: ParameterDescription,
-  command: InterfaceCommand,
-  defaultPrompt: PresentationType,
-  existingArguments: ReadItem[]
-): Promise<void> {
+  command: PartialCommand,
+  defaultPrompt: TPresentation,
+  existingArguments: Presentation[]
+): Promise<Result<void>> {
   const reactionMap = new Map(
     Object.entries({
       Ok: "ok",
     })
   );
-  const events = await renderMatrixAndSend(
+  const sendResult = await sendMatrixEventsFromDeadDocument(
+    clientPlatform.toRoomMessageSender(),
+    eventContext.event.room_id,
     <root>
       No argument was provided for the parameter {parameter.name}, would you
       like to accept the default?
       <br />
-      {DeadDocumentPresentationMirror.present(defaultPrompt)}
+      {TextPresentationRenderer.render(defaultPrompt)}
     </root>,
-    this.roomID,
-    this.event,
-    this.client,
-    this.reactionHandler.createAnnotation(
-      DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      reactionMap,
-      {
-        command_designator: command.designator,
-        read_items: existingArguments.map(printReadably),
-        default: printReadably(defaultPrompt),
-      }
-    )
+    {
+      replyToEvent: eventContext.event,
+      additionalContent: reactionHandler.createAnnotation(
+        DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+        reactionMap,
+        {
+          command_designator: command.designator,
+          read_items: existingArguments.map((p) =>
+            TextPresentationRenderer.render(p)
+          ),
+          default: TextPresentationRenderer.render(defaultPrompt),
+        }
+      ),
+    }
   );
-  if (events[0] === undefined) {
-    throw new TypeError(
-      `We should have got at least one event, the one that we just sent`
-    );
+  if (isError(sendResult)) {
+    return sendResult;
   }
-  await this.reactionHandler.addReactionsToEvent(
-    this.client,
-    this.roomID,
-    events[0],
+  if (sendResult.ok[0] === undefined) {
+    throw new TypeError(`Something is really wrong with the code`);
+  }
+  await reactionHandler.addReactionsToEvent(
+    client,
+    eventContext.event.room_id,
+    sendResult.ok[0],
     reactionMap
   );
+  return Ok(undefined);
 }
 
 // FIXME: <ol> raw tags will not work if the message is sent across events.
 // If there isn't a start attribute for `ol` then we'll need to take this into our own hands.
-export async function promptSuggestions(
-  this: MatrixContext,
+export async function promptSuggestions<TPresentation extends Presentation>(
+  { client, clientPlatform, reactionHandler }: MatrixAdaptorContext,
+  eventContext: MatrixEventContext,
   parameter: ParameterDescription,
-  command: InterfaceCommand,
-  suggestions: ReadItem[],
-  existingArguments: ReadItem[]
-): Promise<void> {
+  command: PartialCommand,
+  suggestions: TPresentation[],
+  existingArguments: Presentation[]
+): Promise<Result<void>> {
   const reactionMap = MatrixReactionHandler.createItemizedReactionMap(
-    suggestions.map(printReadably)
+    suggestions.map((suggestion) => TextPresentationRenderer.render(suggestion))
   );
-  const events = await renderMatrixAndSend(
+  const sendResult = await sendMatrixEventsFromDeadDocument(
+    clientPlatform.toRoomMessageSender(),
+    eventContext.event.room_id,
     <root>
       Please select one of the following options to provide as an argument for
       the parameter <code>{parameter.name}</code>:
       <ol>
         {suggestions.map((suggestion) => {
-          return <li>{DeadDocumentPresentationMirror.present(suggestion)}</li>;
+          return <li>{TextPresentationRenderer.render(suggestion)}</li>;
         })}
       </ol>
     </root>,
-    this.roomID,
-    this.event,
-    this.client,
-    this.reactionHandler.createAnnotation(
-      ARGUMENT_PROMPT_LISTENER,
-      reactionMap,
-      {
-        read_items: existingArguments.map(printReadably),
-        command_designator: command.designator,
-      }
-    )
+    {
+      replyToEvent: eventContext.event,
+      additionalContent: reactionHandler.createAnnotation(
+        ARGUMENT_PROMPT_LISTENER,
+        reactionMap,
+        {
+          command_designator: command.designator,
+          read_items: existingArguments.map((p) =>
+            TextPresentationRenderer.render(p)
+          ),
+        }
+      ),
+    }
   );
-  if (events[0] === undefined) {
-    throw new TypeError(
-      `We should have got at least one event, the one that we just sent`
-    );
+  if (isError(sendResult)) {
+    return sendResult;
   }
-  await this.reactionHandler.addReactionsToEvent(
-    this.client,
-    this.roomID,
-    events[0],
+  if (sendResult.ok[0] === undefined) {
+    throw new TypeError(`Something is really wrong with the code`);
+  }
+  await reactionHandler.addReactionsToEvent(
+    client,
+    eventContext.event.room_id,
+    sendResult.ok[0],
     reactionMap
   );
+  return Ok(undefined);
 }

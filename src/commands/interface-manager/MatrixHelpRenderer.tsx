@@ -2,24 +2,6 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import {
-  BaseFunction,
-  CommandTable,
-  InterfaceCommand,
-} from "./InterfaceCommand";
-import {
-  MatrixContext,
-  MatrixInterfaceAdaptor,
-  RendererSignature,
-} from "./MatrixInterfaceAdaptor";
-import {
-  ArgumentParseError,
-  ParameterDescription,
-  RestDescription,
-} from "./ParameterParsing";
-import { DeadDocumentJSX } from "./JSXFactory";
-import { DocumentNode } from "./DeadDocument";
-import { renderMatrixAndSend } from "./DeadDocumentMatrix";
 import { LogService } from "matrix-bot-sdk";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
@@ -29,6 +11,7 @@ import {
   ActionResult,
   Ok,
   RoomEvent,
+  RoomMessageSender,
   Task,
   isError,
   isOk,
@@ -38,11 +21,28 @@ import {
   renderElaborationTrail,
   renderExceptionTrail,
 } from "../../capabilities/CommonRenderers";
-import { printReadably } from "./PrintReadably";
+import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 import {
-  MatrixRoomReference,
-  StringRoomID,
-} from "@the-draupnir-project/matrix-basic-types";
+  ArgumentParseError,
+  CommandDescription,
+  BaseCommandTableEntry,
+  DeadDocumentJSX,
+  DocumentNode,
+  ParameterDescription,
+  RestDescription,
+  TextPresentationRenderer,
+  CommandTable,
+  Command,
+  CommandTableEntry,
+} from "@the-draupnir-project/interface-manager";
+import {
+  MatrixAdaptorContext,
+  MatrixEventContext,
+  sendMatrixEventsFromDeadDocument,
+} from "./MPSMatrixInterfaceAdaptor";
+import { Result } from "@gnuxie/typescript-result";
+import { printPresentationSchema } from "@the-draupnir-project/interface-manager/dist/Command/PresentationSchema";
+import { DOCUMENTATION_URL } from "../../config";
 
 function requiredArgument(argumentName: string): string {
   return `<${argumentName}>`;
@@ -69,11 +69,15 @@ export function renderParameterDescription(
   );
 }
 
-export function renderCommandSummary(command: InterfaceCommand): DocumentNode {
+export function renderCommandSummary(
+  command: CommandDescription,
+  tableEntry: BaseCommandTableEntry
+): DocumentNode {
   return (
     <details>
       <summary>
-        <code>{renderCommandHelp(command)}</code> - {command.summary}
+        <code>{renderCommandHelp(command, tableEntry.designator)}</code> -{" "}
+        {command.summary}
       </summary>
       {command.description ? (
         <fragment>
@@ -85,11 +89,11 @@ export function renderCommandSummary(command: InterfaceCommand): DocumentNode {
       ) : (
         <fragment></fragment>
       )}
-      {command.argumentListParser.descriptions.length > 0 ? (
+      {command.parametersDescription.descriptions.length > 0 ? (
         <fragment>
           <b>Parameters:</b>
           <br />
-          {...command.argumentListParser.descriptions.map(
+          {...command.parametersDescription.descriptions.map(
             renderParameterDescription
           )}
         </fragment>
@@ -100,52 +104,72 @@ export function renderCommandSummary(command: InterfaceCommand): DocumentNode {
   );
 }
 
-export function renderCommandHelp(command: InterfaceCommand): string {
-  const rest = command.argumentListParser.rest;
-  const keywords = command.argumentListParser.keywords;
+export function renderCommandHelp(
+  command: CommandDescription,
+  designator: string[]
+): string {
+  const rest = command.parametersDescription.rest;
+  const keywords = command.parametersDescription.keywords;
   return [
-    ...command.designator,
-    ...command.argumentListParser.descriptions.map((d) =>
+    ...designator,
+    ...command.parametersDescription.descriptions.map((d) =>
       requiredArgument(d.name)
     ),
     ...(rest ? [restArgument(rest)] : []),
-    ...Object.keys(keywords.description).map((k) => keywordArgument(k)),
+    ...Object.keys(keywords.keywordDescriptions).map((k) => keywordArgument(k)),
   ].join(" ");
 }
 
-function renderTableHelp(table: CommandTable): DocumentNode {
-  let tableName = table.name;
-  if (typeof table.name === "string") {
-    tableName = table.name.charAt(0).toUpperCase() + table.name.slice(1);
-  }
-  return (
+export async function replyToEventWithErrorDetails(
+  roomMessageSender: RoomMessageSender,
+  event: RoomEvent,
+  error: ActionError
+): Promise<Result<void>> {
+  return (await sendMatrixEventsFromDeadDocument(
+    roomMessageSender,
+    event.room_id,
     <root>
       <details>
-        <summary>
-          <b>{tableName.toString()} commands:</b>
-        </summary>
-        {table.getExportedCommands().map(renderCommandSummary)}
-        {table.getImportedTables().map(renderTableHelp)}
+        <summary>{error.mostRelevantElaboration}</summary>
+        {renderDetailsNotice(error)}
+        {renderElaborationTrail(error)}
+        {renderExceptionTrail(error)}
       </details>
-    </root>
-  );
+    </root>,
+    { replyToEvent: event }
+  )) as Result<void>;
 }
 
-export async function renderHelp(
+export function renderActionResultToEvent(
+  roomMessageSender: RoomMessageSender,
   client: MatrixSendClient,
-  commandRoomID: StringRoomID,
   event: RoomEvent,
-  result: ActionResult<CommandTable>
-): Promise<void> {
+  result: ActionResult<void>
+): void {
   if (isError(result)) {
-    throw new TypeError("This command isn't supposed to fail");
+    void Task(
+      replyToEventWithErrorDetails(roomMessageSender, event, result.error)
+    );
   }
-  await renderMatrixAndSend(
-    renderTableHelp(result.ok),
-    commandRoomID,
-    event,
-    client
+  void Task(reactToEventWithResult(client, event, result));
+}
+
+// Maybe we need something like the MatrixInterfaceAdaptor but for Error types?
+
+function formattedArgumentHint(error: ArgumentParseError): string {
+  const argumentsUpToError = error.partialCommand.stream.source.slice(
+    0,
+    error.partialCommand.stream.getPosition()
   );
+  let commandContext = "Command context:";
+  for (const designator of error.partialCommand.designator) {
+    commandContext += ` ${designator}`;
+  }
+  for (const argument of argumentsUpToError) {
+    commandContext += ` ${JSON.stringify(argument)}`;
+  }
+  const badArgument = ` ${TextPresentationRenderer.render(error.partialCommand.stream.peekItem())}\n${Array(commandContext.length + 1).join(" ")} ^ expected ${printPresentationSchema(error.parameter.acceptor)} here`;
+  return commandContext + badArgument;
 }
 
 export async function reactToEventWithResult(
@@ -166,7 +190,7 @@ export async function reactToEventWithResult(
       return Ok(undefined);
     } catch (e) {
       return ActionException.Result(
-        `tickCrossRenderer Couldn't react to the event ${event.event_id}`,
+        `reactToEventWithResult Couldn't react to the event ${event.event_id}`,
         {
           exception: e,
           exceptionKind: ActionExceptionKind.Unknown,
@@ -181,128 +205,81 @@ export async function reactToEventWithResult(
   }
 }
 
-export async function replyToEventWithErrorDetails(
-  client: MatrixSendClient,
-  event: RoomEvent,
-  error: ActionError
-): Promise<ActionResult<void>> {
-  try {
-    await renderMatrixAndSend(
-      <root>
-        <details>
-          <summary>{error.mostRelevantElaboration}</summary>
-          {renderDetailsNotice(error)}
-          {renderElaborationTrail(error)}
-          {renderExceptionTrail(error)}
-        </details>
-      </root>,
-      event.room_id,
-      event,
-      client
-    );
-    return Ok(undefined);
-  } catch (e) {
-    return ActionException.Result(
-      `replyToEventIfError Couldn't send a reply to the event ${event.event_id}`,
-      {
-        exception: e,
-        exceptionKind: ActionExceptionKind.Unknown,
-      }
-    );
-  }
-}
-
-export function renderActionResultToEvent(
-  client: MatrixSendClient,
-  event: RoomEvent,
-  result: ActionResult<void>
-): void {
-  if (isError(result)) {
-    void Task(replyToEventWithErrorDetails(client, event, result.error));
-  }
-  void Task(reactToEventWithResult(client, event, result));
-}
-
-export const tickCrossRenderer: RendererSignature<MatrixContext, BaseFunction> =
-  async function tickCrossRenderer(
-    this: MatrixInterfaceAdaptor<MatrixContext>,
-    client: MatrixSendClient,
-    commandRoomID: StringRoomID,
-    event: RoomEvent,
-    result: ActionResult<unknown>
-  ): Promise<void> {
-    void Task(reactToEventWithResult(client, event, result));
-    if (isError(result)) {
-      if (result.error instanceof ArgumentParseError) {
-        await renderMatrixAndSend(
-          renderArgumentParseError(this.interfaceCommand, result.error),
-          commandRoomID,
-          event,
-          client
-        );
-      } else if (result.error instanceof ActionException) {
-        const commandError = result.error;
-        LogService.error(
-          "CommandException",
-          commandError.uuid,
-          commandError.message,
-          commandError.exception
-        );
-        await renderMatrixAndSend(
-          renderCommandException(this.interfaceCommand, result.error),
-          commandRoomID,
-          event,
-          client
-        );
-      } else {
-        await client.replyNotice(commandRoomID, event, result.error.message);
-      }
-    }
-  };
-
-// Maybe we need something like the MatrixInterfaceAdaptor but for Error types?
-
-function formattedArgumentHint(
-  command: InterfaceCommand,
-  error: ArgumentParseError
-): string {
-  const argumentsUpToError = error.stream.source.slice(
-    0,
-    error.stream.getPosition()
-  );
-  let commandContext = "Command context:";
-  for (const designator of command.designator) {
-    commandContext += ` ${designator}`;
-  }
-  for (const argument of argumentsUpToError) {
-    commandContext += ` ${JSON.stringify(argument)}`;
-  }
-  const badArgument = ` ${printReadably(error.stream.peekItem())}\n${Array(commandContext.length + 1).join(" ")} ^ expected ${error.parameter.acceptor.name} here`;
-  return commandContext + badArgument;
-}
-
-function renderArgumentParseError(
-  command: InterfaceCommand,
-  error: ArgumentParseError
-): DocumentNode {
+function renderArgumentParseError(error: ArgumentParseError): DocumentNode {
   return (
     <root>
       There was a problem when parsing the <code>{error.parameter.name}</code>{" "}
       parameter for this command.
       <br />
-      {renderCommandHelp(command)}
+      {renderCommandHelp(
+        error.partialCommand.description,
+        error.partialCommand.designator
+      )}
       <br />
       {error.message}
       <br />
-      <pre>{formattedArgumentHint(command, error)}</pre>
+      <pre>{formattedArgumentHint(error)}</pre>
     </root>
   );
 }
 
-function renderCommandException(
-  command: InterfaceCommand,
-  error: ActionException
-): DocumentNode {
+export async function matrixCommandRenderer<
+  TAdaptorContext extends MatrixAdaptorContext,
+  TEventContext extends MatrixEventContext,
+>(
+  { clientPlatform, client, commandRoomID }: TAdaptorContext,
+  { event }: TEventContext,
+  _command: Command,
+  result: Result<unknown>
+): Promise<Result<void>> {
+  void Task(reactToEventWithResult(client, event, result));
+  if (isError(result)) {
+    if (result.error instanceof ArgumentParseError) {
+      return (await sendMatrixEventsFromDeadDocument(
+        clientPlatform.toRoomMessageSender(),
+        commandRoomID,
+        renderArgumentParseError(result.error),
+        { replyToEvent: event }
+      )) as Result<void>;
+    } else if (result.error instanceof ActionException) {
+      const commandError = result.error;
+      LogService.error(
+        "CommandException",
+        commandError.uuid,
+        commandError.message,
+        commandError.exception
+      );
+      return (await sendMatrixEventsFromDeadDocument(
+        clientPlatform.toRoomMessageSender(),
+        commandRoomID,
+        renderCommandException(result.error),
+        { replyToEvent: event }
+      )) as Result<void>;
+    } else {
+      try {
+        await client.replyNotice(commandRoomID, event, result.error.message);
+        return Ok(undefined);
+      } catch (e) {
+        if (e instanceof Error) {
+          return ActionException.Result(
+            `Could not reply to a command to report an error back to the user ${event.event_id}: ${result.error.message}`,
+            {
+              exception: e,
+              exceptionKind: ActionExceptionKind.Unknown,
+            }
+          );
+        } else {
+          throw new TypeError(
+            `Someone is throwing things that are not instanceof Error`
+          );
+        }
+      }
+    }
+  }
+  return Ok(undefined);
+}
+
+function renderCommandException(error: ActionException): DocumentNode {
   return (
     <root>
       There was an unexpected error when processing this command:
@@ -325,4 +302,71 @@ export function renderMentionPill(
 
 export function renderRoomPill(room: MatrixRoomReference): DocumentNode {
   return <a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a>;
+}
+
+function sortCommandsBySourceTable(
+  table: CommandTable
+): Map<CommandTable, CommandTableEntry[]> {
+  const commandsBySourceTable = new Map<CommandTable, CommandTableEntry[]>();
+  for (const command of table.getAllCommands()) {
+    const sourceTable = command.sourceTable;
+    const groupedCommands =
+      commandsBySourceTable.get(sourceTable) ??
+      ((groupedCommands) => (
+        commandsBySourceTable.set(sourceTable, groupedCommands), groupedCommands
+      ))([]);
+    groupedCommands.push(command);
+  }
+  return commandsBySourceTable;
+}
+
+function sortGroupedCommandsByDesignator(
+  commandsBySourceTable: Map<CommandTable, CommandTableEntry[]>
+): Map<CommandTable, CommandTableEntry[]> {
+  for (const commands of commandsBySourceTable.values()) {
+    commands.sort((a, b) => {
+      const aDesignator = a.designator.join(".");
+      const bDesignator = b.designator.join(".");
+      return aDesignator.localeCompare(bDesignator);
+    });
+  }
+  return commandsBySourceTable;
+}
+
+function renderSourceTableSummary(
+  sourceTable: CommandTable,
+  sortedEntries: CommandTableEntry[]
+): DocumentNode {
+  const tableName =
+    typeof sourceTable.name === "string"
+      ? sourceTable.name.charAt(0).toUpperCase() + sourceTable.name.slice(1)
+      : sourceTable.name.toString();
+  return (
+    <fragment>
+      <details>
+        <summary>
+          <b>{tableName} commands:</b>
+        </summary>
+        {sortedEntries.map((entry) =>
+          renderCommandSummary(entry.currentCommand, entry)
+        )}
+      </details>
+    </fragment>
+  );
+}
+
+export function renderTableHelp(table: CommandTable): DocumentNode {
+  const groupedAndSortedCommands = sortGroupedCommandsByDesignator(
+    sortCommandsBySourceTable(table)
+  );
+  return (
+    <fragment>
+      <b>Documentation: </b> <a href={DOCUMENTATION_URL}>{DOCUMENTATION_URL}</a>
+      <br />
+      {[...groupedAndSortedCommands.entries()].map(
+        ([sourceTable, sortedEntries]) =>
+          renderSourceTableSummary(sourceTable, sortedEntries)
+      )}
+    </fragment>
+  );
 }

@@ -25,17 +25,19 @@ import {
 } from "matrix-protection-suite";
 import { DraupnirProtection } from "./Protection";
 import { Draupnir } from "../Draupnir";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import {
   renderMentionPill,
   renderRoomPill,
 } from "../commands/interface-manager/MatrixHelpRenderer";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
 import {
   StringRoomID,
   MatrixRoomReference,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("PolicyChangeNotification");
 
@@ -86,15 +88,14 @@ export class PolicyChangeNotification
     if (isError(groupedChanges)) {
       return groupedChanges;
     }
-    try {
-      await renderMatrixAndSend(
-        <root>{renderGroupedChanges(groupedChanges.ok)}</root>,
-        this.draupnir.managementRoomID,
-        undefined,
-        this.draupnir.client
-      );
-    } catch (e) {
-      log.error(`couldn't send change to management room`, e);
+    const sendResult = await sendMatrixEventsFromDeadDocument(
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.draupnir.managementRoomID,
+      <root>{renderGroupedChanges(groupedChanges.ok)}</root>,
+      {}
+    );
+    if (isError(sendResult)) {
+      log.error(`couldn't send change to management room`, sendResult.error);
     }
     return Ok(undefined);
   }

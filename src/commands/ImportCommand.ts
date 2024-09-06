@@ -8,7 +8,6 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { DraupnirBaseExecutor, DraupnirContext } from "./CommandHandler";
 import {
   ActionResult,
   MultipleErrors,
@@ -19,115 +18,107 @@ import {
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  parameters,
-  ParsedKeywords,
-} from "./interface-manager/ParameterParsing";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
+  MatrixRoomReferencePresentationSchema,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-export async function importCommand(
-  this: DraupnirContext,
-  _keywords: ParsedKeywords,
-  importFromRoomReference: MatrixRoomReference,
-  policyRoomReference: MatrixRoomReference
-): Promise<ActionResult<void>> {
-  const importFromRoom = await resolveRoomReferenceSafe(
-    this.client,
-    importFromRoomReference
-  );
-  if (isError(importFromRoom)) {
-    return importFromRoom;
-  }
-  const policyRoom = await resolveRoomReferenceSafe(
-    this.client,
-    policyRoomReference
-  );
-  if (isError(policyRoom)) {
-    return policyRoom;
-  }
-  const policyRoomEditor =
-    await this.draupnir.policyRoomManager.getPolicyRoomEditor(policyRoom.ok);
-  if (isError(policyRoomEditor)) {
-    return policyRoomEditor;
-  }
-  const state = await this.client.getRoomState(
-    importFromRoom.ok.toRoomIDOrAlias()
-  );
-  const errors: RoomUpdateError[] = [];
-  for (const stateEvent of state) {
-    const content = stateEvent["content"] || {};
-    if (!content || Object.keys(content).length === 0) continue;
-
-    if (
-      stateEvent["type"] === "m.room.member" &&
-      stateEvent["state_key"] !== ""
-    ) {
-      // Member event - check for ban
-      if (content["membership"] === "ban") {
-        const reason = content["reason"] || "<no reason>";
-        const result = await policyRoomEditor.ok.banEntity(
-          PolicyRuleType.User,
-          stateEvent["state_key"],
-          reason
-        );
-        if (isError(result)) {
-          errors.push(
-            RoomActionError.fromActionError(policyRoom.ok, result.error)
-          );
-        }
-      }
-    } else if (
-      stateEvent["type"] === "m.room.server_acl" &&
-      stateEvent["state_key"] === ""
-    ) {
-      // ACL event - ban denied servers
-      if (!content["deny"]) continue;
-      for (const server of content["deny"]) {
-        const reason = "<no reason>";
-        const result = await policyRoomEditor.ok.banEntity(
-          PolicyRuleType.Server,
-          server,
-          reason
-        );
-        if (isError(result)) {
-          errors.push(
-            RoomActionError.fromActionError(policyRoom.ok, result.error)
-          );
-        }
-      }
-    }
-  }
-  return MultipleErrors.Result(
-    `There were multiple errors when importing bans from the room ${importFromRoomReference.toPermalink()} to ${policyRoomReference.toPermalink()}`,
-    { errors }
-  );
-}
-
-defineInterfaceCommand<DraupnirBaseExecutor>({
-  designator: ["import"],
-  table: "draupnir",
-  parameters: parameters([
+export const DraupnirImportCommand = describeCommand({
+  summary:
+    "Import user and server bans from a Matrix room and add them to a policy room.",
+  parameters: tuple(
     {
       name: "import from room",
-      acceptor: findPresentationType("MatrixRoomReference"),
+      acceptor: MatrixRoomReferencePresentationSchema,
     },
     {
       name: "policy room",
-      acceptor: findPresentationType("MatrixRoomReference"),
-    },
-  ]),
-  command: importCommand,
-  summary:
-    "Import user and server bans from a Matrix room and add them to a policy room.",
+      acceptor: MatrixRoomReferencePresentationSchema,
+    }
+  ),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    importFromRoomReference,
+    policyRoomReference
+  ): Promise<ActionResult<void>> {
+    const importFromRoom = await resolveRoomReferenceSafe(
+      draupnir.client,
+      importFromRoomReference
+    );
+    if (isError(importFromRoom)) {
+      return importFromRoom;
+    }
+    const policyRoom = await resolveRoomReferenceSafe(
+      draupnir.client,
+      policyRoomReference
+    );
+    if (isError(policyRoom)) {
+      return policyRoom;
+    }
+    const policyRoomEditor =
+      await draupnir.policyRoomManager.getPolicyRoomEditor(policyRoom.ok);
+    if (isError(policyRoomEditor)) {
+      return policyRoomEditor;
+    }
+    const state = await draupnir.client.getRoomState(
+      importFromRoom.ok.toRoomIDOrAlias()
+    );
+    const errors: RoomUpdateError[] = [];
+    for (const stateEvent of state) {
+      const content = stateEvent["content"] || {};
+      if (!content || Object.keys(content).length === 0) continue;
+
+      if (
+        stateEvent["type"] === "m.room.member" &&
+        stateEvent["state_key"] !== ""
+      ) {
+        // Member event - check for ban
+        if (content["membership"] === "ban") {
+          const reason = content["reason"] || "<no reason>";
+          const result = await policyRoomEditor.ok.banEntity(
+            PolicyRuleType.User,
+            stateEvent["state_key"],
+            reason
+          );
+          if (isError(result)) {
+            errors.push(
+              RoomActionError.fromActionError(policyRoom.ok, result.error)
+            );
+          }
+        }
+      } else if (
+        stateEvent["type"] === "m.room.server_acl" &&
+        stateEvent["state_key"] === ""
+      ) {
+        // ACL event - ban denied servers
+        if (!content["deny"]) continue;
+        for (const server of content["deny"]) {
+          const reason = "<no reason>";
+          const result = await policyRoomEditor.ok.banEntity(
+            PolicyRuleType.Server,
+            server,
+            reason
+          );
+          if (isError(result)) {
+            errors.push(
+              RoomActionError.fromActionError(policyRoom.ok, result.error)
+            );
+          }
+        }
+      }
+    }
+    return MultipleErrors.Result(
+      `There were multiple errors when importing bans from the room ${importFromRoomReference.toPermalink()} to ${policyRoomReference.toPermalink()}`,
+      { errors }
+    );
+  },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "import"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirImportCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

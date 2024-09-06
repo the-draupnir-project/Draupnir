@@ -8,50 +8,37 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { PropagationType, isError } from "matrix-protection-suite";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  parameters,
-  ParsedKeywords,
-} from "./interface-manager/ParameterParsing";
-import { DraupnirContext } from "./CommandHandler";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import {
-  ActionResult,
-  PropagationType,
-  isError,
-} from "matrix-protection-suite";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
+  MatrixRoomReferencePresentationSchema,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-defineInterfaceCommand({
-  table: "draupnir",
-  designator: ["watch"],
+export const DraupnirWatchPolicyRoomCommand = describeCommand({
   summary:
     "Watches a list and applies the list's assocated policies to draupnir's protected rooms.",
-  parameters: parameters([
-    {
-      name: "list",
-      acceptor: findPresentationType("MatrixRoomReference"),
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    policyRoomReference: MatrixRoomReference
-  ): Promise<ActionResult<void>> {
-    const policyRoom = await resolveRoomReferenceSafe(
-      this.client,
-      policyRoomReference
-    );
+  parameters: tuple({
+    name: "policy room",
+    acceptor: MatrixRoomReferencePresentationSchema,
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    policyRoomReference
+  ): Promise<Result<void>> {
+    const policyRoom = await draupnir.clientPlatform
+      .toRoomResolver()
+      .resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    return await this.draupnir.protectedRoomsSet.issuerManager.watchList(
+    return await draupnir.protectedRoomsSet.issuerManager.watchList(
       PropagationType.Direct,
       policyRoom.ok,
       {}
@@ -59,42 +46,38 @@ defineInterfaceCommand({
   },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "watch"),
-  renderer: tickCrossRenderer,
-});
-
-defineInterfaceCommand({
-  table: "draupnir",
-  designator: ["unwatch"],
+export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
   summary:
     "Unwatches a list and stops applying the list's assocated policies to draupnir's protected rooms.",
-  parameters: parameters([
-    {
-      name: "list",
-      acceptor: findPresentationType("MatrixRoomReference"),
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    policyRoomReference: MatrixRoomReference
-  ): Promise<ActionResult<void>> {
-    const policyRoom = await resolveRoomReferenceSafe(
-      this.client,
-      policyRoomReference
-    );
+  parameters: tuple({
+    name: "policy room",
+    acceptor: MatrixRoomReferencePresentationSchema,
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    policyRoomReference
+  ): Promise<Result<void>> {
+    const policyRoom = await draupnir.clientPlatform
+      .toRoomResolver()
+      .resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    return await this.draupnir.protectedRoomsSet.issuerManager.unwatchList(
+    return await draupnir.protectedRoomsSet.issuerManager.unwatchList(
       PropagationType.Direct,
       policyRoom.ok
     );
   },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "unwatch"),
-  renderer: tickCrossRenderer,
-});
+for (const command of [
+  DraupnirWatchPolicyRoomCommand,
+  DraupnirUnwatchPolicyRoomCommand,
+]) {
+  DraupnirInterfaceAdaptor.describeRenderer(command, {
+    isAlwaysSupposedToUseDefaultRenderer: true,
+  });
+}
