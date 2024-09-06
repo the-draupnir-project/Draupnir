@@ -5,17 +5,20 @@
 import {
   HandleMissingProtectionPermissions,
   ProtectionPermissionsChange,
+  RoomMessageSender,
   Task,
 } from "matrix-protection-suite";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import {
   StringRoomID,
   MatrixRoomReference,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { Result } from "@gnuxie/typescript-result";
 
 function renderPermissions(
   title: DocumentNode,
@@ -89,21 +92,19 @@ function renderMissingProtectionsPermissions(
 }
 
 export function makeHandleMissingProtectionPermissions(
-  client: MatrixSendClient,
+  roomMessageSender: RoomMessageSender,
   managementRoomID: StringRoomID
 ): HandleMissingProtectionPermissions {
   return function (roomID, protectionPermissions) {
     void Task(
-      (async () => {
-        await renderMatrixAndSend(
-          <root>
-            {renderMissingProtectionsPermissions(roomID, protectionPermissions)}
-          </root>,
-          managementRoomID,
-          undefined,
-          client
-        );
-      })()
+      sendMatrixEventsFromDeadDocument(
+        roomMessageSender,
+        managementRoomID,
+        <root>
+          {renderMissingProtectionsPermissions(roomID, protectionPermissions)}
+        </root>,
+        {}
+      ) as Promise<Result<undefined>>
     );
   };
 }

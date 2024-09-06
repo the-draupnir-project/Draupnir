@@ -8,23 +8,6 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { DraupnirContext } from "./CommandHandler";
-import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  ParameterDescription,
-  parameters,
-  ParsedKeywords,
-  RestDescription,
-  union,
-} from "./interface-manager/ParameterParsing";
-import "./interface-manager/MatrixPresentations";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { PromptOptions } from "./interface-manager/PromptForAccept";
 import { Draupnir } from "../Draupnir";
 import {
   ActionResult,
@@ -39,6 +22,17 @@ import {
   MatrixRoomReference,
   MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  BasicInvocationInformation,
+  MatrixRoomIDPresentationType,
+  MatrixRoomReferencePresentationSchema,
+  MatrixUserIDPresentationType,
+  StringPresentationType,
+  describeCommand,
+  tuple,
+  union,
+} from "@the-draupnir-project/interface-manager";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
 export async function findPolicyRoomEditorFromRoomReference(
   draupnir: Draupnir,
@@ -54,105 +48,102 @@ export async function findPolicyRoomEditorFromRoomReference(
   return await draupnir.policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
 }
 
-async function ban(
-  this: DraupnirContext,
-  _keywords: ParsedKeywords,
-  entity: MatrixUserID | MatrixRoomReference | string,
-  policyRoomDesignator: MatrixRoomReference | string,
-  ...reasonParts: string[]
-): Promise<ActionResult<string>> {
-  const policyRoomReference =
-    typeof policyRoomDesignator === "string"
-      ? await findPolicyRoomIDFromShortcode(this.draupnir, policyRoomDesignator)
-      : Ok(policyRoomDesignator);
-  if (isError(policyRoomReference)) {
-    return policyRoomReference;
-  }
-  const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
-    this.draupnir,
-    policyRoomReference.ok
-  );
-  if (isError(policyListEditorResult)) {
-    return policyListEditorResult;
-  }
-  const policyListEditor = policyListEditorResult.ok;
-  const reason = reasonParts.join(" ");
-  if (entity instanceof MatrixUserID) {
-    return await policyListEditor.banEntity(
-      PolicyRuleType.User,
-      entity.toString(),
-      reason
-    );
-  } else if (typeof entity === "string") {
-    return await policyListEditor.banEntity(
-      PolicyRuleType.Server,
-      entity,
-      reason
-    );
-  } else {
-    const resolvedRoomReference = await resolveRoomReferenceSafe(
-      this.draupnir.client,
-      entity
-    );
-    if (isError(resolvedRoomReference)) {
-      return resolvedRoomReference;
-    }
-    return await policyListEditor.banEntity(
-      PolicyRuleType.Server,
-      resolvedRoomReference.ok.toRoomIDOrAlias(),
-      reason
-    );
-  }
-}
-
-defineInterfaceCommand({
-  designator: ["ban"],
-  table: "draupnir",
-  parameters: parameters(
-    [
-      {
-        name: "entity",
-        acceptor: union(
-          findPresentationType("MatrixUserID"),
-          findPresentationType("MatrixRoomReference"),
-          findPresentationType("string")
-        ),
-      },
-      {
-        name: "list",
-        acceptor: union(
-          findPresentationType("MatrixRoomReference"),
-          findPresentationType("string")
-        ),
-        prompt: async function (
-          this: DraupnirContext,
-          _parameter: ParameterDescription
-        ): Promise<PromptOptions> {
-          return {
-            suggestions:
-              this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(
-                this.draupnir.clientUserID,
-                PolicyRuleType.User
-              ),
-          };
-        },
-      },
-    ],
-    new RestDescription<DraupnirContext>(
-      "reason",
-      findPresentationType("string"),
-      async function (_parameter) {
-        return {
-          suggestions: this.draupnir.config.commands.ban.defaultReasons,
-        };
-      }
-    )
-  ),
-  command: ban,
+export const DraupnirBanCommand = describeCommand({
   summary: "Bans an entity from the policy list.",
+  parameters: tuple(
+    {
+      name: "entity",
+      description:
+        "The entity to ban. This can be a user ID, room ID, or server name.",
+      acceptor: union(
+        MatrixUserIDPresentationType,
+        MatrixRoomReferencePresentationSchema,
+        StringPresentationType
+      ),
+    },
+    {
+      name: "list",
+      acceptor: union(
+        MatrixRoomReferencePresentationSchema,
+        StringPresentationType
+      ),
+      prompt: async function (draupnir: Draupnir) {
+        return Ok({
+          suggestions: draupnir.policyRoomManager
+            .getEditablePolicyRoomIDs(
+              draupnir.clientUserID,
+              PolicyRuleType.User
+            )
+            .map((room) => MatrixRoomIDPresentationType.wrap(room)),
+        });
+      },
+    }
+  ),
+  rest: {
+    name: "reason",
+    description: "The reason for the ban.",
+    acceptor: StringPresentationType,
+    prompt: async function (draupnir: Draupnir) {
+      return Ok({
+        suggestions: draupnir.config.commands.ban.defaultReasons.map(
+          (reason) => [StringPresentationType.wrap(reason)]
+        ),
+      });
+    },
+  },
+  async executor(
+    draupnir: Draupnir,
+    _info: BasicInvocationInformation,
+    _keywords,
+    reasonParts,
+    entity,
+    policyRoomDesignator
+  ): Promise<ActionResult<string>> {
+    const policyRoomReference =
+      typeof policyRoomDesignator === "string"
+        ? await findPolicyRoomIDFromShortcode(draupnir, policyRoomDesignator)
+        : Ok(policyRoomDesignator);
+    if (isError(policyRoomReference)) {
+      return policyRoomReference;
+    }
+    const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
+      draupnir,
+      policyRoomReference.ok
+    );
+    if (isError(policyListEditorResult)) {
+      return policyListEditorResult;
+    }
+    const policyListEditor = policyListEditorResult.ok;
+    const reason = reasonParts.join(" ");
+    if (entity instanceof MatrixUserID) {
+      return await policyListEditor.banEntity(
+        PolicyRuleType.User,
+        entity.toString(),
+        reason
+      );
+    } else if (typeof entity === "string") {
+      return await policyListEditor.banEntity(
+        PolicyRuleType.Server,
+        entity,
+        reason
+      );
+    } else {
+      const resolvedRoomReference = await resolveRoomReferenceSafe(
+        draupnir.client,
+        entity
+      );
+      if (isError(resolvedRoomReference)) {
+        return resolvedRoomReference;
+      }
+      return await policyListEditor.banEntity(
+        PolicyRuleType.Server,
+        resolvedRoomReference.ok.toRoomIDOrAlias(),
+        reason
+      );
+    }
+  },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "ban"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirBanCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

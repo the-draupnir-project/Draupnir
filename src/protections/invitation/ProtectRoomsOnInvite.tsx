@@ -19,17 +19,19 @@ import {
   isError,
   PermalinkSchema,
 } from "matrix-protection-suite";
-import { DocumentNode } from "../../commands/interface-manager/DeadDocument";
 import {
   renderActionResultToEvent,
   renderMentionPill,
   renderRoomPill,
 } from "../../commands/interface-manager/MatrixHelpRenderer";
-import { DeadDocumentJSX } from "../../commands/interface-manager/JSXFactory";
-import { renderMatrixAndSend } from "../../commands/interface-manager/DeadDocumentMatrix";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { Draupnir } from "../../Draupnir";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("ProtectRoomsOnInvite");
 
@@ -82,21 +84,28 @@ export class ProtectroomsOnInvite {
         const reactionMap = new Map<string, string>(
           Object.entries({ OK: "OK", Cancel: "Cancel" })
         );
-        const promptEventID = (
-          await renderMatrixAndSend(
-            renderPromptProtect(),
-            this.draupnir.managementRoomID,
-            undefined,
-            this.draupnir.client,
-            this.draupnir.reactionHandler.createAnnotation(
+        const promptSendResult = await sendMatrixEventsFromDeadDocument(
+          this.draupnir.clientPlatform.toRoomMessageSender(),
+          this.draupnir.managementRoomID,
+          renderPromptProtect(),
+          {
+            additionalContent: this.draupnir.reactionHandler.createAnnotation(
               PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER,
               reactionMap,
               {
                 invited_room: candidateRoom.toPermalink(),
               }
-            )
-          )
-        )[0];
+            ),
+          }
+        );
+        if (isError(promptSendResult)) {
+          log.error(
+            `Could not send the prompt to protect the room: ${candidateRoom.toPermalink()}`,
+            promptSendResult.error
+          );
+          return;
+        }
+        const promptEventID = promptSendResult.ok.at(0);
         if (promptEventID === undefined) {
           throw new TypeError(
             `We should have an eventID for the event that we just sent...`
@@ -130,7 +139,12 @@ export class ProtectroomsOnInvite {
     const context = Value.Decode(ProtectRoomsOnInvitePromptContext, rawContext);
     if (isError(context)) {
       log.error(`Could not decode context from prompt event`, context.error);
-      renderActionResultToEvent(this.draupnir.client, promptEvent, context);
+      renderActionResultToEvent(
+        this.draupnir.clientPlatform.toRoomMessageSender(),
+        this.draupnir.client,
+        promptEvent,
+        context
+      );
       return;
     }
     void Task(
@@ -143,6 +157,7 @@ export class ProtectroomsOnInvite {
             `Could not resolve the room to protect from the MatrixRoomReference: ${context.ok.invited_room.toPermalink()}.`
           );
           renderActionResultToEvent(
+            this.draupnir.clientPlatform.toRoomMessageSender(),
             this.draupnir.client,
             promptEvent,
             resolvedRoom
@@ -158,13 +173,19 @@ export class ProtectroomsOnInvite {
             `Could not protect the room: ${resolvedRoom.ok.toPermalink()}`
           );
           renderActionResultToEvent(
+            this.draupnir.clientPlatform.toRoomMessageSender(),
             this.draupnir.client,
             promptEvent,
             addResult
           );
           return;
         }
-        renderActionResultToEvent(this.draupnir.client, promptEvent, addResult);
+        renderActionResultToEvent(
+          this.draupnir.clientPlatform.toRoomMessageSender(),
+          this.draupnir.client,
+          promptEvent,
+          addResult
+        );
         void Task(
           this.draupnir.reactionHandler.completePrompt(
             promptEvent.room_id,

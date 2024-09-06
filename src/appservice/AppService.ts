@@ -56,7 +56,7 @@ const log = new Logger("AppService");
  */
 export class MjolnirAppService {
   private readonly api: Api;
-  private readonly commands: AppserviceCommandHandler;
+  public readonly commands: AppserviceCommandHandler;
 
   /**
    * The constructor is private because we want to ensure intialization steps are followed,

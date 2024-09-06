@@ -10,16 +10,6 @@
 
 import { DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import { parameters } from "./interface-manager/ParameterParsing";
-import { DraupnirContext } from "./CommandHandler";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import {
   ActionResult,
   Ok,
   PolicyRoomRevision,
@@ -28,18 +18,19 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { DocumentNode } from "./interface-manager/DeadDocument";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+  describeCommand,
+} from "@the-draupnir-project/interface-manager";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-defineInterfaceCommand({
-  designator: ["status"],
-  table: "draupnir",
-  parameters: parameters([]),
-  command: async function (
-    this: DraupnirContext
-  ): Promise<ActionResult<StatusInfo>> {
-    return Ok(await draupnirStatusInfo(this.draupnir));
-  },
+export const DraupnirStatusCommand = describeCommand({
   summary: "Show the status of the bot.",
+  parameters: [],
+  async executor(draupnir: Draupnir): Promise<ActionResult<StatusInfo>> {
+    return Ok(await draupnirStatusInfo(draupnir));
+  },
 });
 
 export interface ListInfo {
@@ -84,6 +75,15 @@ export async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
     };
   });
 }
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
+  JSXRenderer(result) {
+    if (isError(result)) {
+      return Ok(undefined);
+    }
+    return Ok(renderStatusInfo(result.ok));
+  },
+});
 
 // FIXME: need a shoutout to dependencies in here and NOTICE info.
 export async function draupnirStatusInfo(
@@ -165,26 +165,3 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
     </root>
   );
 }
-
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "status"),
-  renderer: async function (
-    this,
-    client,
-    commandRoomID,
-    event,
-    result: ActionResult<StatusInfo>
-  ): Promise<void> {
-    if (isError(result)) {
-      await tickCrossRenderer.call(this, client, commandRoomID, event, result);
-      return;
-    }
-    const info = result.ok;
-    await renderMatrixAndSend(
-      renderStatusInfo(info),
-      commandRoomID,
-      event,
-      client
-    );
-  },
-});

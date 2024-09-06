@@ -8,71 +8,46 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionResult, isError } from "matrix-protection-suite";
-import { DraupnirContext } from "./CommandHandler";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { renderRoomPill } from "./interface-manager/MatrixHelpRenderer";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  ParsedKeywords,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import {
-  renderRoomPill,
-  tickCrossRenderer,
-} from "./interface-manager/MatrixHelpRenderer";
-import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
-import {
-  MatrixRoomAlias,
-  MatrixRoomID,
-} from "@the-draupnir-project/matrix-basic-types";
+  DeadDocumentJSX,
+  MatrixRoomAliasPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Draupnir } from "../Draupnir";
+import { Ok, Result, isError } from "@gnuxie/typescript-result";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-async function resolveAliasCommand(
-  this: DraupnirContext,
-  _keywords: ParsedKeywords,
-  alias: MatrixRoomAlias
-): Promise<ActionResult<MatrixRoomID>> {
-  return await resolveRoomReferenceSafe(this.client, alias);
-}
-
-defineInterfaceCommand({
-  table: "draupnir",
-  designator: ["resolve"],
-  parameters: parameters([
-    {
-      name: "alias",
-      acceptor: findPresentationType("MatrixRoomAlias"),
-    },
-  ]),
-  command: resolveAliasCommand,
+export const DraupnirResolveAliasCommand = describeCommand({
   summary: "Resolve a room alias.",
+  parameters: tuple({
+    name: "alias",
+    acceptor: MatrixRoomAliasPresentationType,
+  }),
+  async executor(
+    { clientPlatform }: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    alias
+  ): Promise<Result<MatrixRoomID>> {
+    return await clientPlatform.toRoomResolver().resolveRoom(alias);
+  },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "resolve"),
-  renderer: async function (
-    this,
-    client,
-    commandRoomID,
-    event,
-    result: ActionResult<MatrixRoomID>
-  ) {
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirResolveAliasCommand, {
+  JSXRenderer(result) {
     if (isError(result)) {
-      await tickCrossRenderer.call(this, client, commandRoomID, event, result);
-      return;
+      return Ok(undefined);
+    } else {
+      return Ok(
+        <root>
+          <code>{result.ok.toRoomIDOrAlias()}</code> -{" "}
+          {renderRoomPill(result.ok)}
+        </root>
+      );
     }
-    await renderMatrixAndSend(
-      <root>
-        <code>{result.ok.toRoomIDOrAlias()}</code> - {renderRoomPill(result.ok)}
-      </root>,
-      commandRoomID,
-      event,
-      client
-    );
   },
 });

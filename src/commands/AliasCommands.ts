@@ -8,158 +8,76 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { ActionResult, isError, Ok } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
 import {
-  findPresentationType,
-  parameters,
-  ParsedKeywords,
-} from "./interface-manager/ParameterParsing";
-import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import { DraupnirContext } from "./CommandHandler";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import {
-  ActionError,
-  ActionResult,
-  isError,
-  Ok,
-} from "matrix-protection-suite";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import {
-  MatrixRoomAlias,
-  MatrixRoomReference,
-} from "@the-draupnir-project/matrix-basic-types";
+  describeCommand,
+  tuple,
+  MatrixRoomAliasPresentationType,
+  MatrixRoomReferencePresentationSchema,
+} from "@the-draupnir-project/interface-manager";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-// TODO: we should probably add an --admin keyword to these commands
-// since they don't actually need admin. Mjolnir had them as admin though.
-// then we'd have to call the table "alias table" or something.
-
-defineInterfaceCommand({
-  table: "synapse admin",
-  designator: ["alias", "move"],
+export const DraupnirAliasMoveCommand = describeCommand({
   summary: "Move an alias from one room to another.",
-  parameters: parameters([
+  parameters: tuple(
     {
       name: "alias",
-      acceptor: findPresentationType("MatrixRoomAlias"),
       description: "The alias that should be moved.",
+      acceptor: MatrixRoomAliasPresentationType,
     },
     {
       name: "new room",
-      acceptor: findPresentationType("MatrixRoomReference"),
       description: "The room to move the alias to.",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    movingAlias: MatrixRoomAlias,
-    room: MatrixRoomReference
-  ): Promise<ActionResult<void>> {
-    const isAdminResult =
-      await this.draupnir.synapseAdminClient?.isSynapseAdmin();
-    if (
-      isAdminResult === undefined ||
-      isError(isAdminResult) ||
-      !isAdminResult.ok
-    ) {
-      return ActionError.Result(
-        "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
-      );
+      acceptor: MatrixRoomReferencePresentationSchema,
     }
-    const newRoomID = await resolveRoomReferenceSafe(this.client, room);
+  ),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    aliasToMove,
+    newRoom
+  ): Promise<ActionResult<void>> {
+    const newRoomID = await draupnir.clientPlatform
+      .toRoomResolver()
+      .resolveRoom(newRoom);
     if (isError(newRoomID)) {
       return newRoomID;
     }
-    await this.draupnir.client.deleteRoomAlias(movingAlias.toRoomIDOrAlias());
-    await this.draupnir.client.createRoomAlias(
-      movingAlias.toRoomIDOrAlias(),
+    await draupnir.client.deleteRoomAlias(aliasToMove.toRoomIDOrAlias());
+    await draupnir.client.createRoomAlias(
+      aliasToMove.toRoomIDOrAlias(),
       newRoomID.ok.toRoomIDOrAlias()
     );
     return Ok(undefined);
   },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("synapse admin", "alias", "move"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirAliasMoveCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });
 
-defineInterfaceCommand({
-  table: "synapse admin",
-  designator: ["alias", "add"],
-  summary: "Add a new alias to a room.",
-  parameters: parameters([
-    {
-      name: "alias",
-      acceptor: findPresentationType("MatrixRoomAlias"),
-      description: "The alias that should be created.",
-    },
-    {
-      name: "target room",
-      acceptor: findPresentationType("MatrixRoomReference"),
-      description: "The room to add the alias to.",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    movingAlias: MatrixRoomAlias,
-    room: MatrixRoomReference
+export const DraupnirAliasRemoveCommand = describeCommand({
+  summary: "Remove an alias from a room.",
+  parameters: tuple({
+    name: "alias",
+    description: "The alias that should be removed.",
+    acceptor: MatrixRoomAliasPresentationType,
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    aliasToRemove
   ): Promise<ActionResult<void>> {
-    const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
-    if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
-      return ActionError.Result(
-        "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
-      );
-    }
-    const roomID = await resolveRoomReferenceSafe(this.draupnir.client, room);
-    if (isError(roomID)) {
-      return roomID;
-    }
-    await this.draupnir.client.createRoomAlias(
-      movingAlias.toRoomIDOrAlias(),
-      roomID.ok.toRoomIDOrAlias()
-    );
+    await draupnir.client.deleteRoomAlias(aliasToRemove.toRoomIDOrAlias());
     return Ok(undefined);
   },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("synapse admin", "alias", "add"),
-  renderer: tickCrossRenderer,
-});
-
-defineInterfaceCommand({
-  table: "synapse admin",
-  designator: ["alias", "remove"],
-  summary: "Removes an alias from a room.",
-  parameters: parameters([
-    {
-      name: "alias",
-      acceptor: findPresentationType("MatrixRoomAlias"),
-      description: "The alias that should be deleted.",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    alias: MatrixRoomAlias
-  ): Promise<ActionResult<void>> {
-    const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
-    if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
-      return ActionError.Result(
-        "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
-      );
-    }
-    await this.draupnir.client.deleteRoomAlias(alias.toRoomIDOrAlias());
-    return Ok(undefined);
-  },
-});
-
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("synapse admin", "alias", "remove"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirAliasRemoveCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

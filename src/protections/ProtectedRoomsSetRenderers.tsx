@@ -8,28 +8,39 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionError, ProtectionDescription } from "matrix-protection-suite";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
+import {
+  ActionError,
+  ProtectionDescription,
+  RoomMessageSender,
+  Task,
+} from "matrix-protection-suite";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
 
+// The callback that this is required for in MPS, is kinda silly and should
+// really be `void` and not `Promise<void>`. If it wanted to be `Promise<void>`,
+// then it should really be `Promise<Result<void>>`.
 export async function renderProtectionFailedToStart(
-  client: MatrixSendClient,
+  roomMessageSender: RoomMessageSender,
   managementRoomID: StringRoomID,
   error: ActionError,
   protectionName: string,
   _protectionDescription?: ProtectionDescription
 ): Promise<void> {
-  await renderMatrixAndSend(
-    <root>
-      <span>
-        A protection {protectionName} failed to start for the following reason:
-      </span>
-      <span>{error.message}</span>
-    </root>,
-    managementRoomID,
-    undefined,
-    client
+  void Task(
+    sendMatrixEventsFromDeadDocument(
+      roomMessageSender,
+      managementRoomID,
+      <root>
+        <span>
+          A protection {protectionName} failed to start for the following
+          reason:
+        </span>
+        <span>{error.message}</span>
+      </root>,
+      {}
+    ) as Promise<Result<void>>
   );
 }

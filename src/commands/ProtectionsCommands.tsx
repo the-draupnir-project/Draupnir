@@ -1,4 +1,4 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2024 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -9,16 +9,6 @@
 // </text>
 
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  KeywordsDescription,
-  ParsedKeywords,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import {
   ActionError,
   ActionResult,
   Ok,
@@ -26,48 +16,45 @@ import {
   ProtectionDescription,
   ProtectionSetting,
   ProtectionSettings,
-  RoomEvent,
   UnknownSettings,
   findProtection,
   getAllProtections,
   isError,
 } from "matrix-protection-suite";
-import { DraupnirContext } from "./CommandHandler";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
-import { DocumentNode } from "./interface-manager/DeadDocument";
-import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+  StringPresentationType,
+  TopPresentationSchema,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-defineInterfaceCommand({
-  designator: ["protections", "enable"],
-  table: "draupnir",
-  parameters: parameters(
-    [
-      {
-        name: "protection name",
-        acceptor: findPresentationType("string"),
-      },
-    ],
-    undefined,
-    new KeywordsDescription({
-      limit: {
-        name: "consequence-provider",
-        isFlag: false,
-        acceptor: findPresentationType("string"),
+export const DraupnirProtectionsEnableCommand = describeCommand({
+  summary: "Enable a named protection.",
+  parameters: tuple({
+    name: "protection name",
+    acceptor: StringPresentationType,
+  }),
+  keywords: {
+    keywordDescriptions: {
+      "consequence-provider": {
+        acceptor: StringPresentationType,
         description:
           "The name of a consequence provider to use for this protection.",
       },
-    })
-  ),
-  command: async function (
-    this: DraupnirContext,
-    keywords: ParsedKeywords,
-    protectionName: string
-  ): Promise<ActionResult<void>> {
+    },
+  },
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    protectionName
+  ): Promise<Result<void>> {
     const protectionDescription = findProtection(protectionName);
     if (protectionDescription === undefined) {
       return ActionError.Result(
@@ -75,7 +62,7 @@ defineInterfaceCommand({
       );
     }
     const capabilityProviderSet =
-      await this.draupnir.protectedRoomsSet.protections.getCapabilityProviderSet(
+      await draupnir.protectedRoomsSet.protections.getCapabilityProviderSet(
         protectionDescription
       );
     if (isError(capabilityProviderSet)) {
@@ -83,35 +70,32 @@ defineInterfaceCommand({
         `Couldn't load the capability provider set for the protection ${protectionName}`
       );
     }
-    return await this.draupnir.protectedRoomsSet.protections.addProtection(
+    return await draupnir.protectedRoomsSet.protections.addProtection(
       protectionDescription,
       capabilityProviderSet.ok,
-      this.draupnir.protectedRoomsSet,
-      this.draupnir
+      draupnir.protectedRoomsSet,
+      draupnir
     );
   },
-  summary: "Enable a named protection.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "protections", "enable"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsEnableCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });
 
-defineInterfaceCommand({
-  designator: ["protections", "disable"],
-  table: "draupnir",
-  parameters: parameters([
-    {
-      name: "protection name",
-      acceptor: findPresentationType("string"),
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    protectionName: string
-  ): Promise<ActionResult<unknown>> {
+export const DraupnirProtectionsDisableCommand = describeCommand({
+  summary: "Disable a named protection.",
+  parameters: tuple({
+    name: "protection name",
+    acceptor: StringPresentationType,
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    protectionName
+  ): Promise<Result<void>> {
     const protectionDescription = findProtection(protectionName);
     if (protectionDescription === undefined) {
       return ActionError.Result(
@@ -119,7 +103,7 @@ defineInterfaceCommand({
       );
     }
     if (
-      !this.draupnir.protectedRoomsSet.protections.isEnabledProtection(
+      !draupnir.protectedRoomsSet.protections.isEnabledProtection(
         protectionDescription
       )
     ) {
@@ -127,31 +111,29 @@ defineInterfaceCommand({
         `The protection named ${protectionDescription.name} is currently disabled`
       );
     }
-    return await this.draupnir.protectedRoomsSet.protections.removeProtection(
+    return await draupnir.protectedRoomsSet.protections.removeProtection(
       protectionDescription
     );
   },
-  summary: "Disable a protection.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "protections", "disable"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsDisableCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });
 
-const CommonProtectionSettingParameters = [
+const CommonProtectionSettingParameters = tuple(
   {
     name: "protection name",
-    acceptor: findPresentationType("string"),
+    acceptor: StringPresentationType,
     description: "The name of the protection to be modified.",
   },
   {
     name: "setting name",
-    acceptor: findPresentationType("string"),
+    acceptor: StringPresentationType,
     description:
       "The name of the setting within the protection config to modify.",
-  },
-];
+  }
+);
 
 interface SettingChangeSummary<
   Key extends string = string,
@@ -162,26 +144,25 @@ interface SettingChangeSummary<
   readonly description: ProtectionSetting<Key, TSettings>;
 }
 
-defineInterfaceCommand({
-  designator: ["protections", "config", "set"],
-  table: "draupnir",
-  parameters: parameters([
-    ...CommonProtectionSettingParameters,
-    {
-      name: "new value",
-      acceptor: findPresentationType("any"),
-      description: "The new value to give the protection setting",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    protectionName: string,
-    settingName: string,
-    value: unknown
-  ): Promise<ActionResult<SettingChangeSummary>> {
+export const DraupnirProtectionsConfigSetCommand = describeCommand({
+  summary:
+    "Set a new value for the protection setting, if the setting is a collection then this will write over the entire collection.",
+  parameters: tuple(...CommonProtectionSettingParameters, {
+    name: "new value",
+    acceptor: TopPresentationSchema,
+    description: "The new value to give the protection setting",
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    protectionName,
+    settingName,
+    value
+  ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      this.draupnir,
+      draupnir,
       protectionName,
       settingName
     );
@@ -198,36 +179,32 @@ defineInterfaceCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      this.draupnir,
+      draupnir,
       details,
       settingName,
       newSettings.ok
     );
   },
-  summary:
-    "Set a new value for the protection setting, if the setting is a collection\
-    then this will write over the entire collection.",
 });
 
-defineInterfaceCommand({
-  designator: ["protections", "config", "add"],
-  table: "draupnir",
-  parameters: parameters([
-    {
-      name: "item",
-      acceptor: findPresentationType("any"),
-      description: "An item to add to the collection setting.",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    protectionName: string,
-    settingName: string,
-    value: unknown
-  ): Promise<ActionResult<SettingChangeSummary>> {
+export const DraupnirProtectionsConfigAddCommand = describeCommand({
+  summary: "Add an item to a collection protection setting.",
+  parameters: tuple(...CommonProtectionSettingParameters, {
+    name: "item",
+    acceptor: TopPresentationSchema,
+    description: "An item to add to the collection setting.",
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    protectionName,
+    settingName,
+    value
+  ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      this.draupnir,
+      draupnir,
       protectionName,
       settingName
     );
@@ -249,34 +226,32 @@ defineInterfaceCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      this.draupnir,
+      draupnir,
       details,
       settingName,
       newSettings.ok
     );
   },
-  summary: "Add an item to a collection protection setting.",
 });
 
-defineInterfaceCommand({
-  designator: ["protections", "config", "remove"],
-  table: "draupnir",
-  parameters: parameters([
-    {
-      name: "item",
-      acceptor: findPresentationType("any"),
-      description: "An item to remove from a collection setting.",
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    protectionName: string,
-    settingName: string,
-    value: unknown
-  ): Promise<ActionResult<SettingChangeSummary>> {
+export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
+  summary: "Remove an item from a collection protection setting.",
+  parameters: tuple(...CommonProtectionSettingParameters, {
+    name: "item",
+    acceptor: TopPresentationSchema,
+    description: "An item to add to the collection setting.",
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    protectionName,
+    settingName,
+    value
+  ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      this.draupnir,
+      draupnir,
       protectionName,
       settingName
     );
@@ -298,13 +273,12 @@ defineInterfaceCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      this.draupnir,
+      draupnir,
       details,
       settingName,
       newSettings.ok
     );
   },
-  summary: "Remove an item from a collection protection setting.",
 });
 
 function renderSettingChangeSummary(
@@ -325,35 +299,18 @@ function renderSettingChangeSummary(
   );
 }
 
-async function settingChangeSummaryRenderer(
-  this: unknown,
-  client: MatrixSendClient,
-  commandRoomID: StringRoomID,
-  event: RoomEvent,
-  result: ActionResult<SettingChangeSummary>
-) {
-  await tickCrossRenderer.call(this, client, commandRoomID, event, result);
-  if (isError(result)) {
-    return;
-  } else {
-    await renderMatrixAndSend(
-      <root>{renderSettingChangeSummary(result.ok)}</root>,
-      commandRoomID,
-      event,
-      client
-    );
-  }
-}
-
-for (const designator of ["add", "set", "remove"]) {
-  defineMatrixInterfaceAdaptor({
-    interfaceCommand: findTableCommand(
-      "draupnir",
-      "protections",
-      "config",
-      designator
-    ),
-    renderer: settingChangeSummaryRenderer,
+for (const command of [
+  DraupnirProtectionsConfigAddCommand,
+  DraupnirProtectionsConfigSetCommand,
+  DraupnirProtectionsConfigRemoveCommand,
+]) {
+  DraupnirInterfaceAdaptor.describeRenderer(command, {
+    JSXRenderer(result) {
+      if (isError(result)) {
+        return Ok(undefined);
+      }
+      return Ok(<root>{renderSettingChangeSummary(result.ok)}</root>);
+    },
   });
 }
 
@@ -455,17 +412,12 @@ interface ProtectionsSummary {
   readonly protection?: Protection<ProtectionDescription>;
 }
 
-defineInterfaceCommand({
-  designator: ["protections"],
-  table: "draupnir",
-  parameters: parameters([]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    _protectionName: string
-  ): Promise<ActionResult<ProtectionsSummary[]>> {
+export const DraupnirListProtectionsCommand = describeCommand({
+  summary: "List all available protections.",
+  parameters: [],
+  async executor(draupnir: Draupnir): Promise<Result<ProtectionsSummary[]>> {
     const enabledProtections =
-      this.draupnir.protectedRoomsSet.protections.allProtections;
+      draupnir.protectedRoomsSet.protections.allProtections;
     const summaries: ProtectionsSummary[] = [];
     for (const protectionDescription of getAllProtections()) {
       const enabledProtection = enabledProtections.find(
@@ -486,28 +438,14 @@ defineInterfaceCommand({
     }
     return Ok(summaries);
   },
-  summary: "List all available protections.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "protections"),
-  renderer: async function (
-    client,
-    commandRoomID,
-    event,
-    result: ActionResult<ProtectionsSummary[]>
-  ) {
-    await tickCrossRenderer.call(this, client, commandRoomID, event, result);
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirListProtectionsCommand, {
+  JSXRenderer(result) {
     if (isError(result)) {
-      return;
-    } else {
-      await renderMatrixAndSend(
-        <root>{renderProtectionsSummary(result.ok)}</root>,
-        commandRoomID,
-        event,
-        client
-      );
+      return Ok(undefined);
     }
+    return Ok(<root>{renderProtectionsSummary(result.ok)}</root>);
   },
 });
 

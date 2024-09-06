@@ -8,70 +8,70 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionResult, Ok, isError } from "matrix-protection-suite";
-import { DraupnirContext } from "./CommandHandler";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
-  ParsedKeywords,
-  RestDescription,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { defineInterfaceCommand } from "./interface-manager/InterfaceCommand";
-import {
-  MatrixRoomID,
-  MatrixRoomReference,
-  MatrixUserID,
-} from "@the-draupnir-project/matrix-basic-types";
+  MatrixRoomReferencePresentationSchema,
+  MatrixUserIDPresentationType,
+  StringPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Ok, Result, isError } from "@gnuxie/typescript-result";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-async function setPowerLevelCommand(
-  this: DraupnirContext,
-  _keywords: ParsedKeywords,
-  user: MatrixUserID,
-  powerLevel: string,
-  ...givenRooms: MatrixRoomReference[]
-): Promise<ActionResult<void>> {
-  const parsedLevel = Number.parseInt(powerLevel, 10);
-  const resolvedGivenRooms: MatrixRoomID[] = [];
-  for (const room of givenRooms) {
-    const resolvedResult = await resolveRoomReferenceSafe(this.client, room);
-    if (isError(resolvedResult)) {
-      return resolvedResult;
-    } else {
-      resolvedGivenRooms.push(resolvedResult.ok);
-    }
-  }
-  const rooms =
-    givenRooms.length === 0
-      ? this.draupnir.protectedRoomsSet.allProtectedRooms
-      : resolvedGivenRooms;
-  for (const room of rooms) {
-    await this.draupnir.client.setUserPowerLevel(
-      user.toString(),
-      room.toRoomIDOrAlias(),
-      parsedLevel
-    );
-  }
-  return Ok(undefined);
-}
-
-defineInterfaceCommand({
-  table: "draupnir",
-  designator: ["powerlevel"],
-  parameters: parameters(
-    [
-      {
-        name: "user",
-        acceptor: findPresentationType("MatrixUserID"),
-      },
-      {
-        name: "power level",
-        acceptor: findPresentationType("string"),
-      },
-    ],
-    new RestDescription("rooms", findPresentationType("MatrixRoomReference"))
-  ),
-  command: setPowerLevelCommand,
+export const DraupnirSetPowerLevelCommand = describeCommand({
   summary:
     "Set the power level of a user across the protected rooms set, or within the provided rooms",
+  parameters: tuple(
+    {
+      name: "user",
+      acceptor: MatrixUserIDPresentationType,
+    },
+    {
+      name: "power level",
+      acceptor: StringPresentationType,
+    }
+  ),
+  rest: {
+    name: "rooms",
+    acceptor: MatrixRoomReferencePresentationSchema,
+  },
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    roomRefs,
+    user,
+    rawPowerLevel
+  ): Promise<Result<void>> {
+    const powerLevel = Number.parseInt(rawPowerLevel, 10);
+    const resolvedGivenRooms: MatrixRoomID[] = [];
+    for (const room of roomRefs) {
+      const resolvedResult = await draupnir.clientPlatform
+        .toRoomResolver()
+        .resolveRoom(room);
+      if (isError(resolvedResult)) {
+        return resolvedResult;
+      } else {
+        resolvedGivenRooms.push(resolvedResult.ok);
+      }
+    }
+    const rooms =
+      roomRefs.length === 0
+        ? draupnir.protectedRoomsSet.allProtectedRooms
+        : resolvedGivenRooms;
+    for (const room of rooms) {
+      await draupnir.client.setUserPowerLevel(
+        user.toString(),
+        room.toRoomIDOrAlias(),
+        powerLevel
+      );
+    }
+    return Ok(undefined);
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirSetPowerLevelCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

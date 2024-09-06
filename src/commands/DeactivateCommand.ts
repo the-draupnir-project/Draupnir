@@ -8,59 +8,44 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { Ok, Result, isError } from "@gnuxie/typescript-result";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  parameters,
-  ParsedKeywords,
-} from "./interface-manager/ParameterParsing";
-import { DraupnirContext } from "./CommandHandler";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import {
-  ActionError,
-  ActionResult,
-  Ok,
-  isError,
-} from "matrix-protection-suite";
-import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
+  MatrixUserIDPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { ActionError } from "matrix-protection-suite";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-defineInterfaceCommand({
-  table: "synapse admin",
-  designator: ["deactivate"],
-  summary:
-    "Deactivates the user on the homeserver, preventing use of the account.",
-  parameters: parameters([
-    {
-      name: "user",
-      acceptor: findPresentationType("MatrixUserID"),
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
-    _keywords: ParsedKeywords,
-    targetUser: MatrixUserID
-  ): Promise<ActionResult<void>> {
-    const isAdmin = await this.draupnir.synapseAdminClient?.isSynapseAdmin();
+export const SynapseAdminDeactivateCommand = describeCommand({
+  summary: "Deactivate a user on the homeserver.",
+  parameters: tuple({
+    name: "user",
+    description: "The user to deactivate",
+    acceptor: MatrixUserIDPresentationType,
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    targetUser
+  ): Promise<Result<void>> {
+    const isAdmin = await draupnir.synapseAdminClient?.isSynapseAdmin();
     if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
       return ActionError.Result(
         "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
       );
     }
-    if (this.draupnir.synapseAdminClient === undefined) {
+    if (draupnir.synapseAdminClient === undefined) {
       throw new TypeError("Shouldn't be happening at this point");
     }
-    await this.draupnir.synapseAdminClient.deactivateUser(
-      targetUser.toString()
-    );
+    await draupnir.synapseAdminClient.deactivateUser(targetUser.toString());
     return Ok(undefined);
   },
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("synapse admin", "deactivate"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(SynapseAdminDeactivateCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

@@ -2,69 +2,57 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "../../commands/interface-manager/InterfaceCommand";
-import {
-  findPresentationType,
-  parameters,
-  ParsedKeywords,
-} from "../../commands/interface-manager/ParameterParsing";
-import { AppserviceContext } from "./AppserviceCommandHandler";
+import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
 import { ActionResult } from "matrix-protection-suite";
-import { defineMatrixInterfaceAdaptor } from "../../commands/interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "../../commands/interface-manager/MatrixHelpRenderer";
-import { MatrixUserID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixUserIDPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotCommandDispatcher";
 
-defineInterfaceCommand({
-  designator: ["allow"],
-  table: "appservice bot",
-  parameters: parameters([
-    {
-      name: "user",
-      acceptor: findPresentationType("MatrixUserID"),
-      description: "The user that should be allowed to provision a bot",
-    },
-  ]),
-  command: async function (
-    this: AppserviceContext,
-    _keywords: ParsedKeywords,
-    user: MatrixUserID
-  ): Promise<ActionResult<void>> {
-    return await this.appservice.accessControl.allow(user.toString());
-  },
+export const AppserviceAllowCommand = describeCommand({
+  parameters: tuple({
+    name: "user",
+    acceptor: MatrixUserIDPresentationType,
+    description: "The user that should be allowed to provision a bot",
+  }),
   summary:
     "Allow a user to provision themselves a draupnir using the appservice.",
-});
-
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("appservice bot", "allow"),
-  renderer: tickCrossRenderer,
-});
-
-defineInterfaceCommand({
-  designator: ["remove"],
-  table: "appservice bot",
-  parameters: parameters([
-    {
-      name: "user",
-      acceptor: findPresentationType("MatrixUserID"),
-      description:
-        "The user which shall not be allowed to provision bots anymore",
-    },
-  ]),
-  command: async function (
-    this: AppserviceContext,
-    _keywords: ParsedKeywords,
-    user: MatrixUserID
+  async executor(
+    context: AppserviceAdaptorContext,
+    _info,
+    _keywords,
+    _rest,
+    user
   ): Promise<ActionResult<void>> {
-    return await this.appservice.accessControl.remove(user.toString());
+    return await context.appservice.accessControl.allow(user.toString());
   },
-  summary: "Stop a user from using any provisioned draupnir in the appservice.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("appservice bot", "remove"),
-  renderer: tickCrossRenderer,
+AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceAllowCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
+});
+
+export const AppserviceRemoveCommand = describeCommand({
+  parameters: tuple({
+    name: "user",
+    acceptor: MatrixUserIDPresentationType,
+    description:
+      "The user which shall not be allowed to provision bots anymore",
+  }),
+  summary: "Stop a user from using any provisioned draupnir in the appservice.",
+  async executor(
+    context: AppserviceAdaptorContext,
+    _info,
+    _keywords,
+    _rest,
+    user
+  ): Promise<ActionResult<void>> {
+    return await context.appservice.accessControl.remove(user.toString());
+  },
+});
+
+AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceRemoveCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });

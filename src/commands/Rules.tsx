@@ -8,75 +8,47 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DraupnirContext } from "./CommandHandler";
-import { renderMatrixAndSend } from "./interface-manager/DeadDocumentMatrix";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import { DeadDocumentJSX } from "./interface-manager/JSXFactory";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import {
-  defineMatrixInterfaceAdaptor,
-  MatrixContext,
-  MatrixInterfaceAdaptor,
-} from "./interface-manager/MatrixInterfaceAdaptor";
-import {
-  findPresentationType,
-  parameters,
-  union,
-} from "./interface-manager/ParameterParsing";
-import {
-  ActionResult,
   Ok,
   PolicyRoomWatchProfile,
   PolicyRule,
   isError,
-  RoomEvent,
 } from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
 import {
   StringRoomID,
   MatrixRoomID,
-  MatrixRoomReference,
-  MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+  MatrixRoomReferencePresentationSchema,
+  MatrixUserIDPresentationType,
+  StringPresentationType,
+  describeCommand,
+  tuple,
+  union,
+} from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
+import { Draupnir } from "../Draupnir";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-async function renderListMatches(
-  this: MatrixInterfaceAdaptor<MatrixContext>,
-  client: MatrixSendClient,
-  commandRoomID: StringRoomID,
-  event: RoomEvent,
-  result: ActionResult<ListMatches[]>
-) {
+function renderListMatches(
+  result: Result<ListMatches[]>
+): Result<DocumentNode | undefined> {
   if (isError(result)) {
-    return await tickCrossRenderer.call(
-      this,
-      client,
-      commandRoomID,
-      event,
-      result
-    );
+    return Ok(undefined);
   }
   const lists = result.ok;
   if (lists.length === 0) {
-    return await renderMatrixAndSend(
-      <root>No policy lists configured</root>,
-      commandRoomID,
-      event,
-      client
-    );
+    return Ok(<root>No policy lists configured</root>);
   }
-  return await renderMatrixAndSend(
+  return Ok(
     <root>
       <b>Rules currently in use:</b>
       <br />
       {lists.map((list) => renderListRules(list))}
-    </root>,
-    commandRoomID,
-    event,
-    client
+    </root>
   );
 }
 
@@ -114,14 +86,11 @@ export interface ListMatches {
   matches: PolicyRule[];
 }
 
-defineInterfaceCommand({
-  designator: ["rules"],
-  table: "draupnir",
-  parameters: parameters([]),
-  command: async function (
-    this: DraupnirContext
-  ): Promise<ActionResult<ListMatches[]>> {
-    const infoResult = await listInfo(this.draupnir);
+export const DraupnirListRulesCommand = describeCommand({
+  summary: "Lists the rules currently in use by Draupnir.",
+  parameters: [],
+  async executor(draupnir: Draupnir): Promise<Result<ListMatches[]>> {
+    const infoResult = await listInfo(draupnir);
     return Ok(
       infoResult.map((policyRoom) => ({
         room: policyRoom.revision.room,
@@ -131,33 +100,31 @@ defineInterfaceCommand({
       }))
     );
   },
-  summary: "Lists the rules currently in use by Mjolnir.",
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "rules"),
-  renderer: renderListMatches,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirListRulesCommand, {
+  JSXRenderer: renderListMatches,
 });
 
-defineInterfaceCommand({
-  designator: ["rules", "matching"],
-  table: "draupnir",
-  parameters: parameters([
-    {
-      name: "entity",
-      acceptor: union(
-        findPresentationType("MatrixUserID"),
-        findPresentationType("MatrixRoomReference"),
-        findPresentationType("string")
-      ),
-    },
-  ]),
-  command: async function (
-    this: DraupnirContext,
+export const DraupnirRulesMatchingCommand = describeCommand({
+  summary:
+    "Lists the rules in use that will match this entity e.g. `!rules matching @foo:example.com` will show all the user and server rules, including globs, that match this user",
+  parameters: tuple({
+    name: "entity",
+    acceptor: union(
+      MatrixUserIDPresentationType,
+      MatrixRoomReferencePresentationSchema,
+      StringPresentationType
+    ),
+  }),
+  async executor(
+    draupnir: Draupnir,
+    _info,
     _keywords,
-    entity: string | MatrixUserID | MatrixRoomReference
-  ): Promise<ActionResult<ListMatches[]>> {
-    const policyRooms = await listInfo(this.draupnir);
+    _rest,
+    entity
+  ): Promise<Result<ListMatches[]>> {
+    const policyRooms = await listInfo(draupnir);
     return Ok(
       policyRooms.map((policyRoom) => {
         return {
@@ -171,12 +138,8 @@ defineInterfaceCommand({
       })
     );
   },
-  summary:
-    "Lists the rules in use that will match this entity e.g. `!rules matching @foo:example.com` will show all the user and server rules, including globs, that match this user",
 });
 
-// I'm pretty sure that both commands could merge and use the same rendeer.
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "rules", "matching"),
-  renderer: renderListMatches,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirRulesMatchingCommand, {
+  JSXRenderer: renderListMatches,
 });

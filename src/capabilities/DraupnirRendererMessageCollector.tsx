@@ -2,36 +2,40 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   RendererMessage,
   RendererMessageCollector,
 } from "./RendererMessageCollector";
-import { DescriptionMeta, Task } from "matrix-protection-suite";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
+import {
+  DescriptionMeta,
+  RoomMessageSender,
+  Task,
+} from "matrix-protection-suite";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { Result } from "@gnuxie/typescript-result";
 
 export class DraupnirRendererMessageCollector
   implements RendererMessageCollector
 {
   constructor(
-    private readonly client: MatrixSendClient,
+    private readonly roomMessageSender: RoomMessageSender,
     private readonly managementRoomID: StringRoomID
   ) {
     // nothing to do.
   }
   private sendMessage(document: DocumentNode): void {
     void Task(
-      (async () => {
-        await renderMatrixAndSend(
-          <root>{document}</root>,
-          this.managementRoomID,
-          undefined,
-          this.client
-        );
-      })()
+      sendMatrixEventsFromDeadDocument(
+        this.roomMessageSender,
+        this.managementRoomID,
+        <root>{document}</root>,
+        {}
+      ) as Promise<Result<void>>
     );
   }
   addMessage(protection: DescriptionMeta, message: DocumentNode): void {

@@ -16,34 +16,30 @@ import {
   PropagationType,
   isError,
 } from "matrix-protection-suite";
-import { DraupnirContext } from "./CommandHandler";
-import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  ParsedKeywords,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
 import { listInfo } from "./StatusCommand";
 import { Draupnir } from "../Draupnir";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  BasicInvocationInformation,
+  ParsedKeywords,
+  StringPresentationType,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
 export async function createList(
-  this: DraupnirContext,
+  draupnir: Draupnir,
+  info: BasicInvocationInformation,
   _keywords: ParsedKeywords,
+  _rest: undefined[],
   shortcode: string,
   aliasName: string
 ): Promise<ActionResult<MatrixRoomID>> {
-  const newList = await this.draupnir.policyRoomManager.createPolicyRoom(
+  const newList = await draupnir.policyRoomManager.createPolicyRoom(
     shortcode,
     // avoids inviting ourself and setting 50 as our own powerlevel
-    [this.event.sender].filter(
-      (sender) => sender !== this.draupnir.clientUserID
-    ),
+    [info.commandSender].filter((sender) => sender !== draupnir.clientUserID),
     {
       room_alias_name: aliasName,
     }
@@ -51,46 +47,40 @@ export async function createList(
   if (isError(newList)) {
     return newList;
   }
-  const watchResult =
-    await this.draupnir.protectedRoomsSet.issuerManager.watchList(
-      PropagationType.Direct,
-      newList.ok,
-      {}
-    );
+  const watchResult = await draupnir.protectedRoomsSet.issuerManager.watchList(
+    PropagationType.Direct,
+    newList.ok,
+    {}
+  );
   if (isError(watchResult)) {
     return watchResult;
   }
   const protectResult =
-    await this.draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
-      newList.ok
-    );
+    await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(newList.ok);
   if (isError(protectResult)) {
     return protectResult;
   }
   return newList;
 }
 
-defineInterfaceCommand({
-  designator: ["list", "create"],
-  table: "draupnir",
-  parameters: parameters([
+export const DraupnirListCreateCommand = describeCommand({
+  summary:
+    "Create a new Policy Room which can be used to ban users, rooms and servers from your protected rooms",
+  parameters: tuple(
     {
       name: "shortcode",
-      acceptor: findPresentationType("string"),
+      acceptor: StringPresentationType,
     },
     {
       name: "alias name",
-      acceptor: findPresentationType("string"),
-    },
-  ]),
-  command: createList,
-  summary:
-    "Create a new Policy Room which can be used to ban users, rooms and servers from your protected rooms",
+      acceptor: StringPresentationType,
+    }
+  ),
+  executor: createList,
 });
 
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "list", "create"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirListCreateCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });
 
 export async function findPolicyRoomIDFromShortcode(

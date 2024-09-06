@@ -203,7 +203,7 @@ export async function makeProtectedRoomsSet(
     protectionsConfig.ok,
     userID,
     makeHandleMissingProtectionPermissions(
-      client,
+      clientPlatform.toRoomMessageSender(),
       managementRoom.toRoomIDOrAlias()
     )
   );

@@ -7,9 +7,7 @@
 // This modified file incorporates work from mjolnir
 // https://github.com/matrix-org/mjolnir
 // </text>
-
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
-import { renderMatrixAndSend } from "../commands/interface-manager/DeadDocumentMatrix";
+import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 import {
   renderMentionPill,
   renderRoomPill,
@@ -51,6 +49,7 @@ import {
   StringUserID,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
+import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("BanPropagationProtection");
 
@@ -91,44 +90,50 @@ async function promptBanPropagation(
       PolicyRuleType.User
     );
   const reactionMap = makePolicyRoomReactionReferenceMap(editablePolicyRoomIDs);
-  const promptEventId = (
-    await renderMatrixAndSend(
-      <root>
-        The user{" "}
-        {renderMentionPill(
-          change.userID,
-          change.content.displayname ?? change.userID
-        )}{" "}
-        was banned in{" "}
-        <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by{" "}
-        {renderMentionPill(change.sender, change.sender)} for{" "}
-        <code>{change.content.reason ?? "<no reason supplied>"}</code>.<br />
-        Would you like to add the ban to a policy list?
-        <ol>
-          {editablePolicyRoomIDs.map((room) => (
-            <li>
-              <a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a>
-            </li>
-          ))}
-        </ol>
-      </root>,
-      draupnir.managementRoomID,
-      undefined,
-      draupnir.client,
-      draupnir.reactionHandler.createAnnotation(
+  const promptSendResult = await sendMatrixEventsFromDeadDocument(
+    draupnir.clientPlatform.toRoomMessageSender(),
+    draupnir.managementRoomID,
+    <root>
+      The user{" "}
+      {renderMentionPill(
+        change.userID,
+        change.content.displayname ?? change.userID
+      )}{" "}
+      was banned in{" "}
+      <a href={`https://matrix.to/#/${change.roomID}`}>{change.roomID}</a> by{" "}
+      {renderMentionPill(change.sender, change.sender)} for{" "}
+      <code>{change.content.reason ?? "<no reason supplied>"}</code>.<br />
+      Would you like to add the ban to a policy list?
+      <ol>
+        {editablePolicyRoomIDs.map((room) => (
+          <li>
+            <a href={room.toPermalink()}>{room.toRoomIDOrAlias()}</a>
+          </li>
+        ))}
+      </ol>
+    </root>,
+    {
+      additionalContent: draupnir.reactionHandler.createAnnotation(
         BAN_PROPAGATION_PROMPT_LISTENER,
         reactionMap,
         {
           target: change.userID,
           reason: change.content.reason,
         }
-      )
-    )
-  ).at(0) as string;
+      ),
+    }
+  );
+  if (isError(promptSendResult)) {
+    log.error(
+      `Could not send the prompt to the management room for the ban in ${change.roomID} for the user ${change.userID}`,
+      promptSendResult.error
+    );
+    return;
+  }
   await draupnir.reactionHandler.addReactionsToEvent(
     draupnir.client,
     draupnir.managementRoomID,
-    promptEventId,
+    promptSendResult.ok[0] as string,
     reactionMap
   );
 }
@@ -142,46 +147,51 @@ async function promptUnbanPropagation(
   const reactionMap = new Map<string, string>(
     Object.entries({ "unban from all": "unban from all" })
   );
-  // shouldn't we warn them that the unban will be futile?
-  const promptEventId = (
-    await renderMatrixAndSend(
-      <root>
-        The user{" "}
-        {renderMentionPill(
-          membershipChange.userID,
-          membershipChange.content.displayname ?? membershipChange.userID
-        )}{" "}
-        was unbanned from the room{" "}
-        {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by{" "}
-        {membershipChange.sender} for{" "}
-        <code>{membershipChange.content.reason ?? "<no reason supplied>"}</code>
-        .<br />
-        However there are rules in Draupnir's watched lists matching this user:
-        <ul>
-          {rulesMatchingUser.map((match) => (
-            <li>{renderListRules(match)}</li>
-          ))}
-        </ul>
-        Would you like to remove these rules and unban the user from all
-        protected rooms?
-      </root>,
-      draupnir.managementRoomID,
-      undefined,
-      draupnir.client,
-      draupnir.reactionHandler.createAnnotation(
+  const promptSendResult = await sendMatrixEventsFromDeadDocument(
+    draupnir.clientPlatform.toRoomMessageSender(),
+    draupnir.managementRoomID,
+    <root>
+      The user{" "}
+      {renderMentionPill(
+        membershipChange.userID,
+        membershipChange.content.displayname ?? membershipChange.userID
+      )}{" "}
+      was unbanned from the room{" "}
+      {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by{" "}
+      {membershipChange.sender} for{" "}
+      <code>{membershipChange.content.reason ?? "<no reason supplied>"}</code>
+      .<br />
+      However there are rules in Draupnir's watched lists matching this user:
+      <ul>
+        {rulesMatchingUser.map((match) => (
+          <li>{renderListRules(match)}</li>
+        ))}
+      </ul>
+      Would you like to remove these rules and unban the user from all protected
+      rooms?
+    </root>,
+    {
+      additionalContent: draupnir.reactionHandler.createAnnotation(
         UNBAN_PROPAGATION_PROMPT_LISTENER,
         reactionMap,
         {
           target: membershipChange.userID,
           reason: membershipChange.content.reason,
         }
-      )
-    )
-  ).at(0) as string;
+      ),
+    }
+  );
+  if (isError(promptSendResult)) {
+    log.error(
+      `Could not send the prompt to the management room for the unban in ${roomID} for the user ${membershipChange.userID}`,
+      promptSendResult.error
+    );
+    return;
+  }
   await draupnir.reactionHandler.addReactionsToEvent(
     draupnir.client,
     draupnir.managementRoomID,
-    promptEventId,
+    promptSendResult.ok[0] as string,
     reactionMap
   );
 }
@@ -453,7 +463,7 @@ export class BanPropagationProtection
       if (errors.length > 0) {
         void Task(
           printActionResult(
-            this.draupnir.client,
+            this.draupnir.clientPlatform.toRoomMessageSender(),
             this.draupnir.managementRoomID,
             errors,
             {

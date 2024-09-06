@@ -17,8 +17,6 @@ import {
   RoomSetResult,
   isOk,
 } from "matrix-protection-suite";
-import { DocumentNode } from "../commands/interface-manager/DeadDocument";
-import { DeadDocumentJSX } from "../commands/interface-manager/JSXFactory";
 import {
   renderMentionPill,
   renderRoomPill,
@@ -28,6 +26,10 @@ import {
   MatrixRoomReference,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
 
 export function renderElaborationTrail(error: ActionError): DocumentNode {
   return (

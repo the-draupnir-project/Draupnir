@@ -2,56 +2,42 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
+import { Ok, Result } from "@gnuxie/typescript-result";
 import {
-  defineInterfaceCommand,
-  findTableCommand,
-} from "./interface-manager/InterfaceCommand";
-import {
-  ParsedKeywords,
-  RestDescription,
-  findPresentationType,
-  parameters,
-} from "./interface-manager/ParameterParsing";
-import { DraupnirContext } from "./CommandHandler";
-import { tickCrossRenderer } from "./interface-manager/MatrixHelpRenderer";
-import { defineMatrixInterfaceAdaptor } from "./interface-manager/MatrixInterfaceAdaptor";
-import { ActionError, ActionResult, Ok } from "matrix-protection-suite";
+  StringPresentationType,
+  describeCommand,
+} from "@the-draupnir-project/interface-manager";
+import { Draupnir } from "../Draupnir";
+import { ActionError } from "matrix-protection-suite";
+import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
-defineInterfaceCommand({
-  table: "draupnir",
-  designator: ["displayname"],
+export const DraupnirDisplaynameCommand = describeCommand({
   summary:
     "Sets the displayname of the draupnir instance to the specified value in all rooms.",
-  parameters: parameters(
-    [],
-    new RestDescription<DraupnirContext>(
-      "displayname",
-      findPresentationType("string")
-    )
-  ),
-  command: execSetDisplayNameCommand,
+  parameters: [],
+  rest: {
+    name: "displayname",
+    acceptor: StringPresentationType,
+  },
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    displaynameParts
+  ): Promise<Result<void>> {
+    const displayname = displaynameParts.join(" ");
+    try {
+      await draupnir.client.setDisplayName(displayname);
+    } catch (e) {
+      const message = e.message || (e.body ? e.body.error : "<no message>");
+      return ActionError.Result(
+        `Failed to set displayname to ${displayname}: ${message}`
+      );
+    }
+    return Ok(undefined);
+  },
 });
 
-// !draupnir displayname <displayname>
-export async function execSetDisplayNameCommand(
-  this: DraupnirContext,
-  _keywords: ParsedKeywords,
-  ...displaynameParts: string[]
-): Promise<ActionResult<void>> {
-  const displayname = displaynameParts.join(" ");
-  try {
-    await this.client.setDisplayName(displayname);
-  } catch (e) {
-    const message = e.message || (e.body ? e.body.error : "<no message>");
-    return ActionError.Result(
-      `Failed to set displayname to ${displayname}: ${message}`
-    );
-  }
-
-  return Ok(undefined);
-}
-
-defineMatrixInterfaceAdaptor({
-  interfaceCommand: findTableCommand("draupnir", "displayname"),
-  renderer: tickCrossRenderer,
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirDisplaynameCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
 });
