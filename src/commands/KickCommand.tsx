@@ -9,7 +9,14 @@
 // </text>
 
 import { MatrixGlob } from "matrix-bot-sdk";
-import { ActionError, Ok, isError } from "matrix-protection-suite";
+import {
+  ActionError,
+  Ok,
+  RoomKicker,
+  RoomResolver,
+  SetMembership,
+  isError,
+} from "matrix-protection-suite";
 import {
   StringUserID,
   StringRoomID,
@@ -25,8 +32,11 @@ import {
   tuple,
 } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
-import { Draupnir } from "../Draupnir";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
+import { ThrottlingQueue } from "../queues/ThrottlingQueue";
 
 type UsersToKick = Map<StringUserID, StringRoomID[]>;
 
@@ -65,6 +75,14 @@ function renderUsersToKick(usersToKick: UsersToKick): DocumentNode {
   );
 }
 
+export type DraupnirKickCommandContext = {
+  roomKicker: RoomKicker;
+  roomResolver: RoomResolver;
+  setMembership: SetMembership;
+  taskQueue: ThrottlingQueue;
+  noop: boolean;
+};
+
 export const DraupnirKickCommand = describeCommand({
   summary:
     "Kicks a user or all of those matching a glob in a particular room or all protected rooms. `--glob` must be provided to use globs. Can be scoped to a specific room with `--room`. Can be dry run with `--dry-run`.",
@@ -96,7 +114,13 @@ export const DraupnirKickCommand = describeCommand({
     acceptor: StringPresentationType,
   },
   async executor(
-    draupnir: Draupnir,
+    {
+      roomKicker,
+      roomResolver,
+      setMembership,
+      taskQueue,
+      noop,
+    }: DraupnirKickCommandContext,
     _info,
     keywords,
     reasonParts,
@@ -105,8 +129,7 @@ export const DraupnirKickCommand = describeCommand({
     const restrictToRoomReference =
       keywords.getKeywordValue<MatrixRoomReference>("room", undefined);
     const isDryRun =
-      draupnir.config.noop ||
-      keywords.getKeywordValue<boolean>("dry-run", false);
+      noop || keywords.getKeywordValue<boolean>("dry-run", false);
     const allowGlob = keywords.getKeywordValue<boolean>("glob", false);
     const isGlob =
       user.toString().includes("*") || user.toString().includes("?");
@@ -116,9 +139,7 @@ export const DraupnirKickCommand = describeCommand({
       );
     }
     const restrictToRoom = restrictToRoomReference
-      ? await draupnir.clientPlatform
-          .toRoomResolver()
-          .resolveRoom(restrictToRoomReference)
+      ? await roomResolver.resolveRoom(restrictToRoomReference)
       : undefined;
     if (restrictToRoom !== undefined && isError(restrictToRoom)) {
       return restrictToRoom;
@@ -126,13 +147,11 @@ export const DraupnirKickCommand = describeCommand({
     const restrictToRoomRevision =
       restrictToRoom === undefined
         ? undefined
-        : draupnir.protectedRoomsSet.setMembership.getRevision(
-            restrictToRoom.ok.toRoomIDOrAlias()
-          );
+        : setMembership.getRevision(restrictToRoom.ok.toRoomIDOrAlias());
     const roomsToKickWithin =
       restrictToRoomRevision !== undefined
         ? [restrictToRoomRevision]
-        : draupnir.protectedRoomsSet.setMembership.allRooms;
+        : setMembership.allRooms;
     const reason = reasonParts.join(" ");
     const kickRule = new MatrixGlob(user.toString());
     const usersToKick: UsersToKick = new Map();
@@ -146,10 +165,10 @@ export const DraupnirKickCommand = describeCommand({
           );
         }
         if (!isDryRun) {
-          void draupnir.taskQueue.push(async () => {
-            return draupnir.client.kickUser(
-              member.userID,
+          void taskQueue.push(async () => {
+            return roomKicker.kickUser(
               revision.room.toRoomIDOrAlias(),
+              member.userID,
               reason
             );
           });
@@ -159,6 +178,19 @@ export const DraupnirKickCommand = describeCommand({
     return Ok(usersToKick);
   },
 });
+
+DraupnirContextToCommandContextTranslator.registerTranslation(
+  DraupnirKickCommand,
+  function (draupnir) {
+    return {
+      roomKicker: draupnir.clientPlatform.toRoomKicker(),
+      roomResolver: draupnir.clientPlatform.toRoomResolver(),
+      setMembership: draupnir.protectedRoomsSet.setMembership,
+      taskQueue: draupnir.taskQueue,
+      noop: draupnir.config.noop,
+    };
+  }
+);
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirKickCommand, {
   JSXRenderer(result) {
