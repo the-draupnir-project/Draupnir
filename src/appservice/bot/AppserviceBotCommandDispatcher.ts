@@ -19,17 +19,11 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import {
   MPSCommandDispatcherCallbacks,
+  MPSMatrixInterfaceAdaptorCallbacks,
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
-  matrixEventsFromDeadDocument,
-  rendererFailedCB,
 } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
-import {
-  promptDefault,
-  promptSuggestions,
-} from "../../commands/interface-manager/MatrixPromptForAccept";
-import { matrixCommandRenderer } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { AppserviceBotHelpCommand } from "./AppserviceBotHelp";
@@ -43,11 +37,8 @@ export const AppserviceBotInterfaceAdaptor = new StandardMatrixInterfaceAdaptor<
 >(
   AppserviceAdaptorContextToCommandContextTranslator,
   invocationInformationFromMatrixEventcontext,
-  promptDefault,
-  promptSuggestions,
-  matrixCommandRenderer,
-  matrixEventsFromDeadDocument,
-  rendererFailedCB
+  MPSMatrixInterfaceAdaptorCallbacks,
+  MPSCommandDispatcherCallbacks
 );
 
 function makePrefixExtractor(

@@ -30,6 +30,7 @@ import {
   CommandDispatcherCallbacks,
   DocumentNode,
   InvocationInformationFromEventContext,
+  MatrixInterfaceAdaptorCallbacks,
   MatrixInterfaceEventsFromDeadDocument,
   MatrixInterfaceRendererFailedCB,
   StandardAdaptorContextToCommandContextTranslator,
@@ -175,7 +176,7 @@ export const MPSCommandDispatcherCallbacks = {
     return new ActionException(
       ActionExceptionKind.Unknown,
       error,
-      "An unexpected error occurred while processing the command."
+      error.message
     );
   },
 } satisfies CommandDispatcherCallbacks<BasicInvocationInformation>;
@@ -189,6 +190,17 @@ export const rendererFailedCB: MatrixInterfaceRendererFailedCB<
     rendererError
   );
 };
+
+export const MPSMatrixInterfaceAdaptorCallbacks = Object.freeze({
+  promptDefault,
+  promptSuggestions,
+  defaultRenderer: matrixCommandRenderer,
+  matrixEventsFromDeadDocument,
+  rendererFailedCB,
+}) satisfies MatrixInterfaceAdaptorCallbacks<
+  MatrixAdaptorContext,
+  MatrixEventContext
+>;
 
 export const invocationInformationFromMatrixEventcontext: InvocationInformationFromEventContext<MatrixEventContext> =
   function (eventContext) {
@@ -207,9 +219,6 @@ export const MPSMatrixInterfaceAdaptor = new StandardMatrixInterfaceAdaptor<
 >(
   MPSContextToCommandContextTranslator,
   invocationInformationFromMatrixEventcontext,
-  promptDefault,
-  promptSuggestions,
-  matrixCommandRenderer,
-  matrixEventsFromDeadDocument,
-  rendererFailedCB
+  MPSMatrixInterfaceAdaptorCallbacks,
+  MPSCommandDispatcherCallbacks
 );
