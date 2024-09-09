@@ -163,6 +163,7 @@ export class BasicFloodingProtection
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
+    this.eventConsequences = capabilities.eventConsequences;
   }
 
   public async handleTimelineEvent(

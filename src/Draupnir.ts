@@ -130,6 +130,10 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       this.client,
       this.config
     );
+    this.taskQueue = new ThrottlingQueue(
+      this.managementRoomOutput,
+      config.backgroundDelayMS
+    );
     this.reactionHandler = new MatrixReactionHandler(
       this.managementRoom.toRoomIDOrAlias(),
       client,
