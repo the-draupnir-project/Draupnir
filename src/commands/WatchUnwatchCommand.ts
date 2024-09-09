@@ -8,7 +8,12 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { PropagationType, isError } from "matrix-protection-suite";
+import {
+  PolicyListConfig,
+  PropagationType,
+  RoomResolver,
+  isError,
+} from "matrix-protection-suite";
 import {
   MatrixRoomReferencePresentationSchema,
   describeCommand,
@@ -16,7 +21,15 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
+
+export type DraupnirWatchUnwatchCommandContext = {
+  issuerManager: PolicyListConfig;
+  roomResolver: RoomResolver;
+};
 
 export const DraupnirWatchPolicyRoomCommand = describeCommand({
   summary:
@@ -26,19 +39,17 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
   async executor(
-    draupnir: Draupnir,
+    { issuerManager, roomResolver }: DraupnirWatchUnwatchCommandContext,
     _info,
     _keywords,
     _rest,
     policyRoomReference
   ): Promise<Result<void>> {
-    const policyRoom = await draupnir.clientPlatform
-      .toRoomResolver()
-      .resolveRoom(policyRoomReference);
+    const policyRoom = await roomResolver.resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    return await draupnir.protectedRoomsSet.issuerManager.watchList(
+    return await issuerManager.watchList(
       PropagationType.Direct,
       policyRoom.ok,
       {}
@@ -54,19 +65,17 @@ export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
   async executor(
-    draupnir: Draupnir,
+    { issuerManager, roomResolver }: DraupnirWatchUnwatchCommandContext,
     _info,
     _keywords,
     _rest,
     policyRoomReference
   ): Promise<Result<void>> {
-    const policyRoom = await draupnir.clientPlatform
-      .toRoomResolver()
-      .resolveRoom(policyRoomReference);
+    const policyRoom = await roomResolver.resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    return await draupnir.protectedRoomsSet.issuerManager.unwatchList(
+    return await issuerManager.unwatchList(
       PropagationType.Direct,
       policyRoom.ok
     );
@@ -80,4 +89,11 @@ for (const command of [
   DraupnirInterfaceAdaptor.describeRenderer(command, {
     isAlwaysSupposedToUseDefaultRenderer: true,
   });
+  DraupnirContextToCommandContextTranslator.registerTranslation(
+    command,
+    (draupnir: Draupnir) => ({
+      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      roomResolver: draupnir.clientPlatform.toRoomResolver(),
+    })
+  );
 }

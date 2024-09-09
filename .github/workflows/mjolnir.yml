@@ -29,6 +29,17 @@ jobs:
       - run: corepack yarn install
       - run: corepack yarn build
       - run: corepack yarn lint
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Specifically use node 18 like in the readme.
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: corepack yarn install
+      - run: corepack yarn test:unit
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
