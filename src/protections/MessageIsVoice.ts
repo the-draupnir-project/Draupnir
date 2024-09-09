@@ -12,7 +12,6 @@ import { LogLevel } from "matrix-bot-sdk";
 import {
   AbstractProtection,
   ActionResult,
-  CapabilitySet,
   EventConsequences,
   Ok,
   ProtectedRoomsSet,
@@ -80,11 +79,12 @@ export class MessageIsVoiceProtection
   private readonly eventConsequences: EventConsequences;
   constructor(
     description: MessageIsVoiceDescription,
-    capabilities: CapabilitySet,
+    capabilities: MessageIsVoiceCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
     super(description, capabilities, protectedRoomsSet, {});
+    this.eventConsequences = capabilities.eventConsequences;
   }
 
   public async handleTimelineEvent(

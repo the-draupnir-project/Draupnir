@@ -28,12 +28,6 @@ export class ThrottlingQueue {
   private timeout: ReturnType<typeof setTimeout> | null;
 
   /**
-   * How long we should wait between the completion of a tasks and the start of the next task.
-   * Any >=0 number is good.
-   */
-  private _delayMS: number;
-
-  /**
    * Construct an empty queue.
    *
    * This queue will start executing whenever `push()` is called and stop
@@ -43,7 +37,11 @@ export class ThrottlingQueue {
    */
   constructor(
     private managementRoomOutput: ManagementRoomOutput,
-    delayMS: number
+    /**
+     * How long we should wait between the completion of a tasks and the start of the next task.
+     * Any >=0 number is good.
+     */
+    private delayMS: number
   ) {
     this.timeout = null;
     this.delayMS = delayMS;
@@ -125,7 +123,7 @@ export class ThrottlingQueue {
     }
     this.timeout = setTimeout(() => {
       void this.step();
-    }, this._delayMS);
+    }, this.delayMS);
   }
 
   /**
@@ -148,20 +146,13 @@ export class ThrottlingQueue {
    *
    * This will be used next time a task is completed.
    */
-  set delayMS(delayMS: number) {
+  public setDelayMS(delayMS: number) {
     if (delayMS < 0) {
       throw new TypeError(
         `Invalid delay ${delayMS}. Need a non-negative number of ms.`
       );
     }
-    this._delayMS = delayMS;
-  }
-
-  /**
-   * Return the delay between completion of an event and the start of the next event.
-   */
-  get delayMS(): number {
-    return this._delayMS;
+    this.delayMS = delayMS;
   }
 
   /**

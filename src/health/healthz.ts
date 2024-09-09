@@ -16,7 +16,9 @@ import { IConfig } from "../config";
 export class Healthz {
   private healthCode: number;
 
-  constructor(private config: IConfig) {}
+  constructor(private config: IConfig) {
+    this.healthCode = this.config.health.healthz.unhealthyStatus;
+  }
 
   public set isHealthy(val: boolean) {
     this.healthCode = val
