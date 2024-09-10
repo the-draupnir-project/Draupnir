@@ -8,14 +8,23 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Draupnir } from "../Draupnir";
-import { isError, Ok, PolicyRuleType } from "matrix-protection-suite";
+import {
+  isError,
+  Ok,
+  PolicyListConfig,
+  PolicyRoomManager,
+  PolicyRuleType,
+  RoomResolver,
+  RoomUnbanner,
+  SetMembership,
+} from "matrix-protection-suite";
 import { LogLevel } from "matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
   isStringUserID,
   MatrixGlob,
   MatrixUserID,
+  StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   describeCommand,
@@ -27,33 +36,47 @@ import {
   union,
 } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
+import ManagementRoomOutput from "../ManagementRoomOutput";
+import { DraupnirBanCommandContext } from "./Ban";
+import { UnlistedUserRedactionQueue } from "../queues/UnlistedUserRedactionQueue";
 
-async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
-  await draupnir.managementRoomOutput.logMessage(
+async function unbanUserFromRooms(
+  {
+    managementRoomOutput,
+    setMembership,
+    roomUnbanner,
+    noop,
+  }: DraupnirUnbanCommandContext,
+  rule: MatrixGlob
+) {
+  await managementRoomOutput.logMessage(
     LogLevel.INFO,
     "Unban",
     `Unbanning users that match glob: ${rule.regex}`
   );
-  for (const revision of draupnir.protectedRoomsSet.setMembership.allRooms) {
+  for (const revision of setMembership.allRooms) {
     for (const member of revision.members()) {
       if (member.membership !== "ban") {
         continue;
       }
       if (rule.test(member.userID)) {
-        await draupnir.managementRoomOutput.logMessage(
+        await managementRoomOutput.logMessage(
           LogLevel.DEBUG,
           "Unban",
           `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`,
           revision.room.toRoomIDOrAlias()
         );
-        if (!draupnir.config.noop) {
-          await draupnir.client.unbanUser(
-            member.userID,
-            revision.room.toRoomIDOrAlias()
+        if (!noop) {
+          await roomUnbanner.unbanUser(
+            revision.room.toRoomIDOrAlias(),
+            member.userID
           );
         } else {
-          await draupnir.managementRoomOutput.logMessage(
+          await managementRoomOutput.logMessage(
             LogLevel.WARN,
             "Unban",
             `Attempted to unban ${member.userID} in ${revision.room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`,
@@ -64,6 +87,18 @@ async function unbanUserFromRooms(draupnir: Draupnir, rule: MatrixGlob) {
     }
   }
 }
+
+export type DraupnirUnbanCommandContext = {
+  policyRoomManager: PolicyRoomManager;
+  issuerManager: PolicyListConfig;
+  roomResolver: RoomResolver;
+  clientUserID: StringUserID;
+  setMembership: SetMembership;
+  managementRoomOutput: ManagementRoomOutput;
+  noop: boolean;
+  roomUnbanner: RoomUnbanner;
+  unlistedUserRedactionQueue: UnlistedUserRedactionQueue;
+};
 
 export const DraupnirUnbanCommand = describeCommand({
   summary:
@@ -85,13 +120,13 @@ export const DraupnirUnbanCommand = describeCommand({
         MatrixRoomReferencePresentationSchema,
         StringPresentationType
       ),
-      prompt: async function (draupnir: Draupnir) {
+      prompt: async function ({
+        policyRoomManager,
+        clientUserID,
+      }: DraupnirBanCommandContext) {
         return Ok({
-          suggestions: draupnir.policyRoomManager
-            .getEditablePolicyRoomIDs(
-              draupnir.clientUserID,
-              PolicyRuleType.User
-            )
+          suggestions: policyRoomManager
+            .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
             .map((room) => MatrixRoomIDPresentationType.wrap(room)),
         });
       },
@@ -105,17 +140,29 @@ export const DraupnirUnbanCommand = describeCommand({
     },
   },
   async executor(
-    draupnir: Draupnir,
+    context: DraupnirUnbanCommandContext,
     _info,
     keywords,
     _rest,
     entity,
     policyRoomDesignator
   ): Promise<Result<void>> {
-    const roomResolver = draupnir.clientPlatform.toRoomResolver();
+    const {
+      roomResolver,
+      policyRoomManager,
+      issuerManager,
+      clientUserID,
+      unlistedUserRedactionQueue,
+      managementRoomOutput,
+    } = context;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
-        ? await findPolicyRoomIDFromShortcode(draupnir, policyRoomDesignator)
+        ? await findPolicyRoomIDFromShortcode(
+            issuerManager,
+            policyRoomManager,
+            clientUserID,
+            policyRoomDesignator
+          )
         : Ok(policyRoomDesignator);
     if (isError(policyRoomReference)) {
       return policyRoomReference;
@@ -124,8 +171,9 @@ export const DraupnirUnbanCommand = describeCommand({
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    const policyRoomEditor =
-      await draupnir.policyRoomManager.getPolicyRoomEditor(policyRoom.ok);
+    const policyRoomEditor = await policyRoomManager.getPolicyRoomEditor(
+      policyRoom.ok
+    );
     if (isError(policyRoomEditor)) {
       return policyRoomEditor;
     }
@@ -156,15 +204,15 @@ export const DraupnirUnbanCommand = describeCommand({
         string.includes("*") ? true : string.includes("?");
       const rule = new MatrixGlob(entity.toString());
       if (isStringUserID(rawEnttiy)) {
-        draupnir.unlistedUserRedactionQueue.removeUser(rawEnttiy);
+        unlistedUserRedactionQueue.removeUser(rawEnttiy);
       }
       if (
         !isGlob(rawEnttiy) ||
         keywords.getKeywordValue<boolean>("true", false)
       ) {
-        await unbanUserFromRooms(draupnir, rule);
+        await unbanUserFromRooms(context, rule);
       } else {
-        await draupnir.managementRoomOutput.logMessage(
+        await managementRoomOutput.logMessage(
           LogLevel.WARN,
           "Unban",
           "Running unban without `unban <list> <user> true` will not override existing room level bans"
@@ -174,6 +222,23 @@ export const DraupnirUnbanCommand = describeCommand({
     return Ok(undefined);
   },
 });
+
+DraupnirContextToCommandContextTranslator.registerTranslation(
+  DraupnirUnbanCommand,
+  function (draupnir) {
+    return {
+      policyRoomManager: draupnir.policyRoomManager,
+      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      roomResolver: draupnir.clientPlatform.toRoomResolver(),
+      clientUserID: draupnir.clientUserID,
+      setMembership: draupnir.protectedRoomsSet.setMembership,
+      managementRoomOutput: draupnir.managementRoomOutput,
+      noop: draupnir.config.noop,
+      roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
+      unlistedUserRedactionQueue: draupnir.unlistedUserRedactionQueue,
+    };
+  }
+);
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirUnbanCommand, {
   isAlwaysSupposedToUseDefaultRenderer: true,

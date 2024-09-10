@@ -90,7 +90,10 @@ export const DraupnirListRulesCommand = describeCommand({
   summary: "Lists the rules currently in use by Draupnir.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<Result<ListMatches[]>> {
-    const infoResult = await listInfo(draupnir);
+    const infoResult = await listInfo(
+      draupnir.protectedRoomsSet.issuerManager,
+      draupnir.policyRoomManager
+    );
     return Ok(
       infoResult.map((policyRoom) => ({
         room: policyRoom.revision.room,
@@ -124,7 +127,10 @@ export const DraupnirRulesMatchingCommand = describeCommand({
     _rest,
     entity
   ): Promise<Result<ListMatches[]>> {
-    const policyRooms = await listInfo(draupnir);
+    const policyRooms = await listInfo(
+      draupnir.protectedRoomsSet.issuerManager,
+      draupnir.policyRoomManager
+    );
     return Ok(
       policyRooms.map((policyRoom) => {
         return {

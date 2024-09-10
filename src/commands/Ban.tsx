@@ -8,19 +8,21 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Draupnir } from "../Draupnir";
 import {
   ActionResult,
   PolicyRoomEditor,
   PolicyRuleType,
   isError,
   Ok,
+  PolicyRoomManager,
+  RoomResolver,
+  PolicyListConfig,
 } from "matrix-protection-suite";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
   MatrixRoomReference,
   MatrixUserID,
+  StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   BasicInvocationInformation,
@@ -32,21 +34,30 @@ import {
   tuple,
   union,
 } from "@the-draupnir-project/interface-manager";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
 
 export async function findPolicyRoomEditorFromRoomReference(
-  draupnir: Draupnir,
+  roomResolver: RoomResolver,
+  policyRoomManager: PolicyRoomManager,
   policyRoomReference: MatrixRoomReference
 ): Promise<ActionResult<PolicyRoomEditor>> {
-  const policyRoomID = await resolveRoomReferenceSafe(
-    draupnir.client,
-    policyRoomReference
-  );
+  const policyRoomID = await roomResolver.resolveRoom(policyRoomReference);
   if (isError(policyRoomID)) {
     return policyRoomID;
   }
-  return await draupnir.policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
+  return await policyRoomManager.getPolicyRoomEditor(policyRoomID.ok);
 }
+
+export type DraupnirBanCommandContext = {
+  policyRoomManager: PolicyRoomManager;
+  issuerManager: PolicyListConfig;
+  defaultReasons: string[];
+  roomResolver: RoomResolver;
+  clientUserID: StringUserID;
+};
 
 export const DraupnirBanCommand = describeCommand({
   summary: "Bans an entity from the policy list.",
@@ -67,13 +78,13 @@ export const DraupnirBanCommand = describeCommand({
         MatrixRoomReferencePresentationSchema,
         StringPresentationType
       ),
-      prompt: async function (draupnir: Draupnir) {
+      prompt: async function ({
+        policyRoomManager,
+        clientUserID,
+      }: DraupnirBanCommandContext) {
         return Ok({
-          suggestions: draupnir.policyRoomManager
-            .getEditablePolicyRoomIDs(
-              draupnir.clientUserID,
-              PolicyRuleType.User
-            )
+          suggestions: policyRoomManager
+            .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
             .map((room) => MatrixRoomIDPresentationType.wrap(room)),
         });
       },
@@ -83,16 +94,21 @@ export const DraupnirBanCommand = describeCommand({
     name: "reason",
     description: "The reason for the ban.",
     acceptor: StringPresentationType,
-    prompt: async function (draupnir: Draupnir) {
+    prompt: async function ({ defaultReasons }: DraupnirBanCommandContext) {
       return Ok({
-        suggestions: draupnir.config.commands.ban.defaultReasons.map(
-          (reason) => [StringPresentationType.wrap(reason)]
-        ),
+        suggestions: defaultReasons.map((reason) => [
+          StringPresentationType.wrap(reason),
+        ]),
       });
     },
   },
   async executor(
-    draupnir: Draupnir,
+    {
+      issuerManager,
+      policyRoomManager,
+      roomResolver,
+      clientUserID,
+    }: DraupnirBanCommandContext,
     _info: BasicInvocationInformation,
     _keywords,
     reasonParts,
@@ -101,13 +117,19 @@ export const DraupnirBanCommand = describeCommand({
   ): Promise<ActionResult<string>> {
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
-        ? await findPolicyRoomIDFromShortcode(draupnir, policyRoomDesignator)
+        ? await findPolicyRoomIDFromShortcode(
+            issuerManager,
+            policyRoomManager,
+            clientUserID,
+            policyRoomDesignator
+          )
         : Ok(policyRoomDesignator);
     if (isError(policyRoomReference)) {
       return policyRoomReference;
     }
     const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
-      draupnir,
+      roomResolver,
+      policyRoomManager,
       policyRoomReference.ok
     );
     if (isError(policyListEditorResult)) {
@@ -128,10 +150,7 @@ export const DraupnirBanCommand = describeCommand({
         reason
       );
     } else {
-      const resolvedRoomReference = await resolveRoomReferenceSafe(
-        draupnir.client,
-        entity
-      );
+      const resolvedRoomReference = await roomResolver.resolveRoom(entity);
       if (isError(resolvedRoomReference)) {
         return resolvedRoomReference;
       }
@@ -143,6 +162,19 @@ export const DraupnirBanCommand = describeCommand({
     }
   },
 });
+
+DraupnirContextToCommandContextTranslator.registerTranslation(
+  DraupnirBanCommand,
+  function (draupnir) {
+    return {
+      policyRoomManager: draupnir.policyRoomManager,
+      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      defaultReasons: draupnir.config.commands.ban.defaultReasons,
+      roomResolver: draupnir.clientPlatform.toRoomResolver(),
+      clientUserID: draupnir.clientUserID,
+    };
+  }
+);
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirBanCommand, {
   isAlwaysSupposedToUseDefaultRenderer: true,
