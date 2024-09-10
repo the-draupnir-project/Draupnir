@@ -56,7 +56,7 @@
     "@sentry/node": "^7.17.2",
     "@sentry/tracing": "^7.17.2",
     "@sinclair/typebox": "0.32.34",
-    "@the-draupnir-project/interface-manager": "2.0.0",
+    "@the-draupnir-project/interface-manager": "2.1.0",
     "@the-draupnir-project/matrix-basic-types": "^0.1.1",
     "await-lock": "^2.2.2",
     "better-sqlite3": "^9.4.3",
