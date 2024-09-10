@@ -96,9 +96,9 @@ export const DraupnirBanCommand = describeCommand({
     acceptor: StringPresentationType,
     prompt: async function ({ defaultReasons }: DraupnirBanCommandContext) {
       return Ok({
-        suggestions: defaultReasons.map((reason) => [
-          StringPresentationType.wrap(reason),
-        ]),
+        suggestions: defaultReasons.map((reason) =>
+          StringPresentationType.wrap(reason)
+        ),
       });
     },
   },
