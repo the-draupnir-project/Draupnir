@@ -61,7 +61,9 @@ export async function listInfo(
   );
   return issuerResults.map((result) => {
     if (isError(result)) {
-      throw result.error;
+      throw result.expect(
+        "We should be able to get the issuers for all of the watched lits."
+      );
     }
     const revision = result.ok.currentRevision;
     const associatedProfile = watchedListProfiles.find(

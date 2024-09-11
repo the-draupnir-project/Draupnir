@@ -9,7 +9,6 @@
 // </text>
 
 import {
-  isError,
   StandardClientsInRoomMap,
   DefaultEventDecoder,
   setGlobalLoggerProvider,
@@ -70,16 +69,13 @@ export async function makeDraupnirBotModeFromConfig(
   const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(
     config.managementRoom
   );
-  const managementRoom = await resolveRoomReferenceSafe(
-    client,
-    configManagementRoomReference
-  );
-  if (isError(managementRoom)) {
-    throw managementRoom.error;
-  }
+  const managementRoom = (
+    await resolveRoomReferenceSafe(client, configManagementRoomReference)
+  ).expect("Unable to resolve Draupnir's management room");
+
   await client.joinRoom(
-    managementRoom.ok.toRoomIDOrAlias(),
-    managementRoom.ok.getViaServers()
+    managementRoom.toRoomIDOrAlias(),
+    managementRoom.getViaServers()
   );
   const clientsInRoomMap = new StandardClientsInRoomMap();
   const clientProvider = async (userID: StringUserID) => {
@@ -106,13 +102,9 @@ export async function makeDraupnirBotModeFromConfig(
   );
   const draupnir = await draupnirFactory.makeDraupnir(
     clientUserId,
-    managementRoom.ok,
+    managementRoom,
     config
   );
-  if (isError(draupnir)) {
-    const error = draupnir.error;
-    throw new Error(`Unable to create Draupnir: ${error.message}`);
-  }
   matrixEmitter.on("room.invite", (roomID, event) => {
     clientsInRoomMap.handleTimelineEvent(roomID, event);
   });
@@ -120,5 +112,5 @@ export async function makeDraupnirBotModeFromConfig(
     roomStateManagerFactory.handleTimelineEvent(roomID, event);
     clientsInRoomMap.handleTimelineEvent(roomID, event);
   });
-  return draupnir.ok;
+  return draupnir.expect("Unable to create Draupnir");
 }
