@@ -134,13 +134,9 @@ export class MjolnirAppService {
         return parseResult.ok;
       }
     })();
-    const accessControlRoom = await resolveRoomReferenceSafe(
-      bridge.getBot().getClient(),
-      adminRoom
-    );
-    if (isError(accessControlRoom)) {
-      throw accessControlRoom.error;
-    }
+    const accessControlRoom = (
+      await resolveRoomReferenceSafe(bridge.getBot().getClient(), adminRoom)
+    ).expect("Unable to resolve the admin room");
     const clientsInRoomMap = new StandardClientsInRoomMap();
     const clientProvider = async (clientUserID: StringUserID) =>
       bridge.getIntent(clientUserID).matrixClient;
@@ -154,26 +150,23 @@ export class MjolnirAppService {
       eventDecoder
     );
     const botUserID = bridge.getBot().getUserId() as StringUserID;
-    const clientRooms = await clientsInRoomMap.makeClientRooms(
-      botUserID,
-      async () => joinedRoomsSafe(bridge.getBot().getClient())
-    );
-    if (isError(clientRooms)) {
-      throw clientRooms.error;
-    }
+    (
+      await clientsInRoomMap.makeClientRooms(botUserID, async () =>
+        joinedRoomsSafe(bridge.getBot().getClient())
+      )
+    ).expect("Unable to initialize client rooms for the appservice bot user");
     const botRoomJoiner = clientCapabilityFactory
       .makeClientPlatform(botUserID, bridge.getBot().getClient())
       .toRoomJoiner();
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
-    const accessControl = await AccessControl.setupAccessControlForRoom(
-      accessControlRoom.ok,
-      appserviceBotPolicyRoomManager,
-      botRoomJoiner
-    );
-    if (isError(accessControl)) {
-      throw accessControl.error;
-    }
+    const accessControl = (
+      await AccessControl.setupAccessControlForRoom(
+        accessControlRoom,
+        appserviceBotPolicyRoomManager,
+        botRoomJoiner
+      )
+    ).expect("Unable to setup access control for the appservice");
     // Activate /metrics endpoint for Prometheus
 
     // This should happen automatically but in testing this didn't happen in the docker image
@@ -192,7 +185,7 @@ export class MjolnirAppService {
       serverName,
       dataStore,
       bridge,
-      accessControl.ok,
+      accessControl,
       roomStateManagerFactory,
       clientCapabilityFactory,
       clientProvider,
@@ -202,14 +195,14 @@ export class MjolnirAppService {
       config,
       bridge,
       mjolnirManager,
-      accessControl.ok,
+      accessControl,
       dataStore,
       eventDecoder,
       roomStateManagerFactory,
       clientCapabilityFactory,
       clientsInRoomMap,
       prometheus,
-      accessControlRoom.ok.toRoomIDOrAlias(),
+      accessControlRoom.toRoomIDOrAlias(),
       botUserID
     );
     bridge.opts.controller = {
