@@ -60,7 +60,7 @@
     "@the-draupnir-project/matrix-basic-types": "^0.1.1",
     "await-lock": "^2.2.2",
     "better-sqlite3": "^9.4.3",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "config": "^3.3.9",
     "express": "^4.19",
     "html-to-text": "^8.0.0",
