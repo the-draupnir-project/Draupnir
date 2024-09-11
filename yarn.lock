@@ -105,11 +105,6 @@
   resolved "https://registry.yarnpkg.com/@gnuxie/super-cool-stream/-/super-cool-stream-0.2.1.tgz#3e7d964f3861f534a207709c88c4acea194ae41f"
   integrity sha512-Sk6MXHTAn3GVRk/EkF9dt514OB/tdmesAJnOwygU1s3YoHcxNkf5t9p0U6BfZt7dYSuqEnMnc/XH5PCVsbrjkA==
 
-"@gnuxie/typescript-result@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/typescript-result/-/typescript-result-0.2.0.tgz#870e29d079341c32a7cae7e0ee77ffdd09aad60f"
-  integrity sha512-V5VZUpl21fRNTBHqdigWVkkXhoue/6MVfpWLBOMVgi5unR4ePoXjzNXc9diNmnmDe+mrQfXGPT8LiB18Cc+0Ig==
-
 "@gnuxie/typescript-result@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@gnuxie/typescript-result/-/typescript-result-1.0.0.tgz#d96ae02123261e42c03b2046e78d0cd6c5a24fb4"
@@ -261,13 +256,13 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@the-draupnir-project/interface-manager@2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-2.2.0.tgz#2326aca4ccbf0b0ed743efb3a20222a5d78ab23e"
-  integrity sha512-ycNBKT78RsRhU+HfHe3gjgtQY2pCn7Umw8uAJBHGzLFpXwk2E9kmv6dGbtGubINjsFdkacr7lVxZwm69K4bSUg==
+"@the-draupnir-project/interface-manager@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-2.3.0.tgz#d09b69334d73b10856853962f25a1526a38a0b17"
+  integrity sha512-DwgyJXoJt53r4B7sMAznEsl5QRshFRBBLZ86vVzguJKDo0XrJVrguPY0IegI8YeaeY1VyPJDkSN7CkcQ2+iDig==
   dependencies:
     "@gnuxie/super-cool-stream" "^0.2.1"
-    "@gnuxie/typescript-result" "^0.2.0"
+    "@gnuxie/typescript-result" "^1.0.0"
 
 "@the-draupnir-project/matrix-basic-types@^0.2.0":
   version "0.2.0"
