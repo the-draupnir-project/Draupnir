@@ -12,6 +12,8 @@ import { DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import {
   ActionResult,
   Ok,
+  PolicyListConfig,
+  PolicyRoomManager,
   PolicyRoomRevision,
   PolicyRoomWatchProfile,
   PolicyRuleType,
@@ -47,12 +49,14 @@ export interface StatusInfo {
   documentationURL: string;
 }
 
-export async function listInfo(draupnir: Draupnir): Promise<ListInfo[]> {
-  const watchedListProfiles =
-    draupnir.protectedRoomsSet.issuerManager.allWatchedLists;
+export async function listInfo(
+  issuerManager: PolicyListConfig,
+  policyRoomManager: PolicyRoomManager
+): Promise<ListInfo[]> {
+  const watchedListProfiles = issuerManager.allWatchedLists;
   const issuerResults = await Promise.all(
     watchedListProfiles.map((profile) =>
-      draupnir.policyRoomManager.getPolicyRoomRevisionIssuer(profile.room)
+      policyRoomManager.getPolicyRoomRevisionIssuer(profile.room)
     )
   );
   return issuerResults.map((result) => {
@@ -89,7 +93,10 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
 export async function draupnirStatusInfo(
   draupnir: Draupnir
 ): Promise<StatusInfo> {
-  const watchedListInfo = await listInfo(draupnir);
+  const watchedListInfo = await listInfo(
+    draupnir.protectedRoomsSet.issuerManager,
+    draupnir.policyRoomManager
+  );
   const protectedWatchedLists = watchedListInfo.filter((info) =>
     draupnir.protectedRoomsSet.isProtectedRoom(
       info.revision.room.toRoomIDOrAlias()

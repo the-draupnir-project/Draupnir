@@ -12,13 +12,18 @@ import {
   ActionError,
   ActionResult,
   Ok,
+  PolicyListConfig,
+  PolicyRoomManager,
   PolicyRuleType,
   PropagationType,
   isError,
 } from "matrix-protection-suite";
 import { listInfo } from "./StatusCommand";
 import { Draupnir } from "../Draupnir";
-import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixRoomID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 import {
   BasicInvocationInformation,
   ParsedKeywords,
@@ -84,10 +89,12 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirListCreateCommand, {
 });
 
 export async function findPolicyRoomIDFromShortcode(
-  draupnir: Draupnir,
+  issuerManager: PolicyListConfig,
+  policyRoomManager: PolicyRoomManager,
+  editingClientUserID: StringUserID,
   shortcode: string
 ): Promise<ActionResult<MatrixRoomID>> {
-  const info = await listInfo(draupnir);
+  const info = await listInfo(issuerManager, policyRoomManager);
   const matchingRevisions = info.filter(
     (list) => list.revision.shortcode === shortcode
   );
@@ -99,7 +106,7 @@ export async function findPolicyRoomIDFromShortcode(
     return Ok(matchingRevisions[0].revision.room);
   } else {
     const remainingRevisions = matchingRevisions.filter((revision) =>
-      revision.revision.isAbleToEdit(draupnir.clientUserID, PolicyRuleType.User)
+      revision.revision.isAbleToEdit(editingClientUserID, PolicyRuleType.User)
     );
     if (
       remainingRevisions.length !== 1 ||

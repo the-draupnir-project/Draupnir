@@ -298,7 +298,10 @@ export class BanPropagationProtection
       PolicyRuleType.User,
       Recommendation.Ban
     );
-    const policyRoomInfo = await listInfo(draupnir);
+    const policyRoomInfo = await listInfo(
+      draupnir.protectedRoomsSet.issuerManager,
+      draupnir.policyRoomManager
+    );
     if (rulesMatchingUser.length === 0) {
       return; // user is already unbanned.
     }
