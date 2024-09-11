@@ -9,3 +9,8 @@ require("ts-node").register({
     before: [tsAutoMockTransformer(program)],
   }),
 });
+
+// Mocha apparently suppresses unhandled rejections for some crazy reason??
+process.on("unhandledRejection", (reason) => {
+  throw reason;
+});

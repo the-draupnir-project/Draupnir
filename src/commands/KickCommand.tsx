@@ -163,15 +163,15 @@ export const DraupnirKickCommand = describeCommand({
             revision.room.toRoomIDOrAlias(),
             member.userID
           );
-        }
-        if (!isDryRun) {
-          void taskQueue.push(async () => {
-            return roomKicker.kickUser(
-              revision.room.toRoomIDOrAlias(),
-              member.userID,
-              reason
-            );
-          });
+          if (!isDryRun) {
+            taskQueue.push(() => {
+              return roomKicker.kickUser(
+                revision.room.toRoomIDOrAlias(),
+                member.userID,
+                reason
+              );
+            });
+          }
         }
       }
     }

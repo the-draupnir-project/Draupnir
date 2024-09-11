@@ -8,6 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { Ok } from "matrix-protection-suite";
 import { ThrottlingQueue } from "../../src/queues/ThrottlingQueue";
 
 describe("Test: ThrottlingQueue", function () {
@@ -19,18 +20,23 @@ describe("Test: ThrottlingQueue", function () {
     const promises: Promise<void>[] = [];
     for (let counter = 0; counter < 10; ++counter) {
       const i = counter;
-      const promise = queue.push(async () => {
-        if (state.get(i)) {
-          throw new Error(`We shouldn't have set state[${i}] yet`);
-        }
-        state.set(i, true);
-        for (let j = 0; j < i; ++j) {
-          if (!state.get(j)) {
-            throw new Error(`We should have set state[${j}] already`);
-          }
-        }
-      });
-      promises.push(promise);
+      promises.push(
+        new Promise((resolve) => {
+          queue.push(async () => {
+            if (state.get(i)) {
+              throw new Error(`We shouldn't have set state[${i}] yet`);
+            }
+            state.set(i, true);
+            for (let j = 0; j < i; ++j) {
+              if (!state.get(j)) {
+                throw new Error(`We should have set state[${j}] already`);
+              }
+            }
+            resolve();
+            return Ok(undefined);
+          });
+        })
+      );
     }
     await Promise.all(promises);
     for (let i = 0; i < 10; ++i) {
@@ -56,21 +62,25 @@ describe("Test: ThrottlingQueue", function () {
     for (let counter = 0; counter < 10; ++counter) {
       const i = counter;
       promises.push(
-        queue.push(async () => {
-          if (state.get(i)) {
-            throw new Error(`We shouldn't have set state[${i}] yet`);
-          }
-          state.set(i, true);
-          for (let j = 0; j < i; ++j) {
-            queue.block(100);
-            if (!state.get(j)) {
-              throw new Error(`We should have set state[${j}] already`);
+        new Promise((resolve) => {
+          queue.push(async () => {
+            if (state.get(i)) {
+              throw new Error(`We shouldn't have set state[${i}] yet`);
             }
-          }
-          if (i % 2 === 0) {
-            // Arbitrary call to `delay()`.
-            queue.block(20);
-          }
+            state.set(i, true);
+            for (let j = 0; j < i; ++j) {
+              queue.block(100);
+              if (!state.get(j)) {
+                throw new Error(`We should have set state[${j}] already`);
+              }
+            }
+            if (i % 2 === 0) {
+              // Arbitrary call to `delay()`.
+              queue.block(20);
+            }
+            resolve();
+            return Ok(undefined);
+          });
         })
       );
     }

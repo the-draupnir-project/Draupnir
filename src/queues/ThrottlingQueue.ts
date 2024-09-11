@@ -10,8 +10,14 @@
 
 import { LogLevel } from "matrix-bot-sdk";
 import ManagementRoomOutput from "../ManagementRoomOutput";
+import { Result, isError } from "@gnuxie/typescript-result";
 
-export type Task<T> = (queue: ThrottlingQueue) => Promise<T>;
+export type TaskFactory<T> = () => Promise<Result<T>>;
+
+type BackgroundTask<T> = {
+  isBackgroundTask: true;
+  factory: TaskFactory<T>;
+};
 
 /**
  * A queue for backgrounding tasks without hammering servers too much.
@@ -20,7 +26,7 @@ export class ThrottlingQueue {
   /**
    * The pending tasks.
    */
-  private _tasks: (() => Promise<void>)[] | null;
+  private _tasks: BackgroundTask<unknown>[] | null = [];
 
   /**
    * A timeout for the next task to execute.
@@ -67,28 +73,10 @@ export class ThrottlingQueue {
    * Push a new task onto the queue.
    *
    * @param task Some code to execute.
-   * @return A promise resolved/rejected once `task` is complete.
    */
-  public push<T>(task: Task<T>): Promise<T> {
-    // Wrap `task` into a `Promise` to inform enqueuer when
-    // the task is complete.
-    return new Promise((resolve, reject) => {
-      const wrapper = async () => {
-        try {
-          const result: T = await task(this);
-          resolve(result);
-        } catch (ex) {
-          if (ex instanceof Error) {
-            reject(ex);
-          }
-          throw new TypeError(
-            `Some garbage is throwing things that are not Error ${ex}`
-          );
-        }
-      };
-      this.tasks.push(wrapper);
-      this.start();
-    });
+  public push<T>(task: TaskFactory<T>): void {
+    this.tasks.push({ isBackgroundTask: true, factory: task });
+    this.start();
   }
 
   /**
@@ -171,24 +159,22 @@ export class ThrottlingQueue {
       this.stop();
       return;
     }
-    try {
-      await task();
-    } catch (ex) {
+    const result = await task.factory();
+    if (isError(result)) {
       await this.managementRoomOutput.logMessage(
-        LogLevel.WARN,
+        LogLevel.ERROR,
         "Error while executing task",
-        ex
+        result.error.toReadableString()
       );
-    } finally {
-      this.stop();
-      this.start();
     }
+    this.stop();
+    this.start();
   }
 
   /**
    * Return `tasks`, unless the queue has been disposed of.
    */
-  private get tasks(): (() => Promise<void>)[] {
+  private get tasks(): BackgroundTask<unknown>[] {
     if (this._tasks === null) {
       throw new TypeError(
         "This Throttling Queue has been disposed of and shouldn't be used anymore"

@@ -10,6 +10,7 @@ import {
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
+  Logger,
   Membership,
   Ok,
   RoomKicker,
@@ -22,6 +23,8 @@ import { ThrottlingQueue } from "../../../src/queues/ThrottlingQueue";
 import ManagementRoomOutput from "../../../src/ManagementRoomOutput";
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
+
+const log = new Logger("KickCommandTest");
 
 async function createProtectedRooms() {
   return await describeProtectedRoomsSet({
@@ -48,7 +51,13 @@ async function createProtectedRooms() {
   });
 }
 
-const taskQueue = new ThrottlingQueue(createMock<ManagementRoomOutput>(), 0);
+const managmenetRoomOutput = createMock<ManagementRoomOutput>({
+  logMessage(_level, module, message, _additionalRoomIds, _isRecursive) {
+    log.error(module, message);
+    throw new TypeError(`We don't expect to be logging anything`);
+  },
+});
+const taskQueue = new ThrottlingQueue(managmenetRoomOutput, 0);
 
 describe("Test the KickCommand", function () {
   const roomResolver = createMock<RoomResolver>({
