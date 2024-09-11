@@ -14,7 +14,7 @@
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
     "lint": "corepack yarn eslint src test && corepack yarn prettier --check src test",
     "start:dev": "corepack yarn build && node --async-stack-traces lib/index.js",
-    "test:unit": "mocha --require './test/tsnode.cjs' 'test/unit/**/*.{ts,tsx}'",
+    "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
     "test:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\"",
     "test:integration:single": "NODE_ENV=harness corepack yarn mocha --require test/tsnode.cjs --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json",

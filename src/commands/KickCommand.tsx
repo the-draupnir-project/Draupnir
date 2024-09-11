@@ -165,7 +165,7 @@ export const DraupnirKickCommand = describeCommand({
           );
         }
         if (!isDryRun) {
-          void taskQueue.push(async () => {
+          taskQueue.push(() => {
             return roomKicker.kickUser(
               revision.room.toRoomIDOrAlias(),
               member.userID,
