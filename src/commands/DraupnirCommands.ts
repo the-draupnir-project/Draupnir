@@ -21,6 +21,7 @@ import { SynapseAdminHijackRoomCommand } from "./HijackRoomCommand";
 import { DraupnirImportCommand } from "./ImportCommand";
 import { DraupnirKickCommand } from "./KickCommand";
 import {
+  DraupnirListProtectionsCommand,
   DraupnirProtectionsConfigAddCommand,
   DraupnirProtectionsConfigSetCommand,
   DraupnirProtectionsDisableCommand,
@@ -62,6 +63,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirHelpCommand, ["help"])
   .internCommand(DraupnirImportCommand, ["import"])
   .internCommand(DraupnirKickCommand, ["kick"])
+  .internCommand(DraupnirListProtectionsCommand, ["protections"])
   .internCommand(DraupnirProtectionsEnableCommand, ["protections", "enable"])
   .internCommand(DraupnirProtectionsDisableCommand, ["protections", "disable"])
   .internCommand(DraupnirProtectionsConfigAddCommand, [
