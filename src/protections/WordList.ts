@@ -49,7 +49,7 @@ type WordListDescription = ProtectionDescription<
 >;
 
 describeProtection<WordListCapabilities, Draupnir, WordListSettings>({
-  name: "WordListProteciton",
+  name: "WordListProtection",
   description:
     "If a user posts a monitored word a set amount of time after joining, they\
     will be banned from that room.  This will not publish the ban to a ban list.",
