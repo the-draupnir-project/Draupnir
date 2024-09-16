@@ -134,7 +134,6 @@ export class AppServiceDraupnirManager {
     if (isError(managedDraupnir)) {
       return managedDraupnir;
     }
-    this.baseManager.startDraupnir(mxid);
     incrementGaugeValue(this.instanceCountGauge, "offline", localPart);
     decrementGaugeValue(this.instanceCountGauge, "disabled", localPart);
     incrementGaugeValue(this.instanceCountGauge, "online", localPart);
