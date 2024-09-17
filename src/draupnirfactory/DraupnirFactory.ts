@@ -37,12 +37,6 @@ export class DraupnirFactory {
     managementRoom: MatrixRoomID,
     config: IConfig
   ): Promise<ActionResult<Draupnir>> {
-    const roomStateManager =
-      await this.roomStateManagerFactory.getRoomStateManager(clientUserID);
-    const policyRoomManager =
-      await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
-    const roomMembershipManager =
-      await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
     const client = await this.clientProvider(clientUserID);
     const clientRooms = await this.clientsInRoomMap.makeClientRooms(
       clientUserID,
@@ -51,6 +45,12 @@ export class DraupnirFactory {
     if (isError(clientRooms)) {
       return clientRooms;
     }
+    const roomStateManager =
+      await this.roomStateManagerFactory.getRoomStateManager(clientUserID);
+    const policyRoomManager =
+      await this.roomStateManagerFactory.getPolicyRoomManager(clientUserID);
+    const roomMembershipManager =
+      await this.roomStateManagerFactory.getRoomMembershipManager(clientUserID);
     const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(
       clientUserID,
       client
