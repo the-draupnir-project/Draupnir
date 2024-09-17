@@ -13,6 +13,7 @@ import {
   DefaultEventDecoder,
   setGlobalLoggerProvider,
   RoomStateBackingStore,
+  ClientsInRoomMap,
 } from "matrix-protection-suite";
 import {
   BotSDKLogServiceLogger,
@@ -20,7 +21,7 @@ import {
   MatrixSendClient,
   RoomStateManagerFactory,
   SafeMatrixEmitter,
-  resolveRoomReferenceSafe,
+  joinedRoomsSafe,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
@@ -32,7 +33,13 @@ import {
   isStringRoomID,
   MatrixRoomReference,
   StringUserID,
+  MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { Result, isError } from "@gnuxie/typescript-result";
+import { SafeModeToggle } from "./safemode/SafeModeToggle";
+import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
+import { ResultError } from "@gnuxie/typescript-result";
+import { SafeModeCause } from "./safemode/SafeModeCause";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 
@@ -40,77 +47,138 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
   return new WebAPIs(draupnir.reportManager, draupnir.config);
 }
 
-/**
- * This is a file for providing default concrete implementations
- * for all things to bootstrap Draupnir in 'bot mode'.
- * However, people should be encouraged to make their own when
- * APIs are stable as the protection-suite makes Draupnir
- * almost completely modular and customizable.
- */
+export class DraupnirBotModeToggle implements SafeModeToggle {
+  private draupnir: Draupnir | null = null;
+  private safeModeDraupnir: SafeModeDraupnir | null = null;
 
-export async function makeDraupnirBotModeFromConfig(
-  client: MatrixSendClient,
-  matrixEmitter: SafeMatrixEmitter,
-  config: IConfig,
-  backingStore?: RoomStateBackingStore
-): Promise<Draupnir> {
-  const clientUserId = await client.getUserId();
-  if (!isStringUserID(clientUserId)) {
-    throw new TypeError(`${clientUserId} is not a valid mxid`);
-  }
-  if (
-    !isStringRoomAlias(config.managementRoom) &&
-    !isStringRoomID(config.managementRoom)
+  private constructor(
+    private readonly clientUserID: StringUserID,
+    private readonly managementRoom: MatrixRoomID,
+    private readonly clientsInRoomMap: ClientsInRoomMap,
+    private readonly roomStateManagerFactory: RoomStateManagerFactory,
+    private readonly draupnirFactory: DraupnirFactory,
+    private readonly matrixEmitter: SafeMatrixEmitter,
+    private readonly config: IConfig
   ) {
-    throw new TypeError(
-      `${config.managementRoom} is not a valid room id or alias`
+    this.matrixEmitter.on("room.invite", (roomID, event) => {
+      this.clientsInRoomMap.handleTimelineEvent(roomID, event);
+    });
+    this.matrixEmitter.on("room.event", (roomID, event) => {
+      this.roomStateManagerFactory.handleTimelineEvent(roomID, event);
+      this.clientsInRoomMap.handleTimelineEvent(roomID, event);
+    });
+  }
+  public static async create(
+    client: MatrixSendClient,
+    matrixEmitter: SafeMatrixEmitter,
+    config: IConfig,
+    backingStore?: RoomStateBackingStore
+  ): Promise<DraupnirBotModeToggle> {
+    const clientUserID = await client.getUserId();
+    if (!isStringUserID(clientUserID)) {
+      throw new TypeError(`${clientUserID} is not a valid mxid`);
+    }
+    if (
+      !isStringRoomAlias(config.managementRoom) &&
+      !isStringRoomID(config.managementRoom)
+    ) {
+      throw new TypeError(
+        `${config.managementRoom} is not a valid room id or alias`
+      );
+    }
+    const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(
+      config.managementRoom
+    );
+    const clientsInRoomMap = new StandardClientsInRoomMap();
+    const clientCapabilityFactory = new ClientCapabilityFactory(
+      clientsInRoomMap,
+      DefaultEventDecoder
+    );
+    // needed to have accurate join infomration.
+    (
+      await clientsInRoomMap.makeClientRooms(clientUserID, async () =>
+        joinedRoomsSafe(client)
+      )
+    ).expect("Unable to create ClientRooms");
+    const clientPlatform = clientCapabilityFactory.makeClientPlatform(
+      clientUserID,
+      client
+    );
+    const managementRoom = (
+      await clientPlatform
+        .toRoomResolver()
+        .resolveRoom(configManagementRoomReference)
+    ).expect("Unable to resolve Draupnir's management room");
+    (await clientPlatform.toRoomJoiner().joinRoom(managementRoom)).expect(
+      "Unable to join Draupnir's management room"
+    );
+    const clientProvider = async (userID: StringUserID) => {
+      if (userID !== clientUserID) {
+        throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);
+      }
+      return client;
+    };
+    const roomStateManagerFactory = new RoomStateManagerFactory(
+      clientsInRoomMap,
+      clientProvider,
+      DefaultEventDecoder,
+      backingStore
+    );
+    const draupnirFactory = new DraupnirFactory(
+      clientsInRoomMap,
+      clientCapabilityFactory,
+      clientProvider,
+      roomStateManagerFactory
+    );
+    return new DraupnirBotModeToggle(
+      clientUserID,
+      managementRoom,
+      clientsInRoomMap,
+      roomStateManagerFactory,
+      draupnirFactory,
+      matrixEmitter,
+      config
     );
   }
-  const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(
-    config.managementRoom
-  );
-  const managementRoom = (
-    await resolveRoomReferenceSafe(client, configManagementRoomReference)
-  ).expect("Unable to resolve Draupnir's management room");
-
-  await client.joinRoom(
-    managementRoom.toRoomIDOrAlias(),
-    managementRoom.getViaServers()
-  );
-  const clientsInRoomMap = new StandardClientsInRoomMap();
-  const clientProvider = async (userID: StringUserID) => {
-    if (userID !== clientUserId) {
-      throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);
+  public async switchToDraupnir(): Promise<Result<Draupnir>> {
+    if (this.draupnir !== null) {
+      return ResultError.Result(
+        `There is a draupnir for ${this.clientUserID} already running`
+      );
     }
-    return client;
-  };
-  const roomStateManagerFactory = new RoomStateManagerFactory(
-    clientsInRoomMap,
-    clientProvider,
-    DefaultEventDecoder,
-    backingStore
-  );
-  const clientCapabilityFactory = new ClientCapabilityFactory(
-    clientsInRoomMap,
-    DefaultEventDecoder
-  );
-  const draupnirFactory = new DraupnirFactory(
-    clientsInRoomMap,
-    clientCapabilityFactory,
-    clientProvider,
-    roomStateManagerFactory
-  );
-  const draupnir = await draupnirFactory.makeDraupnir(
-    clientUserId,
-    managementRoom,
-    config
-  );
-  matrixEmitter.on("room.invite", (roomID, event) => {
-    clientsInRoomMap.handleTimelineEvent(roomID, event);
-  });
-  matrixEmitter.on("room.event", (roomID, event) => {
-    roomStateManagerFactory.handleTimelineEvent(roomID, event);
-    clientsInRoomMap.handleTimelineEvent(roomID, event);
-  });
-  return draupnir.expect("Unable to create Draupnir");
+    const draupnirResult = await this.draupnirFactory.makeDraupnir(
+      this.clientUserID,
+      this.managementRoom,
+      this.config
+    );
+    if (isError(draupnirResult)) {
+      return draupnirResult;
+    }
+    this.safeModeDraupnir?.stop();
+    this.safeModeDraupnir = null;
+    this.draupnir = draupnirResult.ok;
+    return draupnirResult;
+  }
+  public async switchToSafeMode(
+    cause: SafeModeCause
+  ): Promise<Result<SafeModeDraupnir>> {
+    if (this.safeModeDraupnir !== null) {
+      return ResultError.Result(
+        `There is a safe mode draupnir for ${this.clientUserID} already running`
+      );
+    }
+    const safeModeResult = await this.draupnirFactory.makeSafeModeDraupnir(
+      this.clientUserID,
+      this.managementRoom,
+      this.config,
+      cause
+    );
+    if (isError(safeModeResult)) {
+      return safeModeResult;
+    }
+    this.draupnir?.stop();
+    this.draupnir = null;
+    this.safeModeDraupnir = safeModeResult.ok;
+    return safeModeResult;
+  }
 }

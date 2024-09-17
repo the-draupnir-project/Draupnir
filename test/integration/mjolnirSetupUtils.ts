@@ -20,7 +20,7 @@ import { overrideRatelimitForUser, registerUser } from "./clientHelper";
 import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
-import { makeDraupnirBotModeFromConfig } from "../../src/DraupnirBotMode";
+import { DraupnirBotModeToggle } from "../../src/DraupnirBotMode";
 import {
   SafeMatrixEmitter,
   SafeMatrixEmitterWrapper,
@@ -140,11 +140,14 @@ export async function makeMjolnir(
     await client.getUserId()
   );
   await ensureAliasedRoomExists(client, config.managementRoom);
-  const mj = await makeDraupnirBotModeFromConfig(
+  const toggle = await DraupnirBotModeToggle.create(
     client,
     new SafeMatrixEmitterWrapper(client, DefaultEventDecoder),
     config,
     backingStore
+  );
+  const mj = (await toggle.switchToDraupnir()).expect(
+    "Could not create Draupnir"
   );
   globalClient = client;
   globalMjolnir = mj;

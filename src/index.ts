@@ -24,10 +24,7 @@ import {
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { read as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
-import {
-  constructWebAPIs,
-  makeDraupnirBotModeFromConfig,
-} from "./DraupnirBotMode";
+import { DraupnirBotModeToggle, constructWebAPIs } from "./DraupnirBotMode";
 import { Draupnir } from "./Draupnir";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder, Task } from "matrix-protection-suite";
@@ -104,11 +101,15 @@ void (async function () {
           eventDecoder
         )
       : undefined;
-    bot = await makeDraupnirBotModeFromConfig(
+    const toggle = await DraupnirBotModeToggle.create(
       client,
       new SafeMatrixEmitterWrapper(client, eventDecoder),
       config,
       store
+    );
+
+    bot = (await toggle.switchToDraupnir()).expect(
+      "Failed to initialize Draupnir"
     );
     apis = constructWebAPIs(bot);
   } catch (err) {
