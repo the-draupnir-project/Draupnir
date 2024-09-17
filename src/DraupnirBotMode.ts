@@ -149,7 +149,8 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     const draupnirResult = await this.draupnirFactory.makeDraupnir(
       this.clientUserID,
       this.managementRoom,
-      this.config
+      this.config,
+      this
     );
     if (isError(draupnirResult)) {
       return draupnirResult;

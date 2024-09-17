@@ -24,6 +24,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
+import { SafeModeToggle } from "../safemode/SafeModeToggle";
 
 export class DraupnirFactory {
   public constructor(
@@ -38,7 +39,8 @@ export class DraupnirFactory {
   public async makeDraupnir(
     clientUserID: StringUserID,
     managementRoom: MatrixRoomID,
-    config: IConfig
+    config: IConfig,
+    toggle: SafeModeToggle
   ): Promise<ActionResult<Draupnir>> {
     const client = await this.clientProvider(clientUserID);
     const clientRooms = await this.clientsInRoomMap.makeClientRooms(
@@ -84,7 +86,8 @@ export class DraupnirFactory {
       policyRoomManager,
       roomMembershipManager,
       config,
-      configLogTracker
+      configLogTracker,
+      toggle
     );
   }
 

@@ -23,6 +23,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
+import { SafeModeToggle } from "../safemode/SafeModeToggle";
 
 export class StandardDraupnirManager {
   private readonly draupnir = new Map<StringUserID, Draupnir>();
@@ -33,6 +34,34 @@ export class StandardDraupnirManager {
     // nothing to do.
   }
 
+  public makeSafeModeToggle(
+    clientUserID: StringUserID,
+    managementRoom: MatrixRoomID,
+    config: IConfig
+  ): SafeModeToggle {
+    // We need to alias to make the toggle frankly.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const draupnirManager = this;
+    const toggle: SafeModeToggle = Object.freeze({
+      async switchToSafeMode(cause: SafeModeCause) {
+        return draupnirManager.makeSafeModeDraupnir(
+          clientUserID,
+          managementRoom,
+          config,
+          cause
+        );
+      },
+      async switchToDraupnir() {
+        return draupnirManager.makeDraupnir(
+          clientUserID,
+          managementRoom,
+          config
+        );
+      },
+    });
+    return toggle;
+  }
+
   public async makeDraupnir(
     clientUserID: StringUserID,
     managementRoom: MatrixRoomID,
@@ -41,7 +70,8 @@ export class StandardDraupnirManager {
     const draupnir = await this.draupnirFactory.makeDraupnir(
       clientUserID,
       managementRoom,
-      config
+      config,
+      this.makeSafeModeToggle(clientUserID, managementRoom, config)
     );
     if (this.isDraupnirAvailable(clientUserID)) {
       return ActionError.Result(

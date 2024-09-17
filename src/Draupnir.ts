@@ -67,6 +67,7 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { makeDraupnirCommandDispatcher } from "./commands/DraupnirCommandDispatcher";
+import { SafeModeToggle } from "./safemode/SafeModeToggle";
 
 const log = new Logger("Draupnir");
 
@@ -121,6 +122,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     /** Mjolnir has a feature where you can choose to accept invitations from a space and not just the management room. */
     public readonly acceptInvitesFromRoom: MatrixRoomID,
     public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
+    public readonly safeModeToggle: SafeModeToggle,
     public readonly synapseAdminClient?: SynapseAdminClient
   ) {
     this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
@@ -169,7 +171,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     policyRoomManager: PolicyRoomManager,
     roomMembershipManager: RoomMembershipManager,
     config: IConfig,
-    loggableConfigTracker: LoggableConfigTracker
+    loggableConfigTracker: LoggableConfigTracker,
+    safeModeToggle: SafeModeToggle
   ): Promise<ActionResult<Draupnir>> {
     const acceptInvitesFromRoom = await (async () => {
       if (config.autojoinOnlyIfManager) {
@@ -225,6 +228,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       loggableConfigTracker,
       acceptInvitesFromRoom.ok,
       acceptInvitesFromRoomIssuer.ok,
+      safeModeToggle,
       new SynapseAdminClient(client, clientUserID)
     );
     const loadResult = await protectedRoomsSet.protections.loadProtections(
