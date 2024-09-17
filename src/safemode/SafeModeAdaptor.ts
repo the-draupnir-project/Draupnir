@@ -5,14 +5,11 @@
 import {
   CommandPrefixExtractor,
   MatrixInterfaceCommandDispatcher,
-  StandardAdaptorContextToCommandContextTranslator,
-  StandardMatrixInterfaceAdaptor,
   StandardMatrixInterfaceCommandDispatcher,
 } from "@the-draupnir-project/interface-manager";
 import { SafeModeDraupnir } from "./DraupnirSafeMode";
 import {
   MPSCommandDispatcherCallbacks,
-  MPSMatrixInterfaceAdaptorCallbacks,
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
 } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
@@ -21,19 +18,7 @@ import {
   SafeModeCommands,
   SafeModeHelpCommand,
 } from "./commands/SafeModeCommands";
-
-export const SafeModeContextToCommandContextTranslator =
-  new StandardAdaptorContextToCommandContextTranslator<SafeModeDraupnir>();
-
-export const SafeModeInterfaceAdaptor = new StandardMatrixInterfaceAdaptor<
-  SafeModeDraupnir,
-  MatrixEventContext
->(
-  SafeModeContextToCommandContextTranslator,
-  invocationInformationFromMatrixEventcontext,
-  MPSMatrixInterfaceAdaptorCallbacks,
-  MPSCommandDispatcherCallbacks
-);
+import { SafeModeInterfaceAdaptor } from "./commands/SafeModeCommands";
 
 function makePrefixExtractor(
   safeModeDraupnir: SafeModeDraupnir

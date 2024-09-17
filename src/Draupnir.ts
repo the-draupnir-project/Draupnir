@@ -23,10 +23,8 @@ import {
   RoomEvent,
   RoomMembershipManager,
   RoomMembershipRevisionIssuer,
-  RoomMessage,
   RoomStateManager,
   Task,
-  TextMessageContent,
   Value,
   isError,
 } from "matrix-protection-suite";
@@ -68,6 +66,7 @@ import {
 } from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { makeDraupnirCommandDispatcher } from "./commands/DraupnirCommandDispatcher";
 import { SafeModeToggle } from "./safemode/SafeModeToggle";
+import { makeCommandDispatcherTimelineListener } from "./safemode/ManagementRoom";
 
 const log = new Logger("Draupnir");
 
@@ -106,6 +105,13 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
 
   public readonly capabilityMessageRenderer: RendererMessageCollector;
+
+  private readonly commandDispatcherTimelineListener =
+    makeCommandDispatcherTimelineListener(
+      this.managementRoom,
+      this.client,
+      this.commandDispatcher
+    );
 
   private constructor(
     public readonly client: MatrixSendClient,
@@ -307,42 +313,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     if (roomID !== this.managementRoomID) {
       return;
     }
-    if (
-      Value.Check(RoomMessage, event) &&
-      Value.Check(TextMessageContent, event.content)
-    ) {
-      if (
-        event.content.body ===
-        "** Unable to decrypt: The sender's device has not sent us the keys for this message. **"
-      ) {
-        log.info(
-          `Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom.toPermalink()}.`
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "⚠")
-            .then((_) => Ok(undefined))
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "UISI")
-            .then((_) => Ok(undefined))
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "🚨")
-            .then((_) => Ok(undefined))
-        );
-        return;
-      }
-      this.commandDispatcher.handleCommandMessageEvent(
-        {
-          event,
-          roomID,
-        },
-        event.content.body
-      );
-    }
+    this.commandDispatcherTimelineListener(roomID, event);
     this.reportManager.handleTimelineEvent(roomID, event);
   }
 
@@ -352,6 +323,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * to events. Nor will it start any syncing client.
    */
   public async start(): Promise<void> {
+    // to avoid handlers getting out of sync on clientRooms and leaking
+    // when draupnir keeps being started and restarted, we can basically
+    // clear all listeners each time and add the factory listener back.
     this.clientRooms.on("timeline", this.timelineEventListener);
     if (this.reportPoller) {
       const reportPollSetting = await ReportPoller.getReportPollSetting(

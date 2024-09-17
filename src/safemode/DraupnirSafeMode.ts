@@ -18,11 +18,25 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import { IConfig } from "../config";
 import { SafeModeCause } from "./SafeModeCause";
+import { makeSafeModeCommandDispatcher } from "./SafeModeAdaptor";
+import {
+  ARGUMENT_PROMPT_LISTENER,
+  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  makeListenerForArgumentPrompt,
+  makeListenerForPromptDefault,
+} from "../commands/interface-manager/MatrixPromptForAccept";
+import { makeCommandDispatcherTimelineListener } from "./ManagementRoom";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
-
+  private readonly commandDispatcher = makeSafeModeCommandDispatcher(this);
+  private readonly commandDispatcherTimelineListener =
+    makeCommandDispatcherTimelineListener(
+      this.managementRoom,
+      this.client,
+      this.commandDispatcher
+    );
   public constructor(
     public readonly cause: SafeModeCause,
     public readonly client: MatrixSendClient,
@@ -41,10 +55,18 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
       this.clientUserID,
       this.clientPlatform
     );
+    this.reactionHandler.on(
+      ARGUMENT_PROMPT_LISTENER,
+      makeListenerForArgumentPrompt(this.commandDispatcher)
+    );
+    this.reactionHandler.on(
+      DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+      makeListenerForPromptDefault(this.commandDispatcher)
+    );
   }
 
-  handleTimelineEvent(_roomID: StringRoomID, _event: RoomEvent): void {
-    throw new Error("Method not implemented.");
+  handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
+    this.commandDispatcherTimelineListener(roomID, event);
   }
   handleEventReport(_report: EventReport): void {
     throw new Error("Method not implemented.");
