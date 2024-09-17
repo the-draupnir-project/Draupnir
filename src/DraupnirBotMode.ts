@@ -180,6 +180,7 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     this.draupnir?.stop();
     this.draupnir = null;
     this.safeModeDraupnir = safeModeResult.ok;
+    this.safeModeDraupnir.start();
     return safeModeResult;
   }
 }
