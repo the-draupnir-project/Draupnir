@@ -21,10 +21,13 @@ import {
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
+import { SafeModeCause } from "../safemode/SafeModeCause";
 
 export class StandardDraupnirManager {
   private readonly draupnir = new Map<StringUserID, Draupnir>();
   private readonly failedDraupnir = new Map<StringUserID, UnstartedDraupnir>();
+  private readonly safeModeDraupnir = new Map<StringUserID, SafeModeDraupnir>();
 
   public constructor(protected readonly draupnirFactory: DraupnirFactory) {
     // nothing to do.
@@ -40,7 +43,7 @@ export class StandardDraupnirManager {
       managementRoom,
       config
     );
-    if (this.isDraupnirListening(clientUserID)) {
+    if (this.isDraupnirAvailable(clientUserID)) {
       return ActionError.Result(
         `There is a draupnir for ${clientUserID} already running`
       );
@@ -61,8 +64,44 @@ export class StandardDraupnirManager {
     return draupnir;
   }
 
-  public isDraupnirListening(draupnirClientID: StringUserID): boolean {
-    return this.draupnir.has(draupnirClientID);
+  public async makeSafeModeDraupnir(
+    clientUserID: StringUserID,
+    managementRoom: MatrixRoomID,
+    config: IConfig,
+    cause: SafeModeCause
+  ): Promise<ActionResult<SafeModeDraupnir>> {
+    if (this.isDraupnirAvailable(clientUserID)) {
+      return ActionError.Result(
+        `There is a draupnir for ${clientUserID} already running`
+      );
+    }
+    const safeModeDraupnir = await this.draupnirFactory.makeSafeModeDraupnir(
+      clientUserID,
+      managementRoom,
+      config,
+      cause
+    );
+    if (isError(safeModeDraupnir)) {
+      this.reportUnstartedDraupnir(
+        DraupnirFailType.InitializationError,
+        safeModeDraupnir.error,
+        clientUserID
+      );
+      return safeModeDraupnir;
+    }
+    safeModeDraupnir.ok.start();
+    this.safeModeDraupnir.set(clientUserID, safeModeDraupnir.ok);
+    return safeModeDraupnir;
+  }
+
+  /**
+   * Whether the draupnir is available to the user, either normally or via safe mode.
+   */
+  public isDraupnirAvailable(draupnirClientID: StringUserID): boolean {
+    return (
+      this.draupnir.has(draupnirClientID) ||
+      this.safeModeDraupnir.has(draupnirClientID)
+    );
   }
 
   public isDraupnirFailed(draupnirClientID: StringUserID): boolean {

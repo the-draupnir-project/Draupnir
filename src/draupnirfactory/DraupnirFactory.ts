@@ -5,6 +5,7 @@
 import {
   ActionResult,
   ClientsInRoomMap,
+  Ok,
   StandardLoggableConfigTracker,
   isError,
 } from "matrix-protection-suite";
@@ -21,6 +22,8 @@ import {
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
+import { SafeModeCause } from "../safemode/SafeModeCause";
 
 export class DraupnirFactory {
   public constructor(
@@ -82,6 +85,37 @@ export class DraupnirFactory {
       roomMembershipManager,
       config,
       configLogTracker
+    );
+  }
+
+  public async makeSafeModeDraupnir(
+    clientUserID: StringUserID,
+    managementRoom: MatrixRoomID,
+    config: IConfig,
+    cause: SafeModeCause
+  ): Promise<ActionResult<SafeModeDraupnir>> {
+    const client = await this.clientProvider(clientUserID);
+    const clientRooms = await this.clientsInRoomMap.makeClientRooms(
+      clientUserID,
+      async () => joinedRoomsSafe(client)
+    );
+    if (isError(clientRooms)) {
+      return clientRooms;
+    }
+    const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(
+      clientUserID,
+      client
+    );
+    return Ok(
+      new SafeModeDraupnir(
+        cause,
+        client,
+        clientUserID,
+        clientPlatform,
+        managementRoom,
+        clientRooms.ok,
+        config
+      )
     );
   }
 }
