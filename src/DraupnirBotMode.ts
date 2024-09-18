@@ -15,6 +15,10 @@ import {
   RoomStateBackingStore,
   ClientsInRoomMap,
   Task,
+  Logger,
+  Ok,
+  ActionException,
+  ActionExceptionKind,
 } from "matrix-protection-suite";
 import {
   BotSDKLogServiceLogger,
@@ -43,17 +47,34 @@ import {
 } from "./safemode/SafeModeToggle";
 import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
-import { SafeModeCause } from "./safemode/SafeModeCause";
+import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
+
+const log = new Logger("DraupnirBotMode");
 
 export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
   return new WebAPIs(draupnir.reportManager, draupnir.config);
 }
 
-export class DraupnirBotModeToggle implements SafeModeToggle {
+/**
+ * The bot mode toggle allows the entrypoint, either src/index.ts or
+ * manual test scripts, to setup and control Draupnir.
+ * This includes the webAPIS that accompany Draupnir in bot mode.
+ *
+ * The appservice also implements `SafeModeToggle` but has different requirements.
+ * This interface is exlusively used by the entrypoints to draupnir's bot mode.
+ */
+interface BotModeTogle extends SafeModeToggle {
+  encryptionInitialized(): Promise<void>;
+  stopEverything(): void;
+  startFromScratch(options?: SafeModeToggleOptions): Promise<Result<void>>;
+}
+
+export class DraupnirBotModeToggle implements BotModeTogle {
   private draupnir: Draupnir | null = null;
   private safeModeDraupnir: SafeModeDraupnir | null = null;
+  private webAPIs: WebAPIs | null = null;
 
   private constructor(
     private readonly clientUserID: StringUserID,
@@ -161,13 +182,27 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     if (isError(draupnirResult)) {
       return draupnirResult;
     }
-    this.safeModeDraupnir?.stop();
-    this.safeModeDraupnir = null;
     this.draupnir = draupnirResult.ok;
     void Task(this.draupnir.start());
     if (options?.sendStatusOnStart) {
       void Task(this.draupnir.startupComplete());
+      try {
+        this.webAPIs = constructWebAPIs(this.draupnir);
+        await this.webAPIs.start();
+      } catch (e) {
+        if (e instanceof Error) {
+          this.stopDraupnir();
+          log.error("Failed to start webAPIs", e);
+          return ActionException.Result("Failed to start webAPIs", {
+            exceptionKind: ActionExceptionKind.Unknown,
+            exception: e,
+          });
+        } else {
+          throw new TypeError("Someone is throwing garbage.");
+        }
+      }
     }
+    this.stopSafeModeDraupnir();
     return draupnirResult;
   }
   public async switchToSafeMode(
@@ -189,13 +224,68 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     if (isError(safeModeResult)) {
       return safeModeResult;
     }
-    this.draupnir?.stop();
-    this.draupnir = null;
+    this.stopDraupnir();
     this.safeModeDraupnir = safeModeResult.ok;
     this.safeModeDraupnir.start();
     if (options?.sendStatusOnStart) {
-      this.safeModeDraupnir.sendStartupComplete();
+      this.safeModeDraupnir.startupComplete();
     }
     return safeModeResult;
+  }
+
+  public async startFromScratch(
+    options?: SafeModeToggleOptions
+  ): Promise<Result<void>> {
+    const draupnirResult = await this.switchToDraupnir(options ?? {});
+    if (isError(draupnirResult)) {
+      if (this.config.safeMode?.bootOnStartupFailure) {
+        log.error(
+          "Failed to start draupnir, switching to safe mode as configured",
+          draupnirResult.error
+        );
+        return (await this.switchToSafeMode(
+          {
+            reason: SafeModeReason.InitializationError,
+            error: draupnirResult.error,
+          },
+          options ?? {}
+        )) as Result<void>;
+      } else {
+        return draupnirResult;
+      }
+    }
+    return Ok(undefined);
+  }
+
+  public async encryptionInitialized(): Promise<void> {
+    if (this.draupnir !== null) {
+      try {
+        this.webAPIs = constructWebAPIs(this.draupnir);
+        await this.webAPIs.start();
+        await this.draupnir.startupComplete();
+      } catch (e) {
+        this.stopEverything();
+        throw e;
+      }
+    } else if (this.safeModeDraupnir !== null) {
+      this.safeModeDraupnir.startupComplete();
+    }
+  }
+
+  private stopDraupnir(): void {
+    this.draupnir?.stop();
+    this.draupnir = null;
+    this.webAPIs?.stop();
+    this.webAPIs = null;
+  }
+
+  private stopSafeModeDraupnir(): void {
+    this.safeModeDraupnir?.stop();
+    this.safeModeDraupnir = null;
+  }
+
+  public stopEverything(): void {
+    this.stopDraupnir();
+    this.stopSafeModeDraupnir();
   }
 }

@@ -101,7 +101,7 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     this.clientRooms.off("timeline", this.timelineEventListener);
   }
 
-  public sendStartupComplete(): void {
+  public startupComplete(): void {
     void Task(
       sendMatrixEventsFromDeadDocument(
         this.clientPlatform.toRoomMessageSender(),
