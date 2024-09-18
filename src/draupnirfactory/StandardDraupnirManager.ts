@@ -8,12 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionError,
-  ActionResult,
-  Task,
-  isError,
-} from "matrix-protection-suite";
+import { ActionError, ActionResult, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -86,9 +81,6 @@ export class StandardDraupnirManager {
       );
       return draupnir;
     }
-    // FIXME: This is a little more than suspect that there are no handlers if starting fails?
-    // unclear to me what can fail though.
-    void Task(draupnir.ok.start());
     this.draupnir.set(clientUserID, draupnir.ok);
     this.failedDraupnir.delete(clientUserID);
     return draupnir;
@@ -109,7 +101,8 @@ export class StandardDraupnirManager {
       clientUserID,
       managementRoom,
       config,
-      cause
+      cause,
+      this.makeSafeModeToggle(clientUserID, managementRoom, config)
     );
     if (isError(safeModeDraupnir)) {
       this.reportUnstartedDraupnir(

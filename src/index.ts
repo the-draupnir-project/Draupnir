@@ -119,7 +119,6 @@ void (async function () {
     throw err;
   }
   try {
-    await bot.start();
     await config.RUNTIME.client.start();
     void Task(bot.startupComplete());
     await apis.start();

@@ -26,6 +26,7 @@ import {
   makeListenerForPromptDefault,
 } from "../commands/interface-manager/MatrixPromptForAccept";
 import { makeCommandDispatcherTimelineListener } from "./ManagementRoom";
+import { SafeModeToggle } from "./SafeModeToggle";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -44,6 +45,7 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     public readonly clientPlatform: ClientPlatform,
     public readonly managementRoom: MatrixRoomID,
     private readonly clientRooms: ClientRooms,
+    public readonly safeModeToggle: SafeModeToggle,
     public readonly config: IConfig
     //private readonly roomStateManager: RoomStateManager,
     //private readonly policyRoomManager: PolicyRoomManager,

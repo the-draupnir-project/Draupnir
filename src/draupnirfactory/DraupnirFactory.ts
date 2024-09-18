@@ -95,7 +95,8 @@ export class DraupnirFactory {
     clientUserID: StringUserID,
     managementRoom: MatrixRoomID,
     config: IConfig,
-    cause: SafeModeCause
+    cause: SafeModeCause,
+    toggle: SafeModeToggle
   ): Promise<ActionResult<SafeModeDraupnir>> {
     const client = await this.clientProvider(clientUserID);
     const clientRooms = await this.clientsInRoomMap.makeClientRooms(
@@ -117,6 +118,7 @@ export class DraupnirFactory {
         clientPlatform,
         managementRoom,
         clientRooms.ok,
+        toggle,
         config
       )
     );

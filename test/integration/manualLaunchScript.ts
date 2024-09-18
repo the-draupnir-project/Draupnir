@@ -29,7 +29,6 @@ void (async () => {
     )
   );
   console.info(`management room ${mjolnir.managementRoom.toPermalink()}`);
-  await mjolnir.start();
   const apis = constructWebAPIs(mjolnir);
   await draupnirClient()?.start();
   await apis.start();

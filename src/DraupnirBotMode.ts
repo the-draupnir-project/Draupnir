@@ -14,6 +14,7 @@ import {
   setGlobalLoggerProvider,
   RoomStateBackingStore,
   ClientsInRoomMap,
+  Task,
 } from "matrix-protection-suite";
 import {
   BotSDKLogServiceLogger,
@@ -158,6 +159,7 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     this.safeModeDraupnir?.stop();
     this.safeModeDraupnir = null;
     this.draupnir = draupnirResult.ok;
+    void Task(this.draupnir.start());
     return draupnirResult;
   }
   public async switchToSafeMode(
@@ -172,7 +174,8 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
       this.clientUserID,
       this.managementRoom,
       this.config,
-      cause
+      cause,
+      this
     );
     if (isError(safeModeResult)) {
       return safeModeResult;
