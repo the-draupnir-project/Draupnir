@@ -7,8 +7,12 @@ import {
   ClientRooms,
   EventReport,
   RoomEvent,
+  Task,
 } from "matrix-protection-suite";
-import { MatrixAdaptorContext } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import {
+  MatrixAdaptorContext,
+  sendMatrixEventsFromDeadDocument,
+} from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import {
   StringUserID,
   StringRoomID,
@@ -27,6 +31,12 @@ import {
 } from "../commands/interface-manager/MatrixPromptForAccept";
 import { makeCommandDispatcherTimelineListener } from "./ManagementRoom";
 import { SafeModeToggle } from "./SafeModeToggle";
+import { Result } from "@gnuxie/typescript-result";
+import {
+  renderSafeModeStatusInfo,
+  safeModeStatusInfo,
+} from "./commands/StatusCommand";
+import { wrapInRoot } from "../commands/interface-manager/MatrixHelpRenderer";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -89,5 +99,16 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
 
   public stop(): void {
     this.clientRooms.off("timeline", this.timelineEventListener);
+  }
+
+  public sendStartupComplete(): void {
+    void Task(
+      sendMatrixEventsFromDeadDocument(
+        this.clientPlatform.toRoomMessageSender(),
+        this.commandRoomID,
+        wrapInRoot(renderSafeModeStatusInfo(safeModeStatusInfo(this))),
+        {}
+      ) as Promise<Result<void>>
+    );
   }
 }

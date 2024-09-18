@@ -370,3 +370,7 @@ export function renderTableHelp(table: CommandTable): DocumentNode {
     </fragment>
   );
 }
+
+export function wrapInRoot(node: DocumentNode): DocumentNode {
+  return <root>{node}</root>;
+}

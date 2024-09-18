@@ -19,10 +19,13 @@ export const DraupnirSafeModeCommand = describeCommand({
     { safeModeToggle }: Draupnir,
     info: BasicInvocationInformation
   ): Promise<Result<SafeModeDraupnir>> {
-    return safeModeToggle.switchToSafeMode({
-      reason: SafeModeReason.ByRequest,
-      user: info.commandSender,
-    });
+    return safeModeToggle.switchToSafeMode(
+      {
+        reason: SafeModeReason.ByRequest,
+        user: info.commandSender,
+      },
+      { sendStatusOnStart: true }
+    );
   },
 });
 

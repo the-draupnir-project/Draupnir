@@ -171,7 +171,8 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     return draupnirResult;
   }
   public async switchToSafeMode(
-    cause: SafeModeCause
+    cause: SafeModeCause,
+    options?: SafeModeToggleOptions
   ): Promise<Result<SafeModeDraupnir>> {
     if (this.safeModeDraupnir !== null) {
       return ResultError.Result(
@@ -192,6 +193,9 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     this.draupnir = null;
     this.safeModeDraupnir = safeModeResult.ok;
     this.safeModeDraupnir.start();
+    if (options?.sendStatusOnStart) {
+      this.safeModeDraupnir.sendStartupComplete();
+    }
     return safeModeResult;
   }
 }

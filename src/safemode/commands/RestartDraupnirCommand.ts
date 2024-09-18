@@ -14,7 +14,7 @@ export const SafeModeRestartCommand = describeCommand({
   async executor({
     safeModeToggle,
   }: SafeModeDraupnir): Promise<Result<Draupnir>> {
-    return safeModeToggle.switchToDraupnir();
+    return safeModeToggle.switchToDraupnir({ sendStatusOnStart: true });
   },
 });
 
