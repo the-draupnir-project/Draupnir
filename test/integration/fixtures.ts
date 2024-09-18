@@ -12,13 +12,13 @@ import {
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
 } from "matrix-protection-suite";
-import { constructWebAPIs } from "../../src/DraupnirBotMode";
 import { read as configRead } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
 import {
   DraupnirTestContext,
+  draupnir,
   draupnirClient,
-  makeMjolnir,
+  makeBotModeToggle,
   teardownManagementRoom,
 } from "./mjolnirSetupUtils";
 import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
@@ -46,25 +46,23 @@ export const mochaHooks = {
       this.timeout(30000);
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
-      this.draupnir = await makeMjolnir(config, { eraseAccountData: true });
+      this.toggle = await makeBotModeToggle(config, { eraseAccountData: true });
+      this.draupnir = draupnir();
       const draupnirMatrixClient = draupnirClient();
       if (draupnirMatrixClient === null) {
         throw new TypeError(`setup code is broken`);
       }
       config.RUNTIME.client = draupnirMatrixClient;
-      await this.draupnir.start();
-      this.apis = constructWebAPIs(this.draupnir);
-      await this.apis.start();
       await draupnirClient()?.start();
+      await this.toggle.encryptionInitialized();
       console.log("mochaHooks.beforeEach DONE");
     },
   ],
   afterEach: [
     async function (this: DraupnirTestContext) {
       this.timeout(10000);
-      this.apis?.stop();
+      this.toggle?.stopEverything();
       draupnirClient()?.stop();
-      this.draupnir?.stop();
 
       // remove alias from management room and leave it.
       if (this.draupnir !== undefined) {

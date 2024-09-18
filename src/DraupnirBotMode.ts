@@ -16,7 +16,6 @@ import {
   ClientsInRoomMap,
   Task,
   Logger,
-  Ok,
   ActionException,
   ActionExceptionKind,
 } from "matrix-protection-suite";
@@ -68,7 +67,9 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
 interface BotModeTogle extends SafeModeToggle {
   encryptionInitialized(): Promise<void>;
   stopEverything(): void;
-  startFromScratch(options?: SafeModeToggleOptions): Promise<Result<void>>;
+  startFromScratch(
+    options?: SafeModeToggleOptions
+  ): Promise<Result<Draupnir | SafeModeDraupnir>>;
 }
 
 export class DraupnirBotModeToggle implements BotModeTogle {
@@ -235,7 +236,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
 
   public async startFromScratch(
     options?: SafeModeToggleOptions
-  ): Promise<Result<void>> {
+  ): Promise<Result<Draupnir | SafeModeDraupnir>> {
     const draupnirResult = await this.switchToDraupnir(options ?? {});
     if (isError(draupnirResult)) {
       if (this.config.safeMode?.bootOnStartupFailure) {
@@ -243,18 +244,18 @@ export class DraupnirBotModeToggle implements BotModeTogle {
           "Failed to start draupnir, switching to safe mode as configured",
           draupnirResult.error
         );
-        return (await this.switchToSafeMode(
+        return await this.switchToSafeMode(
           {
             reason: SafeModeReason.InitializationError,
             error: draupnirResult.error,
           },
           options ?? {}
-        )) as Result<void>;
+        );
       } else {
         return draupnirResult;
       }
     }
-    return Ok(undefined);
+    return draupnirResult;
   }
 
   public async encryptionInitialized(): Promise<void> {

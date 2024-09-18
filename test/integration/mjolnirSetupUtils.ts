@@ -31,7 +31,7 @@ import {
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   RoomStateBackingStore,
 } from "matrix-protection-suite";
-import { WebAPIs } from "../../src/webapis/WebAPIs";
+import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 
 patchMatrixClient();
 
@@ -51,7 +51,7 @@ export type SafeMochaContext = Pick<
 export interface DraupnirTestContext extends SafeMochaContext {
   draupnir?: Draupnir;
   managementRoomAlias?: string;
-  apis?: WebAPIs;
+  toggle?: DraupnirBotModeToggle;
   config: IConfig;
 }
 
@@ -102,7 +102,10 @@ async function configureMjolnir(config: IConfig) {
   }
 }
 
-export function draupnir(): Draupnir | null {
+export function draupnir(): Draupnir {
+  if (globalMjolnir === null) {
+    throw new TypeError("Setup code didn't run before you called `draupnir()`");
+  }
   return globalMjolnir;
 }
 export function draupnirClient(): MatrixClient | null {
@@ -121,13 +124,13 @@ let globalSafeEmitter: SafeMatrixEmitter | undefined;
 /**
  * Return a test instance of Mjolnir.
  */
-export async function makeMjolnir(
+export async function makeBotModeToggle(
   config: IConfig,
   {
     backingStore,
     eraseAccountData,
   }: { backingStore?: RoomStateBackingStore; eraseAccountData?: boolean } = {}
-): Promise<Draupnir> {
+): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
   LogService.setLogger(new RichConsoleLogger());
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
@@ -161,12 +164,17 @@ export async function makeMjolnir(
   );
   // we don't want to send status on startup incase we want to test e2ee from the manual launch script.
   const mj = (
-    await toggle.switchToDraupnir({ sendStatusOnStart: false })
+    await toggle.startFromScratch({ sendStatusOnStart: false })
   ).expect("Could not create Draupnir");
+  if (mj instanceof SafeModeDraupnir) {
+    throw new TypeError(
+      "Setup code is wrong, shouldn't be booting into safe mode"
+    );
+  }
   globalClient = client;
   globalMjolnir = mj;
   globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
-  return mj;
+  return toggle;
 }
 
 /**
