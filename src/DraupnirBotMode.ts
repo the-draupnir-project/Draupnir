@@ -239,7 +239,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
   ): Promise<Result<Draupnir | SafeModeDraupnir>> {
     const draupnirResult = await this.switchToDraupnir(options ?? {});
     if (isError(draupnirResult)) {
-      if (this.config.safeMode?.bootOnStartupFailure) {
+      if (this.config.safeMode?.bootIntoOnStartupFailure) {
         log.error(
           "Failed to start draupnir, switching to safe mode as configured",
           draupnirResult.error

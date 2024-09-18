@@ -90,7 +90,7 @@ export interface IConfig {
     };
   };
   safeMode?: {
-    bootOnStartupFailure: boolean;
+    bootIntoOnStartupFailure: boolean;
   };
   health: {
     healthz: {
@@ -192,7 +192,7 @@ const defaultConfig: IConfig = {
     },
   },
   safeMode: {
-    bootOnStartupFailure: false,
+    bootIntoOnStartupFailure: false,
   },
   health: {
     healthz: {
