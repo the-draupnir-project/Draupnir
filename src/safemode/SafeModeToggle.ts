@@ -7,6 +7,8 @@ import { Draupnir } from "../Draupnir";
 import { SafeModeDraupnir } from "./DraupnirSafeMode";
 import { SafeModeCause } from "./SafeModeCause";
 
+export type SafeModeToggleOptions = { sendStatusOnStart?: boolean };
+
 export interface SafeModeToggle {
   /**
    * Switch the bot to Draupnir mode.
@@ -15,6 +17,9 @@ export interface SafeModeToggle {
    * That means that by the command responds with ticks and crosses,
    * draupnir will be running or we will still be in safe mode.
    */
-  switchToDraupnir(): Promise<Result<Draupnir>>;
-  switchToSafeMode(cause: SafeModeCause): Promise<Result<SafeModeDraupnir>>;
+  switchToDraupnir(options?: SafeModeToggleOptions): Promise<Result<Draupnir>>;
+  switchToSafeMode(
+    cause: SafeModeCause,
+    options?: SafeModeToggleOptions
+  ): Promise<Result<SafeModeDraupnir>>;
 }

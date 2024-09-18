@@ -159,9 +159,10 @@ export async function makeMjolnir(
     config,
     backingStore
   );
-  const mj = (await toggle.switchToDraupnir()).expect(
-    "Could not create Draupnir"
-  );
+  // we don't want to send status on startup incase we want to test e2ee from the manual launch script.
+  const mj = (
+    await toggle.switchToDraupnir({ sendStatusOnStart: false })
+  ).expect("Could not create Draupnir");
   globalClient = client;
   globalMjolnir = mj;
   globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);

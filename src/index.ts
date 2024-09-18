@@ -108,7 +108,8 @@ void (async function () {
       store
     );
 
-    bot = (await toggle.switchToDraupnir()).expect(
+    // We don't want to send the status on start, as we need to initialize e2ee first (using client.start);
+    bot = (await toggle.switchToDraupnir({ sendStatusOnStart: false })).expect(
       "Failed to initialize Draupnir"
     );
     apis = constructWebAPIs(bot);

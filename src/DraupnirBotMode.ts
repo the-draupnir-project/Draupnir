@@ -37,7 +37,10 @@ import {
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { Result, isError } from "@gnuxie/typescript-result";
-import { SafeModeToggle } from "./safemode/SafeModeToggle";
+import {
+  SafeModeToggle,
+  SafeModeToggleOptions,
+} from "./safemode/SafeModeToggle";
 import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause } from "./safemode/SafeModeCause";
@@ -141,7 +144,9 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
       config
     );
   }
-  public async switchToDraupnir(): Promise<Result<Draupnir>> {
+  public async switchToDraupnir(
+    options?: SafeModeToggleOptions
+  ): Promise<Result<Draupnir>> {
     if (this.draupnir !== null) {
       return ResultError.Result(
         `There is a draupnir for ${this.clientUserID} already running`
@@ -160,6 +165,9 @@ export class DraupnirBotModeToggle implements SafeModeToggle {
     this.safeModeDraupnir = null;
     this.draupnir = draupnirResult.ok;
     void Task(this.draupnir.start());
+    if (options?.sendStatusOnStart) {
+      void Task(this.draupnir.startupComplete());
+    }
     return draupnirResult;
   }
   public async switchToSafeMode(
