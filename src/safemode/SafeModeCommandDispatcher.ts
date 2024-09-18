@@ -14,11 +14,9 @@ import {
   invocationInformationFromMatrixEventcontext,
 } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
-import {
-  SafeModeCommands,
-  SafeModeHelpCommand,
-} from "./commands/SafeModeCommands";
-import { SafeModeInterfaceAdaptor } from "./commands/SafeModeCommands";
+import { SafeModeCommands } from "./commands/SafeModeCommands";
+import { SafeModeHelpCommand } from "./commands/HelpCommand";
+import { SafeModeInterfaceAdaptor } from "./commands/SafeModeAdaptor";
 
 function makePrefixExtractor(
   safeModeDraupnir: SafeModeDraupnir

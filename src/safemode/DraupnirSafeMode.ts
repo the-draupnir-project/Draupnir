@@ -18,7 +18,7 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import { IConfig } from "../config";
 import { SafeModeCause } from "./SafeModeCause";
-import { makeSafeModeCommandDispatcher } from "./SafeModeAdaptor";
+import { makeSafeModeCommandDispatcher } from "./SafeModeCommandDispatcher";
 import {
   ARGUMENT_PROMPT_LISTENER,
   DEFAUILT_ARGUMENT_PROMPT_LISTENER,
