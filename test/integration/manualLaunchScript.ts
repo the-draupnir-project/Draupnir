@@ -12,11 +12,7 @@
  * This file is used to launch mjolnir for manual testing, creating a user and management room automatically if it doesn't already exist.
  */
 
-import {
-  draupnir,
-  draupnirClient,
-  makeBotModeToggle,
-} from "./mjolnirSetupUtils";
+import { draupnirClient, makeBotModeToggle } from "./mjolnirSetupUtils";
 import { read as configRead } from "../../src/config";
 import { SqliteRoomStateBackingStore } from "../../src/backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import path from "path";
@@ -29,8 +25,8 @@ void (async () => {
       path.join(config.dataPath, "room-state-backing-store.db"),
       DefaultEventDecoder
     ),
+    allowSafeMode: true,
   });
-  console.info(`management room ${draupnir().managementRoom.toPermalink()}`);
   await draupnirClient()?.start();
   await toggle.encryptionInitialized();
 })();

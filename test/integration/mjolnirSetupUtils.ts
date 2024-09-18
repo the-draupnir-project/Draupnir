@@ -129,7 +129,12 @@ export async function makeBotModeToggle(
   {
     backingStore,
     eraseAccountData,
-  }: { backingStore?: RoomStateBackingStore; eraseAccountData?: boolean } = {}
+    allowSafeMode,
+  }: {
+    backingStore?: RoomStateBackingStore;
+    eraseAccountData?: boolean;
+    allowSafeMode?: boolean;
+  } = {}
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
   LogService.setLogger(new RichConsoleLogger());
@@ -166,13 +171,16 @@ export async function makeBotModeToggle(
   const mj = (
     await toggle.startFromScratch({ sendStatusOnStart: false })
   ).expect("Could not create Draupnir");
-  if (mj instanceof SafeModeDraupnir) {
+  if (mj instanceof SafeModeDraupnir && !allowSafeMode) {
     throw new TypeError(
       "Setup code is wrong, shouldn't be booting into safe mode"
     );
   }
   globalClient = client;
-  globalMjolnir = mj;
+  if (mj instanceof Draupnir) {
+    globalMjolnir = mj;
+  }
+  console.info(`management room ${mj.managementRoom.toPermalink()}`);
   globalSafeEmitter = new SafeMatrixEmitterWrapper(client, DefaultEventDecoder);
   return toggle;
 }
