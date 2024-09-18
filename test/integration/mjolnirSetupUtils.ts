@@ -27,6 +27,8 @@ import {
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   DefaultEventDecoder,
+  MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
+  MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   RoomStateBackingStore,
 } from "matrix-protection-suite";
 import { WebAPIs } from "../../src/webapis/WebAPIs";
@@ -121,7 +123,10 @@ let globalSafeEmitter: SafeMatrixEmitter | undefined;
  */
 export async function makeMjolnir(
   config: IConfig,
-  backingStore?: RoomStateBackingStore
+  {
+    backingStore,
+    eraseAccountData,
+  }: { backingStore?: RoomStateBackingStore; eraseAccountData?: boolean } = {}
 ): Promise<Draupnir> {
   await configureMjolnir(config);
   LogService.setLogger(new RichConsoleLogger());
@@ -135,6 +140,14 @@ export async function makeMjolnir(
     config.pantalaimon.username,
     config.pantalaimon.password
   );
+  if (eraseAccountData) {
+    await Promise.all([
+      client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, { rooms: [] }),
+      client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE, {
+        references: [],
+      }),
+    ]);
+  }
   await overrideRatelimitForUser(
     config.homeserverUrl,
     await client.getUserId()

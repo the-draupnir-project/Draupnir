@@ -46,22 +46,12 @@ export const mochaHooks = {
       this.timeout(30000);
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
-      this.draupnir = await makeMjolnir(config);
+      this.draupnir = await makeMjolnir(config, { eraseAccountData: true });
       const draupnirMatrixClient = draupnirClient();
       if (draupnirMatrixClient === null) {
         throw new TypeError(`setup code is broken`);
       }
       config.RUNTIME.client = draupnirMatrixClient;
-      await Promise.all([
-        this.draupnir.client.setAccountData(
-          MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
-          { rooms: [] }
-        ),
-        this.draupnir.client.setAccountData(
-          MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
-          { references: [] }
-        ),
-      ]);
       await this.draupnir.start();
       this.apis = constructWebAPIs(this.draupnir);
       await this.apis.start();

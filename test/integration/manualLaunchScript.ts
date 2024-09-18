@@ -21,13 +21,12 @@ import { DefaultEventDecoder, Task } from "matrix-protection-suite";
 
 void (async () => {
   const config = configRead();
-  const mjolnir = await makeMjolnir(
-    config,
-    new SqliteRoomStateBackingStore(
+  const mjolnir = await makeMjolnir(config, {
+    backingStore: new SqliteRoomStateBackingStore(
       path.join(config.dataPath, "room-state-backing-store.db"),
       DefaultEventDecoder
-    )
-  );
+    ),
+  });
   console.info(`management room ${mjolnir.managementRoom.toPermalink()}`);
   const apis = constructWebAPIs(mjolnir);
   await draupnirClient()?.start();
