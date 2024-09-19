@@ -11,6 +11,9 @@ import {
   MatrixInterfaceCommandDispatcher,
   StandardMatrixInterfaceCommandDispatcher,
   CommandPrefixExtractor,
+  JSInterfaceCommandDispatcher,
+  BasicInvocationInformation,
+  StandardJSInterfaceCommandDispatcher,
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../Draupnir";
 import {
@@ -21,7 +24,10 @@ import {
 import { DraupnirHelpCommand } from "./Help";
 import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
 import "./DraupnirCommands";
 
 function makePrefixExtractor(draupnir: Draupnir): CommandPrefixExtractor {
@@ -58,5 +64,20 @@ export function makeDraupnirCommandDispatcher(
       ...MPSCommandDispatcherCallbacks,
       prefixExtractor: makePrefixExtractor(draupnir),
     }
+  );
+}
+
+export function makeDraupnirJSCommandDispatcher(
+  draupnir: Draupnir
+): JSInterfaceCommandDispatcher<BasicInvocationInformation> {
+  return new StandardJSInterfaceCommandDispatcher(
+    DraupnirTopLevelCommands,
+    DraupnirHelpCommand,
+    draupnir,
+    {
+      ...MPSCommandDispatcherCallbacks,
+      prefixExtractor: makePrefixExtractor(draupnir),
+    },
+    DraupnirContextToCommandContextTranslator
   );
 }
