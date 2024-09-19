@@ -292,7 +292,7 @@ export class MjolnirAppService {
         .getClient()
         .sendText(
           mxEvent.room_id,
-          "Please make sure you are allowed to provision a bot. Otherwise notify the admin please. The provisioning request was rejected."
+          "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
         );
     }
     try {
