@@ -184,7 +184,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       return draupnirResult;
     }
     this.draupnir = draupnirResult.ok;
-    void Task(this.draupnir.start());
+    this.draupnir.start();
     if (options?.sendStatusOnStart) {
       void Task(this.draupnir.startupComplete());
       try {

@@ -8,12 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionError,
-  ActionResult,
-  Task,
-  isError,
-} from "matrix-protection-suite";
+import { ActionError, ActionResult, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -88,7 +83,7 @@ export class StandardDraupnirManager {
     }
     this.draupnir.set(clientUserID, draupnir.ok);
     this.failedDraupnir.delete(clientUserID);
-    void Task(draupnir.ok.start());
+    draupnir.ok.start();
     return draupnir;
   }
 

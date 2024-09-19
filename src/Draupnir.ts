@@ -322,17 +322,17 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * This will not start the appservice from listening and responding
    * to events. Nor will it start any syncing client.
    */
-  public async start(): Promise<void> {
+  public start(): void {
     // to avoid handlers getting out of sync on clientRooms and leaking
     // when draupnir keeps being started and restarted, we can basically
     // clear all listeners each time and add the factory listener back.
     this.clientRooms.on("timeline", this.timelineEventListener);
     if (this.reportPoller) {
-      const reportPollSetting = await ReportPoller.getReportPollSetting(
+      // allow this to crash draupnir if it fails, since we need to know.
+      void this.reportPoller.startFromStoredSetting(
         this.client,
         this.managementRoomOutput
       );
-      this.reportPoller.start(reportPollSetting);
     }
   }
 
