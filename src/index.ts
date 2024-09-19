@@ -9,9 +9,7 @@
 // </text>
 
 import * as path from "path";
-
 import { Healthz } from "./health/healthz";
-
 import {
   LogLevel,
   LogService,
@@ -24,14 +22,9 @@ import {
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { read as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
-import {
-  constructWebAPIs,
-  makeDraupnirBotModeFromConfig,
-} from "./DraupnirBotMode";
-import { Draupnir } from "./Draupnir";
+import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder, Task } from "matrix-protection-suite";
-import { WebAPIs } from "./webapis/WebAPIs";
+import { DefaultEventDecoder } from "matrix-protection-suite";
 import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
 void (async function () {
@@ -54,8 +47,7 @@ void (async function () {
     healthz.listen();
   }
 
-  let bot: Draupnir | null = null;
-  let apis: WebAPIs | null = null;
+  let bot: DraupnirBotModeToggle | null = null;
   try {
     const storagePath = path.isAbsolute(config.dataPath)
       ? config.dataPath
@@ -104,29 +96,31 @@ void (async function () {
           eventDecoder
         )
       : undefined;
-    bot = await makeDraupnirBotModeFromConfig(
+    bot = await DraupnirBotModeToggle.create(
       client,
       new SafeMatrixEmitterWrapper(client, eventDecoder),
       config,
       store
     );
-    apis = constructWebAPIs(bot);
+
+    // We don't want to send the status on start, as we need to initialize e2ee first (using client.start);
+    (await bot.startFromScratch({ sendStatusOnStart: false })).expect(
+      "Failed to start Draupnir"
+    );
   } catch (err) {
     console.error(
       `Failed to setup mjolnir from the config ${config.dataPath}: ${err}`
     );
+    bot?.stopEverything();
     throw err;
   }
   try {
-    await bot.start();
     await config.RUNTIME.client.start();
-    void Task(bot.startupComplete());
-    await apis.start();
+    await bot.encryptionInitialized();
     healthz.isHealthy = true;
   } catch (err) {
     console.error(`Mjolnir failed to start: ${err}`);
-    bot.stop();
-    apis.stop();
+    bot.stopEverything();
     throw err;
   }
 })();

@@ -23,10 +23,8 @@ import {
   RoomEvent,
   RoomMembershipManager,
   RoomMembershipRevisionIssuer,
-  RoomMessage,
   RoomStateManager,
   Task,
-  TextMessageContent,
   Value,
   isError,
 } from "matrix-protection-suite";
@@ -67,6 +65,8 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { makeDraupnirCommandDispatcher } from "./commands/DraupnirCommandDispatcher";
+import { SafeModeToggle } from "./safemode/SafeModeToggle";
+import { makeCommandDispatcherTimelineListener } from "./safemode/ManagementRoom";
 
 const log = new Logger("Draupnir");
 
@@ -106,6 +106,13 @@ export class Draupnir implements Client, MatrixAdaptorContext {
 
   public readonly capabilityMessageRenderer: RendererMessageCollector;
 
+  private readonly commandDispatcherTimelineListener =
+    makeCommandDispatcherTimelineListener(
+      this.managementRoom,
+      this.client,
+      this.commandDispatcher
+    );
+
   private constructor(
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
@@ -121,6 +128,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     /** Mjolnir has a feature where you can choose to accept invitations from a space and not just the management room. */
     public readonly acceptInvitesFromRoom: MatrixRoomID,
     public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
+    public readonly safeModeToggle: SafeModeToggle,
     public readonly synapseAdminClient?: SynapseAdminClient
   ) {
     this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
@@ -169,7 +177,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     policyRoomManager: PolicyRoomManager,
     roomMembershipManager: RoomMembershipManager,
     config: IConfig,
-    loggableConfigTracker: LoggableConfigTracker
+    loggableConfigTracker: LoggableConfigTracker,
+    safeModeToggle: SafeModeToggle
   ): Promise<ActionResult<Draupnir>> {
     const acceptInvitesFromRoom = await (async () => {
       if (config.autojoinOnlyIfManager) {
@@ -225,6 +234,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       loggableConfigTracker,
       acceptInvitesFromRoom.ok,
       acceptInvitesFromRoomIssuer.ok,
+      safeModeToggle,
       new SynapseAdminClient(client, clientUserID)
     );
     const loadResult = await protectedRoomsSet.protections.loadProtections(
@@ -303,42 +313,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     if (roomID !== this.managementRoomID) {
       return;
     }
-    if (
-      Value.Check(RoomMessage, event) &&
-      Value.Check(TextMessageContent, event.content)
-    ) {
-      if (
-        event.content.body ===
-        "** Unable to decrypt: The sender's device has not sent us the keys for this message. **"
-      ) {
-        log.info(
-          `Unable to decrypt an event ${event.event_id} from ${event.sender} in the management room ${this.managementRoom.toPermalink()}.`
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "⚠")
-            .then((_) => Ok(undefined))
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "UISI")
-            .then((_) => Ok(undefined))
-        );
-        void Task(
-          this.client.unstableApis
-            .addReactionToEvent(roomID, event.event_id, "🚨")
-            .then((_) => Ok(undefined))
-        );
-        return;
-      }
-      this.commandDispatcher.handleCommandMessageEvent(
-        {
-          event,
-          roomID,
-        },
-        event.content.body
-      );
-    }
+    this.commandDispatcherTimelineListener(roomID, event);
     this.reportManager.handleTimelineEvent(roomID, event);
   }
 
@@ -347,14 +322,17 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * This will not start the appservice from listening and responding
    * to events. Nor will it start any syncing client.
    */
-  public async start(): Promise<void> {
+  public start(): void {
+    // to avoid handlers getting out of sync on clientRooms and leaking
+    // when draupnir keeps being started and restarted, we can basically
+    // clear all listeners each time and add the factory listener back.
     this.clientRooms.on("timeline", this.timelineEventListener);
     if (this.reportPoller) {
-      const reportPollSetting = await ReportPoller.getReportPollSetting(
+      // allow this to crash draupnir if it fails, since we need to know.
+      void this.reportPoller.startFromStoredSetting(
         this.client,
         this.managementRoomOutput
       );
-      this.reportPoller.start(reportPollSetting);
     }
   }
 

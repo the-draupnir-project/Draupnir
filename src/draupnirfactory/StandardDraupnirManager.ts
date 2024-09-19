@@ -8,12 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionError,
-  ActionResult,
-  Task,
-  isError,
-} from "matrix-protection-suite";
+import { ActionError, ActionResult, isError } from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -21,14 +16,45 @@ import {
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
+import { SafeModeCause } from "../safemode/SafeModeCause";
+import { SafeModeToggle } from "../safemode/SafeModeToggle";
 
 export class StandardDraupnirManager {
-  private readonly readyDraupnirs = new Map<StringUserID, Draupnir>();
-  private readonly listeningDraupnirs = new Map<StringUserID, Draupnir>();
-  private readonly failedDraupnirs = new Map<StringUserID, UnstartedDraupnir>();
+  private readonly draupnir = new Map<StringUserID, Draupnir>();
+  private readonly failedDraupnir = new Map<StringUserID, UnstartedDraupnir>();
+  private readonly safeModeDraupnir = new Map<StringUserID, SafeModeDraupnir>();
 
   public constructor(protected readonly draupnirFactory: DraupnirFactory) {
     // nothing to do.
+  }
+
+  public makeSafeModeToggle(
+    clientUserID: StringUserID,
+    managementRoom: MatrixRoomID,
+    config: IConfig
+  ): SafeModeToggle {
+    // We need to alias to make the toggle frankly.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const draupnirManager = this;
+    const toggle: SafeModeToggle = Object.freeze({
+      async switchToSafeMode(cause: SafeModeCause) {
+        return draupnirManager.makeSafeModeDraupnir(
+          clientUserID,
+          managementRoom,
+          config,
+          cause
+        );
+      },
+      async switchToDraupnir() {
+        return draupnirManager.makeDraupnir(
+          clientUserID,
+          managementRoom,
+          config
+        );
+      },
+    });
+    return toggle;
   }
 
   public async makeDraupnir(
@@ -39,13 +65,10 @@ export class StandardDraupnirManager {
     const draupnir = await this.draupnirFactory.makeDraupnir(
       clientUserID,
       managementRoom,
-      config
+      config,
+      this.makeSafeModeToggle(clientUserID, managementRoom, config)
     );
-    if (this.isDraupnirReady(clientUserID)) {
-      return ActionError.Result(
-        `There is a draupnir for ${clientUserID} already waiting to be started`
-      );
-    } else if (this.isDraupnirListening(clientUserID)) {
+    if (this.isDraupnirAvailable(clientUserID)) {
       return ActionError.Result(
         `There is a draupnir for ${clientUserID} already running`
       );
@@ -58,21 +81,55 @@ export class StandardDraupnirManager {
       );
       return draupnir;
     }
-    this.readyDraupnirs.set(clientUserID, draupnir.ok);
-    this.failedDraupnirs.delete(clientUserID);
+    this.draupnir.set(clientUserID, draupnir.ok);
+    this.failedDraupnir.delete(clientUserID);
+    draupnir.ok.start();
     return draupnir;
   }
 
-  public isDraupnirReady(draupnirClientID: StringUserID): boolean {
-    return this.readyDraupnirs.has(draupnirClientID);
+  public async makeSafeModeDraupnir(
+    clientUserID: StringUserID,
+    managementRoom: MatrixRoomID,
+    config: IConfig,
+    cause: SafeModeCause
+  ): Promise<ActionResult<SafeModeDraupnir>> {
+    if (this.isDraupnirAvailable(clientUserID)) {
+      return ActionError.Result(
+        `There is a draupnir for ${clientUserID} already running`
+      );
+    }
+    const safeModeDraupnir = await this.draupnirFactory.makeSafeModeDraupnir(
+      clientUserID,
+      managementRoom,
+      config,
+      cause,
+      this.makeSafeModeToggle(clientUserID, managementRoom, config)
+    );
+    if (isError(safeModeDraupnir)) {
+      this.reportUnstartedDraupnir(
+        DraupnirFailType.InitializationError,
+        safeModeDraupnir.error,
+        clientUserID
+      );
+      return safeModeDraupnir;
+    }
+    safeModeDraupnir.ok.start();
+    this.safeModeDraupnir.set(clientUserID, safeModeDraupnir.ok);
+    return safeModeDraupnir;
   }
 
-  public isDraupnirListening(draupnirClientID: StringUserID): boolean {
-    return this.listeningDraupnirs.has(draupnirClientID);
+  /**
+   * Whether the draupnir is available to the user, either normally or via safe mode.
+   */
+  public isDraupnirAvailable(draupnirClientID: StringUserID): boolean {
+    return (
+      this.draupnir.has(draupnirClientID) ||
+      this.safeModeDraupnir.has(draupnirClientID)
+    );
   }
 
   public isDraupnirFailed(draupnirClientID: StringUserID): boolean {
-    return this.failedDraupnirs.has(draupnirClientID);
+    return this.failedDraupnir.has(draupnirClientID);
   }
 
   public reportUnstartedDraupnir(
@@ -80,50 +137,35 @@ export class StandardDraupnirManager {
     cause: unknown,
     draupnirClientID: StringUserID
   ): void {
-    this.failedDraupnirs.set(
+    this.failedDraupnir.set(
       draupnirClientID,
       new UnstartedDraupnir(draupnirClientID, failType, cause)
     );
   }
 
   public getUnstartedDraupnirs(): UnstartedDraupnir[] {
-    return [...this.failedDraupnirs.values()];
+    return [...this.failedDraupnir.values()];
   }
 
   public findUnstartedDraupnir(
     draupnirClientID: StringUserID
   ): UnstartedDraupnir | undefined {
-    return this.failedDraupnirs.get(draupnirClientID);
+    return this.failedDraupnir.get(draupnirClientID);
   }
 
   public findRunningDraupnir(
     draupnirClientID: StringUserID
   ): Draupnir | undefined {
-    return this.listeningDraupnirs.get(draupnirClientID);
-  }
-
-  public startDraupnir(clientUserID: StringUserID): void {
-    const draupnir = this.readyDraupnirs.get(clientUserID);
-    if (draupnir === undefined) {
-      throw new TypeError(
-        `Trying to start a draupnir that hasn't been created ${clientUserID}`
-      );
-    }
-    // FIXME: This is a little more than suspect that there are no handlers if starting fails?
-    // unclear to me what can fail though.
-    void Task(draupnir.start());
-    this.listeningDraupnirs.set(clientUserID, draupnir);
-    this.readyDraupnirs.delete(clientUserID);
+    return this.draupnir.get(draupnirClientID);
   }
 
   public stopDraupnir(clientUserID: StringUserID): void {
-    const draupnir = this.listeningDraupnirs.get(clientUserID);
+    const draupnir = this.draupnir.get(clientUserID);
     if (draupnir === undefined) {
       return;
     } else {
       draupnir.stop();
-      this.listeningDraupnirs.delete(clientUserID);
-      this.readyDraupnirs.set(clientUserID, draupnir);
+      this.draupnir.delete(clientUserID);
     }
   }
 }

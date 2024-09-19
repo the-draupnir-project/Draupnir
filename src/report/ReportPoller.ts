@@ -207,6 +207,18 @@ export class ReportPoller {
     }
     return reportPollSetting;
   }
+
+  public async startFromStoredSetting(
+    client: MatrixSendClient,
+    managementRoomOutput: ManagementRoomOutput
+  ): Promise<void> {
+    const reportPollSetting = await ReportPoller.getReportPollSetting(
+      client,
+      managementRoomOutput
+    );
+    this.start(reportPollSetting);
+  }
+
   public start({ from: startFrom }: ReportPollSetting) {
     if (this.timeout === null) {
       this.from = startFrom;

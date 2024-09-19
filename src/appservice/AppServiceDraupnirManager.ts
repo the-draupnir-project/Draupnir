@@ -134,7 +134,6 @@ export class AppServiceDraupnirManager {
     if (isError(managedDraupnir)) {
       return managedDraupnir;
     }
-    this.baseManager.startDraupnir(mxid);
     incrementGaugeValue(this.instanceCountGauge, "offline", localPart);
     decrementGaugeValue(this.instanceCountGauge, "disabled", localPart);
     incrementGaugeValue(this.instanceCountGauge, "online", localPart);
@@ -288,7 +287,7 @@ export class AppServiceDraupnirManager {
     mjolnirRecord: MjolnirRecord
   ): Promise<ActionResult<void>> {
     const clientUserID = this.draupnirMXID(mjolnirRecord);
-    if (this.baseManager.isDraupnirListening(clientUserID)) {
+    if (this.baseManager.isDraupnirAvailable(clientUserID)) {
       throw new TypeError(
         `${mjolnirRecord.local_part} is already running, we cannot start it.`
       );

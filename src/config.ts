@@ -89,6 +89,9 @@ export interface IConfig {
       redactReason: string;
     };
   };
+  safeMode?: {
+    bootIntoOnStartupFailure: boolean;
+  };
   health: {
     healthz: {
       enabled: boolean;
@@ -187,6 +190,9 @@ const defaultConfig: IConfig = {
       redactReason:
         "You have mentioned too many users in this message, so we have had to redact it.",
     },
+  },
+  safeMode: {
+    bootIntoOnStartupFailure: false,
   },
   health: {
     healthz: {
