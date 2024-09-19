@@ -64,10 +64,18 @@ import {
   MatrixAdaptorContext,
   sendMatrixEventsFromDeadDocument,
 } from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { makeDraupnirCommandDispatcher } from "./commands/DraupnirCommandDispatcher";
+import {
+  makeDraupnirCommandDispatcher,
+  makeDraupnirJSCommandDispatcher,
+} from "./commands/DraupnirCommandDispatcher";
 import { SafeModeToggle } from "./safemode/SafeModeToggle";
 import { makeCommandDispatcherTimelineListener } from "./safemode/ManagementRoom";
-
+import {
+  BasicInvocationInformation,
+  JSInterfaceCommandDispatcher,
+  Presentation,
+  StandardPresentationArgumentStream,
+} from "@the-draupnir-project/interface-manager";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -113,6 +121,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       this.commandDispatcher
     );
 
+  private readonly JSInterfaceDispatcher: JSInterfaceCommandDispatcher<BasicInvocationInformation> =
+    makeDraupnirJSCommandDispatcher(this);
   private constructor(
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
@@ -353,5 +363,29 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    */
   public get commandRoomID() {
     return this.managementRoomID;
+  }
+
+  /**
+   * API for integration tests to be able to test commands, mostly to ensure
+   * functionality of the appservice bots.
+   */
+  public async sendPresentationCommand<CommandReturn>(
+    sender: StringUserID,
+    ...items: Presentation[]
+  ): Promise<ActionResult<CommandReturn>> {
+    return await this.JSInterfaceDispatcher.invokeCommandFromPresentationStream(
+      { commandSender: sender },
+      new StandardPresentationArgumentStream(items)
+    );
+  }
+
+  public async sendTextCommand<CommandReturn>(
+    sender: StringUserID,
+    command: string
+  ): Promise<ActionResult<CommandReturn>> {
+    return await this.JSInterfaceDispatcher.invokeCommandFromBody(
+      { commandSender: sender },
+      command
+    );
   }
 }

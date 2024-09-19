@@ -22,7 +22,10 @@ import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import { IConfig } from "../config";
 import { SafeModeCause } from "./SafeModeCause";
-import { makeSafeModeCommandDispatcher } from "./SafeModeCommandDispatcher";
+import {
+  makeSafeModeCommandDispatcher,
+  makeSafeModeJSDispatcher,
+} from "./SafeModeCommandDispatcher";
 import {
   ARGUMENT_PROMPT_LISTENER,
   DEFAUILT_ARGUMENT_PROMPT_LISTENER,
@@ -48,6 +51,7 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
       this.client,
       this.commandDispatcher
     );
+  private readonly JSInterfaceDispatcher = makeSafeModeJSDispatcher(this);
   public constructor(
     public readonly cause: SafeModeCause,
     public readonly client: MatrixSendClient,
@@ -109,6 +113,16 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
         wrapInRoot(renderSafeModeStatusInfo(safeModeStatusInfo(this))),
         {}
       ) as Promise<Result<void>>
+    );
+  }
+
+  public async sendTextCommand<CommandReturn>(
+    sender: StringUserID,
+    command: string
+  ): Promise<Result<CommandReturn>> {
+    return await this.JSInterfaceDispatcher.invokeCommandFromBody(
+      { commandSender: sender },
+      command
     );
   }
 }

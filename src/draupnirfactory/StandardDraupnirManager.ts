@@ -68,7 +68,7 @@ export class StandardDraupnirManager {
       config,
       this.makeSafeModeToggle(clientUserID, managementRoom, config)
     );
-    if (this.isDraupnirAvailable(clientUserID)) {
+    if (this.isNormalDraupnir(clientUserID)) {
       return ActionError.Result(
         `There is a draupnir for ${clientUserID} already running`
       );
@@ -83,6 +83,7 @@ export class StandardDraupnirManager {
     }
     this.draupnir.set(clientUserID, draupnir.ok);
     this.failedDraupnir.delete(clientUserID);
+    this.safeModeDraupnir.delete(clientUserID);
     draupnir.ok.start();
     return draupnir;
   }
@@ -93,7 +94,7 @@ export class StandardDraupnirManager {
     config: IConfig,
     cause: SafeModeCause
   ): Promise<ActionResult<SafeModeDraupnir>> {
-    if (this.isDraupnirAvailable(clientUserID)) {
+    if (this.isSafeModeDraupnir(clientUserID)) {
       return ActionError.Result(
         `There is a draupnir for ${clientUserID} already running`
       );
@@ -115,7 +116,17 @@ export class StandardDraupnirManager {
     }
     safeModeDraupnir.ok.start();
     this.safeModeDraupnir.set(clientUserID, safeModeDraupnir.ok);
+    this.draupnir.delete(clientUserID);
+    this.failedDraupnir.delete(clientUserID);
     return safeModeDraupnir;
+  }
+
+  private isNormalDraupnir(drapunirClientID: StringUserID): boolean {
+    return this.draupnir.has(drapunirClientID);
+  }
+
+  private isSafeModeDraupnir(drapunirClientID: StringUserID): boolean {
+    return this.safeModeDraupnir.has(drapunirClientID);
   }
 
   /**
@@ -123,8 +134,8 @@ export class StandardDraupnirManager {
    */
   public isDraupnirAvailable(draupnirClientID: StringUserID): boolean {
     return (
-      this.draupnir.has(draupnirClientID) ||
-      this.safeModeDraupnir.has(draupnirClientID)
+      this.isNormalDraupnir(draupnirClientID) ||
+      this.isSafeModeDraupnir(draupnirClientID)
     );
   }
 
