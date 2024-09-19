@@ -278,7 +278,7 @@ export class MjolnirAppService {
         .getClient()
         .sendText(
           mxEvent.room_id,
-          "Please accept the invites to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
+          "Please accept the inviations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
         );
     } catch (e: unknown) {
       log.error(
