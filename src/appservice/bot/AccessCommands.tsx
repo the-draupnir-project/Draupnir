@@ -9,7 +9,7 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotCommandDispatcher";
+import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
 
 export const AppserviceAllowCommand = describeCommand({
   parameters: tuple({

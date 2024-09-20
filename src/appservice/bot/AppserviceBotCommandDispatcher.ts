@@ -12,14 +12,11 @@ import {
   CommandPrefixExtractor,
   JSInterfaceCommandDispatcher,
   MatrixInterfaceCommandDispatcher,
-  StandardAdaptorContextToCommandContextTranslator,
   StandardJSInterfaceCommandDispatcher,
-  StandardMatrixInterfaceAdaptor,
   StandardMatrixInterfaceCommandDispatcher,
 } from "@the-draupnir-project/interface-manager";
 import {
   MPSCommandDispatcherCallbacks,
-  MPSMatrixInterfaceAdaptorCallbacks,
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
 } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
@@ -27,19 +24,10 @@ import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
 import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { AppserviceBotHelpCommand } from "./AppserviceBotHelp";
-
-export const AppserviceAdaptorContextToCommandContextTranslator =
-  new StandardAdaptorContextToCommandContextTranslator<AppserviceAdaptorContext>();
-
-export const AppserviceBotInterfaceAdaptor = new StandardMatrixInterfaceAdaptor<
-  AppserviceAdaptorContext,
-  MatrixEventContext
->(
+import {
+  AppserviceBotInterfaceAdaptor,
   AppserviceAdaptorContextToCommandContextTranslator,
-  invocationInformationFromMatrixEventcontext,
-  MPSMatrixInterfaceAdaptorCallbacks,
-  MPSCommandDispatcherCallbacks
-);
+} from "./AppserviceBotInterfaceAdaptor";
 
 function makePrefixExtractor(
   appserviceContext: AppserviceAdaptorContext
