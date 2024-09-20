@@ -378,8 +378,16 @@ export class AppServiceDraupnirManager {
    * Used at startup to create all the ManagedMjolnir instances and start them so that they will respond to users.
    */
   public async startDraupnirs(mjolnirRecords: MjolnirRecord[]): Promise<void> {
-    for (const mjolnirRecord of mjolnirRecords) {
-      await this.startDraupnirFromRecord(mjolnirRecord);
+    // Start the bots in small batches instead of sequentially.
+    // This is to avoid a thundering herd of bots all starting at once.
+    // It also is to avoid that others have to wait for a single bot to start.
+    const chunkSize = 5;
+    for (let i = 0; i < mjolnirRecords.length; i += chunkSize) {
+      const batch = mjolnirRecords.slice(i, i + chunkSize);
+      await Promise.all(
+        // `startDraupnirFromRecord` handles errors for us and adds the draupnir to the list of unstarted draupnir.
+        batch.map((record) => this.startDraupnirFromRecord(record))
+      );
     }
   }
 }
