@@ -1,6 +1,7 @@
 // Copyright 2024 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2024 The Matrix.org Foundation C.I.C.
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   AbstractProtection,
@@ -29,6 +30,40 @@ const MentionsContentSchema = Type.Object({
 const NewContentMentionsSchema = Type.Object({
   "m.new_content": MentionsContentSchema,
 });
+
+const WeakTextContentSchema = Type.Object({
+  body: Type.Optional(Type.String()),
+  formatted_body: Type.Optional(Type.String()),
+});
+
+export function isContainingMentionsOverLimit(
+  event: RoomEvent,
+  maxMentions: number
+): boolean {
+  const isOverLimit = (user_ids: string[]): boolean =>
+    user_ids.length > maxMentions;
+  if (
+    Value.Check(NewContentMentionsSchema, event.content) &&
+    isOverLimit(event.content["m.new_content"]["m.mentions"].user_ids)
+  ) {
+    return true;
+  }
+  if (
+    Value.Check(MentionsContentSchema, event.content) &&
+    isOverLimit(event.content["m.mentions"].user_ids)
+  ) {
+    return true;
+  }
+  if (Value.Check(WeakTextContentSchema, event.content)) {
+    if (
+      event.content.body !== undefined &&
+      event.content.body.split("@").length - 1 > maxMentions
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export type MentionLimitProtectionDescription = ProtectionDescription<
   unknown,
@@ -60,21 +95,7 @@ export class MentionLimitProtection
     _room: MatrixRoomID,
     event: RoomEvent
   ): Promise<ActionResult<void>> {
-    const isOverLimit = (user_ids: string[]): boolean =>
-      user_ids.length > this.maxMentions;
-    if (
-      Value.Check(NewContentMentionsSchema, event.content) &&
-      isOverLimit(event.content["m.new_content"]["m.mentions"].user_ids)
-    ) {
-      return await this.eventConsequences.consequenceForEvent(
-        event.room_id,
-        event.event_id,
-        this.redactReason
-      );
-    } else if (
-      Value.Check(MentionsContentSchema, event.content) &&
-      isOverLimit(event.content["m.mentions"].user_ids)
-    ) {
+    if (isContainingMentionsOverLimit(event, this.maxMentions)) {
       return await this.eventConsequences.consequenceForEvent(
         event.room_id,
         event.event_id,
@@ -92,7 +113,7 @@ export type MentionLimitProtectionCapabilities = {
 
 describeProtection<MentionLimitProtectionCapabilities, Draupnir>({
   name: "MentionLimitProtection",
-  description: `Highly experimental protection that will remove any messages with
+  description: `A potection that will remove any messages with
     a number of mentions over a preconfigured limit.
     Please read the documentation https://the-draupnir-project.github.io/draupnir-documentation/protections/mention-limit-protection.`,
   capabilityInterfaces: {
