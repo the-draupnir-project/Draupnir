@@ -6,9 +6,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Draupnir
 
-A [Matrix](https://matrix.org) moderation bot.
+A [Matrix](https://matrix.org) moderation bot and protection platform.
 Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)
 in your client and come say hi.
+
+Please see the [draupnir
+documentation](https://the-draupnir-project.github.io/draupnir-documentation/)
+for installation instructions and usage guides.
 
 ## Features
 
@@ -17,7 +21,7 @@ users and servers across all of the matrix rooms that you moderate.
 The second is to protect your community by applying policies from community curated
 policy lists, for example the [community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev),
 to your rooms around the clock. This means that communities can warn
-and protect each other of known threats
+and protect each other of known threats.
 
 Draupnir also includes a series of protections that can be enabled
 that might help you in some scenarios.
@@ -34,9 +38,50 @@ shutting down rooms.
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
 Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
-and is a continuation of Mjolnir. However, large sections of the the
-code base are now very distinct and much of Draupnir was rewritten
-into a library called the [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite).
+in order to radically refactor the code base and break a feature freeze.
+Draupnir has now completed this refactor and large sections of the the
+code base are now very distinct, as much of Draupnir was rewritten.
+
+Draupnir remains a drop in replacement for Mjolnir and is forwards and
+backwards compatible.
+
+#### Changes in `v2.0.0-beta.*` (pre-release)
+
+* Draupnir's new core efficiently caches room state and room
+  membership allowing Draupnir to be much more responsive than
+  Mjolnir.
+
+* Draupnir is much less dependant on commands
+  and will automatically send prompts to the management room.
+  Prompts are sent for inviting Draupnir to protect rooms,
+  watch policy lists, ban users, and unban users.
+
+* Draupnir offers a [room state backing
+  store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
+  allowing Draupnir startup quickly, even when deployed at distance
+  from the homeserver.
+
+* Draupnir's core functionality is implemented as protections,
+  which can be dynamically turned on and off.
+
+* Most effort has been spent refactoring the code base, paving the way
+  for future feature development and adjacent projects. This includes
+  the rewrite of the core of Draupnir into the
+  [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
+  providing all the Matrix client code required to operate a
+  protection platform.  The
+  [interface-manager](https://github.com/the-draupnir-project/interface-manager)
+  providing an advanced command-oriented interface (note, this does
+  not mean command-line interface). The
+  [matrix-basic-types](https://github.com/the-draupnir-project/matrix-basic-types)
+  library for dealing with Matrix's various string types. And finally
+  the introduction of [prettier](https://prettier.io/),
+  [eslint](https://eslint.org/) and
+  [typescript-eslint](https://typescript-eslint.io/) into Draupnir's
+  development tooling, modernising TypeScript development.
+
+
+#### Changes in latest `v1.87.0`
 
 The main difference from Mjolnir is that it is no longer necessary to use
 commands for some functions. Banning a user in a protected room from your
@@ -64,12 +109,19 @@ to trace the cause of unexpected errors much more easily.
 
 ## Status
 
-The UX and code base of Draupnir is being overhauled and Draupnir is
-slowly moving towards a 2.0.0 release.
+Draupnir is being supported with a grant from NLnet,
+the goals of the work are described [here](https://marewolf.me/posts/draupnir/24-nlnet-goals.html)
+
+Currently The UX and code base of Draupnir has been overhauled and
+Draupnir is moving towards a 2.0.0 release.
 
 As Draupnir heads towards `v2.0.0`, releases will appear [here](https://github.com/Gnuxie/Draupnir/releases).
 Until `v2.0.0` there will be frequent changes to commands but all of these
 will be noted in the changes for that release.
+
+Currently, we are running a beta channel (`v2.0.0-beta.*`). As of now
+all functionality apart from dynamic configuration of protection
+settings is stable in the beta channel.
 
 For the latest stable release, see `v1.87.0`, the documentation
 for which can be found [here](https://github.com/the-draupnir-project/Draupnir/tree/v1.87.0).
