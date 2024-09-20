@@ -23,6 +23,7 @@ import { DraupnirKickCommand } from "./KickCommand";
 import {
   DraupnirListProtectionsCommand,
   DraupnirProtectionsConfigAddCommand,
+  DraupnirProtectionsConfigRemoveCommand,
   DraupnirProtectionsConfigSetCommand,
   DraupnirProtectionsDisableCommand,
   DraupnirProtectionsEnableCommand,
@@ -72,7 +73,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
     "config",
     "add",
   ])
-  .internCommand(DraupnirProtectionsConfigAddCommand, [
+  .internCommand(DraupnirProtectionsConfigRemoveCommand, [
     "protections",
     "config",
     "remove",

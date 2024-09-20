@@ -16,7 +16,7 @@ import {
   MatrixUserIDPresentationType,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotCommandDispatcher";
+import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
 
 export const AppserviceListUnstartedCommand = describeCommand({
   summary: "List any Draupnir that failed to start.",

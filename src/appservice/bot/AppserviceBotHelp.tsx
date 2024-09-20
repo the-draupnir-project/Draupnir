@@ -12,12 +12,10 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { ActionResult, Ok, isError } from "matrix-protection-suite";
-import {
-  MatrixAdaptorContext,
-  MPSMatrixInterfaceAdaptor,
-} from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { MatrixAdaptorContext } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { renderTableHelp } from "../../commands/interface-manager/MatrixHelpRenderer";
+import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
 
 export const AppserviceBotHelpCommand = describeCommand({
   rest: {
@@ -44,6 +42,6 @@ function renderAppserviceBotHelp(
   return Ok(<root>{renderTableHelp(appserviceBotCommands.ok)}</root>);
 }
 
-MPSMatrixInterfaceAdaptor.describeRenderer(AppserviceBotHelpCommand, {
+AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceBotHelpCommand, {
   JSXRenderer: renderAppserviceBotHelp,
 });
