@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Draupnir
 
-A [Matrix](https://matrix.org) moderation bot and protections platform.
+A [Matrix](https://matrix.org) moderation bot and protection platform.
 Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org)
 in your client and come say hi.
 
@@ -38,9 +38,12 @@ shutting down rooms.
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
 Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
-and is a continuation of Mjolnir. However, large sections of the the
-code base are now very distinct and much of Draupnir was rewritten
-into a library called the [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite).
+in order to radically refactor the code base and break a feature freeze.
+Draupnir has now completed this refactor and large sections of the the
+code base are now very distinct, as much of Draupnir was rewritten.
+
+Draupnir remains a drop in replacement for Mjolnir and is forwards and
+backwards compatible.
 
 #### Changes in `v2.0.0-beta.*` (pre-release)
 
@@ -49,7 +52,7 @@ into a library called the [matrix-protection-suite](https://github.com/Gnuxie/ma
   Mjolnir.
 
 * Draupnir is much less dependant on commands
-  and will automatically send prompts to the managment room.
+  and will automatically send prompts to the management room.
   Prompts are sent for inviting Draupnir to protect rooms,
   watch policy lists, ban users, and unban users.
 
@@ -60,6 +63,23 @@ into a library called the [matrix-protection-suite](https://github.com/Gnuxie/ma
 
 * Draupnir's core functionality is implemented as protections,
   which can be dynamically turned on and off.
+
+* Most effort has been spent refactoring the code base, paving the way
+  for future feature development and adjacent projects. This includes
+  the rewrite of the core of Draupnir into the
+  [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
+  providing all the Matrix client code required to operate a
+  protection platform.  The
+  [interface-manager](https://github.com/the-draupnir-project/interface-manager)
+  providing an advanced command-oriented interface (note, this does
+  not mean command-line interface). The
+  [matrix-basic-types](https://github.com/the-draupnir-project/matrix-basic-types)
+  library for dealing with Matrix's various string types. And finally
+  the introduction of [prettier](https://prettier.io/),
+  [eslint](https://eslint.org/) and
+  [typescript-eslint](https://typescript-eslint.io/) into Draupnir's
+  development tooling, modernising TypeScript development.
+
 
 #### Changes in latest `v1.87.0`
 
