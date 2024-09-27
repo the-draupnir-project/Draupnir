@@ -71,11 +71,19 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     );
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(this.commandRoomID, this.commandDispatcher)
+      makeListenerForArgumentPrompt(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(this.commandRoomID, this.commandDispatcher)
+      makeListenerForPromptDefault(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
   }
 

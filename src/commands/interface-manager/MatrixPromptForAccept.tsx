@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Logger, Value, isError } from "matrix-protection-suite";
+import { Logger, Task, Value, isError } from "matrix-protection-suite";
 import {
   MatrixReactionHandler,
   ReactionListener,
@@ -50,7 +50,8 @@ function continueCommandAcceptingPrompt(
   eventContext: MatrixEventContext,
   promptContext: PromptContext,
   serializedPrompt: string,
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): void {
   const stream = new StandardPresentationArgumentStream(
     readCommand(
@@ -62,13 +63,20 @@ function continueCommandAcceptingPrompt(
     )
   );
   commandDispatcher.handleCommandFromPresentationStream(eventContext, stream);
+  void Task(
+    reactionHandler.completePrompt(
+      eventContext.roomID,
+      eventContext.event.event_id
+    )
+  );
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.default_argument_prompt";
 export function makeListenerForPromptDefault(
   commandRoomID: StringRoomID,
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
     if (annotatedEvent.room_id !== commandRoomID) {
@@ -89,7 +97,8 @@ export function makeListenerForPromptDefault(
       { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
       item,
-      commandDispatcher
+      commandDispatcher,
+      reactionHandler
     );
   };
 }
@@ -98,7 +107,8 @@ export const ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.argument_prompt";
 export function makeListenerForArgumentPrompt(
   commandRoomID: StringRoomID,
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
     if (annotatedEvent.room_id !== commandRoomID) {
@@ -116,7 +126,8 @@ export function makeListenerForArgumentPrompt(
       { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
       item,
-      commandDispatcher
+      commandDispatcher,
+      reactionHandler
     );
   };
 }
