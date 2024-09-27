@@ -42,6 +42,7 @@ import {
   isError,
 } from "matrix-protection-suite";
 import {
+  BotSDKAccountDataConfigBackend,
   BotSDKMatrixAccountData,
   BotSDKMatrixStateData,
   MatrixSendClient,
@@ -81,10 +82,10 @@ async function makeProtectedRoomsConfig(
   loggableConfigTracker: LoggableConfigTracker
 ): Promise<ActionResult<ProtectedRoomsConfig>> {
   return await MjolnirProtectedRoomsConfig.createFromStore(
-    new BotSDKMatrixAccountData(
+    new BotSDKAccountDataConfigBackend(
+      client,
       MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
-      MjolnirProtectedRoomsEvent,
-      client
+      MjolnirProtectedRoomsEvent
     ),
     roomResolver,
     loggableConfigTracker

@@ -17,6 +17,7 @@ import {
   SOFTWARE_VERSION,
 } from "../../config";
 import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
+import { renderRecoveryOptions } from "../RecoveryOptions";
 
 export function safeModeHeader(): DocumentNode {
   return (
@@ -83,6 +84,8 @@ export function renderSafeModeStatusInfo(
         {renderSafeModeCause(info.safeModeCause)}
         <br />
       </span>
+      <br />
+      {renderRecoveryOptions(info.safeModeCause)}
       <br />
       <b>Version: </b>
       <code>{info.version}</code>
