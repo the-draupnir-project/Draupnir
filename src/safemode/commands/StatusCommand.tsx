@@ -18,6 +18,7 @@ import {
 } from "../../config";
 import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
 import { renderRecoveryOptions } from "../RecoveryOptions";
+import { sendAndAnnotateWithRecoveryOptions } from "./RecoverCommand";
 
 export function safeModeHeader(): DocumentNode {
   return (
@@ -131,10 +132,14 @@ export const SafeModeStatusCommand = describeCommand({
 });
 
 SafeModeInterfaceAdaptor.describeRenderer(SafeModeStatusCommand, {
-  JSXRenderer(result) {
-    if (isError(result)) {
+  async arbritraryRenderer(context, eventContext, commandResult) {
+    if (isError(commandResult)) {
       return Ok(undefined);
     }
-    return Ok(<root>{renderSafeModeStatusInfo(result.ok)}</root>);
+    return await sendAndAnnotateWithRecoveryOptions(
+      context,
+      <root>{renderSafeModeStatusInfo(commandResult.ok)}</root>,
+      { replyToEvent: eventContext.event }
+    );
   },
 });
