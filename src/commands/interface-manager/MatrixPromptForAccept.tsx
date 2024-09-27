@@ -24,6 +24,7 @@ import {
   readCommand,
 } from "@the-draupnir-project/interface-manager";
 import { Ok, Result } from "@gnuxie/typescript-result";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("MatrixPromptForAccept");
 
@@ -66,9 +67,13 @@ function continueCommandAcceptingPrompt(
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.default_argument_prompt";
 export function makeListenerForPromptDefault(
+  commandRoomID: StringRoomID,
   commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
+    if (annotatedEvent.room_id !== commandRoomID) {
+      return;
+    }
     if (item !== "ok") {
       return;
     }
@@ -92,9 +97,13 @@ export function makeListenerForPromptDefault(
 export const ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.argument_prompt";
 export function makeListenerForArgumentPrompt(
+  commandRoomID: StringRoomID,
   commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
+    if (annotatedEvent.room_id !== commandRoomID) {
+      return;
+    }
     const promptContext = Value.Decode(PromptContext, context);
     if (isError(promptContext)) {
       log.error(

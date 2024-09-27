@@ -164,11 +164,11 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     }
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(this.commandDispatcher)
+      makeListenerForArgumentPrompt(this.commandRoomID, this.commandDispatcher)
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(this.commandDispatcher)
+      makeListenerForPromptDefault(this.commandRoomID, this.commandDispatcher)
     );
     this.capabilityMessageRenderer = new DraupnirRendererMessageCollector(
       this.clientPlatform.toRoomMessageSender(),
