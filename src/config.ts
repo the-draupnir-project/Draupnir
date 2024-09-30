@@ -287,6 +287,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "automaticallyRedactForReasons",
     "protectAllJoinedRooms",
     "backgroundDelayMS",
+    "safeMode",
   ];
   const configTemplate = read(); // we use the standard bot config as a template for every provisioned mjolnir.
   const unusedKeys = Object.keys(configTemplate).filter(
