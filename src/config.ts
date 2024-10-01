@@ -13,6 +13,7 @@ import { load } from "js-yaml";
 import { MatrixClient, LogService } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
+import { SafeModeBootOption } from "./safemode/BootOption";
 
 /**
  * The configuration, as read from production.yaml
@@ -90,7 +91,7 @@ export interface IConfig {
     };
   };
   safeMode?: {
-    bootIntoOnStartupFailure: boolean;
+    bootOption: SafeModeBootOption;
   };
   health: {
     healthz: {
@@ -192,7 +193,7 @@ const defaultConfig: IConfig = {
     },
   },
   safeMode: {
-    bootIntoOnStartupFailure: true,
+    bootOption: SafeModeBootOption.RecoveryOnly,
   },
   health: {
     healthz: {

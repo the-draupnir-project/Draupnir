@@ -18,6 +18,7 @@ import {
   Logger,
   ActionException,
   ActionExceptionKind,
+  ConfigRecoverableError,
 } from "matrix-protection-suite";
 import {
   BotSDKLogServiceLogger,
@@ -48,6 +49,7 @@ import {
 import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
+import { SafeModeBootOption } from "./safemode/BootOption";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 
@@ -268,20 +270,26 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     error: ResultError,
     options?: SafeModeToggleOptions | undefined
   ): Promise<Result<SafeModeDraupnir>> {
-    if (this.config.safeMode?.bootIntoOnStartupFailure) {
-      log.error(
-        "Failed to start draupnir, switching to safe mode as configured",
-        error
-      );
-      return await this.switchToSafeMode(
-        {
-          reason: SafeModeReason.InitializationError,
-          error: error,
-        },
-        options ?? {}
-      );
-    } else {
-      return Err(error);
+    switch (this.config.safeMode?.bootOption) {
+      case SafeModeBootOption.Never:
+        return Err(error);
+      case SafeModeBootOption.RecoveryOnly:
+        if (!(error instanceof ConfigRecoverableError)) {
+          return Err(error);
+        }
+      // fallthrough
+      default:
+        log.error(
+          "Failed to start draupnir, switching to safe mode as configured",
+          error
+        );
+        return await this.switchToSafeMode(
+          {
+            reason: SafeModeReason.InitializationError,
+            error: error,
+          },
+          options ?? {}
+        );
     }
   }
 

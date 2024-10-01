@@ -211,6 +211,13 @@ protections:
 roomStateBackingStore:
   enabled: false
 
+#safeMode:
+#  # The option for entering safe mode when Draupnir fails to start up.
+#  # - "RecoveryOnly" will only start the bot in safe mode when there are recovery options available.
+#  # - "Never" will never start the bot in safe mode when Draupnir fails to start normally.
+#  # - "Always" will always start the bot in safe mode when Draupnir fails to start normally.
+#  bootOption: RecoveryOnly
+
 # Options for advanced monitoring of the health of the bot.
 health:
   # healthz options. These options are best for use in container environments

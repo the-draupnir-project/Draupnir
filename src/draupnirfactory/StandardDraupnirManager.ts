@@ -11,6 +11,7 @@
 import {
   ActionError,
   ActionResult,
+  ConfigRecoverableError,
   Logger,
   isError,
 } from "matrix-protection-suite";
@@ -28,6 +29,7 @@ import {
   SafeModeToggle,
 } from "../safemode/SafeModeToggle";
 import { ResultError } from "@gnuxie/typescript-result";
+import { SafeModeBootOption } from "../safemode/BootOption";
 
 const log = new Logger("StandardDraupnirManager");
 
@@ -91,30 +93,37 @@ export class StandardDraupnirManager {
         draupnir.error,
         clientUserID
       );
-      if (config.safeMode?.bootIntoOnStartupFailure) {
-        log.error(
-          `Failed to start draupnir ${clientUserID}, switching to safe mode as configured`,
-          draupnir.error
-        );
-        const safeModeResult = await this.makeSafeModeDraupnir(
-          clientUserID,
-          managementRoom,
-          config,
-          {
-            reason: SafeModeReason.InitializationError,
-            error: draupnir.error,
+      switch (config.safeMode?.bootOption) {
+        case SafeModeBootOption.Never:
+          return draupnir;
+        case SafeModeBootOption.RecoveryOnly:
+          if (!(draupnir.error instanceof ConfigRecoverableError)) {
+            return draupnir;
           }
-        );
-        if (isError(safeModeResult)) {
-          return safeModeResult;
-        } else {
-          return DraupnirRestartError.Result(
+        // fallthrough
+        default: {
+          log.error(
             `Failed to start draupnir ${clientUserID}, switching to safe mode as configured`,
-            { safeModeDraupnir: safeModeResult.ok }
+            draupnir.error
           );
+          const safeModeResult = await this.makeSafeModeDraupnir(
+            clientUserID,
+            managementRoom,
+            config,
+            {
+              reason: SafeModeReason.InitializationError,
+              error: draupnir.error,
+            }
+          );
+          if (isError(safeModeResult)) {
+            return safeModeResult;
+          } else {
+            return DraupnirRestartError.Result(
+              `Failed to start draupnir ${clientUserID}, switching to safe mode as configured`,
+              { safeModeDraupnir: safeModeResult.ok }
+            );
+          }
         }
-      } else {
-        return draupnir;
       }
     }
     this.draupnir.set(clientUserID, draupnir.ok);
