@@ -192,7 +192,7 @@ const defaultConfig: IConfig = {
     },
   },
   safeMode: {
-    bootIntoOnStartupFailure: false,
+    bootIntoOnStartupFailure: true,
   },
   health: {
     healthz: {
