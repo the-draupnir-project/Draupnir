@@ -209,7 +209,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
         await this.webAPIs.start();
       } catch (e) {
         if (e instanceof Error) {
-          this.stopDraupnir();
+          await this.stopDraupnir();
           log.error("Failed to start webAPIs", e);
           return ActionException.Result("Failed to start webAPIs", {
             exceptionKind: ActionExceptionKind.Unknown,
@@ -241,7 +241,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     if (isError(safeModeResult)) {
       return safeModeResult;
     }
-    this.stopDraupnir();
+    await this.stopDraupnir();
     this.safeModeDraupnir = safeModeResult.ok;
     this.safeModeDraupnir.start();
     if (options?.sendStatusOnStart) {
@@ -292,7 +292,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
         await this.webAPIs.start();
         await this.draupnir.startupComplete();
       } catch (e) {
-        this.stopEverything();
+        await this.stopEverything();
         throw e;
       }
     } else if (this.safeModeDraupnir !== null) {
@@ -300,10 +300,10 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     }
   }
 
-  private stopDraupnir(): void {
+  private async stopDraupnir(): Promise<void> {
     this.draupnir?.stop();
     this.draupnir = null;
-    this.webAPIs?.stop();
+    await this.webAPIs?.stop();
     this.webAPIs = null;
   }
 
@@ -312,8 +312,8 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     this.safeModeDraupnir = null;
   }
 
-  public stopEverything(): void {
-    this.stopDraupnir();
+  public async stopEverything(): Promise<void> {
+    await this.stopDraupnir();
     this.stopSafeModeDraupnir();
   }
 }
