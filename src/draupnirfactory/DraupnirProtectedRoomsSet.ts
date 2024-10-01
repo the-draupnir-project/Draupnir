@@ -16,14 +16,11 @@ import {
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   MissingProtectionCB,
-  MjolnirEnabledProtectionsEvent,
   MjolnirEnabledProtectionsEventType,
   MjolnirPolicyRoomsConfig,
   MjolnirProtectedRoomsConfig,
-  MjolnirProtectedRoomsEvent,
   MjolnirProtectionSettingsEventType,
   MjolnirProtectionsConfig,
-  MjolnirWatchedPolicyRoomsEvent,
   Ok,
   PolicyListConfig,
   PolicyRoomManager,
@@ -43,7 +40,6 @@ import {
 } from "matrix-protection-suite";
 import {
   BotSDKAccountDataConfigBackend,
-  BotSDKMatrixAccountData,
   BotSDKMatrixStateData,
   MatrixSendClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -65,10 +61,9 @@ async function makePolicyListConfig(
   roomJoiner: RoomJoiner
 ): Promise<ActionResult<PolicyListConfig>> {
   const result = await MjolnirPolicyRoomsConfig.createFromStore(
-    new BotSDKMatrixAccountData(
-      MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
-      MjolnirWatchedPolicyRoomsEvent,
-      client
+    new BotSDKAccountDataConfigBackend(
+      client,
+      MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE
     ),
     policyRoomManager,
     roomJoiner
@@ -84,8 +79,7 @@ async function makeProtectedRoomsConfig(
   return await MjolnirProtectedRoomsConfig.createFromStore(
     new BotSDKAccountDataConfigBackend(
       client,
-      MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
-      MjolnirProtectedRoomsEvent
+      MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE
     ),
     roomResolver,
     loggableConfigTracker
@@ -117,10 +111,9 @@ async function makeProtectionsManager(
     return result;
   }
   const protectionsConfigResult = await MjolnirProtectionsConfig.create(
-    new BotSDKMatrixAccountData<MjolnirEnabledProtectionsEvent>(
-      MjolnirEnabledProtectionsEventType,
-      MjolnirEnabledProtectionsEvent,
-      client
+    new BotSDKAccountDataConfigBackend(
+      client,
+      MjolnirEnabledProtectionsEventType
     ),
     loggableConfigTracker,
     {
