@@ -61,7 +61,7 @@ export const mochaHooks = {
   afterEach: [
     async function (this: DraupnirTestContext) {
       this.timeout(10000);
-      this.toggle?.stopEverything();
+      await this.toggle?.stopEverything();
       draupnirClient()?.stop();
 
       // remove alias from management room and leave it.

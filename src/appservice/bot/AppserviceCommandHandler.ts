@@ -75,11 +75,19 @@ export class AppserviceCommandHandler {
     );
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(this.commandDispatcher)
+      makeListenerForArgumentPrompt(
+        this.adminRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(this.commandDispatcher)
+      makeListenerForPromptDefault(
+        this.adminRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
     this.JSInterfaceDispatcher = makeAppserviceJSCommandDispatcher(
       this.appserviceContext

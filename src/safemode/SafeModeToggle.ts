@@ -2,12 +2,28 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { Result } from "@gnuxie/typescript-result";
+import { Err, Result, ResultError } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
 import { SafeModeDraupnir } from "./DraupnirSafeMode";
 import { SafeModeCause } from "./SafeModeCause";
 
 export type SafeModeToggleOptions = { sendStatusOnStart?: boolean };
+
+export class DraupnirRestartError extends ResultError {
+  constructor(
+    message: string,
+    public readonly safeModeDraupnir: SafeModeDraupnir
+  ) {
+    super(message);
+  }
+
+  public static Result(
+    message: string,
+    options: { safeModeDraupnir: SafeModeDraupnir }
+  ): Result<never> {
+    return Err(new DraupnirRestartError(message, options.safeModeDraupnir));
+  }
+}
 
 export interface SafeModeToggle {
   /**
@@ -17,7 +33,9 @@ export interface SafeModeToggle {
    * That means that by the command responds with ticks and crosses,
    * draupnir will be running or we will still be in safe mode.
    */
-  switchToDraupnir(options?: SafeModeToggleOptions): Promise<Result<Draupnir>>;
+  switchToDraupnir(
+    options?: SafeModeToggleOptions
+  ): Promise<Result<Draupnir, DraupnirRestartError | ResultError>>;
   switchToSafeMode(
     cause: SafeModeCause,
     options?: SafeModeToggleOptions

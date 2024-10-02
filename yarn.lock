@@ -256,10 +256,10 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@the-draupnir-project/interface-manager@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-2.4.0.tgz#7734309e8cdc709d4f4a63557ac6b192dcb188a0"
-  integrity sha512-0iKB5nHHUBRMysKOw77/YmPaSrA6d7YtrMZQd7fAE0eqNTZLgHu3vS0fnBQ1AcVM2016Io512up3WYTUVqAqkA==
+"@the-draupnir-project/interface-manager@2.4.1":
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-2.4.1.tgz#fc93eac495cf89fee0c87786b405a2fbae826b49"
+  integrity sha512-7L9QzsH/BAgdPSoNaB78ENJKAqbD4sqA0J7LmAUDiM7ygLS1yVrrI2VRN9aCdguVcbuD//fnOCJhSlfL2vr6YQ==
   dependencies:
     "@gnuxie/super-cool-stream" "^0.2.1"
     "@gnuxie/typescript-result" "^1.0.0"
@@ -2526,17 +2526,17 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.8.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-1.4.0.tgz#0745358810e03959344e791733e6ccb7e811689d"
-  integrity sha512-xGkBaBdZ3u5Z27HqG2IEPxQ8Z5slFtWCihnFzocPBtRcLDJMFXnoF1+bpWElnPomDQtw/u0gvDwSC+f4pmTqyQ==
+"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.5.1":
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-1.5.1.tgz#ff01f3c81a28b7ea7391d9df06cac0613ad61b50"
+  integrity sha512-cPG46fPDlROSsGPY79XZpjp6AIUBvk2rGZkPUr1Cbxl1FIntOzDNIKePLu3CEEAY4RppPDmmjsm0bmRt6zbYBA==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-1.4.0.tgz#0cce6f9dec22cf41b8ffc26861e5ae5c7cf463db"
-  integrity sha512-/1+L/Tf/fJx9aeNvyIfF4dqkS6YtTkRLMvSiqFNIpCq3JxOwyM2nqVBBNG5rbVPPdrxGlaFP+GuPxAUm54SdSA==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@1.5.1":
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-1.5.1.tgz#243068169f8ff71e1e3fe5ae61d53c08995de520"
+  integrity sha512-A4xaONgW4asZ22cZeZl+Rk4lWWd44WOWFOoZjRFSmve8ismU+HQQ+PA2jLacfARvlqi/puqiYAb6VN7GIbtz/w==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Logger, Value, isError } from "matrix-protection-suite";
+import { Logger, Task, Value, isError } from "matrix-protection-suite";
 import {
   MatrixReactionHandler,
   ReactionListener,
@@ -24,6 +24,7 @@ import {
   readCommand,
 } from "@the-draupnir-project/interface-manager";
 import { Ok, Result } from "@gnuxie/typescript-result";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("MatrixPromptForAccept");
 
@@ -49,7 +50,8 @@ function continueCommandAcceptingPrompt(
   eventContext: MatrixEventContext,
   promptContext: PromptContext,
   serializedPrompt: string,
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): void {
   const stream = new StandardPresentationArgumentStream(
     readCommand(
@@ -61,14 +63,25 @@ function continueCommandAcceptingPrompt(
     )
   );
   commandDispatcher.handleCommandFromPresentationStream(eventContext, stream);
+  void Task(
+    reactionHandler.completePrompt(
+      eventContext.roomID,
+      eventContext.event.event_id
+    )
+  );
 }
 
 export const DEFAUILT_ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.default_argument_prompt";
 export function makeListenerForPromptDefault(
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandRoomID: StringRoomID,
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
+    if (annotatedEvent.room_id !== commandRoomID) {
+      return;
+    }
     if (item !== "ok") {
       return;
     }
@@ -84,7 +97,8 @@ export function makeListenerForPromptDefault(
       { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
       item,
-      commandDispatcher
+      commandDispatcher,
+      reactionHandler
     );
   };
 }
@@ -92,9 +106,14 @@ export function makeListenerForPromptDefault(
 export const ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.argument_prompt";
 export function makeListenerForArgumentPrompt(
-  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>
+  commandRoomID: StringRoomID,
+  commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
+  reactionHandler: MatrixReactionHandler
 ): ReactionListener {
   return function (reactionKey, item, context, reactionMap, annotatedEvent) {
+    if (annotatedEvent.room_id !== commandRoomID) {
+      return;
+    }
     const promptContext = Value.Decode(PromptContext, context);
     if (isError(promptContext)) {
       log.error(
@@ -107,7 +126,8 @@ export function makeListenerForArgumentPrompt(
       { event: annotatedEvent, roomID: annotatedEvent.room_id },
       promptContext.ok,
       item,
-      commandDispatcher
+      commandDispatcher,
+      reactionHandler
     );
   };
 }

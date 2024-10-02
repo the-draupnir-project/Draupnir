@@ -111,7 +111,7 @@ void (async function () {
     console.error(
       `Failed to setup mjolnir from the config ${config.dataPath}: ${err}`
     );
-    bot?.stopEverything();
+    await bot?.stopEverything();
     throw err;
   }
   try {
@@ -120,7 +120,7 @@ void (async function () {
     healthz.isHealthy = true;
   } catch (err) {
     console.error(`Mjolnir failed to start: ${err}`);
-    bot.stopEverything();
+    await bot.stopEverything();
     throw err;
   }
 })();

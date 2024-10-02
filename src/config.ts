@@ -13,6 +13,7 @@ import { load } from "js-yaml";
 import { MatrixClient, LogService } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
+import { SafeModeBootOption } from "./safemode/BootOption";
 
 /**
  * The configuration, as read from production.yaml
@@ -90,7 +91,7 @@ export interface IConfig {
     };
   };
   safeMode?: {
-    bootIntoOnStartupFailure: boolean;
+    bootOption: SafeModeBootOption;
   };
   health: {
     healthz: {
@@ -192,7 +193,7 @@ const defaultConfig: IConfig = {
     },
   },
   safeMode: {
-    bootIntoOnStartupFailure: false,
+    bootOption: SafeModeBootOption.RecoveryOnly,
   },
   health: {
     healthz: {
@@ -287,6 +288,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "automaticallyRedactForReasons",
     "protectAllJoinedRooms",
     "backgroundDelayMS",
+    "safeMode",
   ];
   const configTemplate = read(); // we use the standard bot config as a template for every provisioned mjolnir.
   const unusedKeys = Object.keys(configTemplate).filter(

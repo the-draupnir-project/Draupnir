@@ -8,7 +8,13 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionError, ActionResult, isError } from "matrix-protection-suite";
+import {
+  ActionError,
+  ActionResult,
+  ConfigRecoverableError,
+  Logger,
+  isError,
+} from "matrix-protection-suite";
 import { IConfig } from "../config";
 import { DraupnirFactory } from "./DraupnirFactory";
 import { Draupnir } from "../Draupnir";
@@ -17,8 +23,15 @@ import {
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
-import { SafeModeCause } from "../safemode/SafeModeCause";
-import { SafeModeToggle } from "../safemode/SafeModeToggle";
+import { SafeModeCause, SafeModeReason } from "../safemode/SafeModeCause";
+import {
+  DraupnirRestartError,
+  SafeModeToggle,
+} from "../safemode/SafeModeToggle";
+import { ResultError } from "@gnuxie/typescript-result";
+import { SafeModeBootOption } from "../safemode/BootOption";
+
+const log = new Logger("StandardDraupnirManager");
 
 export class StandardDraupnirManager {
   private readonly draupnir = new Map<StringUserID, Draupnir>();
@@ -61,7 +74,8 @@ export class StandardDraupnirManager {
     clientUserID: StringUserID,
     managementRoom: MatrixRoomID,
     config: IConfig
-  ): Promise<ActionResult<Draupnir>> {
+  ): Promise<ActionResult<Draupnir, DraupnirRestartError | ResultError>> {
+    this.safeModeDraupnir.delete(clientUserID);
     const draupnir = await this.draupnirFactory.makeDraupnir(
       clientUserID,
       managementRoom,
@@ -79,11 +93,41 @@ export class StandardDraupnirManager {
         draupnir.error,
         clientUserID
       );
-      return draupnir;
+      switch (config.safeMode?.bootOption) {
+        case SafeModeBootOption.Never:
+          return draupnir;
+        case SafeModeBootOption.RecoveryOnly:
+          if (!(draupnir.error instanceof ConfigRecoverableError)) {
+            return draupnir;
+          }
+        // fallthrough
+        default: {
+          log.error(
+            `Failed to start draupnir ${clientUserID}, switching to safe mode as configured`,
+            draupnir.error
+          );
+          const safeModeResult = await this.makeSafeModeDraupnir(
+            clientUserID,
+            managementRoom,
+            config,
+            {
+              reason: SafeModeReason.InitializationError,
+              error: draupnir.error,
+            }
+          );
+          if (isError(safeModeResult)) {
+            return safeModeResult;
+          } else {
+            return DraupnirRestartError.Result(
+              `Failed to start draupnir ${clientUserID}, switching to safe mode as configured`,
+              { safeModeDraupnir: safeModeResult.ok }
+            );
+          }
+        }
+      }
     }
     this.draupnir.set(clientUserID, draupnir.ok);
     this.failedDraupnir.delete(clientUserID);
-    this.safeModeDraupnir.delete(clientUserID);
     draupnir.ok.start();
     return draupnir;
   }

@@ -9,10 +9,7 @@ import {
   RoomEvent,
   Task,
 } from "matrix-protection-suite";
-import {
-  MatrixAdaptorContext,
-  sendMatrixEventsFromDeadDocument,
-} from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { MatrixAdaptorContext } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import {
   StringUserID,
   StringRoomID,
@@ -40,6 +37,7 @@ import {
   safeModeStatusInfo,
 } from "./commands/StatusCommand";
 import { wrapInRoot } from "../commands/interface-manager/MatrixHelpRenderer";
+import { sendAndAnnotateWithRecoveryOptions } from "./commands/RecoverCommand";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -73,16 +71,29 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     );
     this.reactionHandler.on(
       ARGUMENT_PROMPT_LISTENER,
-      makeListenerForArgumentPrompt(this.commandDispatcher)
+      makeListenerForArgumentPrompt(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-      makeListenerForPromptDefault(this.commandDispatcher)
+      makeListenerForPromptDefault(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
     );
   }
 
   handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
     this.commandDispatcherTimelineListener(roomID, event);
+    void Task(
+      (async () => {
+        await this.reactionHandler.handleEvent(roomID, event);
+      })()
+    );
   }
   handleEventReport(_report: EventReport): void {
     throw new Error("Method not implemented.");
@@ -107,12 +118,11 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
 
   public startupComplete(): void {
     void Task(
-      sendMatrixEventsFromDeadDocument(
-        this.clientPlatform.toRoomMessageSender(),
-        this.commandRoomID,
+      sendAndAnnotateWithRecoveryOptions(
+        this,
         wrapInRoot(renderSafeModeStatusInfo(safeModeStatusInfo(this))),
         {}
-      ) as Promise<Result<void>>
+      )
     );
   }
 

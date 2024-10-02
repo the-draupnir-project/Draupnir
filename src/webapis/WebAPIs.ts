@@ -17,7 +17,9 @@ import {
   StringRoomID,
   StringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Task } from "matrix-protection-suite";
+import { Logger, Task } from "matrix-protection-suite";
+
+const log = new Logger("WebAPIs");
 
 /**
  * A common prefix for all web-exposed APIs.
@@ -41,18 +43,22 @@ export class WebAPIs {
   /**
    * Start accepting requests to the Web API.
    */
-  public async start() {
+  public async start(): Promise<void> {
     if (!this.config.web.enabled) {
       return;
     }
-    this.httpServer = this.webController.listen(
-      this.config.web.port,
-      this.config.web.address
-    );
-
+    await new Promise((resolve) => {
+      this.httpServer = this.webController.listen(
+        this.config.web.port,
+        this.config.web.address,
+        () => {
+          resolve(undefined);
+        }
+      );
+    });
     // configure /report API.
     if (this.config.web.abuseReporting.enabled) {
-      console.log(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
+      log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
       this.webController.options(
         `${API_PREFIX}/report/:room_id/:event_id`,
         (request, response) => {
@@ -70,7 +76,7 @@ export class WebAPIs {
       this.webController.post(
         `${API_PREFIX}/report/:room_id/:event_id`,
         (request, response) => {
-          console.debug(
+          log.debug(
             `Received a message on ${API_PREFIX}/report/:room_id/:event_id`,
             request.params
           );
@@ -91,16 +97,31 @@ export class WebAPIs {
           );
         }
       );
-      console.log(
-        `configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`
-      );
+      log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
     }
   }
 
-  public stop() {
+  public async stop(): Promise<void> {
     if (this.httpServer) {
-      console.log("Stopping WebAPIs.");
-      this.httpServer.close();
+      log.info("Stopping WebAPIs.");
+      await new Promise((resolve, reject) => {
+        if (this.httpServer === undefined) {
+          throw new TypeError("There is some kind of weird race going on here");
+        }
+        this.httpServer.close((error) => {
+          if (error === undefined) {
+            resolve(undefined);
+          } else if (
+            "code" in error &&
+            error.code === "ERR_SERVER_NOT_RUNNING"
+          ) {
+            resolve(undefined);
+          } else {
+            log.error("Error when stopping WebAPIs", error);
+            reject(error);
+          }
+        });
+      });
       this.httpServer = undefined;
     }
   }
@@ -226,7 +247,7 @@ export class WebAPIs {
       // Match the spec behavior of `/report`: return 200 and an empty JSON.
       response.status(200).json({});
     } catch (ex) {
-      console.warn("Error responding to an abuse report", roomID, eventID, ex);
+      log.warn("Error responding to an abuse report", roomID, eventID, ex);
       response.status(503);
     }
   }

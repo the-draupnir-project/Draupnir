@@ -18,6 +18,7 @@ import {
   Logger,
   ActionException,
   ActionExceptionKind,
+  ConfigRecoverableError,
 } from "matrix-protection-suite";
 import {
   BotSDKLogServiceLogger,
@@ -39,14 +40,16 @@ import {
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Result, isError } from "@gnuxie/typescript-result";
+import { Err, Ok, Result, isError } from "@gnuxie/typescript-result";
 import {
+  DraupnirRestartError,
   SafeModeToggle,
   SafeModeToggleOptions,
 } from "./safemode/SafeModeToggle";
 import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
+import { SafeModeBootOption } from "./safemode/BootOption";
 
 setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 
@@ -70,6 +73,10 @@ interface BotModeTogle extends SafeModeToggle {
   startFromScratch(
     options?: SafeModeToggleOptions
   ): Promise<Result<Draupnir | SafeModeDraupnir>>;
+  maybeRecoverWithSafeMode(
+    error: ResultError,
+    options?: SafeModeToggleOptions
+  ): Promise<Result<SafeModeDraupnir>>;
 }
 
 export class DraupnirBotModeToggle implements BotModeTogle {
@@ -168,12 +175,13 @@ export class DraupnirBotModeToggle implements BotModeTogle {
   }
   public async switchToDraupnir(
     options?: SafeModeToggleOptions
-  ): Promise<Result<Draupnir>> {
+  ): Promise<Result<Draupnir, DraupnirRestartError | ResultError>> {
     if (this.draupnir !== null) {
       return ResultError.Result(
         `There is a draupnir for ${this.clientUserID} already running`
       );
     }
+    this.stopSafeModeDraupnir();
     const draupnirResult = await this.draupnirFactory.makeDraupnir(
       this.clientUserID,
       this.managementRoom,
@@ -181,7 +189,18 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       this
     );
     if (isError(draupnirResult)) {
-      return draupnirResult;
+      const safeModeResult = await this.maybeRecoverWithSafeMode(
+        draupnirResult.error,
+        options
+      );
+      if (isError(safeModeResult)) {
+        return safeModeResult;
+      } else {
+        return DraupnirRestartError.Result(
+          "Draupnir failed to start, switching to safe mode.",
+          { safeModeDraupnir: safeModeResult.ok }
+        );
+      }
     }
     this.draupnir = draupnirResult.ok;
     this.draupnir.start();
@@ -192,7 +211,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
         await this.webAPIs.start();
       } catch (e) {
         if (e instanceof Error) {
-          this.stopDraupnir();
+          await this.stopDraupnir();
           log.error("Failed to start webAPIs", e);
           return ActionException.Result("Failed to start webAPIs", {
             exceptionKind: ActionExceptionKind.Unknown,
@@ -203,7 +222,6 @@ export class DraupnirBotModeToggle implements BotModeTogle {
         }
       }
     }
-    this.stopSafeModeDraupnir();
     return draupnirResult;
   }
   public async switchToSafeMode(
@@ -225,7 +243,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     if (isError(safeModeResult)) {
       return safeModeResult;
     }
-    this.stopDraupnir();
+    await this.stopDraupnir();
     this.safeModeDraupnir = safeModeResult.ok;
     this.safeModeDraupnir.start();
     if (options?.sendStatusOnStart) {
@@ -239,23 +257,40 @@ export class DraupnirBotModeToggle implements BotModeTogle {
   ): Promise<Result<Draupnir | SafeModeDraupnir>> {
     const draupnirResult = await this.switchToDraupnir(options ?? {});
     if (isError(draupnirResult)) {
-      if (this.config.safeMode?.bootIntoOnStartupFailure) {
-        log.error(
-          "Failed to start draupnir, switching to safe mode as configured",
-          draupnirResult.error
-        );
-        return await this.switchToSafeMode(
-          {
-            reason: SafeModeReason.InitializationError,
-            error: draupnirResult.error,
-          },
-          options ?? {}
-        );
+      if (draupnirResult.error instanceof DraupnirRestartError) {
+        return Ok(draupnirResult.error.safeModeDraupnir);
       } else {
         return draupnirResult;
       }
     }
     return draupnirResult;
+  }
+
+  public async maybeRecoverWithSafeMode(
+    error: ResultError,
+    options?: SafeModeToggleOptions | undefined
+  ): Promise<Result<SafeModeDraupnir>> {
+    switch (this.config.safeMode?.bootOption) {
+      case SafeModeBootOption.Never:
+        return Err(error);
+      case SafeModeBootOption.RecoveryOnly:
+        if (!(error instanceof ConfigRecoverableError)) {
+          return Err(error);
+        }
+      // fallthrough
+      default:
+        log.error(
+          "Failed to start draupnir, switching to safe mode as configured",
+          error
+        );
+        return await this.switchToSafeMode(
+          {
+            reason: SafeModeReason.InitializationError,
+            error: error,
+          },
+          options ?? {}
+        );
+    }
   }
 
   public async encryptionInitialized(): Promise<void> {
@@ -265,7 +300,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
         await this.webAPIs.start();
         await this.draupnir.startupComplete();
       } catch (e) {
-        this.stopEverything();
+        await this.stopEverything();
         throw e;
       }
     } else if (this.safeModeDraupnir !== null) {
@@ -273,10 +308,10 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     }
   }
 
-  private stopDraupnir(): void {
+  private async stopDraupnir(): Promise<void> {
     this.draupnir?.stop();
     this.draupnir = null;
-    this.webAPIs?.stop();
+    await this.webAPIs?.stop();
     this.webAPIs = null;
   }
 
@@ -285,8 +320,8 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     this.safeModeDraupnir = null;
   }
 
-  public stopEverything(): void {
-    this.stopDraupnir();
+  public async stopEverything(): Promise<void> {
+    await this.stopDraupnir();
     this.stopSafeModeDraupnir();
   }
 }
