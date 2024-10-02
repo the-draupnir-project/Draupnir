@@ -10,6 +10,7 @@ import {
 } from "matrix-protection-suite";
 import { Draupnir } from "../../../src/Draupnir";
 import {
+  MatrixRoomReference,
   StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
@@ -17,6 +18,8 @@ import { isOk } from "@gnuxie/typescript-result";
 import { SafeModeDraupnir } from "../../../src/safemode/DraupnirSafeMode";
 import { DraupnirRestartError } from "../../../src/safemode/SafeModeToggle";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MjolnirPolicyRoomsEncodedShape } from "matrix-protection-suite/dist/Protection/PolicyListConfig/MjolnirPolicyRoomsDescription";
+import { MjolnirProtectedRoomsEncodedShape } from "matrix-protection-suite/dist/Protection/ProtectedRoomsConfig/MjolnirProtectedRoomsDescription";
 
 async function clobberProtectedRooms(client: MatrixSendClient): Promise<void> {
   const existingAccountData =
@@ -42,6 +45,26 @@ async function clobberEnabledProtections(
   await client.setAccountData(MjolnirEnabledProtectionsEventType, {
     enabled: 34,
   });
+}
+
+async function clobberWithUnjoinableProtectedRoom(
+  client: MatrixSendClient
+): Promise<void> {
+  await client.setAccountData(MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE, {
+    rooms: ["!nowaytojoinme:example.com" as StringRoomID],
+  } satisfies MjolnirProtectedRoomsEncodedShape);
+}
+
+async function clobberWithUnjoinableWatchedList(
+  client: MatrixSendClient
+): Promise<void> {
+  await client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE, {
+    references: [
+      MatrixRoomReference.fromRoomID(
+        "!nowaytojoinme:example.com" as StringRoomID
+      ).toPermalink(),
+    ],
+  } satisfies MjolnirPolicyRoomsEncodedShape);
 }
 
 async function goToSafeMode(
@@ -129,7 +152,15 @@ export const ClobberEffects = [
     effect: clobberEnabledProtections,
     description: "EnabledProtections",
   },
-];
+  {
+    effect: clobberWithUnjoinableProtectedRoom,
+    description: "UnjoinableProtectedRoom",
+  },
+  {
+    effect: clobberWithUnjoinableWatchedList,
+    description: "UnjoinableWatchedList",
+  },
+] satisfies ClobberEffectDescription[];
 
 export async function testRecoverAndRestart(
   sender: StringUserID,
