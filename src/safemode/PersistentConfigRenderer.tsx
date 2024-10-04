@@ -153,11 +153,8 @@ function renderConfigDetails(
 ): DocumentNode {
   return (
     <fragment>
-      <summary>
-        {renderConfigPropertyError(error)}{" "}
-        <code>{description.schema.title ?? "Untitled Config"}</code>
-      </summary>{" "}
-      {children}
+      {renderConfigPropertyError(error)}{" "}
+      <code>{description.schema.title ?? "Untitled Config"}</code> {children}
     </fragment>
   );
 }
