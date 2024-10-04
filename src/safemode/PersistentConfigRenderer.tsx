@@ -11,7 +11,12 @@ import {
   MatrixRoomID,
   MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { ConfigParseError, ConfigPropertyError } from "matrix-protection-suite";
+import {
+  ConfigDescription,
+  ConfigParseError,
+  ConfigPropertyError,
+  ConfigPropertyUseError,
+} from "matrix-protection-suite";
 import {
   renderMentionPill,
   renderRoomPill,
@@ -80,8 +85,8 @@ function renderConfigPropertyItem(
   const error = findItemError(propertyKey, index, errors);
   return (
     <li>
-      {renderConfigPropertyError(error)}
-      <code>{index}</code>: {renderConfigPropertyValue(value)}
+      {renderConfigPropertyError(error)} <code>{index}</code>:{" "}
+      {renderConfigPropertyValue(value)}
     </li>
   );
 }
@@ -89,7 +94,19 @@ function renderConfigPropertyItem(
 function renderConfigPropertyError(
   error: ConfigPropertyError | ConfigParseError | undefined
 ): string {
-  return error === undefined ? "🟢" : "🔴";
+  if (error === undefined) {
+    return "🟢";
+  } else if (error instanceof ConfigPropertyUseError) {
+    return "🟠";
+  } else if (error instanceof ConfigParseError) {
+    if (error.errors.every((e) => e instanceof ConfigPropertyUseError)) {
+      return "🟠";
+    } else {
+      return "🔴";
+    }
+  } else {
+    return "🔴";
+  }
 }
 
 function renderConfigProperty(
@@ -102,8 +119,7 @@ function renderConfigProperty(
   if (Array.isArray(propertyValue)) {
     return (
       <li>
-        {renderConfigPropertyError(error)}
-        <code>{propertyKey}</code>:{" "}
+        {renderConfigPropertyError(error)} <code>{propertyKey}</code>:{" "}
         <ul>
           {propertyValue.map((value, index) =>
             renderConfigPropertyItem(propertyKey, index, value, errors)
@@ -120,11 +136,36 @@ function renderConfigProperty(
   );
 }
 
-function renderBodgedConfig(value: unknown): DocumentNode {
+function renderConfigDetails(
+  error: ConfigParseError | undefined,
+  description: ConfigDescription,
+  children: DocumentNode
+): DocumentNode {
   return (
+    <details>
+      <summary>
+        {renderConfigPropertyError(error)}{" "}
+        <code>{description.schema.title ?? "Untitled Config"}</code>
+      </summary>{" "}
+      {children}
+    </details>
+  );
+}
+
+function renderBodgedConfig(config: PersistentConfigStatus): DocumentNode {
+  if (config.data === undefined) {
+    return renderConfigDetails(
+      undefined,
+      config.description,
+      <fragment>No data is currently persisted for this config.</fragment>
+    );
+  }
+  return renderConfigDetails(
+    config.error,
+    config.description,
     <fragment>
       The config seems to be entirely invalid:{" "}
-      {renderConfigPropertyValue(value)}
+      {renderConfigPropertyValue(config.data)}
     </fragment>
   );
 }
@@ -132,14 +173,12 @@ function renderBodgedConfig(value: unknown): DocumentNode {
 export const StandardPersistentConfigRenderer = Object.freeze({
   renderConfigStatus(config: PersistentConfigStatus): DocumentNode {
     if (typeof config.data !== "object" || config.data === null) {
-      return renderBodgedConfig(config.data);
+      return renderBodgedConfig(config);
     }
-    return (
-      <details>
-        <summary>
-          {renderConfigPropertyError(config.error)}{" "}
-          {config.description.schema.title ?? "Untitled Config"}
-        </summary>
+    return renderConfigDetails(
+      config.error,
+      config.description,
+      <fragment>
         {config.description
           .properties()
           .map((property) =>
@@ -149,16 +188,19 @@ export const StandardPersistentConfigRenderer = Object.freeze({
               config.error?.errors ?? []
             )
           )}
-      </details>
+      </fragment>
     );
   },
   renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode {
     return (
-      <ul>
-        {info.map((config) => (
-          <li>{this.renderConfigStatus(config)}</li>
-        ))}
-      </ul>
+      <fragment>
+        Persistent configuration status:
+        <ul>
+          {info.map((config) => (
+            <li>{this.renderConfigStatus(config)}</li>
+          ))}
+        </ul>
+      </fragment>
     );
   },
 }) satisfies PersistentConfigRenderer;

@@ -31,13 +31,14 @@ import {
 } from "../commands/interface-manager/MatrixPromptForAccept";
 import { makeCommandDispatcherTimelineListener } from "./ManagementRoom";
 import { SafeModeToggle } from "./SafeModeToggle";
-import { Result } from "@gnuxie/typescript-result";
+import { Result, isError } from "@gnuxie/typescript-result";
 import {
   renderSafeModeStatusInfo,
   safeModeStatusInfo,
 } from "./commands/StatusCommand";
 import { wrapInRoot } from "../commands/interface-manager/MatrixHelpRenderer";
 import { sendAndAnnotateWithRecoveryOptions } from "./commands/RecoverCommand";
+import { StandardPersistentConfigEditor } from "./PersistentConfigEditor";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -118,11 +119,26 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
 
   public startupComplete(): void {
     void Task(
-      sendAndAnnotateWithRecoveryOptions(
-        this,
-        wrapInRoot(renderSafeModeStatusInfo(safeModeStatusInfo(this))),
-        {}
-      )
+      (async () => {
+        const editor = new StandardPersistentConfigEditor(this.client);
+        const configStatus = await editor.supplementStatusWithSafeModeCause(
+          this.cause
+        );
+        if (isError(configStatus)) {
+          return configStatus.elaborate(
+            "Failed to fetch draupnir's persistent configuration"
+          );
+        }
+        return await sendAndAnnotateWithRecoveryOptions(
+          this,
+          wrapInRoot(
+            renderSafeModeStatusInfo(
+              safeModeStatusInfo(this.cause, configStatus.ok)
+            )
+          ),
+          {}
+        );
+      })()
     );
   }
 

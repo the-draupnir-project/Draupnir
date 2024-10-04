@@ -19,6 +19,11 @@ import {
 import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
 import { renderRecoveryOptions } from "../RecoveryOptions";
 import { sendAndAnnotateWithRecoveryOptions } from "./RecoverCommand";
+import {
+  PersistentConfigStatus,
+  StandardPersistentConfigEditor,
+} from "../PersistentConfigEditor";
+import { StandardPersistentConfigRenderer } from "../PersistentConfigRenderer";
 
 export function safeModeHeader(): DocumentNode {
   return (
@@ -68,6 +73,7 @@ function renderSafeModeCause(safeModeCause: SafeModeCause): DocumentNode {
 
 export interface SafeModeStatusInfo {
   safeModeCause: SafeModeCause;
+  configStatus: PersistentConfigStatus[];
   documentationURL: string;
   version: string;
   repository: string;
@@ -88,6 +94,7 @@ export function renderSafeModeStatusInfo(
       <br />
       {renderRecoveryOptions(info.safeModeCause)}
       <br />
+      {StandardPersistentConfigRenderer.renderAdaptorStatus(info.configStatus)}
       <b>Version: </b>
       <code>{info.version}</code>
       <br />
@@ -110,10 +117,12 @@ export function renderSafeModeStatusInfo(
 }
 
 export function safeModeStatusInfo(
-  safeModeDraupnir: SafeModeDraupnir
+  cause: SafeModeCause,
+  configStatus: PersistentConfigStatus[]
 ): SafeModeStatusInfo {
   return {
-    safeModeCause: safeModeDraupnir.cause,
+    safeModeCause: cause,
+    configStatus,
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
     repository: PACKAGE_JSON["repository"] ?? "Unknown",
@@ -127,7 +136,14 @@ export const SafeModeStatusCommand = describeCommand({
   async executor(
     safeModeDraupnir: SafeModeDraupnir
   ): Promise<Result<SafeModeStatusInfo>> {
-    return Ok(safeModeStatusInfo(safeModeDraupnir));
+    const editor = new StandardPersistentConfigEditor(safeModeDraupnir.client);
+    const configStatus = await editor.supplementStatusWithSafeModeCause(
+      safeModeDraupnir.cause
+    );
+    if (isError(configStatus)) {
+      return configStatus;
+    }
+    return Ok(safeModeStatusInfo(safeModeDraupnir.cause, configStatus.ok));
   },
 });
 

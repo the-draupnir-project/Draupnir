@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { Ok, Result, isError } from "@gnuxie/typescript-result";
-import { TObject } from "@sinclair/typebox";
 import {
   ConfigDescription,
   ConfigParseError,
+  ConfigPropertyUseError,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   MjolnirEnabledProtectionsDescription,
@@ -20,16 +20,28 @@ import {
   BotSDKAccountDataConfigBackend,
   MatrixSendClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { SafeModeCause, SafeModeReason } from "./SafeModeCause";
 
 export type PersistentConfigStatus = {
-  readonly description: ConfigDescription;
-  readonly data: unknown;
-  readonly error: ConfigParseError | undefined;
+  description: ConfigDescription;
+  data: unknown;
+  error: ConfigParseError | undefined;
 };
 
 export interface PersistentConfigEditor {
   getConfigAdaptors(): PersistentConfigData[];
   requestConfigStatus(): Promise<Result<PersistentConfigStatus[]>>;
+  /**
+   * requestConfigStatus, but be sure to update the PeristentConfigStatus list
+   * with the ConfigPropertyUseError in the safe mode cause, if there is one.
+   *
+   * This is because `ConfigPropertyUseError`'s will not show up in parsing,
+   * only when creating Draupnir itself, and so they won't show up from just requesting
+   * the config alone.
+   */
+  supplementStatusWithSafeModeCause(
+    cause: SafeModeCause
+  ): Promise<Result<PersistentConfigStatus[]>>;
 }
 
 export class StandardPersistentConfigEditor implements PersistentConfigEditor {
@@ -41,24 +53,25 @@ export class StandardPersistentConfigEditor implements PersistentConfigEditor {
     // only work with the general shape rather than the specific one, in the way that
     // the `remove` methods do, but I'm not convinced that works either, as those
     // methods accept a Record that at least has the keys from the specific shape
-    // of the config.
+    // of the config. OK that's not why, because I tried to remove the toMirror method.
+    // I don't understand why it won't work then...
     this.configAdaptors = [
       new StandardPersistentConfigData(
-        MjolnirPolicyRoomsDescription as unknown as ConfigDescription<TObject>,
+        MjolnirPolicyRoomsDescription as unknown as ConfigDescription,
         new BotSDKAccountDataConfigBackend(
           client,
           MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE
         )
       ),
       new StandardPersistentConfigData(
-        MjolnirProtectedRoomsDescription as unknown as ConfigDescription<TObject>,
+        MjolnirProtectedRoomsDescription as unknown as ConfigDescription,
         new BotSDKAccountDataConfigBackend(
           client,
           MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE
         )
       ),
       new StandardPersistentConfigData(
-        MjolnirEnabledProtectionsDescription as unknown as ConfigDescription<TObject>,
+        MjolnirEnabledProtectionsDescription as unknown as ConfigDescription,
         new BotSDKAccountDataConfigBackend(
           client,
           MjolnirEnabledProtectionsEventType
@@ -95,5 +108,36 @@ export class StandardPersistentConfigEditor implements PersistentConfigEditor {
       }
     }
     return Ok(info);
+  }
+  public async supplementStatusWithSafeModeCause(
+    cause: SafeModeCause
+  ): Promise<Result<PersistentConfigStatus[]>> {
+    const info = await this.requestConfigStatus();
+    if (isError(info)) {
+      return info;
+    }
+    if (cause.reason === SafeModeReason.ByRequest) {
+      return Ok(info.ok);
+    }
+    if (!(cause.error instanceof ConfigPropertyUseError)) {
+      return Ok(info.ok);
+    }
+    const relevantStatus = info.ok.find(
+      (status) =>
+        status.description ===
+        (cause.error as ConfigPropertyUseError).configDescription
+    );
+    if (relevantStatus === undefined) {
+      throw new TypeError(
+        "The cause of the safe mode error was not found in the configuration status."
+      );
+    }
+    relevantStatus.error = new ConfigParseError(
+      "There was a problem when using a property in the configuration.",
+      relevantStatus.description as unknown as ConfigDescription,
+      [cause.error],
+      relevantStatus.data
+    );
+    return Ok(info.ok);
   }
 }
