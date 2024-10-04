@@ -23,6 +23,12 @@ import {
 } from "../commands/interface-manager/MatrixHelpRenderer";
 import { PersistentConfigStatus } from "./PersistentConfigEditor";
 
+const ConfigStatusIndicator = Object.freeze({
+  Ok: "✔",
+  UseError: "⚠",
+  ParseError: "❌",
+});
+
 export interface PersistentConfigRenderer {
   renderConfigStatus(config: PersistentConfigStatus): DocumentNode;
   renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode;
@@ -95,17 +101,17 @@ function renderConfigPropertyError(
   error: ConfigPropertyError | ConfigParseError | undefined
 ): string {
   if (error === undefined) {
-    return "🟢";
+    return ConfigStatusIndicator.Ok;
   } else if (error instanceof ConfigPropertyUseError) {
-    return "🟠";
+    return ConfigStatusIndicator.UseError;
   } else if (error instanceof ConfigParseError) {
     if (error.errors.every((e) => e instanceof ConfigPropertyUseError)) {
-      return "🟠";
+      return ConfigStatusIndicator.UseError;
     } else {
-      return "🔴";
+      return ConfigStatusIndicator.ParseError;
     }
   } else {
-    return "🔴";
+    return ConfigStatusIndicator.ParseError;
   }
 }
 
