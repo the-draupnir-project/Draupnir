@@ -20,7 +20,7 @@ export interface MjolnirRecord {
 }
 
 /**
- * Used to persist mjolnirs that have been provisioned by the mjolnir manager.
+ * Used to persist draupnirs that have been provisioned by the draupnir manager.
  */
 export interface DataStore {
   /**
@@ -34,7 +34,7 @@ export interface DataStore {
   close(): Promise<void>;
 
   /**
-   * List all of the mjolnirs we have provisioned.
+   * List all of the draupnirs we have provisioned.
    */
   list(): Promise<MjolnirRecord[]>;
 
@@ -44,12 +44,12 @@ export interface DataStore {
   store(mjolnirRecord: MjolnirRecord): Promise<void>;
 
   /**
-   * @param owner The mxid of the user who provisioned this mjolnir.
+   * @param owner The mxid of the user who provisioned this draupnir.
    */
   lookupByOwner(owner: string): Promise<MjolnirRecord[]>;
 
   /**
-   * @param localPart the mxid of the provisioned mjolnir.
+   * @param localPart the mxid of the provisioned draupnir.
    */
   lookupByLocalPart(localPart: string): Promise<MjolnirRecord[]>;
 }

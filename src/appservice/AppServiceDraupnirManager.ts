@@ -86,7 +86,7 @@ export class AppServiceDraupnirManager {
    * @param dataStore The data store interface that has the details for provisioned draupnirs.
    * @param bridge The bridge abstraction that encapsulates details about the appservice.
    * @param accessControl Who has access to the bridge.
-   * @returns A new mjolnir manager.
+   * @returns A new Draupnir manager.
    */
   public static async makeDraupnirManager(
     serverName: string,
@@ -113,11 +113,11 @@ export class AppServiceDraupnirManager {
   }
 
   /**
-   * Creates a new mjolnir for a user.
-   * @param requestingUserID The user that is requesting this mjolnir and who will own it.
+   * Creates a new draupnir for a user.
+   * @param requestingUserID The user that is requesting this draupnir and who will own it.
    * @param managementRoomId An existing matrix room to act as the management room.
-   * @param client A client for the appservice virtual user that the new mjolnir should use.
-   * @returns A new managed mjolnir.
+   * @param client A client for the appservice virtual user that the new draupnir should use.
+   * @returns A new managed draupnir.
    */
   public async makeInstance(
     localPart: string,
@@ -202,7 +202,7 @@ export class AppServiceDraupnirManager {
         power_level_content_override: {
           users: {
             [requestingUserID]: 100,
-            // Give the mjolnir a higher PL so that can avoid issues with managing the management room.
+            // Give the draupnir a higher PL so that can avoid issues with managing the management room.
             [await mjIntent.matrixClient.getUserId()]: 101,
           },
         },
@@ -279,9 +279,9 @@ export class AppServiceDraupnirManager {
   }
 
   /**
-   * Attempt to start a mjolnir, and notify its management room of any failure to start.
+   * Attempt to start a draupnir, and notify its management room of any failure to start.
    * Will be added to `this.unstartedMjolnirs` if we fail to start it AND it is not already running.
-   * @param mjolnirRecord The record for the mjolnir that we want to start.
+   * @param mjolnirRecord The record for the draupnir that we want to start.
    */
   public async startDraupnirFromRecord(
     mjolnirRecord: MjolnirRecord
@@ -330,7 +330,7 @@ export class AppServiceDraupnirManager {
         mjIntent.matrixClient
       ).catch((e: unknown) => {
         log.error(
-          `Could not start mjolnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`,
+          `Could not start draupnir ${mjolnirRecord.local_part} for ${mjolnirRecord.owner}:`,
           e
         );
         this.baseManager.reportUnstartedDraupnir(

@@ -218,10 +218,10 @@ export async function getFirstEventMatching(details: {
 }
 
 /**
- * Create a new banlist for mjolnir to watch and return the shortcode that can be used to refer to the list in future commands.
+ * Create a new banlist for draupnir to watch and return the shortcode that can be used to refer to the list in future commands.
  * @param managementRoom The room to send the create command to.
  * @param mjolnir A syncing matrix client.
- * @param client A client that isn't mjolnir to send the message with, as you will be invited to the room.
+ * @param client A client that isn't draupnir to send the message with, as you will be invited to the room.
  * @returns The shortcode for the list that can be used to refer to the list in future commands.
  */
 export async function createBanList(
@@ -236,7 +236,7 @@ export async function createBanList(
     async () => {
       return await client.sendMessage(managementRoom, {
         msgtype: "m.text",
-        body: `!mjolnir list create ${listName} ${listName}`,
+        body: `!draupnir list create ${listName} ${listName}`,
       });
     }
   );

@@ -109,7 +109,7 @@ void (async function () {
     );
   } catch (err) {
     console.error(
-      `Failed to setup mjolnir from the config ${config.dataPath}: ${err}`
+      `Failed to setup draupnir from the config ${config.dataPath}: ${err}`
     );
     await bot?.stopEverything();
     throw err;
@@ -119,7 +119,7 @@ void (async function () {
     await bot.encryptionInitialized();
     healthz.isHealthy = true;
   } catch (err) {
-    console.error(`Mjolnir failed to start: ${err}`);
+    console.error(`Draupnir failed to start: ${err}`);
     await bot.stopEverything();
     throw err;
   }

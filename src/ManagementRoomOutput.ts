@@ -34,7 +34,7 @@ const levelToFn = {
 };
 
 /**
- * Allows the different componenets of mjolnir to send messages back to the management room without introducing a dependency on the entirity of a `Mjolnir` instance.
+ * Allows the different componenets of draupnir to send messages back to the management room without introducing a dependency on the entirity of a `Draupnir` instance.
  */
 export default class ManagementRoomOutput {
   constructor(

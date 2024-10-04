@@ -207,7 +207,7 @@ export class ReportManager {
       );
       if (originalEvent.sender !== this.draupnir.clientUserID) {
         // Let's not handle reactions to events we didn't send as
-        // some setups have two or more Mjolnir's in the same management room.
+        // some setups have two or more Draupnir's in the same management room.
         return;
       }
       if (!("content" in originalEvent)) {

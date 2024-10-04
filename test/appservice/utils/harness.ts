@@ -31,7 +31,11 @@ export async function setupHarness(): Promise<MjolnirAppService> {
     name: { contains: "utility" },
   });
   await ensureAliasedRoomExists(utilityUser, config.adminRoom);
-  return await MjolnirAppService.run(9000, config, "mjolnir-registration.yaml");
+  return await MjolnirAppService.run(
+    9000,
+    config,
+    "draupnir-registration.yaml"
+  );
 }
 
 export async function isPolicyRoom(

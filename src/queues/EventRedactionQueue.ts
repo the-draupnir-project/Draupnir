@@ -57,7 +57,7 @@ export class RedactUserInRoom implements QueuedRedaction {
   ) {
     await managementRoom.logMessage(
       LogLevel.DEBUG,
-      "Mjolnir",
+      "Draupnir",
       `Redacting events from ${this.userID} in room ${this.roomID}.`
     );
     await redactUserMessagesIn(client, managementRoom, this.userID, [

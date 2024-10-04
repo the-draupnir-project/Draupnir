@@ -79,7 +79,7 @@ async function unbanUserFromRooms(
           await managementRoomOutput.logMessage(
             LogLevel.WARN,
             "Unban",
-            `Attempted to unban ${member.userID} in ${revision.room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`,
+            `Attempted to unban ${member.userID} in ${revision.room.toRoomIDOrAlias()} but Draupnir is running in no-op mode`,
             revision.room.toRoomIDOrAlias()
           );
         }

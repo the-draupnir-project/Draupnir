@@ -81,7 +81,7 @@ const log = new Logger("Draupnir");
 // webAPIS should not be included on the Draupnir class.
 // That should be managed elsewhere.
 // It's not actually relevant to the Draupnir instance and it only was connected
-// to Mjolnir because it needs to be started after Mjolnir started and not before.
+// to Draupnir because it needs to be started after Draupnir started and not before.
 // And giving it to the class was a dumb easy way of doing that.
 
 export class Draupnir implements Client, MatrixAdaptorContext {
@@ -99,7 +99,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public readonly managementRoomOutput: ManagementRoomOutput;
   public readonly managementRoomID: StringRoomID;
   /*
-   * Config-enabled polling of reports in Synapse, so Mjolnir can react to reports
+   * Config-enabled polling of reports in Synapse, so Draupnir can react to reports
    */
   private reportPoller?: ReportPoller;
   /**
@@ -135,7 +135,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly policyRoomManager: PolicyRoomManager,
     public readonly roomMembershipManager: RoomMembershipManager,
     public readonly loggableConfigTracker: LoggableConfigTracker,
-    /** Mjolnir has a feature where you can choose to accept invitations from a space and not just the management room. */
+    /** Draupnir has a feature where you can choose to accept invitations from a space and not just the management room. */
     public readonly acceptInvitesFromRoom: MatrixRoomID,
     public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
     public readonly safeModeToggle: SafeModeToggle,
@@ -292,7 +292,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     try {
       await this.managementRoomOutput.logMessage(
         LogLevel.INFO,
-        "Mjolnir@startup",
+        "Draupnir@startup",
         "Startup complete. Now monitoring rooms."
       );
       await sendMatrixEventsFromDeadDocument(

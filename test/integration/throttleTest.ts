@@ -12,7 +12,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
 import { getMessagesByUserIn } from "../../src/utils";
 
-describe("Test: throttled users can function with Mjolnir.", function () {
+describe("Test: throttled users can function with Draupnir.", function () {
   it("throttled users survive being throttled by synapse", async function () {
     const throttledUser = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "throttled" },
@@ -48,7 +48,7 @@ describe("Test: throttled users can function with Mjolnir.", function () {
 });
 
 /**
- * We used to have a test here that tested whether Mjolnir was going to carry out a redact order the default limits in a reasonable time scale.
+ * We used to have a test here that tested whether Draupnir was going to carry out a redact order the default limits in a reasonable time scale.
  * Now I think that's never going to happen without writing a new algorithm for respecting rate limiting.
  * Which is not something there is time for.
  *
@@ -59,5 +59,5 @@ describe("Test: throttled users can function with Mjolnir.", function () {
  *
  * https://github.com/matrix-org/mjolnir/commit/b850e4554c6cbc9456e23ab1a92ede547d044241
  *
- * Honestly I don't think we can expect anyone to be able to use Mjolnir under default rate limits.
+ * Honestly I don't think we can expect anyone to be able to use Draupnir under default rate limits.
  */

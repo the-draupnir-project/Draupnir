@@ -25,7 +25,7 @@ describe("Test: The rooms commands", function () {
   });
 
   it(
-    "Mjolnir can protect a room, show that it is protected and then stop protecting the room.",
+    "Draupnir can protect a room, show that it is protected and then stop protecting the room.",
     async function (this: RoomsTestContext) {
       // Create a few users and a room.
       const draupnir = this.draupnir;

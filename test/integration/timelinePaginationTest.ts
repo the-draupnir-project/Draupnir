@@ -15,7 +15,7 @@ import { getMessagesByUserIn } from "../../src/utils";
 import { TextMessageContent } from "matrix-protection-suite";
 
 /**
- * Ensure that Mjolnir paginates only the necessary segment of the room timeline when backfilling.
+ * Ensure that Draupnir paginates only the necessary segment of the room timeline when backfilling.
  */
 describe("Test: timeline pagination", function () {
   it("does not paginate across the entire room history while backfilling.", async function () {

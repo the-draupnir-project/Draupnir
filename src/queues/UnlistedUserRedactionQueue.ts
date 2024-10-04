@@ -56,7 +56,7 @@ export class UnlistedUserRedactionQueue {
           await draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "AutomaticRedactionQueue",
-            `Tried to redact ${permalink} but Mjolnir is running in no-op mode`
+            `Tried to redact ${permalink} but Draupnir is running in no-op mode`
           );
         }
       } catch (e) {

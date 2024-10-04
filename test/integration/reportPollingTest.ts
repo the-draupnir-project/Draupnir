@@ -31,7 +31,7 @@ describe("Test: Report polling", function () {
       name: { contains: "protection-settings" },
     });
   });
-  it("Mjolnir correctly retrieves a report from synapse", async function (
+  it("Draupnir correctly retrieves a report from synapse", async function (
     this: DraupnirTestContext
   ) {
     this.timeout(40000);

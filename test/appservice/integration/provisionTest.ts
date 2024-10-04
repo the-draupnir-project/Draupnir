@@ -19,7 +19,7 @@ interface Context extends Mocha.Context {
   appservice?: MjolnirAppService | undefined;
 }
 
-describe("Test that the app service can provision a mjolnir on invite of the appservice bot", function () {
+describe("Test that the app service can provision a draupnir on invite of the appservice bot", function () {
   afterEach(function (this: Context) {
     this.moderator?.stop();
     if (this.appservice) {
@@ -29,7 +29,7 @@ describe("Test that the app service can provision a mjolnir on invite of the app
       return Promise.resolve(); // TS7030: Not all code paths return a value.
     }
   });
-  it("A moderator that requests a mjolnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
+  it("A moderator that requests a draupnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
     const config = readTestConfig();
     this.appservice = await setupHarness();
     const appservice = this.appservice;
@@ -38,7 +38,7 @@ describe("Test that the app service can provision a mjolnir on invite of the app
       name: { contains: "test" },
     });
     const roomWeWantProtecting = await moderator.createRoom();
-    // have the moderator invite the appservice bot in order to request a new mjolnir
+    // have the moderator invite the appservice bot in order to request a new draupnir
     this.moderator = moderator;
     const roomsInvitedTo: string[] = [];
     await new Promise((resolve) => {
@@ -66,7 +66,7 @@ describe("Test that the app service can provision a mjolnir on invite of the app
     if (managementRoomId === undefined) {
       throw new TypeError(`Unable to find management room`);
     }
-    // Check that the newly provisioned mjolnir is actually responsive.
+    // Check that the newly provisioned draupnir is actually responsive.
     await getFirstReply(moderator, managementRoomId, () => {
       return moderator.sendMessage(managementRoomId, {
         body: `!draupnir status`,
