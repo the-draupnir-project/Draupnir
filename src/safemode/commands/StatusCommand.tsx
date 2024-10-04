@@ -39,22 +39,23 @@ function renderSafeModeCauseError(error: ResultError): DocumentNode {
     return (
       <fragment>
         Draupnir is in safe mode because Draupnir failed to start.
-        <br />
-        {error.mostRelevantElaboration}
-        <br />
-        Details can be found by providing the reference{" "}
-        <code>{error.uuid}</code>
-        to an administrator.
-        <pre>{error.toReadableString()}</pre>
+        <details>
+          <summary>{error.mostRelevantElaboration}</summary>
+          Details can be found by providing the reference{" "}
+          <code>{error.uuid}</code>
+          to an administrator.
+          <pre>{error.toReadableString()}</pre>
+        </details>
       </fragment>
     );
   } else {
     return (
       <fragment>
         Draupnir is in safe mode because Draupnir failed to start.
-        <br />
-        {error.mostRelevantElaboration}
-        <pre>{error.toReadableString()}</pre>
+        <details>
+          <summary>{error.mostRelevantElaboration}</summary>
+          <pre>{error.toReadableString()}</pre>
+        </details>
       </fragment>
     );
   }
@@ -86,11 +87,8 @@ export function renderSafeModeStatusInfo(
   return (
     <fragment>
       ⚠️ Draupnir is in safe mode ⚠️
-      <span>
-        <br />
-        {renderSafeModeCause(info.safeModeCause)}
-        <br />
-      </span>
+      <br />
+      {renderSafeModeCause(info.safeModeCause)}
       <br />
       {renderRecoveryOptions(info.safeModeCause)}
       <br />
