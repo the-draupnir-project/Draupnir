@@ -119,12 +119,16 @@ function renderConfigProperty(
   if (Array.isArray(propertyValue)) {
     return (
       <li>
-        {renderConfigPropertyError(error)} <code>{propertyKey}</code>:{" "}
-        <ul>
-          {propertyValue.map((value, index) =>
-            renderConfigPropertyItem(propertyKey, index, value, errors)
-          )}
-        </ul>
+        <details>
+          <summary>
+            {renderConfigPropertyError(error)} <code>{propertyKey}</code>:
+          </summary>
+          <ul>
+            {propertyValue.map((value, index) =>
+              renderConfigPropertyItem(propertyKey, index, value, errors)
+            )}
+          </ul>
+        </details>
       </li>
     );
   }
@@ -142,13 +146,13 @@ function renderConfigDetails(
   children: DocumentNode
 ): DocumentNode {
   return (
-    <details>
+    <fragment>
       <summary>
         {renderConfigPropertyError(error)}{" "}
         <code>{description.schema.title ?? "Untitled Config"}</code>
       </summary>{" "}
       {children}
-    </details>
+    </fragment>
   );
 }
 
