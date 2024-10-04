@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
+import { Ok, Result, isError } from "@gnuxie/typescript-result";
 import { TObject } from "@sinclair/typebox";
 import {
   ConfigDescription,
+  ConfigParseError,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   MjolnirEnabledProtectionsDescription,
@@ -19,8 +21,15 @@ import {
   MatrixSendClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 
+export type PersistentConfigStatus = {
+  readonly description: ConfigDescription;
+  readonly data: unknown;
+  readonly error: ConfigParseError | undefined;
+};
+
 export interface PersistentConfigEditor {
   getConfigAdaptors(): PersistentConfigData[];
+  requestConfigStatus(): Promise<Result<PersistentConfigStatus[]>>;
 }
 
 export class StandardPersistentConfigEditor implements PersistentConfigEditor {
@@ -59,5 +68,32 @@ export class StandardPersistentConfigEditor implements PersistentConfigEditor {
   }
   getConfigAdaptors(): PersistentConfigData[] {
     return this.configAdaptors;
+  }
+
+  public async requestConfigStatus(): Promise<
+    Result<PersistentConfigStatus[]>
+  > {
+    const info: PersistentConfigStatus[] = [];
+    for (const adaptor of this.configAdaptors) {
+      const dataResult = await adaptor.requestConfig();
+      if (isError(dataResult)) {
+        if (dataResult.error instanceof ConfigParseError) {
+          info.push({
+            description: adaptor.description,
+            data: dataResult.error.config,
+            error: dataResult.error,
+          });
+        } else {
+          return dataResult;
+        }
+      } else {
+        info.push({
+          description: adaptor.description,
+          data: dataResult.ok,
+          error: undefined,
+        });
+      }
+    }
+    return Ok(info);
   }
 }

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { Ok, Result, isError } from "@gnuxie/typescript-result";
 import {
   DeadDocumentJSX,
   DocumentNode,
@@ -12,23 +11,16 @@ import {
   MatrixRoomID,
   MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
-import {
-  ConfigParseError,
-  ConfigPropertyError,
-  PersistentConfigData,
-} from "matrix-protection-suite";
+import { ConfigParseError, ConfigPropertyError } from "matrix-protection-suite";
 import {
   renderMentionPill,
   renderRoomPill,
 } from "../commands/interface-manager/MatrixHelpRenderer";
+import { PersistentConfigStatus } from "./PersistentConfigEditor";
 
-// FIXME: This is backwards, we should generate some kind of object that can be rendered by the interface manager,
-// that already has all the information fetched.
 export interface PersistentConfigRenderer {
-  renderConfig(config: PersistentConfigData): Promise<Result<DocumentNode>>;
-  renderStatusOfConfigAdaptors(
-    adaptors: PersistentConfigData[]
-  ): Promise<Result<DocumentNode>>;
+  renderConfigStatus(config: PersistentConfigStatus): DocumentNode;
+  renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode;
 }
 
 function findError(
@@ -95,14 +87,13 @@ function renderConfigPropertyItem(
 }
 
 function renderConfigPropertyError(
-  error: ConfigPropertyError | undefined
+  error: ConfigPropertyError | ConfigParseError | undefined
 ): string {
   return error === undefined ? "🟢" : "🔴";
 }
 
 function renderConfigProperty(
   propertyKey: string,
-  config: PersistentConfigData,
   data: Record<string, unknown>,
   errors: ConfigPropertyError[]
 ): DocumentNode {
@@ -139,48 +130,35 @@ function renderBodgedConfig(value: unknown): DocumentNode {
 }
 
 export const StandardPersistentConfigRenderer = Object.freeze({
-  async renderConfig(
-    config: PersistentConfigData
-  ): Promise<Result<DocumentNode>> {
-    const dataResult = await config.requestConfig();
-    if (
-      isError(dataResult) &&
-      !(dataResult.error instanceof ConfigParseError)
-    ) {
-      return dataResult;
+  renderConfigStatus(config: PersistentConfigStatus): DocumentNode {
+    if (typeof config.data !== "object" || config.data === null) {
+      return renderBodgedConfig(config.data);
     }
-    const [data, errors] = dataResult.match(
-      (ok) => [ok, []],
-      (error) => {
-        if (error instanceof ConfigParseError) {
-          return [error.config, error.errors];
-        } else {
-          throw new TypeError(
-            "We should have been able to narrow to ConfigParseError"
-          );
-        }
-      }
-    );
-    if (typeof data !== "object" || data === null) {
-      return Ok(renderBodgedConfig(data));
-    }
-    return Ok(
-      <fragment>
-        {config.description.schema.title ?? "Untitled Config"}
+    return (
+      <details>
+        <summary>
+          {renderConfigPropertyError(config.error)}{" "}
+          {config.description.schema.title ?? "Untitled Config"}
+        </summary>
         {config.description
           .properties()
           .map((property) =>
             renderConfigProperty(
               property.name,
-              config,
-              data as Record<string, unknown>,
-              errors
+              config.data as Record<string, unknown>,
+              config.error?.errors ?? []
             )
           )}
-      </fragment>
+      </details>
     );
   },
-  async renderStatusOfConfigAdaptors(
-    adaptors: PersistentConfigData[]
-  ): Promise<Result<DocumentNode>> {},
+  renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode {
+    return (
+      <ul>
+        {info.map((config) => (
+          <li>{this.renderConfigStatus(config)}</li>
+        ))}
+      </ul>
+    );
+  },
 }) satisfies PersistentConfigRenderer;
