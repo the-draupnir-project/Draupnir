@@ -122,7 +122,7 @@ let globalMjolnir: Draupnir | null;
 let globalSafeEmitter: SafeMatrixEmitter | undefined;
 
 /**
- * Return a test instance of Mjolnir.
+ * Return a test instance of Draupnir.
  */
 export async function makeBotModeToggle(
   config: IConfig,
@@ -186,7 +186,7 @@ export async function makeBotModeToggle(
 }
 
 /**
- * Remove the alias and leave the room, can't be implicitly provided from the config because Mjolnir currently mutates it.
+ * Remove the alias and leave the room, can't be implicitly provided from the config because Draupnir currently mutates it.
  * @param client The client to use to leave the room.
  * @param roomId The roomId of the room to leave.
  * @param alias The alias to remove from the room.

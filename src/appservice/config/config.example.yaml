@@ -4,7 +4,7 @@ homeserver:
   # The url for the appservice to call the client server API from.
   url: http://localhost:8081
 
-# Database configuration for storing which Mjolnirs have been provisioned.
+# Database configuration for storing which Draupnirs have been provisioned.
 db:
   engine: "postgres"
   connectionString: "postgres://mjolnir-tester:mjolnir-test@localhost:8083/mjolnir-test-db"

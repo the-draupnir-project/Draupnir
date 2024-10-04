@@ -24,7 +24,7 @@ interface Context extends Mocha.Context {
   moderator?: MatrixClient;
 }
 
-describe("Test that the app service can provision a mjolnir when requested from the web API", function () {
+describe("Test that the app service can provision a draupnir when requested from the web API", function () {
   afterEach(function (this: Context) {
     this.moderator?.stop();
     if (this.appservice) {
@@ -34,7 +34,7 @@ describe("Test that the app service can provision a mjolnir when requested from 
       return Promise.resolve(); // TS7030: Not all code paths return a value.
     }
   });
-  it("A moderator that requests a mjolnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
+  it("A moderator that requests a draupnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
     const config = readTestConfig();
     this.appservice = await setupHarness();
     // create a moderator
@@ -49,7 +49,7 @@ describe("Test that the app service can provision a mjolnir when requested from 
       preset: "public_chat",
     });
 
-    // have the moderator invite the appservice bot in order to request a new mjolnir
+    // have the moderator invite the appservice bot in order to request a new draupnir
     this.moderator = moderator;
     const roomsInvitedTo: string[] = [];
     const mjolnirDetails: CreateMjolnirResponse = await new Promise(
@@ -77,7 +77,7 @@ describe("Test that the app service can provision a mjolnir when requested from 
     if (managementRoomId !== mjolnirDetails.managementRoomId) {
       throw new TypeError(`Unable to find the management room`);
     }
-    // Check that the newly provisioned mjolnir is actually responsive.
+    // Check that the newly provisioned draupnir is actually responsive.
     const event = await getFirstReply(moderator, managementRoomId, () => {
       return moderator.sendMessage(managementRoomId, {
         body: `!draupnir status`,

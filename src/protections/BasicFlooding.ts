@@ -62,7 +62,7 @@ describeProtection<
   name: "BasicFloodingProtection",
   description: `If a user posts more than ${DEFAULT_MAX_PER_MINUTE} messages in 60s they'll be
     banned for spam. This does not publish the ban to any of your ban lists.
-    This is a legacy protection from Mjolnir and contains bugs.`,
+    This is a legacy protection from Draupnir and contains bugs.`,
   capabilityInterfaces: {
     userConsequences: "UserConsequences",
     eventConsequences: "EventConsequences",
@@ -216,7 +216,7 @@ export class BasicFloodingProtection
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "BasicFlooding",
-          `Tried to ban ${event["sender"]} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`,
+          `Tried to ban ${event["sender"]} in ${room.toRoomIDOrAlias()} but Draupnir is running in no-op mode`,
           room.toRoomIDOrAlias()
         );
       }
@@ -240,7 +240,7 @@ export class BasicFloodingProtection
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "BasicFlooding",
-          `Tried to redact messages for ${event["sender"]} in ${room.toRoomIDOrAlias()} but Mjolnir is running in no-op mode`,
+          `Tried to redact messages for ${event["sender"]} in ${room.toRoomIDOrAlias()} but Draupnir is running in no-op mode`,
           room.toRoomIDOrAlias()
         );
       }

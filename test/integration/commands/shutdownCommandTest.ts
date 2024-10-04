@@ -26,7 +26,7 @@ describe("Test: shutdown command", function () {
   this.afterEach(async function () {
     client.stop();
   });
-  it("Mjolnir asks synapse to shut down a channel", async function (
+  it("Draupnir asks synapse to shut down a channel", async function (
     this: DraupnirTestContext
   ) {
     this.timeout(20000);

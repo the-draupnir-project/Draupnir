@@ -9,9 +9,9 @@ COPY . /tmp/src
 RUN cd /tmp/src \
     && yarn install --network-timeout 100000 \
     && yarn build \
-    && mv lib/ /mjolnir/ \
+    && mv lib/ /draupnir/ \
     && mv node_modules / \
-    && mv mjolnir-entrypoint.sh / \
+    && mv draupnir-entrypoint.sh / \
     && mv package.json / \
     && mv version.txt / \
     && cd / \
@@ -21,5 +21,5 @@ ENV NODE_ENV=production
 ENV NODE_CONFIG_DIR=/data/config
 
 CMD ["bot"]
-ENTRYPOINT ["./mjolnir-entrypoint.sh"]
+ENTRYPOINT ["./draupnir-entrypoint.sh"]
 VOLUME ["/data"]

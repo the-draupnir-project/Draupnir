@@ -75,7 +75,7 @@ interface BanPropagationMessageContext {
 
 /**
  * Prompt the management room to propagate a user ban to a policy list of their choice.
- * @param mjolnir Mjolnir.
+ * @param mjolnir Draupnir.
  * @param event The ban event.
  * @param roomId The room that the ban happened in.
  * @returns An event id which can be used by the `PromptResponseListener`.

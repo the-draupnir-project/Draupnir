@@ -25,7 +25,7 @@ describe("Test: !help command", function () {
   this.afterEach(async function () {
     client.stop();
   } as unknown as Mocha.AsyncFunc);
-  it("Mjolnir responded to !mjolnir help", async function (
+  it("Draupnir responded to !mjolnir help", async function (
     this: DraupnirTestContext
   ) {
     this.timeout(30000);

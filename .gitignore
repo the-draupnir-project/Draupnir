@@ -7,7 +7,7 @@ config/*
 !config/default.yaml
 
 # Draupnir test data
-mjolnir-registration.yaml
+draupnir-registration.yaml
 test/harness/mjolnir-data/*
 
 # Misc

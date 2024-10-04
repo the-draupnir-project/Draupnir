@@ -139,7 +139,7 @@ export async function redactUserMessagesIn(
               await managementRoom.logMessage(
                 LogLevel.WARN,
                 "utils#redactUserMessagesIn",
-                `Tried to redact ${victimEvent["event_id"]} in ${targetRoomId} but Mjolnir is running in no-op mode`,
+                `Tried to redact ${victimEvent["event_id"]} in ${targetRoomId} but Draupnir is running in no-op mode`,
                 targetRoomId
               );
             }
@@ -474,7 +474,7 @@ function patchMatrixClientForRetry() {
                 } else {
                   if (attempt >= MAX_REQUEST_ATTEMPTS) {
                     LogService.warn(
-                      "Mjolnir.client",
+                      "Draupnir.client",
                       `Retried request ${params.method} ${params.uri} ${attempt} times, giving up.`
                     );
                   }
@@ -500,7 +500,7 @@ function patchMatrixClientForRetry() {
           }
         }
         LogService.debug(
-          "Mjolnir.client",
+          "Draupnir.client",
           `Waiting ${retryAfterMs}ms before retrying ${params.method} ${params.uri}`
         );
         await new Promise((resolve) => setTimeout(resolve, retryAfterMs));

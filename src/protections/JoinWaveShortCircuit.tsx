@@ -168,7 +168,7 @@ export class JoinWaveShortCircuitProtection
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "JoinWaveShortCircuit",
-          `Tried to set ${roomID} to invite-only, but Mjolnir is running in no-op mode`,
+          `Tried to set ${roomID} to invite-only, but Draupnir is running in no-op mode`,
           roomID
         );
       }

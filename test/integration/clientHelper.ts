@@ -118,7 +118,7 @@ export async function registerUser(
     }
   }
   throw new Error(
-    `Retried registration ${REGISTRATION_ATTEMPTS} times, is Mjolnir or Synapse misconfigured?`
+    `Retried registration ${REGISTRATION_ATTEMPTS} times, is Draupnir or Synapse misconfigured?`
   );
 }
 

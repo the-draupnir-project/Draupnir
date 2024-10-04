@@ -28,7 +28,7 @@ import {
 
 /**
  * Utility to manage which users have access to the application service,
- * meaning whether a user is able to provision a mjolnir or continue to use one.
+ * meaning whether a user is able to provision a draupnir or continue to use one.
  * Internally we use a policy list within matrix to determine who has access via the `AccessControlUnit`.
  */
 export class AccessControl {
@@ -41,7 +41,7 @@ export class AccessControl {
 
   /**
    * Construct and initialize access control for the `MjolnirAppService`.
-   * @param accessControlListId The room id of a policy list used to manage access to the appservice (who can provision & use mjolniren)
+   * @param accessControlListId The room id of a policy list used to manage access to the appservice (who can provision & use draupnir)
    * @param bridge The matrix-appservice-bridge, used to get the appservice bot.
    * @returns A new instance of `AccessControl` to be used by `MjolnirAppService`.
    */

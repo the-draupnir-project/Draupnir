@@ -29,7 +29,7 @@ export interface IConfig {
   webAPI: {
     port: number;
   };
-  /** The admin room for the appservice bot. Not called managementRoom like mjolnir on purpose, so they're not mixed in code somehow. */
+  /** The admin room for the appservice bot. Not called managementRoom like draupnir on purpose, so they're not mixed in code somehow. */
   adminRoom: string;
   /** configuration for matrix-appservice-bridge's Logger */
   logging?: LoggingOpts;

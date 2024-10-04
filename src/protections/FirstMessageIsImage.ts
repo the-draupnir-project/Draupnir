@@ -150,7 +150,7 @@ export class FirstMessageIsImageProtection
           await this.draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "FirstMessageIsImage",
-            `Tried to ban ${event["sender"]} in ${roomID} but Mjolnir is running in no-op mode`,
+            `Tried to ban ${event["sender"]} in ${roomID} but Draupnir is running in no-op mode`,
             roomID
           );
         }
@@ -172,7 +172,7 @@ export class FirstMessageIsImageProtection
           await this.draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "FirstMessageIsImage",
-            `Tried to redact ${event["event_id"]} in ${roomID} but Mjolnir is running in no-op mode`,
+            `Tried to redact ${event["event_id"]} in ${roomID} but Draupnir is running in no-op mode`,
             roomID
           );
         }

@@ -89,8 +89,8 @@ export class MjolnirAppService {
 
   /**
    * Make and initialize the app service from the config, ready to be started.
-   * @param config The appservice's config, not mjolnir's, see `src/appservice/config`.
-   * @param dataStore A datastore to persist infomration about the mjolniren to.
+   * @param config The appservice's config, not draupnirs's, see `src/appservice/config`.
+   * @param dataStore A datastore to persist infomration about the draupnir to.
    * @param registrationFilePath A file path to the registration file to read the namespace and tokens from.
    * @returns A new `MjolnirAppService`.
    */
@@ -109,10 +109,10 @@ export class MjolnirAppService {
       // to make the code base much simpler. A small hack to pay for an overall less hacky code base.
       controller: {
         onUserQuery: () => {
-          throw new Error("Mjolnir uninitialized");
+          throw new Error("Draupnir uninitialized");
         },
         onEvent: () => {
-          throw new Error("Mjolnir uninitialized");
+          throw new Error("Draupnir uninitialized");
         },
       },
       suppressEcho: false,
@@ -241,11 +241,11 @@ export class MjolnirAppService {
     return {}; // auto-provision users with no additonal data
   }
 
-  // Provision a new mjolnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
+  // Provision a new draupnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
   // Acts as an alternative to the web api provided for the widget.
   private async handleProvisionInvite(mxEvent: WeakEvent): Promise<void> {
     log.info(
-      `${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a mjolnir`
+      `${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a draupnir`
     );
     // Join the room and try to send the welcome flow
     try {
@@ -282,7 +282,7 @@ export class MjolnirAppService {
         );
     } catch (e: unknown) {
       log.error(
-        `Failed to provision a mjolnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`,
+        `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`,
         e
       );
       // continue, we still want to reject this invitation.
@@ -296,7 +296,7 @@ export class MjolnirAppService {
         );
     }
     try {
-      // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their mjolnir.
+      // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their draupnir.
       await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
     } catch (e: unknown) {
       log.warn("Unable to reject an invite to a room", e);
@@ -341,7 +341,10 @@ export class MjolnirAppService {
    * @param port The port that the appservice should listen on to receive transactions from the homeserver.
    */
   private async start(port: number) {
-    log.info("Starting MjolnirAppService, Matrix-side to listen on port", port);
+    log.info(
+      "Starting DraupnirAppService, Matrix-side to listen on port",
+      port
+    );
     this.api.start(this.config.webAPI.port);
     await this.bridge.listen(port);
     this.prometheusMetrics.addAppServicePath(this.bridge);
@@ -353,7 +356,7 @@ export class MjolnirAppService {
         res.status(200).send("ok");
       },
     });
-    log.info("MjolnirAppService started successfully");
+    log.info("DraupnirAppService started successfully");
   }
 
   /**

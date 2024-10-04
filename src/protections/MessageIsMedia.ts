@@ -123,7 +123,7 @@ export class MessageIsMediaProtection
           await this.draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "MessageIsMedia",
-            `Tried to redact ${event["event_id"]} in ${roomID} but Mjolnir is running in no-op mode`,
+            `Tried to redact ${event["event_id"]} in ${roomID} but Draupnir is running in no-op mode`,
             roomID
           );
         }

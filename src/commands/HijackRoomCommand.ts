@@ -53,7 +53,7 @@ export const SynapseAdminHijackRoomCommand = describeCommand({
       !isAdmin.ok
     ) {
       return ActionError.Result(
-        "Either the command is disabled or Mjolnir is not running as homeserver administrator."
+        "Either the command is disabled or Draupnir is not running as homeserver administrator."
       );
     }
     if (draupnir.synapseAdminClient === undefined) {

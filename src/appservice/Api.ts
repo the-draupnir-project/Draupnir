@@ -109,9 +109,9 @@ export class Api {
   }
 
   /**
-   * Finds the management room for a mjolnir.
-   * @param req.body.openId An OpenID token to verify that the sender of the request owns the mjolnir described in `req.body.mxid`.
-   * @param req.body.mxid   The mxid of the mjolnir we want to find the management room for.
+   * Finds the management room for a draupnir.
+   * @param req.body.openId An OpenID token to verify that the sender of the request owns the draupnir described in `req.body.mxid`.
+   * @param req.body.mxid   The mxid of the draupnir we want to find the management room for.
    */
   private async pathGet(req: express.Request, response: express.Response) {
     const accessToken = req.body["openId"];
@@ -141,7 +141,7 @@ export class Api {
       userId
     );
     if (mjolnir === undefined) {
-      response.status(400).send("unknown mjolnir mxid");
+      response.status(400).send("unknown draupnir mxid");
       return;
     }
 
@@ -149,8 +149,8 @@ export class Api {
   }
 
   /**
-   * Return the mxids of mjolnirs that this user has provisioned.
-   * @param req.body.openId An OpenID token to find the sender of the request with and find their provisioned mjolnirs.
+   * Return the mxids of draupnirs that this user has provisioned.
+   * @param req.body.openId An OpenID token to find the sender of the request with and find their provisioned draupnirs.
    */
   private async pathList(req: express.Request, response: express.Response) {
     const accessToken = req.body["openId"];
@@ -174,9 +174,9 @@ export class Api {
   }
 
   /**
-   * Creates a new mjolnir for the requesting user and protects their first room.
-   * @param req.body.roomId The room id that the request to create a mjolnir originates from.
-   * This is so that mjolnir can protect the room once the authenticity of the request has been verified.
+   * Creates a new draupnir for the requesting user and protects their first room.
+   * @param req.body.roomId The room id that the request to create a draupnir originates from.
+   * This is so that draupnir can protect the room once the authenticity of the request has been verified.
    * @param req.body.openId An OpenID token to find the sender of the request with.
    */
   private async pathCreate(req: express.Request, response: express.Response) {
@@ -214,10 +214,10 @@ export class Api {
   }
 
   /**
-   * Request a mjolnir to join and protect a room.
-   * @param req.body.openId An OpenID token to find the sender of the request with and that they own the mjolnir described in `req.body.mxid`.
-   * @param req.body.mxid   The mxid of the mjolnir that should join the room.
-   * @param req.body.roomId The room that this mjolnir should join and protect.
+   * Request a draupnir to join and protect a room.
+   * @param req.body.openId An OpenID token to find the sender of the request with and that they own the draupnir described in `req.body.mxid`.
+   * @param req.body.mxid   The mxid of the draupnir that should join the room.
+   * @param req.body.roomId The room that this draupnir should join and protect.
    */
   private async pathJoin(req: express.Request, response: express.Response) {
     const accessToken = req.body["openId"];
@@ -255,7 +255,7 @@ export class Api {
       userId
     );
     if (mjolnir === undefined) {
-      response.status(400).send("unknown mjolnir mxid");
+      response.status(400).send("unknown draupnir mxid");
       return;
     }
 

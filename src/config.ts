@@ -34,11 +34,11 @@ export interface IConfig {
   };
   dataPath: string;
   /**
-   * If true, Mjolnir will only accept invites from users present in managementRoom.
+   * If true, Draupnir will only accept invites from users present in managementRoom.
    * Otherwise a space must be provided to `acceptInvitesFromSpace`.
    */
   autojoinOnlyIfManager: boolean;
-  /** Mjolnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
+  /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
   managementRoom: string;
@@ -270,14 +270,14 @@ export function read(): IConfig {
 }
 
 /**
- * Provides a config for each newly provisioned mjolnir in appservice mode.
- * @param managementRoomId A room that has been created to serve as the mjolnir's management room for the owner.
- * @returns A config that can be directly used by the new mjolnir.
+ * Provides a config for each newly provisioned draupnir in appservice mode.
+ * @param managementRoomId A room that has been created to serve as the draupnir's management room for the owner.
+ * @returns A config that can be directly used by the new draupnir.
  */
 export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
-  // These are keys that are allowed to be configured for provisioned mjolnirs.
+  // These are keys that are allowed to be configured for provisioned draupnirs.
   // We need a restricted set so that someone doesn't accidentally enable webservers etc
-  // on every created Mjolnir, which would result in very confusing error messages.
+  // on every created Draupnir, which would result in very confusing error messages.
   const allowedKeys = [
     "commands",
     "verboseLogging",
@@ -290,14 +290,14 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "backgroundDelayMS",
     "safeMode",
   ];
-  const configTemplate = read(); // we use the standard bot config as a template for every provisioned mjolnir.
+  const configTemplate = read(); // we use the standard bot config as a template for every provisioned draupnir.
   const unusedKeys = Object.keys(configTemplate).filter(
     (key) => !allowedKeys.includes(key)
   );
   if (unusedKeys.length > 0) {
     LogService.warn(
       "config",
-      "The config provided for provisioned mjolnirs contains keys which are not used by the appservice.",
+      "The config provided for provisioned draupnirs contains keys which are not used by the appservice.",
       unusedKeys
     );
   }

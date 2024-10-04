@@ -448,7 +448,7 @@ describe("Test: Reporting abuse", () => {
     const mjolnirRooms = new Set(await draupnir.client.getJoinedRooms());
     assert.ok(
       mjolnirRooms.has(roomId),
-      "Mjölnir should be a member of the room"
+      "Draupnir should be a member of the room"
     );
 
     // Find the notice

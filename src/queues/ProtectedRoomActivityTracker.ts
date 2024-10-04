@@ -30,8 +30,8 @@ export class ProtectedRoomActivityTracker {
   private activeRoomsCache: null | string[] = null;
 
   /**
-   * Inform the tracker that a new room is being protected by Mjolnir.
-   * @param roomId The room Mjolnir is now protecting.
+   * Inform the tracker that a new room is being protected by Draupnir.
+   * @param roomId The room Draupnir is now protecting.
    */
   public addProtectedRoom(roomId: string): void {
     this.protectedRoomActivities.set(roomId, /* epoch */ 0);
@@ -39,8 +39,8 @@ export class ProtectedRoomActivityTracker {
   }
 
   /**
-   * Inform the trakcer that a room is no longer being protected by Mjolnir.
-   * @param roomId The roomId that is no longer being protected by Mjolnir.
+   * Inform the trakcer that a room is no longer being protected by Draupnir.
+   * @param roomId The roomId that is no longer being protected by Draupnir.
    */
   public removeProtectedRoom(roomId: string): void {
     this.protectedRoomActivities.delete(roomId);

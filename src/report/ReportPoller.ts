@@ -199,7 +199,7 @@ export class ReportPoller {
         void Task(
           managementRoomOutput.logMessage(
             LogLevel.INFO,
-            "Mjolnir@startup",
+            "Draupnir@startup",
             "report poll setting does not exist yet"
           )
         );
