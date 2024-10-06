@@ -15,15 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* `Dockerfile`: entry-point was renamed from `mjolnir-entrypoint.sh` to `draupnir-entrypoint.sh`.
-If you have built a Dockerfile based on ours, you may need to make some changes.
+- `Dockerfile`: entry-point was renamed from `mjolnir-entrypoint.sh` to `draupnir-entrypoint.sh`.
+  If you have built a Dockerfile based on ours, you may need to make some changes.
 
-* `Dockerfile`: source code was moved from `/mjolnir` to `/draupnir`. If you have built a custom
-docker image based on our Dockerfile based on ours, you may need to make some changes.
+- `Dockerfile`: source code was moved from `/mjolnir` to `/draupnir`. If you have built a custom
+  docker image based on our Dockerfile based on ours, you may need to make some changes.
 
-* The appservice registration file generator no longer emits `mjolnir-registration.yaml`
-as it has been renamed to `draupnir-registration.yaml`. This is only a concern if you have
-automated tooling that generates a registration file.
+- The appservice registration file generator no longer emits `mjolnir-registration.yaml`
+  as it has been renamed to `draupnir-registration.yaml`. This is only a concern if you have
+  automated tooling that generates a registration file.
 
 ## Versions v2.0.0-beta.7 and prior
 

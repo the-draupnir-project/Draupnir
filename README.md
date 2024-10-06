@@ -47,29 +47,29 @@ backwards compatible.
 
 #### Changes in `v2.0.0-beta.*` (pre-release)
 
-* Draupnir's new core efficiently caches room state and room
+- Draupnir's new core efficiently caches room state and room
   membership allowing Draupnir to be much more responsive than
   Mjolnir.
 
-* Draupnir is much less dependant on commands
+- Draupnir is much less dependant on commands
   and will automatically send prompts to the management room.
   Prompts are sent for inviting Draupnir to protect rooms,
   watch policy lists, ban users, and unban users.
 
-* Draupnir offers a [room state backing
+- Draupnir offers a [room state backing
   store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
   allowing Draupnir startup quickly, even when deployed at distance
   from the homeserver.
 
-* Draupnir's core functionality is implemented as protections,
+- Draupnir's core functionality is implemented as protections,
   which can be dynamically turned on and off.
 
-* Most effort has been spent refactoring the code base, paving the way
+- Most effort has been spent refactoring the code base, paving the way
   for future feature development and adjacent projects. This includes
   the rewrite of the core of Draupnir into the
   [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
   providing all the Matrix client code required to operate a
-  protection platform.  The
+  protection platform. The
   [interface-manager](https://github.com/the-draupnir-project/interface-manager)
   providing an advanced command-oriented interface (note, this does
   not mean command-line interface). The
@@ -79,7 +79,6 @@ backwards compatible.
   [eslint](https://eslint.org/) and
   [typescript-eslint](https://typescript-eslint.io/) into Draupnir's
   development tooling, modernising TypeScript development.
-
 
 #### Changes in latest `v1.87.0`
 

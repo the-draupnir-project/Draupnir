@@ -12,7 +12,7 @@
     "postbuild": "corepack yarn describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
-    "lint": "corepack yarn eslint src test && corepack yarn prettier --check src test",
+    "lint": "corepack yarn eslint --cache src test && corepack yarn prettier --cache --ignore-unknown --check src test",
     "start:dev": "corepack yarn build && node --async-stack-traces lib/index.js",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
