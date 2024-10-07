@@ -14,6 +14,29 @@ import { MatrixClient, LogService } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
+import { Logger } from "matrix-protection-suite";
+
+const log = new Logger("config");
+
+/**
+ * The version of the configuration that has been explicitly provided,
+ * and does not contain default values. Secrets are marked with "REDACTED".
+ */
+export function getNonDefaultConfigProperties(
+  config: IConfig
+): Record<string, unknown> {
+  const nonDefault = Config.util.diffDeep(defaultConfig, config);
+  if ("accessToken" in nonDefault) {
+    nonDefault.accessToken = "REDACTED";
+  }
+  if (
+    "pantalaimon" in nonDefault &&
+    typeof nonDefault.pantalaimon === "object"
+  ) {
+    nonDefault.pantalaimon.password = "REDACTED";
+  }
+  return nonDefault;
+}
 
 /**
  * The configuration, as read from production.yaml
@@ -234,17 +257,26 @@ function readConfigSource(): IConfig {
     process.argv,
     "--draupnir-config"
   );
-  if (explicitConfigPath !== undefined) {
-    const content = fs.readFileSync(explicitConfigPath, "utf8");
-    const parsed = load(content);
-    return Config.util.extendDeep({}, defaultConfig, parsed);
-  } else {
-    return Config.util.extendDeep(
-      {},
-      defaultConfig,
-      Config.util.toObject()
-    ) as IConfig;
-  }
+  // we probably want to make an incision after this if block.
+  // to create the provided values field to the config.
+  const config = (() => {
+    if (explicitConfigPath !== undefined) {
+      const content = fs.readFileSync(explicitConfigPath, "utf8");
+      const parsed = load(content);
+      return Config.util.extendDeep({}, defaultConfig, parsed);
+    } else {
+      return Config.util.extendDeep(
+        {},
+        defaultConfig,
+        Config.util.toObject()
+      ) as IConfig;
+    }
+  })();
+  log.info(
+    "non-default configuration properties loaded:",
+    JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
+  );
+  return config;
 }
 
 export function configRead(): IConfig {
