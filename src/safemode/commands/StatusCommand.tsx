@@ -38,9 +38,11 @@ function renderSafeModeCauseError(error: ResultError): DocumentNode {
   if (error instanceof ActionException) {
     return (
       <fragment>
-        Draupnir is in safe mode because Draupnir failed to start.
+        <p>Draupnir is in safe mode because Draupnir failed to start.</p>
         <details>
-          <summary>{error.mostRelevantElaboration}</summary>
+          <summary>
+            <code>{error.mostRelevantElaboration}</code>
+          </summary>
           Details can be found by providing the reference{" "}
           <code>{error.uuid}</code>
           to an administrator.
@@ -53,7 +55,9 @@ function renderSafeModeCauseError(error: ResultError): DocumentNode {
       <fragment>
         Draupnir is in safe mode because Draupnir failed to start.
         <details>
-          <summary>{error.mostRelevantElaboration}</summary>
+          <summary>
+            <code>{error.mostRelevantElaboration}</code>
+          </summary>
           <pre>{error.toReadableString()}</pre>
         </details>
       </fragment>
@@ -86,12 +90,12 @@ export function renderSafeModeStatusInfo(
 ): DocumentNode {
   return (
     <fragment>
-      ⚠️ Draupnir is in safe mode ⚠️
-      <br />
+      <h3>
+        ⚠️ <b>Draupnir is in safe mode</b> ⚠️
+      </h3>
       {renderSafeModeCause(info.safeModeCause)}
-      <br />
       {renderRecoveryOptions(info.safeModeCause)}
-      <br />
+      <hr />
       {StandardPersistentConfigRenderer.renderAdaptorStatus(info.configStatus)}
       <b>Version: </b>
       <code>{info.version}</code>
