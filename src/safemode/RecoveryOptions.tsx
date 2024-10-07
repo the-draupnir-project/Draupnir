@@ -26,17 +26,22 @@ export function renderRecoveryOptions(cause: SafeModeCause): DocumentNode {
   }
   return (
     <fragment>
-      Recovery options are available for this failure mode:
-      <ol>
-        {recoveryOptions.map((option) => (
-          <li>{option.description}</li>
-        ))}
-      </ol>
-      To use a recovery option, click on one of the reactions (
-      {recoveryOptions
-        .map((_, index) => MatrixReactionHandler.numberToEmoji(index + 1))
-        .join(", ")}
-      ), or use the recover command: <code>!draupnir recover 1</code>.
+      <p>
+        Recovery options are available for this failure mode:
+        <ol>
+          {recoveryOptions.map((option) => (
+            <li>{option.description}</li>
+          ))}
+        </ol>
+      </p>
+      <hr />
+      <p>
+        To use a <b>recovery option</b>, click on one of the reactions (
+        {recoveryOptions
+          .map((_, index) => MatrixReactionHandler.numberToEmoji(index + 1))
+          .join(", ")}
+        ), or use the recover command: <code>!draupnir recover 1</code>.
+      </p>
     </fragment>
   );
 }
