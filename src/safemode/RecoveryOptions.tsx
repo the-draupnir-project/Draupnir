@@ -8,6 +8,7 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { ConfigRecoverableError } from "matrix-protection-suite";
 import { SafeModeCause, SafeModeReason } from "./SafeModeCause";
+import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 
 export function renderRecoveryOptions(cause: SafeModeCause): DocumentNode {
   const recoveryOptions =
@@ -31,6 +32,11 @@ export function renderRecoveryOptions(cause: SafeModeCause): DocumentNode {
           <li>{option.description}</li>
         ))}
       </ol>
+      To use a recovery option, click on one of the reactions (
+      {recoveryOptions
+        .map((_, index) => MatrixReactionHandler.numberToEmoji(index + 1))
+        .join(", ")}
+      ), or use the recover command: <code>!draupnir recover 1</code>.
     </fragment>
   );
 }

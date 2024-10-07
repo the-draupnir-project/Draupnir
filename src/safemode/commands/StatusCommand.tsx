@@ -109,7 +109,7 @@ export function renderSafeModeStatusInfo(
       )}
       <br />
       <br />
-      To attempt to restart, use <code>!draupnir restart</code>
+      To attempt to restart, use <code>!draupnir restart</code>.
     </fragment>
   );
 }
