@@ -16,7 +16,7 @@ import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { Logger } from "matrix-protection-suite";
 
-const log = new Logger("config");
+const log = new Logger("Draupnir config");
 
 /**
  * The version of the configuration that has been explicitly provided,
@@ -87,9 +87,11 @@ export interface IConfig {
    * should be printed to our managementRoom.
    */
   displayReports: boolean;
-  admin?: {
-    enableMakeRoomAdminCommand?: boolean;
-  };
+  admin?:
+    | {
+        enableMakeRoomAdminCommand?: boolean;
+      }
+    | undefined;
   commands: {
     allowNoPrefix: boolean;
     additionalPrefixes: string[];
@@ -126,15 +128,17 @@ export interface IConfig {
       unhealthyStatus: number;
     };
     // If specified, attempt to upload any crash statistics to sentry.
-    sentry?: {
-      dsn: string;
+    sentry?:
+      | {
+          dsn: string;
 
-      // Frequency of performance monitoring.
-      //
-      // A number in [0.0, 1.0], where 0.0 means "don't bother with tracing"
-      // and 1.0 means "trace performance at every opportunity".
-      tracesSampleRate: number;
-    };
+          // Frequency of performance monitoring.
+          //
+          // A number in [0.0, 1.0], where 0.0 means "don't bother with tracing"
+          // and 1.0 means "trace performance at every opportunity".
+          tracesSampleRate: number;
+        }
+      | undefined;
   };
   web: {
     enabled: boolean;
@@ -227,7 +231,9 @@ const defaultConfig: IConfig = {
       healthyStatus: 200,
       unhealthyStatus: 418,
     },
+    sentry: undefined,
   },
+  admin: undefined,
   web: {
     enabled: false,
     port: 8080,
@@ -276,6 +282,13 @@ function readConfigSource(): IConfig {
     "non-default configuration properties loaded:",
     JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
   );
+  const unknownProperties = getUnknownConfigPropertyPaths(config);
+  if (unknownProperties.length > 0) {
+    log.warn(
+      "There are unknown configuration properties, possibly a result of typos:",
+      unknownProperties
+    );
+  }
   return config;
 }
 
@@ -422,4 +435,59 @@ function getCommandLineOption(
 
   // No value was provided, or the next argument is another option
   throw new Error(`No value provided for ${optionName}`);
+}
+
+type UnknownPropertyPaths = string[];
+
+export function getUnknownPropertiesHelper(
+  rawConfig: unknown,
+  rawDefaults: unknown,
+  currentPathProperties: string[]
+): UnknownPropertyPaths {
+  const unknownProperties: UnknownPropertyPaths = [];
+  if (
+    typeof rawConfig !== "object" ||
+    rawConfig === null ||
+    Array.isArray(rawConfig)
+  ) {
+    return unknownProperties;
+  }
+  if (rawDefaults === undefined || rawDefaults == null) {
+    // the top level property should have been defined, these could be and
+    // probably are custom properties.
+    return unknownProperties;
+  }
+  if (typeof rawDefaults !== "object") {
+    throw new TypeError("default and normal config are out of sync");
+  }
+  const defaultConfig = rawDefaults as Record<string, unknown>;
+  const config = rawConfig as Record<string, unknown>;
+  for (const key of Object.keys(config)) {
+    if (!(key in defaultConfig)) {
+      unknownProperties.push("/" + [...currentPathProperties, key].join("/"));
+    } else {
+      const unknownSubProperties = getUnknownPropertiesHelper(
+        config[key],
+        defaultConfig[key] as Record<string, unknown>,
+        [...currentPathProperties, key]
+      );
+      unknownProperties.push(...unknownSubProperties);
+    }
+  }
+  return unknownProperties;
+}
+
+/**
+ * Return a list of JSON paths to properties in the given config object that are not present in the default config.
+ * This is used to detect typos in the config file.
+ */
+export function getUnknownConfigPropertyPaths(config: unknown): string[] {
+  if (typeof config !== "object" || config === null) {
+    return [];
+  }
+  return getUnknownPropertiesHelper(
+    config,
+    defaultConfig as unknown as Record<string, unknown>,
+    []
+  );
 }
