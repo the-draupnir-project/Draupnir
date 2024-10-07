@@ -247,7 +247,7 @@ function readConfigSource(): IConfig {
   }
 }
 
-export function read(): IConfig {
+export function configRead(): IConfig {
   const config = readConfigSource();
   const explicitAccessTokenPath = getCommandLineOption(
     process.argv,
@@ -290,7 +290,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "backgroundDelayMS",
     "safeMode",
   ];
-  const configTemplate = read(); // we use the standard bot config as a template for every provisioned draupnir.
+  const configTemplate = configRead(); // we use the standard bot config as a template for every provisioned draupnir.
   const unusedKeys = Object.keys(configTemplate).filter(
     (key) => !allowedKeys.includes(key)
   );

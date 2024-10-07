@@ -13,7 +13,7 @@
  */
 
 import { draupnirClient, makeBotModeToggle } from "./mjolnirSetupUtils";
-import { read as configRead } from "../../src/config";
+import { configRead } from "../../src/config";
 import { SqliteRoomStateBackingStore } from "../../src/backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import path from "path";
 import { DefaultEventDecoder } from "matrix-protection-suite";

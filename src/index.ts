@@ -20,7 +20,7 @@ import {
   RustSdkCryptoStorageProvider,
 } from "matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
-import { read as configRead } from "./config";
+import { configRead as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
