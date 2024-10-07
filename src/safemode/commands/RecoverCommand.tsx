@@ -21,6 +21,16 @@ import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
 import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { ARGUMENT_PROMPT_LISTENER } from "../../commands/interface-manager/MatrixPromptForAccept";
 import { MatrixReactionHandler } from "../../commands/interface-manager/MatrixReactionHandler";
+import {
+  PersistentConfigStatus,
+  StandardPersistentConfigEditor,
+} from "../PersistentConfigEditor";
+import { StandardPersistentConfigRenderer } from "../PersistentConfigRenderer";
+
+export type SafeModeRecoverEffectInfo = {
+  readonly configStatus: PersistentConfigStatus[];
+  readonly recoveryOption: ConfigRecoveryOption;
+};
 
 export const SafeModeRecoverCommand = describeCommand({
   summary: "Select an availale recovery option to enact.",
@@ -35,7 +45,7 @@ export const SafeModeRecoverCommand = describeCommand({
     _keywords,
     _rest,
     optionDesignator
-  ): Promise<Result<ConfigRecoveryOption>> {
+  ): Promise<Result<SafeModeRecoverEffectInfo>> {
     const optionNumber = (() => {
       try {
         return Ok(parseInt(optionDesignator));
@@ -59,7 +69,18 @@ export const SafeModeRecoverCommand = describeCommand({
     if (isError(recoveryResult)) {
       return recoveryResult;
     }
-    return Ok(selectedOption);
+    // Now we're going to get the config again to show the user the outcome of recovery.
+    const editor = new StandardPersistentConfigEditor(safeModeDraupnir.client);
+    const configStatus = await editor.requestConfigStatus();
+    if (isError(configStatus)) {
+      return configStatus.elaborate(
+        "The recovery option has been applied successfully. There was an error when trying to fetch the status of the persistent config."
+      );
+    }
+    return Ok({
+      configStatus: configStatus.ok,
+      recoveryOption: selectedOption,
+    });
   },
 });
 
@@ -68,12 +89,15 @@ SafeModeInterfaceAdaptor.describeRenderer(SafeModeRecoverCommand, {
     if (isError(result)) {
       return Ok(undefined);
     }
+    const { configStatus, recoveryOption } = result.ok;
     return Ok(
       <root>
         <fragment>
           The recovery following recovery option has sucessfully been applied:
           <br />
-          {result.ok.description}
+          {recoveryOption.description}
+          <br />
+          {StandardPersistentConfigRenderer.renderAdaptorStatus(configStatus)}
           <br />
           You may now restart Draupnir with <code>!draupnir restart</code>
         </fragment>
