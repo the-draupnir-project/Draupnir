@@ -11,7 +11,6 @@
 import {
   StandardClientsInRoomMap,
   DefaultEventDecoder,
-  setGlobalLoggerProvider,
   RoomStateBackingStore,
   ClientsInRoomMap,
   Task,
@@ -21,7 +20,6 @@ import {
   ConfigRecoverableError,
 } from "matrix-protection-suite";
 import {
-  BotSDKLogServiceLogger,
   ClientCapabilityFactory,
   MatrixSendClient,
   RoomStateManagerFactory,
@@ -50,8 +48,6 @@ import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
-
-setGlobalLoggerProvider(new BotSDKLogServiceLogger());
 
 const log = new Logger("DraupnirBotMode");
 

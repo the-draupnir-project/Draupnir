@@ -10,12 +10,14 @@
 
 import * as fs from "fs";
 import { load } from "js-yaml";
-import { LogService } from "matrix-bot-sdk";
+import { LogService, RichConsoleLogger } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import { Logger } from "matrix-protection-suite";
+import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
 
+LogService.setLogger(new RichConsoleLogger());
+setGlobalLoggerProvider(new RichConsoleLogger());
 const log = new Logger("Draupnir config");
 
 /**
@@ -319,7 +321,7 @@ function readConfigSource(): IConfig {
   })();
   logConfigMeta(config);
   if (!configMeta.isDraupnirConfigOptionUsed) {
-    log.error(
+    log.warn(
       "DEPRECATED",
       "Starting Draupnir without the --draupnir-config option is deprecated. Please provide Draupnir's configuration explicitly with --draupnir-config.",
       "config path used:",

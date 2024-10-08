@@ -15,7 +15,6 @@ import {
   LogService,
   MatrixClient,
   PantalaimonClient,
-  RichConsoleLogger,
   SimpleFsStorageProvider,
   RustSdkCryptoStorageProvider,
 } from "matrix-bot-sdk";
@@ -30,7 +29,6 @@ import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/Sqlit
 void (async function () {
   const config = configRead();
 
-  LogService.setLogger(new RichConsoleLogger());
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
 
   LogService.info("index", "Starting bot...");

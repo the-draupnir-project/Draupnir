@@ -14,7 +14,6 @@ import {
   MemoryStorageProvider,
   LogService,
   LogLevel,
-  RichConsoleLogger,
 } from "matrix-bot-sdk";
 import { overrideRatelimitForUser, registerUser } from "./clientHelper";
 import { initializeSentry, patchMatrixClient } from "../../src/utils";
@@ -137,7 +136,6 @@ export async function makeBotModeToggle(
   } = {}
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
-  LogService.setLogger(new RichConsoleLogger());
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
   LogService.info("test/mjolnirSetupUtils", "Starting bot...");
   const pantalaimon = new PantalaimonClient(
