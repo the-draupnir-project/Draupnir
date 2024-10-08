@@ -259,6 +259,17 @@ export function getDefaultConfig(): IConfig {
   return Config.util.cloneDeep(defaultConfig);
 }
 
+function logNonDefaultConfiguration(config: IConfig): void {
+  log.info(
+    "non-default configuration properties:",
+    JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
+  );
+}
+
+function logConfigMeta(config: IConfig): void {
+  log.info("Configuration meta:", JSON.stringify(config.configMeta, null, 2));
+}
+
 function getConfigPath(): {
   isDraupnirPath: boolean;
   path: string;
@@ -306,18 +317,15 @@ function readConfigSource(): IConfig {
       configMeta: configMeta,
     }) as IConfig;
   })();
+  logConfigMeta(config);
   if (!configMeta.isDraupnirConfigOptionUsed) {
-    log.warn(
+    log.error(
       "DEPRECATED",
       "Starting Draupnir without the --draupnir-config option is deprecated. Please provide Draupnir's configuration explicitly with --draupnir-config.",
       "config path used:",
       config.configMeta?.configPath
     );
   }
-  log.info(
-    "non-default configuration properties loaded:",
-    JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
-  );
   const unknownProperties = getUnknownConfigPropertyPaths(config);
   if (unknownProperties.length > 0) {
     log.warn(
@@ -325,6 +333,10 @@ function readConfigSource(): IConfig {
       unknownProperties
     );
   }
+  process.on("exit", () => {
+    logNonDefaultConfiguration(config);
+    logConfigMeta(config);
+  });
   return config;
 }
 
