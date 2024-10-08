@@ -250,14 +250,23 @@ export function getDefaultConfig(): IConfig {
   return Config.util.cloneDeep(defaultConfig);
 }
 
+function getExplicitConfigPath(): {
+  isDraupnirPath: boolean;
+  path: string | undefined;
+} {
+  const draupnirPath = getCommandLineOption(process.argv, "--draupnir-config");
+  if (draupnirPath) {
+    return { isDraupnirPath: true, path: draupnirPath };
+  }
+  const mjolnirPath = getCommandLineOption(process.argv, "--mjolnir-config");
+  return { isDraupnirPath: false, path: mjolnirPath };
+}
+
 /**
  * @returns The users's raw config, deep copied over the `defaultConfig`.
  */
 function readConfigSource(): IConfig {
-  const explicitConfigPath = getCommandLineOption(
-    process.argv,
-    "--draupnir-config"
-  );
+  const { isDraupnirPath, path: explicitConfigPath } = getExplicitConfigPath();
   // we probably want to make an incision after this if block.
   // to create the provided values field to the config.
   const config = (() => {
@@ -273,6 +282,14 @@ function readConfigSource(): IConfig {
       }) as IConfig;
     }
   })();
+  if (!isDraupnirPath) {
+    log.warn(
+      "DEPRECATED",
+      "Starting Draupnir without the --draupnir-config option is deprecated. Please provide Draupnir's configuration explicitly with --draupnir-config.",
+      "config path used:",
+      config.configPath
+    );
+  }
   log.info(
     "non-default configuration properties loaded:",
     JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
