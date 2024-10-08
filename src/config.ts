@@ -156,6 +156,11 @@ export interface IConfig {
   // Experimental usage of the matrix-bot-sdk rust crypto.
   // This can not be used with Pantalaimon.
   experimentalRustCrypto: boolean;
+
+  /**
+   * The path that the configuration file was loaded from.
+   */
+  configPath?: string | undefined;
 }
 
 const defaultConfig: IConfig = {
@@ -238,6 +243,7 @@ const defaultConfig: IConfig = {
     enabled: false,
   },
   experimentalRustCrypto: false,
+  configPath: undefined,
 };
 
 export function getDefaultConfig(): IConfig {
@@ -258,13 +264,13 @@ function readConfigSource(): IConfig {
     if (explicitConfigPath !== undefined) {
       const content = fs.readFileSync(explicitConfigPath, "utf8");
       const parsed = load(content);
-      return Config.util.extendDeep({}, defaultConfig, parsed);
+      return Config.util.extendDeep({}, defaultConfig, parsed, {
+        configPath: explicitConfigPath,
+      });
     } else {
-      return Config.util.extendDeep(
-        {},
-        defaultConfig,
-        Config.util.toObject()
-      ) as IConfig;
+      return Config.util.extendDeep({}, defaultConfig, Config.util.toObject(), {
+        configPath: Config.util.getConfigSources().at(-1)?.name,
+      }) as IConfig;
     }
   })();
   log.info(
