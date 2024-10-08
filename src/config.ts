@@ -157,10 +157,19 @@ export interface IConfig {
   // This can not be used with Pantalaimon.
   experimentalRustCrypto: boolean;
 
-  /**
-   * The path that the configuration file was loaded from.
-   */
-  configPath?: string | undefined;
+  configMeta:
+    | {
+        /**
+         * The path that the configuration file was loaded from.
+         */
+        configPath: string;
+
+        isDraupnirConfigOptionUsed: boolean;
+
+        isAccessTokenPathOptionUsed: boolean;
+        isPasswordPathOptionUsed: boolean;
+      }
+    | undefined;
 }
 
 const defaultConfig: IConfig = {
@@ -243,51 +252,66 @@ const defaultConfig: IConfig = {
     enabled: false,
   },
   experimentalRustCrypto: false,
-  configPath: undefined,
+  configMeta: undefined,
 };
 
 export function getDefaultConfig(): IConfig {
   return Config.util.cloneDeep(defaultConfig);
 }
 
-function getExplicitConfigPath(): {
+function getConfigPath(): {
   isDraupnirPath: boolean;
-  path: string | undefined;
+  path: string;
 } {
   const draupnirPath = getCommandLineOption(process.argv, "--draupnir-config");
   if (draupnirPath) {
     return { isDraupnirPath: true, path: draupnirPath };
   }
   const mjolnirPath = getCommandLineOption(process.argv, "--mjolnir-config");
-  return { isDraupnirPath: false, path: mjolnirPath };
+  if (mjolnirPath) {
+    return { isDraupnirPath: false, path: mjolnirPath };
+  }
+  const path = Config.util.getConfigSources().at(-1)?.name;
+  if (path === undefined) {
+    throw new TypeError("No configuration path has been found for Draupnir");
+  }
+  return { isDraupnirPath: false, path };
+}
+
+function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
+  const { isDraupnirPath, path } = getConfigPath();
+  return {
+    configPath: path,
+    isDraupnirConfigOptionUsed: isDraupnirPath,
+    isAccessTokenPathOptionUsed: isCommandLineOptionPresent(
+      process.argv,
+      "--access-token-path"
+    ),
+    isPasswordPathOptionUsed: isCommandLineOptionPresent(
+      process.argv,
+      "--pantalaimon-password-path"
+    ),
+  };
 }
 
 /**
  * @returns The users's raw config, deep copied over the `defaultConfig`.
  */
 function readConfigSource(): IConfig {
-  const { isDraupnirPath, path: explicitConfigPath } = getExplicitConfigPath();
-  // we probably want to make an incision after this if block.
-  // to create the provided values field to the config.
+  const configMeta = getConfigMeta();
   const config = (() => {
-    if (explicitConfigPath !== undefined) {
-      const content = fs.readFileSync(explicitConfigPath, "utf8");
-      const parsed = load(content);
-      return Config.util.extendDeep({}, defaultConfig, parsed, {
-        configPath: explicitConfigPath,
-      });
-    } else {
-      return Config.util.extendDeep({}, defaultConfig, Config.util.toObject(), {
-        configPath: Config.util.getConfigSources().at(-1)?.name,
-      }) as IConfig;
-    }
+    const content = fs.readFileSync(configMeta.configPath, "utf8");
+    const parsed = load(content);
+    return Config.util.extendDeep({}, defaultConfig, parsed, {
+      configMeta: configMeta,
+    }) as IConfig;
   })();
-  if (!isDraupnirPath) {
+  if (!configMeta.isDraupnirConfigOptionUsed) {
     log.warn(
       "DEPRECATED",
       "Starting Draupnir without the --draupnir-config option is deprecated. Please provide Draupnir's configuration explicitly with --draupnir-config.",
       "config path used:",
-      config.configPath
+      config.configMeta?.configPath
     );
   }
   log.info(
