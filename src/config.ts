@@ -10,7 +10,7 @@
 
 import * as fs from "fs";
 import { load } from "js-yaml";
-import { MatrixClient, LogService } from "matrix-bot-sdk";
+import { LogService } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
@@ -156,14 +156,6 @@ export interface IConfig {
   // Experimental usage of the matrix-bot-sdk rust crypto.
   // This can not be used with Pantalaimon.
   experimentalRustCrypto: boolean;
-
-  /**
-   * Config options only set at runtime. Try to avoid using the objects
-   * here as much as possible.
-   */
-  RUNTIME: {
-    client?: MatrixClient;
-  };
 }
 
 const defaultConfig: IConfig = {
@@ -246,9 +238,6 @@ const defaultConfig: IConfig = {
     enabled: false,
   },
   experimentalRustCrypto: false,
-
-  // Needed to make the interface happy.
-  RUNTIME: {},
 };
 
 export function getDefaultConfig(): IConfig {

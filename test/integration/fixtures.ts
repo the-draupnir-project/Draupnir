@@ -52,7 +52,6 @@ export const mochaHooks = {
       if (draupnirMatrixClient === null) {
         throw new TypeError(`setup code is broken`);
       }
-      config.RUNTIME.client = draupnirMatrixClient;
       await draupnirClient()?.start();
       await this.toggle.encryptionInitialized();
       console.log("mochaHooks.beforeEach DONE");
