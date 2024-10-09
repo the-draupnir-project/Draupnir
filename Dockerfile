@@ -3,13 +3,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0 AND AFL-3.0
 
-FROM alpine/git:latest as git-stamp-stage
-COPY . /tmp/src
-RUN cd /tmp/src && git describe > version.txt.tmp && mv version.txt.tmp version.txt
-
 FROM node:20-slim as build-stage
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY . /tmp/src
-COPY --from=git-stamp-stage /tmp/src/version.txt version.txt
+# describe the version.
+RUN cd /tmp/src && git describe > version.txt.tmp && mv version.txt.tmp version.txt
+# build and install
 RUN cd /tmp/src \
     && yarn install --frozen-lockfile --network-timeout 100000 \
     && yarn build \
