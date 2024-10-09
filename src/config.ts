@@ -11,6 +11,9 @@
 import * as fs from "fs";
 import { load } from "js-yaml";
 import { LogService, RichConsoleLogger } from "matrix-bot-sdk";
+// Needed for https://github.com/the-draupnir-project/Draupnir/issues/480
+// sorry buddy...
+process.env.SUPPRESS_NO_CONFIG_WARNING = "y";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
@@ -286,7 +289,9 @@ function getConfigPath(): {
   }
   const path = Config.util.getConfigSources().at(-1)?.name;
   if (path === undefined) {
-    throw new TypeError("No configuration path has been found for Draupnir");
+    throw new TypeError(
+      "No configuration path has been found for Draupnir. Use the --draupnir-config option to provide a path to the config."
+    );
   }
   return { isDraupnirPath: false, path };
 }
