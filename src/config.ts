@@ -10,10 +10,35 @@
 
 import * as fs from "fs";
 import { load } from "js-yaml";
-import { MatrixClient, LogService } from "matrix-bot-sdk";
+import { LogService, RichConsoleLogger } from "matrix-bot-sdk";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
+import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+
+LogService.setLogger(new RichConsoleLogger());
+setGlobalLoggerProvider(new RichConsoleLogger());
+const log = new Logger("Draupnir config");
+
+/**
+ * The version of the configuration that has been explicitly provided,
+ * and does not contain default values. Secrets are marked with "REDACTED".
+ */
+export function getNonDefaultConfigProperties(
+  config: IConfig
+): Record<string, unknown> {
+  const nonDefault = Config.util.diffDeep(defaultConfig, config);
+  if ("accessToken" in nonDefault) {
+    nonDefault.accessToken = "REDACTED";
+  }
+  if (
+    "pantalaimon" in nonDefault &&
+    typeof nonDefault.pantalaimon === "object"
+  ) {
+    nonDefault.pantalaimon.password = "REDACTED";
+  }
+  return nonDefault;
+}
 
 /**
  * The configuration, as read from production.yaml
@@ -64,9 +89,11 @@ export interface IConfig {
    * should be printed to our managementRoom.
    */
   displayReports: boolean;
-  admin?: {
-    enableMakeRoomAdminCommand?: boolean;
-  };
+  admin?:
+    | {
+        enableMakeRoomAdminCommand?: boolean;
+      }
+    | undefined;
   commands: {
     allowNoPrefix: boolean;
     additionalPrefixes: string[];
@@ -103,15 +130,17 @@ export interface IConfig {
       unhealthyStatus: number;
     };
     // If specified, attempt to upload any crash statistics to sentry.
-    sentry?: {
-      dsn: string;
+    sentry?:
+      | {
+          dsn: string;
 
-      // Frequency of performance monitoring.
-      //
-      // A number in [0.0, 1.0], where 0.0 means "don't bother with tracing"
-      // and 1.0 means "trace performance at every opportunity".
-      tracesSampleRate: number;
-    };
+          // Frequency of performance monitoring.
+          //
+          // A number in [0.0, 1.0], where 0.0 means "don't bother with tracing"
+          // and 1.0 means "trace performance at every opportunity".
+          tracesSampleRate: number;
+        }
+      | undefined;
   };
   web: {
     enabled: boolean;
@@ -130,13 +159,19 @@ export interface IConfig {
   // This can not be used with Pantalaimon.
   experimentalRustCrypto: boolean;
 
-  /**
-   * Config options only set at runtime. Try to avoid using the objects
-   * here as much as possible.
-   */
-  RUNTIME: {
-    client?: MatrixClient;
-  };
+  configMeta:
+    | {
+        /**
+         * The path that the configuration file was loaded from.
+         */
+        configPath: string;
+
+        isDraupnirConfigOptionUsed: boolean;
+
+        isAccessTokenPathOptionUsed: boolean;
+        isPasswordPathOptionUsed: boolean;
+      }
+    | undefined;
 }
 
 const defaultConfig: IConfig = {
@@ -204,7 +239,9 @@ const defaultConfig: IConfig = {
       healthyStatus: 200,
       unhealthyStatus: 418,
     },
+    sentry: undefined,
   },
+  admin: undefined,
   web: {
     enabled: false,
     port: 8080,
@@ -217,37 +254,95 @@ const defaultConfig: IConfig = {
     enabled: false,
   },
   experimentalRustCrypto: false,
-
-  // Needed to make the interface happy.
-  RUNTIME: {},
+  configMeta: undefined,
 };
 
 export function getDefaultConfig(): IConfig {
   return Config.util.cloneDeep(defaultConfig);
 }
 
+function logNonDefaultConfiguration(config: IConfig): void {
+  log.info(
+    "non-default configuration properties:",
+    JSON.stringify(getNonDefaultConfigProperties(config), null, 2)
+  );
+}
+
+function logConfigMeta(config: IConfig): void {
+  log.info("Configuration meta:", JSON.stringify(config.configMeta, null, 2));
+}
+
+function getConfigPath(): {
+  isDraupnirPath: boolean;
+  path: string;
+} {
+  const draupnirPath = getCommandLineOption(process.argv, "--draupnir-config");
+  if (draupnirPath) {
+    return { isDraupnirPath: true, path: draupnirPath };
+  }
+  const mjolnirPath = getCommandLineOption(process.argv, "--mjolnir-config");
+  if (mjolnirPath) {
+    return { isDraupnirPath: false, path: mjolnirPath };
+  }
+  const path = Config.util.getConfigSources().at(-1)?.name;
+  if (path === undefined) {
+    throw new TypeError("No configuration path has been found for Draupnir");
+  }
+  return { isDraupnirPath: false, path };
+}
+
+function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
+  const { isDraupnirPath, path } = getConfigPath();
+  return {
+    configPath: path,
+    isDraupnirConfigOptionUsed: isDraupnirPath,
+    isAccessTokenPathOptionUsed: isCommandLineOptionPresent(
+      process.argv,
+      "--access-token-path"
+    ),
+    isPasswordPathOptionUsed: isCommandLineOptionPresent(
+      process.argv,
+      "--pantalaimon-password-path"
+    ),
+  };
+}
+
 /**
  * @returns The users's raw config, deep copied over the `defaultConfig`.
  */
 function readConfigSource(): IConfig {
-  const explicitConfigPath = getCommandLineOption(
-    process.argv,
-    "--draupnir-config"
-  );
-  if (explicitConfigPath !== undefined) {
-    const content = fs.readFileSync(explicitConfigPath, "utf8");
+  const configMeta = getConfigMeta();
+  const config = (() => {
+    const content = fs.readFileSync(configMeta.configPath, "utf8");
     const parsed = load(content);
-    return Config.util.extendDeep({}, defaultConfig, parsed);
-  } else {
-    return Config.util.extendDeep(
-      {},
-      defaultConfig,
-      Config.util.toObject()
-    ) as IConfig;
+    return Config.util.extendDeep({}, defaultConfig, parsed, {
+      configMeta: configMeta,
+    }) as IConfig;
+  })();
+  logConfigMeta(config);
+  if (!configMeta.isDraupnirConfigOptionUsed) {
+    log.warn(
+      "DEPRECATED",
+      "Starting Draupnir without the --draupnir-config option is deprecated. Please provide Draupnir's configuration explicitly with --draupnir-config.",
+      "config path used:",
+      config.configMeta?.configPath
+    );
   }
+  const unknownProperties = getUnknownConfigPropertyPaths(config);
+  if (unknownProperties.length > 0) {
+    log.warn(
+      "There are unknown configuration properties, possibly a result of typos:",
+      unknownProperties
+    );
+  }
+  process.on("exit", () => {
+    logNonDefaultConfiguration(config);
+    logConfigMeta(config);
+  });
+  return config;
 }
 
-export function read(): IConfig {
+export function configRead(): IConfig {
   const config = readConfigSource();
   const explicitAccessTokenPath = getCommandLineOption(
     process.argv,
@@ -290,7 +385,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "backgroundDelayMS",
     "safeMode",
   ];
-  const configTemplate = read(); // we use the standard bot config as a template for every provisioned draupnir.
+  const configTemplate = configRead(); // we use the standard bot config as a template for every provisioned draupnir.
   const unusedKeys = Object.keys(configTemplate).filter(
     (key) => !allowedKeys.includes(key)
   );
@@ -390,4 +485,59 @@ function getCommandLineOption(
 
   // No value was provided, or the next argument is another option
   throw new Error(`No value provided for ${optionName}`);
+}
+
+type UnknownPropertyPaths = string[];
+
+export function getUnknownPropertiesHelper(
+  rawConfig: unknown,
+  rawDefaults: unknown,
+  currentPathProperties: string[]
+): UnknownPropertyPaths {
+  const unknownProperties: UnknownPropertyPaths = [];
+  if (
+    typeof rawConfig !== "object" ||
+    rawConfig === null ||
+    Array.isArray(rawConfig)
+  ) {
+    return unknownProperties;
+  }
+  if (rawDefaults === undefined || rawDefaults == null) {
+    // the top level property should have been defined, these could be and
+    // probably are custom properties.
+    return unknownProperties;
+  }
+  if (typeof rawDefaults !== "object") {
+    throw new TypeError("default and normal config are out of sync");
+  }
+  const defaultConfig = rawDefaults as Record<string, unknown>;
+  const config = rawConfig as Record<string, unknown>;
+  for (const key of Object.keys(config)) {
+    if (!(key in defaultConfig)) {
+      unknownProperties.push("/" + [...currentPathProperties, key].join("/"));
+    } else {
+      const unknownSubProperties = getUnknownPropertiesHelper(
+        config[key],
+        defaultConfig[key] as Record<string, unknown>,
+        [...currentPathProperties, key]
+      );
+      unknownProperties.push(...unknownSubProperties);
+    }
+  }
+  return unknownProperties;
+}
+
+/**
+ * Return a list of JSON paths to properties in the given config object that are not present in the default config.
+ * This is used to detect typos in the config file.
+ */
+export function getUnknownConfigPropertyPaths(config: unknown): string[] {
+  if (typeof config !== "object" || config === null) {
+    return [];
+  }
+  return getUnknownPropertiesHelper(
+    config,
+    defaultConfig as unknown as Record<string, unknown>,
+    []
+  );
 }

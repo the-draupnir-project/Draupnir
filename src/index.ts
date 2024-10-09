@@ -15,12 +15,11 @@ import {
   LogService,
   MatrixClient,
   PantalaimonClient,
-  RichConsoleLogger,
   SimpleFsStorageProvider,
   RustSdkCryptoStorageProvider,
 } from "matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
-import { read as configRead } from "./config";
+import { configRead as configRead } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -30,9 +29,6 @@ import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/Sqlit
 void (async function () {
   const config = configRead();
 
-  config.RUNTIME = {};
-
-  LogService.setLogger(new RichConsoleLogger());
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
 
   LogService.info("index", "Starting bot...");
@@ -48,6 +44,7 @@ void (async function () {
   }
 
   let bot: DraupnirBotModeToggle | null = null;
+  let client: MatrixClient;
   try {
     const storagePath = path.isAbsolute(config.dataPath)
       ? config.dataPath
@@ -56,7 +53,6 @@ void (async function () {
       path.join(storagePath, "bot.json")
     );
 
-    let client: MatrixClient;
     if (config.pantalaimon.use && !config.experimentalRustCrypto) {
       const pantalaimon = new PantalaimonClient(config.homeserverUrl, storage);
       client = await pantalaimon.createClientWithCredentials(
@@ -88,7 +84,6 @@ void (async function () {
       );
     }
     patchMatrixClient();
-    config.RUNTIME.client = client;
     const eventDecoder = DefaultEventDecoder;
     const store = config.roomStateBackingStore.enabled
       ? new SqliteRoomStateBackingStore(
@@ -115,7 +110,7 @@ void (async function () {
     throw err;
   }
   try {
-    await config.RUNTIME.client.start();
+    await client.start();
     await bot.encryptionInitialized();
     healthz.isHealthy = true;
   } catch (err) {

@@ -12,7 +12,7 @@ import {
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
 } from "matrix-protection-suite";
-import { read as configRead } from "../../src/config";
+import { configRead } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
 import {
   DraupnirTestContext,
@@ -52,7 +52,6 @@ export const mochaHooks = {
       if (draupnirMatrixClient === null) {
         throw new TypeError(`setup code is broken`);
       }
-      config.RUNTIME.client = draupnirMatrixClient;
       await draupnirClient()?.start();
       await this.toggle.encryptionInitialized();
       console.log("mochaHooks.beforeEach DONE");
