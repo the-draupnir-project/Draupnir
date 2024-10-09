@@ -185,6 +185,9 @@ protections:
     #
     # WordList will ban users who use these words when first joining a room, so take caution when selecting them.
     #
+    # The word list protection does not support regular expressions at this time.
+    # The configuration in the past stated support for Regex erroneously.
+    #
     words:
       - "LoReM"
       - "IpSuM"
