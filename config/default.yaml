@@ -185,10 +185,9 @@ protections:
     #
     # WordList will ban users who use these words when first joining a room, so take caution when selecting them.
     #
-    # For advanced usage, regex can also be used, see the following links for more information;
-    #  - https://www.digitalocean.com/community/tutorials/an-introduction-to-regular-expressions
-    #  - https://regexr.com/
-    #  - https://regexone.com/
+    # The word list protection does not support regular expressions at this time.
+    # The configuration in the past stated support for Regex erroneously.
+    #
     words:
       - "LoReM"
       - "IpSuM"
