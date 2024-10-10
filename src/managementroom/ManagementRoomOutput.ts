@@ -27,6 +27,7 @@ import {
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { ManagementRoomDetail } from "./ManagementRoomDetail";
+import { Task } from "matrix-protection-suite";
 
 const levelToFn = {
   [LogLevel.DEBUG.toString()]: LogService.debug,
@@ -62,6 +63,7 @@ export interface ManagementRoomOutput {
 export default class StandardManagementRoomOutput
   implements ManagementRoomOutput
 {
+  private isSuccessfullySendingMessages = false;
   constructor(
     private readonly managementRoomDetail: ManagementRoomDetail,
     private readonly clientUserID: StringUserID,
@@ -77,6 +79,18 @@ export default class StandardManagementRoomOutput
 
   public get managementRoomID(): StringRoomID {
     return this.managementRoomDetail.managementRoomID;
+  }
+
+  private maybeWarnAboutPublicManagementRoom(): void {
+    if (this.managementRoomDetail.isRoomPublic()) {
+      void Task(
+        this.logMessage(
+          LogLevel.WARN,
+          "ManagementRoom",
+          "Your management room is public! You should review the join rule of your Matrix room immediately and set it to invite only, otherwise anyone could hijack your protected rooms!"
+        )
+      );
+    }
   }
 
   /**
@@ -184,9 +198,16 @@ export default class StandardManagementRoomOutput
       try {
         await client.sendMessage(this.managementRoomID, evContent);
       } catch (ex) {
-        // We want to be informed if we cannot log a message.
-        Sentry.captureException(ex);
+        LogService.error(
+          "ManagementRoomOutput",
+          "Failed to log a message to the management room",
+          ex
+        );
       }
+    }
+    if (!this.isSuccessfullySendingMessages) {
+      this.maybeWarnAboutPublicManagementRoom();
+      this.isSuccessfullySendingMessages = true;
     }
     const logFunction = levelToFn[level.toString()];
     if (logFunction === undefined) {
