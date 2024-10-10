@@ -16,6 +16,8 @@ and this project adheres to
 
 ### Changed
 
+- The Node version required to run Draupnir has been updated to Node 20.
+
 - `Dockerfile`: entry-point was renamed from `mjolnir-entrypoint.sh` to
   `draupnir-entrypoint.sh`. If you have built a Dockerfile based on ours, you
   may need to make some changes.

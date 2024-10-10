@@ -68,7 +68,8 @@
     "humanize-duration-ts": "^2.1.1",
     "js-yaml": "^4.1.0",
     "jsdom": "^24.0.0",
-    "matrix-appservice-bridge": "^9.0.1",
+    "matrix-appservice-bridge": "^10.3.1",
+    "matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk",
     "matrix-protection-suite": "npm:@gnuxie/matrix-protection-suite@1.6.0",
     "matrix-protection-suite-for-matrix-bot-sdk": "npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@1.6.0",
     "parse-duration": "^1.0.2",
@@ -82,7 +83,7 @@
     "@vector-im/matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.6.6-element.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
