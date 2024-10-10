@@ -24,7 +24,7 @@ import {
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
 import { DraupnirUnbanCommand } from "../../../src/commands/Unban";
-import ManagementRoomOutput from "../../../src/ManagementRoomOutput";
+import ManagementRoomOutput from "../../../src/managementroom/ManagementRoomOutput";
 import { UnlistedUserRedactionQueue } from "../../../src/queues/UnlistedUserRedactionQueue";
 
 const DraupnirUserID = `@draupnir:ourserver.example.com` as StringUserID;

@@ -19,7 +19,7 @@ import {
 import { ClientRequest, IncomingMessage } from "http";
 import * as Sentry from "@sentry/node";
 
-import ManagementRoomOutput from "./ManagementRoomOutput";
+import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
 import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";

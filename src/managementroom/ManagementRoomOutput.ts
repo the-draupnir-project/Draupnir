@@ -15,8 +15,8 @@ import {
   MessageType,
   TextualMessageEventContent,
 } from "matrix-bot-sdk";
-import { IConfig } from "./config";
-import { htmlEscape } from "./utils";
+import { IConfig } from "../config";
+import { htmlEscape } from "../utils";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   StringRoomID,

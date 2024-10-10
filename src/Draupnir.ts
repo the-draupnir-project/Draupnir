@@ -30,7 +30,7 @@ import {
 } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
-import ManagementRoomOutput from "./ManagementRoomOutput";
+import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { ReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";

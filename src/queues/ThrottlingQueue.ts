@@ -9,7 +9,7 @@
 // </text>
 
 import { LogLevel } from "matrix-bot-sdk";
-import ManagementRoomOutput from "../ManagementRoomOutput";
+import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { Result, isError } from "@gnuxie/typescript-result";
 
 export type TaskFactory<T> = () => Promise<Result<T>>;

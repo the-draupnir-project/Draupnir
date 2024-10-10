@@ -10,7 +10,7 @@
 
 import { LogLevel } from "matrix-bot-sdk";
 import { redactUserMessagesIn } from "../utils";
-import ManagementRoomOutput from "../ManagementRoomOutput";
+import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ActionExceptionKind,

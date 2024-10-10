@@ -20,7 +20,7 @@ import {
 } from "matrix-protection-suite";
 import { DraupnirKickCommand } from "../../../src/commands/KickCommand";
 import { ThrottlingQueue } from "../../../src/queues/ThrottlingQueue";
-import ManagementRoomOutput from "../../../src/ManagementRoomOutput";
+import ManagementRoomOutput from "../../../src/managementroom/ManagementRoomOutput";
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
 
