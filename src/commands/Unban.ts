@@ -40,7 +40,7 @@ import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
-import ManagementRoomOutput from "../ManagementRoomOutput";
+import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { DraupnirBanCommandContext } from "./Ban";
 import { UnlistedUserRedactionQueue } from "../queues/UnlistedUserRedactionQueue";
 

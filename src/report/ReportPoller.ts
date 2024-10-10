@@ -11,7 +11,7 @@
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ReportManager } from "./ReportManager";
 import { LogLevel, LogService } from "matrix-bot-sdk";
-import ManagementRoomOutput from "../ManagementRoomOutput";
+import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { Draupnir } from "../Draupnir";
 import {
   ActionException,
