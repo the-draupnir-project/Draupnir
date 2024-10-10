@@ -24,7 +24,9 @@ import {
   Permalinks,
   StringRoomAlias,
   userServerName,
+  MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { ManagementRoomDetail } from "./ManagementRoomDetail";
 
 const levelToFn = {
   [LogLevel.DEBUG.toString()]: LogService.debug,
@@ -33,16 +35,49 @@ const levelToFn = {
   [LogLevel.ERROR.toString()]: LogService.error,
 };
 
+export interface ManagementRoomOutput {
+  managementRoom: MatrixRoomID;
+  managementRoomID: StringRoomID;
+  /**
+   * Log a message to the management room and the console, replaces any room ids in additionalRoomIds with pills.
+   * @param level Used to determine whether to hide the message or not depending on `config.verboseLogging`.
+   * @param module Used to help find where in the source the message is coming from (when logging to the console).
+   * @param message The message we want to log.
+   * @param additionalRoomIds The roomIds in the message that we want to be replaced by room pills.
+   * @param isRecursive Whether logMessage is being called from logMessage.
+   * @deprecated This is a legacy method i would really avoid using it if you can.
+   */
+  logMessage(
+    level: LogLevel,
+    module: string,
+    message: string,
+    additionalRoomIds?: string[] | string | null,
+    isRecursive?: boolean
+  ): Promise<void>;
+}
+
 /**
  * Allows the different componenets of draupnir to send messages back to the management room without introducing a dependency on the entirity of a `Draupnir` instance.
  */
-export default class ManagementRoomOutput {
+export default class StandardManagementRoomOutput
+  implements ManagementRoomOutput
+{
   constructor(
-    private readonly managementRoomID: StringRoomID,
+    private readonly managementRoomDetail: ManagementRoomDetail,
     private readonly clientUserID: StringUserID,
     private readonly client: MatrixSendClient,
     private readonly config: IConfig
-  ) {}
+  ) {
+    // nothing to do.
+  }
+
+  public get managementRoom(): MatrixRoomID {
+    return this.managementRoomDetail.managementRoom;
+  }
+
+  public get managementRoomID(): StringRoomID {
+    return this.managementRoomDetail.managementRoomID;
+  }
 
   /**
    * Take an arbitrary string and a set of room IDs, and return a
@@ -110,15 +145,6 @@ export default class ManagementRoomOutput {
     return content;
   }
 
-  /**
-   * Log a message to the management room and the console, replaces any room ids in additionalRoomIds with pills.
-   *
-   * @param level Used to determine whether to hide the message or not depending on `config.verboseLogging`.
-   * @param module Used to help find where in the source the message is coming from (when logging to the console).
-   * @param message The message we want to log.
-   * @param additionalRoomIds The roomIds in the message that we want to be replaced by room pills.
-   * @param isRecursive Whether logMessage is being called from logMessage.
-   */
   public async logMessage(
     level: LogLevel,
     module: string,

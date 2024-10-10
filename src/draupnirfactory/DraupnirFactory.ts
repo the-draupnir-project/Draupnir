@@ -25,6 +25,7 @@ import {
 import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
 import { SafeModeToggle } from "../safemode/SafeModeToggle";
+import { StandardManagementRoomDetail } from "../managementroom/ManagementRoomDetail";
 
 export class DraupnirFactory {
   public constructor(
@@ -75,11 +76,36 @@ export class DraupnirFactory {
     if (isError(protectedRoomsSet)) {
       return protectedRoomsSet;
     }
+    const managementRoomMembership =
+      await this.roomStateManagerFactory.getRoomMembershipRevisionIssuer(
+        managementRoom,
+        clientUserID
+      );
+    if (isError(managementRoomMembership)) {
+      return managementRoomMembership.elaborate(
+        "Failed to get room membership revision issuer for the management room"
+      );
+    }
+    const managementRoomState =
+      await this.roomStateManagerFactory.getRoomStateRevisionIssuer(
+        managementRoom,
+        clientUserID
+      );
+    if (isError(managementRoomState)) {
+      return managementRoomState.elaborate(
+        "Failed to get room state revision issuer for the management room"
+      );
+    }
+    const managementRoomDetail = new StandardManagementRoomDetail(
+      managementRoom,
+      managementRoomMembership.ok,
+      managementRoomState.ok
+    );
     return await Draupnir.makeDraupnirBot(
       client,
       clientUserID,
       clientPlatform,
-      managementRoom,
+      managementRoomDetail,
       clientRooms.ok,
       protectedRoomsSet.ok,
       roomStateManager,

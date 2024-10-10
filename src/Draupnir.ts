@@ -76,6 +76,7 @@ import {
   Presentation,
   StandardPresentationArgumentStream,
 } from "@the-draupnir-project/interface-manager";
+import { ManagementRoomDetail } from "./managementroom/ManagementRoomDetail";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -97,7 +98,6 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * Reporting back to the management room.
    */
   public readonly managementRoomOutput: ManagementRoomOutput;
-  public readonly managementRoomID: StringRoomID;
   /*
    * Config-enabled polling of reports in Synapse, so Draupnir can react to reports
    */
@@ -127,7 +127,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
     public readonly clientPlatform: ClientPlatform,
-    public readonly managementRoom: MatrixRoomID,
+    public readonly managementRoomDetail: ManagementRoomDetail,
     public readonly clientRooms: ClientRooms,
     public readonly config: IConfig,
     public readonly protectedRoomsSet: ProtectedRoomsSet,
@@ -141,9 +141,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly safeModeToggle: SafeModeToggle,
     public readonly synapseAdminClient?: SynapseAdminClient
   ) {
-    this.managementRoomID = this.managementRoom.toRoomIDOrAlias();
     this.managementRoomOutput = new ManagementRoomOutput(
-      this.managementRoomID,
+      this.managementRoomDetail,
       this.clientUserID,
       this.client,
       this.config
@@ -188,7 +187,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     client: MatrixSendClient,
     clientUserID: StringUserID,
     clientPlatform: ClientPlatform,
-    managementRoom: MatrixRoomID,
+    managementRoomDetail: ManagementRoomDetail,
     clientRooms: ClientRooms,
     protectedRoomsSet: ProtectedRoomsSet,
     roomStateManager: RoomStateManager,
@@ -200,7 +199,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   ): Promise<ActionResult<Draupnir>> {
     const acceptInvitesFromRoom = await (async () => {
       if (config.autojoinOnlyIfManager) {
-        return Ok(managementRoom);
+        return Ok(managementRoomDetail.managementRoom);
       } else {
         if (config.acceptInvitesFromSpace === undefined) {
           throw new TypeError(
@@ -242,7 +241,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       client,
       clientUserID,
       clientPlatform,
-      managementRoom,
+      managementRoomDetail,
       clientRooms,
       config,
       protectedRoomsSet,
@@ -261,7 +260,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       (error, protectionName, description) =>
         renderProtectionFailedToStart(
           clientPlatform.toRoomMessageSender(),
-          managementRoom.toRoomIDOrAlias(),
+          managementRoomDetail.managementRoomID,
           error,
           protectionName,
           description
@@ -274,12 +273,20 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     // have immediate access to its membership (for accepting invitations).
     const managementRoomProtectResult =
       await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
-        managementRoom
+        managementRoomDetail.managementRoom
       );
     if (isError(managementRoomProtectResult)) {
       return managementRoomProtectResult;
     }
     return Ok(draupnir);
+  }
+
+  public get managementRoomID(): StringRoomID {
+    return this.managementRoomDetail.managementRoomID;
+  }
+
+  public get managementRoom(): MatrixRoomID {
+    return this.managementRoomDetail.managementRoom;
   }
 
   /**
