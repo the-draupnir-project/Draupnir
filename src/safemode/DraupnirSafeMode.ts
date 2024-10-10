@@ -39,6 +39,10 @@ import {
 import { wrapInRoot } from "../commands/interface-manager/MatrixHelpRenderer";
 import { sendAndAnnotateWithRecoveryOptions } from "./commands/RecoverCommand";
 import { StandardPersistentConfigEditor } from "./PersistentConfigEditor";
+import {
+  COMMAND_CONFIRMATION_LISTENER,
+  makeConfirmationPromptListener,
+} from "../commands/interface-manager/MatrixPromptForConfirmation";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -81,6 +85,14 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
       makeListenerForPromptDefault(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
+    );
+    this.reactionHandler.on(
+      COMMAND_CONFIRMATION_LISTENER,
+      makeConfirmationPromptListener(
         this.commandRoomID,
         this.commandDispatcher,
         this.reactionHandler

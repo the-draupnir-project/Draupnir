@@ -28,27 +28,25 @@ import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 const log = new Logger("MatrixPromptForAccept");
 
-type PromptContext = StaticDecode<typeof PromptContext>;
-// FIXME: Remove no-redeclare entirely, it is wrong.
+export type CommandPromptContext = StaticDecode<typeof CommandPromptContext>;
 
-const PromptContext = Type.Object({
+export const CommandPromptContext = Type.Object({
   command_designator: Type.Array(Type.String()),
   read_items: Type.Array(Type.String()),
 });
 
 type DefaultPromptContext = StaticDecode<typeof DefaultPromptContext>;
-// FIXME: Remove no-redeclare entirely, it is wrong.
 
 const DefaultPromptContext = Type.Composite([
-  PromptContext,
+  CommandPromptContext,
   Type.Object({
     default: Type.String(),
   }),
 ]);
 
-function continueCommandAcceptingPrompt(
+export function continueCommandAcceptingPrompt(
   eventContext: MatrixEventContext,
-  promptContext: PromptContext,
+  promptContext: CommandPromptContext,
   serializedPrompt: string,
   commandDispatcher: MatrixInterfaceCommandDispatcher<MatrixEventContext>,
   reactionHandler: MatrixReactionHandler
@@ -114,7 +112,7 @@ export function makeListenerForArgumentPrompt(
     if (annotatedEvent.room_id !== commandRoomID) {
       return;
     }
-    const promptContext = Value.Decode(PromptContext, context);
+    const promptContext = Value.Decode(CommandPromptContext, context);
     if (isError(promptContext)) {
       log.error(
         `malformed event context when trying to accept a prompted argument`,
