@@ -15,7 +15,7 @@ RUN cd /tmp/src \
     && yarn install --frozen-lockfile --production --network-timeout 100000
 
 FROM node:20-slim as final-stage
-COPY --from=git-stamp-stage /tmp/src/version.txt version.txt
+COPY --from=build-stage /tmp/src/version.txt version.txt
 COPY --from=build-stage /tmp/src/lib/ /draupnir/
 COPY --from=build-stage /tmp/src/node_modules /node_modules
 COPY --from=build-stage /tmp/src/draupnir-entrypoint.sh /
