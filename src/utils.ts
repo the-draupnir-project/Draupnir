@@ -416,7 +416,8 @@ function patchMatrixClientForConciseExceptions() {
         if (isMatrixError(path)) {
           const matrixError = new MatrixError(
             body as MatrixError["body"],
-            err.statusCode as number
+            err.statusCode as number,
+            err.headers as Record<string, string>
           );
           if (error.stack !== undefined) {
             matrixError.stack = error.stack;
