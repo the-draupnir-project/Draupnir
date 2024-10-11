@@ -102,7 +102,7 @@ async function recoverAndRestart(
   (
     await safeModeDraupnirWithRecoveryOptions.sendTextCommand(
       sender,
-      "!draupnir recover 1"
+      "!draupnir recover 1 --no-confirm"
     )
   ).expect("Failed to recover the draupnir");
   return (

@@ -39,10 +39,18 @@ export const SafeModeRecoverCommand = describeCommand({
     acceptor: StringPresentationType,
     description: "The recovery option to enact, e.g. 1.",
   }),
+  keywords: {
+    keywordDescriptions: {
+      "no-confirm": {
+        description: "Do not prompt for confirmation.",
+        isFlag: true,
+      },
+    },
+  },
   async executor(
     safeModeDraupnir: SafeModeDraupnir,
     _info,
-    _keywords,
+    keywords,
     _rest,
     optionDesignator
   ): Promise<Result<SafeModeRecoverEffectInfo>> {
@@ -65,6 +73,12 @@ export const SafeModeRecoverCommand = describeCommand({
         `No recovery option with the number ${optionNumber.ok} exists.`
       );
     }
+    if (!keywords.getKeywordValue<boolean>("no-confirm", false)) {
+      return Ok({
+        recoveryOption: selectedOption,
+        configStatus: [],
+      });
+    }
     const recoveryResult = await selectedOption.recover();
     if (isError(recoveryResult)) {
       return recoveryResult;
@@ -85,6 +99,19 @@ export const SafeModeRecoverCommand = describeCommand({
 });
 
 SafeModeInterfaceAdaptor.describeRenderer(SafeModeRecoverCommand, {
+  confirmationPromptJSXRenderer(result) {
+    if (isError(result)) {
+      return Ok(undefined);
+    }
+    const { recoveryOption } = result.ok;
+    return Ok(
+      <root>
+        <h4>You are about to use the following recovery option:</h4>
+        <p>{recoveryOption.description}</p>
+        <p>Please confirm that you wish to proceed.</p>
+      </root>
+    );
+  },
   JSXRenderer(result) {
     if (isError(result)) {
       return Ok(undefined);

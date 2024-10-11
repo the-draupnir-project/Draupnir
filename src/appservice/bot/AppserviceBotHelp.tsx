@@ -11,7 +11,7 @@ import {
   TopPresentationSchema,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
-import { ActionResult, Ok, isError } from "matrix-protection-suite";
+import { ActionResult, Ok } from "matrix-protection-suite";
 import { MatrixAdaptorContext } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { renderTableHelp } from "../../commands/interface-manager/MatrixHelpRenderer";
@@ -33,13 +33,8 @@ export const AppserviceBotHelpCommand = describeCommand({
   parameters: [],
 });
 
-function renderAppserviceBotHelp(
-  appserviceBotCommands: Result<CommandTable>
-): Result<DocumentNode> {
-  if (isError(appserviceBotCommands)) {
-    return appserviceBotCommands;
-  }
-  return Ok(<root>{renderTableHelp(appserviceBotCommands.ok)}</root>);
+function renderAppserviceBotHelp(): Result<DocumentNode> {
+  return Ok(<root>{renderTableHelp(AppserviceBotCommands)}</root>);
 }
 
 AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceBotHelpCommand, {

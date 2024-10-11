@@ -34,6 +34,7 @@ import {
   CommandTable,
   Command,
   CommandTableEntry,
+  LeafNode,
 } from "@the-draupnir-project/interface-manager";
 import {
   MatrixAdaptorContext,
@@ -371,6 +372,8 @@ export function renderTableHelp(table: CommandTable): DocumentNode {
   );
 }
 
-export function wrapInRoot(node: DocumentNode): DocumentNode {
+export function wrapInRoot(
+  node: DocumentNode | LeafNode | (DocumentNode | LeafNode)[]
+): DocumentNode {
   return <root>{node}</root>;
 }

@@ -41,6 +41,7 @@ import {
 import { matrixCommandRenderer } from "./MatrixHelpRenderer";
 import { promptDefault, promptSuggestions } from "./MatrixPromptForAccept";
 import { Result } from "@gnuxie/typescript-result";
+import { matrixEventsFromConfirmationPrompt } from "./MatrixPromptForConfirmation";
 
 export interface MatrixEventContext {
   roomID: StringRoomID;
@@ -197,6 +198,7 @@ export const MPSMatrixInterfaceAdaptorCallbacks = Object.freeze({
   defaultRenderer: matrixCommandRenderer,
   matrixEventsFromDeadDocument,
   rendererFailedCB,
+  matrixEventsFromConfirmationPrompt,
 }) satisfies MatrixInterfaceAdaptorCallbacks<
   MatrixAdaptorContext,
   MatrixEventContext
