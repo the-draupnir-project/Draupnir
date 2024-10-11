@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Ok, isError } from "matrix-protection-suite";
+import { Ok } from "matrix-protection-suite";
 import {
   CommandTable,
   DocumentNode,
@@ -38,13 +38,7 @@ export const DraupnirHelpCommand = describeCommand({
 });
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirHelpCommand, {
-  JSXRenderer(result) {
-    if (isError(result)) {
-      throw new TypeError(
-        `We should always be able to get the base command table`
-      );
-    } else {
-      return Ok(renderDraupnirHelp(result.ok));
-    }
+  JSXRenderer() {
+    return Ok(renderDraupnirHelp(DraupnirTopLevelCommands));
   },
 });
