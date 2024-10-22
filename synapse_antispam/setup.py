@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mjolnir",
-    version="2.0.0-beta.7", # version automated in package.json - Do not edit this line, use `yarn version`.
+    version="2.0.0-beta.8", # version automated in package.json - Do not edit this line, use `yarn version`.
     packages=find_packages(),
     description="Mjolnir Antispam",
     include_package_data=True,
