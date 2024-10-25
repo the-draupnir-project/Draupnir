@@ -20,28 +20,31 @@ import { LogLevel } from "matrix-bot-sdk";
 import {
   AbstractProtection,
   ActionResult,
+  EDStatic,
   EventConsequences,
   Logger,
   Ok,
   ProtectedRoomsSet,
   ProtectionDescription,
   RoomEvent,
-  SafeIntegerProtectionSetting,
-  StandardProtectionSettings,
   UserConsequences,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
+import { Type } from "@sinclair/typebox";
 
 const log = new Logger("BasicFloodingProtection");
-
-type BasicFloodingProtectionSettings = {
-  maxPerMinute: number;
-};
 
 // if this is exceeded, we'll ban the user for spam and redact their messages
 export const DEFAULT_MAX_PER_MINUTE = 10;
 const TIMESTAMP_THRESHOLD = 30000; // 30s out of phase
+
+const BasicFloodingProtectionSettings = Type.Object({
+  maxPerMinute: Type.Integer({ default: DEFAULT_MAX_PER_MINUTE }),
+});
+type BasicFloodingProtectionSettings = EDStatic<
+  typeof BasicFloodingProtectionSettings
+>;
 
 export type BasicFloodingProtectionCapabilities = {
   userConsequences: UserConsequences;
@@ -50,14 +53,14 @@ export type BasicFloodingProtectionCapabilities = {
 
 export type BasicFloodingProtectionDescription = ProtectionDescription<
   Draupnir,
-  BasicFloodingProtectionSettings,
+  typeof BasicFloodingProtectionSettings,
   BasicFloodingProtectionCapabilities
 >;
 
 describeProtection<
   BasicFloodingProtectionCapabilities,
   Draupnir,
-  BasicFloodingProtectionSettings
+  typeof BasicFloodingProtectionSettings
 >({
   name: "BasicFloodingProtection",
   description: `If a user posts more than ${DEFAULT_MAX_PER_MINUTE} messages in 60s they'll be
@@ -71,6 +74,7 @@ describeProtection<
     userConsequences: "StandardUserConsequences",
     eventConsequences: "StandardEventConsequences",
   },
+  configSchema: BasicFloodingProtectionSettings,
   factory: (
     description,
     protectedRoomsSet,
@@ -79,7 +83,7 @@ describeProtection<
     rawSettings
   ) => {
     const parsedSettings =
-      description.protectionSettings.parseSettings(rawSettings);
+      description.protectionSettings.parseConfig(rawSettings);
     if (isError(parsedSettings)) {
       return parsedSettings;
     }
@@ -89,19 +93,10 @@ describeProtection<
         capabilities,
         protectedRoomsSet,
         draupnir,
-        parsedSettings.ok
+        parsedSettings.ok.maxPerMinute
       )
     );
   },
-  protectionSettings:
-    new StandardProtectionSettings<BasicFloodingProtectionSettings>(
-      {
-        maxPerMinute: new SafeIntegerProtectionSetting("maxPerMinute"),
-      },
-      {
-        maxPerMinute: DEFAULT_MAX_PER_MINUTE,
-      }
-    ),
 });
 
 type LastEvents = { originServerTs: number; eventID: StringEventID }[];
@@ -159,7 +154,7 @@ export class BasicFloodingProtection
     capabilities: BasicFloodingProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir,
-    private readonly settings: BasicFloodingProtectionSettings
+    private readonly maxPerMinute: number
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
@@ -199,7 +194,7 @@ export class BasicFloodingProtection
       messageCount++;
     }
 
-    if (messageCount >= this.settings.maxPerMinute) {
+    if (messageCount >= this.maxPerMinute) {
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.WARN,
         "BasicFlooding",
@@ -250,8 +245,8 @@ export class BasicFloodingProtection
     }
 
     // Trim the oldest messages off the user's history if it's getting large
-    if (forUser.length > this.settings.maxPerMinute * 2) {
-      forUser.splice(0, forUser.length - this.settings.maxPerMinute * 2 - 1);
+    if (forUser.length > this.maxPerMinute * 2) {
+      forUser.splice(0, forUser.length - this.maxPerMinute * 2 - 1);
     }
     return Ok(undefined);
   }

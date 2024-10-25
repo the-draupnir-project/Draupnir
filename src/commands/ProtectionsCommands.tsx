@@ -12,10 +12,12 @@ import {
   ActionError,
   ActionResult,
   Ok,
+  ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
   ProtectionSetting,
   ProtectionSettings,
+  ProtectionsManager,
   UnknownSettings,
   findProtection,
   getAllProtections,
@@ -31,7 +33,7 @@ import {
   tuple,
 } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { DraupnirContextToCommandContextTranslator, DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
 export const DraupnirProtectionsEnableCommand = describeCommand({
   summary: "Enable a named protection.",
@@ -144,6 +146,12 @@ interface SettingChangeSummary<
   readonly description: ProtectionSetting<Key, TSettings>;
 }
 
+export type ProtectionsConfigCommandContext<ProtectionContext = unknown> = {
+  readonly protectionContext: ProtectionContext;
+  readonly protectionsManager: ProtectionsManager<ProtectionContext>;
+  readonly protectedRoomsSet: ProtectedRoomsSet;
+}
+
 export const DraupnirProtectionsConfigSetCommand = describeCommand({
   summary:
     "Set a new value for the protection setting, if the setting is a collection then this will write over the entire collection.",
@@ -153,7 +161,7 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
     description: "The new value to give the protection setting",
   }),
   async executor(
-    draupnir: Draupnir,
+    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -162,7 +170,7 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
     value
   ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      draupnir,
+      protectionsManager,
       protectionName,
       settingName
     );
@@ -179,7 +187,9 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      draupnir,
+      protectionContext,
+      protectedRoomsSet,
+      protectionsManager,
       details,
       settingName,
       newSettings.ok
@@ -195,7 +205,7 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
     description: "An item to add to the collection setting.",
   }),
   async executor(
-    draupnir: Draupnir,
+    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -204,7 +214,7 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
     value
   ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      draupnir,
+      protectionsManager,
       protectionName,
       settingName
     );
@@ -226,7 +236,9 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      draupnir,
+      protectionContext,
+      protectedRoomsSet,
+      protectionsManager,
       details,
       settingName,
       newSettings.ok
@@ -242,7 +254,7 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
     description: "An item to add to the collection setting.",
   }),
   async executor(
-    draupnir: Draupnir,
+    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -251,7 +263,7 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
     value
   ): Promise<Result<SettingChangeSummary>> {
     const detailsResult = await findSettingDetailsForCommand(
-      draupnir,
+      protectionsManager,
       protectionName,
       settingName
     );
@@ -273,7 +285,9 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
       return newSettings;
     }
     return await changeSettingsForCommands(
-      draupnir,
+      protectionContext,
+      protectedRoomsSet,
+      protectionsManager,
       details,
       settingName,
       newSettings.ok
@@ -312,6 +326,13 @@ for (const command of [
       return Ok(<root>{renderSettingChangeSummary(result.ok)}</root>);
     },
   });
+  DraupnirContextToCommandContextTranslator.registerTranslation(command, function (draupnir: Draupnir) {
+    return {
+      protectionContext: draupnir,
+      protectionsManager: draupnir.protectedRoomsSet.protections,
+      protectedRoomsSet: draupnir.protectedRoomsSet,
+    };
+  });
 }
 
 function findProtectionDescriptionForCommand(
@@ -349,7 +370,7 @@ interface SettingDetails<
 }
 
 async function findSettingDetailsForCommand(
-  draupnir: Draupnir,
+  protectionsManager: ProtectionsManager,
   protectionName: string,
   settingName: string
 ): Promise<ActionResult<SettingDetails>> {
@@ -367,7 +388,7 @@ async function findSettingDetailsForCommand(
     return settingDescription;
   }
   const previousSettings =
-    await draupnir.protectedRoomsSet.protections.getProtectionSettings(
+    await protectionsManager.getProtectionSettings(
       protectionDescription.ok
     );
   if (isError(previousSettings)) {
@@ -381,19 +402,27 @@ async function findSettingDetailsForCommand(
   });
 }
 
+// So I'm thinking instead that we're going to move to the PersistentConfigData
+// thingy for protection settings. Wouldn't it make sense to make a plan for that,
+// consider how recovery would work, and how to unit test evertyhing, then
+// do that.
+
 async function changeSettingsForCommands<
+  ProtectionContext = unknown,
   TSettings extends UnknownSettings<string> = UnknownSettings<string>,
 >(
-  draupnir: Draupnir,
+  context: ProtectionContext,
+  protectedRoomsSet: ProtectedRoomsSet,
+  protectionsManager: ProtectionsManager<ProtectionContext>,
   details: SettingDetails<TSettings>,
   settingName: string,
   newSettings: TSettings
 ): Promise<ActionResult<SettingChangeSummary>> {
   const changeResult =
-    await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
+    await protectedRoomsSet.protections.changeProtectionSettings(
       details.protectionDescription,
-      draupnir.protectedRoomsSet,
-      draupnir,
+      protectedRoomsSet,
+      context,
       newSettings
     );
   if (isError(changeResult)) {

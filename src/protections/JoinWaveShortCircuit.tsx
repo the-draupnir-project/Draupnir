@@ -12,6 +12,7 @@ import {
   AbstractProtection,
   ActionResult,
   CapabilitySet,
+  EDStatic,
   Logger,
   MembershipChange,
   MembershipChangeType,
@@ -19,8 +20,6 @@ import {
   ProtectedRoomsSet,
   ProtectionDescription,
   RoomMembershipRevision,
-  SafeIntegerProtectionSetting,
-  StandardProtectionSettings,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -28,6 +27,7 @@ import { LogLevel } from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import { Type } from "@sinclair/typebox";
 
 const log = new Logger("JoinWaveShortCircuitProtection");
 
@@ -35,30 +35,35 @@ const DEFAULT_MAX_PER_TIMESCALE = 50;
 const DEFAULT_TIMESCALE_MINUTES = 60;
 const ONE_MINUTE = 60_000; // 1min in ms
 
-type JoinWaveShortCircuitProtectionSettings = {
-  maxPer: number;
-  timescaleMinutes: number;
-};
+const JoinWaveShortCircuitProtectionSettings = Type.Object({
+  maxPer: Type.Integer({ default: DEFAULT_MAX_PER_TIMESCALE }),
+  timescaleMinutes: Type.Integer({ default: DEFAULT_TIMESCALE_MINUTES }),
+});
+
+type JoinWaveShortCircuitProtectionSettings = EDStatic<
+  typeof JoinWaveShortCircuitProtectionSettings
+>;
 
 // TODO: Add join rule capability.
 type JoinWaveShortCircuitProtectionCapabilities = Record<never, never>;
 
 type JoinWaveShortCircuitProtectionDescription = ProtectionDescription<
   Draupnir,
-  JoinWaveShortCircuitProtectionSettings,
+  typeof JoinWaveShortCircuitProtectionSettings,
   JoinWaveShortCircuitProtectionCapabilities
 >;
 
 describeProtection<
   JoinWaveShortCircuitProtectionCapabilities,
   Draupnir,
-  JoinWaveShortCircuitProtectionSettings
+  typeof JoinWaveShortCircuitProtectionSettings
 >({
   name: "JoinWaveShortCircuitProtection",
   description:
     "If X amount of users join in Y time, set the room to invite-only.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
+  configSchema: JoinWaveShortCircuitProtectionSettings,
   factory: function (
     description,
     protectedRoomsSet,
@@ -66,8 +71,7 @@ describeProtection<
     capabilities,
     settings
   ) {
-    const parsedSettings =
-      description.protectionSettings.parseSettings(settings);
+    const parsedSettings = description.protectionSettings.parseConfig(settings);
     if (isError(parsedSettings)) {
       return parsedSettings;
     }
@@ -81,16 +85,6 @@ describeProtection<
       )
     );
   },
-  protectionSettings: new StandardProtectionSettings(
-    {
-      maxPer: new SafeIntegerProtectionSetting("maxPer"),
-      timescaleMinutes: new SafeIntegerProtectionSetting("timescaleMinutes"),
-    },
-    {
-      maxPer: DEFAULT_MAX_PER_TIMESCALE,
-      timescaleMinutes: DEFAULT_TIMESCALE_MINUTES,
-    }
-  ),
 });
 
 export class JoinWaveShortCircuitProtection

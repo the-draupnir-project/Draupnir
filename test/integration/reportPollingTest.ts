@@ -16,13 +16,14 @@ import {
   Ok,
   Protection,
   ProtectionDescription,
-  StandardProtectionSettings,
   Task,
+  describeConfig,
 } from "matrix-protection-suite";
 import {
   MatrixRoomReference,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { Type } from "@sinclair/typebox";
 
 describe("Test: Report polling", function () {
   let client: MatrixClient;
@@ -77,13 +78,12 @@ describe("Test: Report polling", function () {
             requiredStatePermissions: [],
           });
         },
-        protectionSettings: new StandardProtectionSettings({}, {}),
+        protectionSettings: describeConfig({ schema: Type.Object({}) }),
       };
       void Task(
         (async () => {
           await draupnir.protectedRoomsSet.protections.addProtection(
             testProtectionDescription,
-            {},
             draupnir.protectedRoomsSet,
             draupnir
           );

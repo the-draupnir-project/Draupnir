@@ -19,6 +19,7 @@ import {
   ProtectionDescription,
   RoomEvent,
   RoomMessage,
+  UnknownConfig,
   Value,
   describeProtection,
 } from "matrix-protection-suite";
@@ -33,7 +34,7 @@ type MessageIsVoiceCapabilities = {
   eventConsequences: EventConsequences;
 };
 
-type MessageIsVoiceSettings = Record<never, never>;
+type MessageIsVoiceSettings = UnknownConfig;
 
 type MessageIsVoiceDescription = ProtectionDescription<
   Draupnir,
@@ -41,11 +42,7 @@ type MessageIsVoiceDescription = ProtectionDescription<
   MessageIsVoiceCapabilities
 >;
 
-describeProtection<
-  MessageIsVoiceCapabilities,
-  Draupnir,
-  MessageIsVoiceSettings
->({
+describeProtection<MessageIsVoiceCapabilities, Draupnir>({
   name: "MessageIsVoiceProtection",
   description: "If a user posts a voice message, that message will be redacted",
   capabilityInterfaces: {

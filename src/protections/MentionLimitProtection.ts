@@ -12,7 +12,7 @@ import {
   Protection,
   ProtectionDescription,
   RoomEvent,
-  UnknownSettings,
+  UnknownConfig,
   Value,
   describeProtection,
 } from "matrix-protection-suite";
@@ -67,7 +67,7 @@ export function isContainingMentionsOverLimit(
 
 export type MentionLimitProtectionDescription = ProtectionDescription<
   unknown,
-  UnknownSettings<string>,
+  UnknownConfig,
   MentionLimitProtectionCapabilities
 >;
 
