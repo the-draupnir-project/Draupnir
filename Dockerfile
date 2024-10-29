@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 AND AFL-3.0
 
-FROM node:20-slim as build-stage
+FROM node:22-slim as build-stage
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY . /tmp/src
 # describe the version.
@@ -14,7 +14,7 @@ RUN cd /tmp/src \
     && yarn build \
     && yarn install --frozen-lockfile --production --network-timeout 100000
 
-FROM node:20-slim as final-stage
+FROM node:22-slim as final-stage
 COPY --from=build-stage /tmp/src/version.txt version.txt
 COPY --from=build-stage /tmp/src/lib/ /draupnir/
 COPY --from=build-stage /tmp/src/node_modules /node_modules
