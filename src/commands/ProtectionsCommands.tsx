@@ -11,14 +11,14 @@
 import {
   ActionError,
   ActionResult,
+  ConfigDescription,
+  EDStatic,
   Ok,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  ProtectionSetting,
-  ProtectionSettings,
   ProtectionsManager,
-  UnknownSettings,
+  UnknownConfig,
   findProtection,
   getAllProtections,
   isError,
@@ -28,12 +28,16 @@ import {
   DeadDocumentJSX,
   DocumentNode,
   StringPresentationType,
+  TextPresentationRenderer,
   TopPresentationSchema,
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
-import { DraupnirContextToCommandContextTranslator, DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  DraupnirContextToCommandContextTranslator,
+  DraupnirInterfaceAdaptor,
+} from "./DraupnirCommandPrerequisites";
 
 export const DraupnirProtectionsEnableCommand = describeCommand({
   summary: "Enable a named protection.",
@@ -41,15 +45,6 @@ export const DraupnirProtectionsEnableCommand = describeCommand({
     name: "protection name",
     acceptor: StringPresentationType,
   }),
-  keywords: {
-    keywordDescriptions: {
-      "consequence-provider": {
-        acceptor: StringPresentationType,
-        description:
-          "The name of a consequence provider to use for this protection.",
-      },
-    },
-  },
   async executor(
     draupnir: Draupnir,
     _info,
@@ -63,18 +58,8 @@ export const DraupnirProtectionsEnableCommand = describeCommand({
         `Couldn't find a protection named ${protectionName}`
       );
     }
-    const capabilityProviderSet =
-      await draupnir.protectedRoomsSet.protections.getCapabilityProviderSet(
-        protectionDescription
-      );
-    if (isError(capabilityProviderSet)) {
-      return capabilityProviderSet.elaborate(
-        `Couldn't load the capability provider set for the protection ${protectionName}`
-      );
-    }
     return await draupnir.protectedRoomsSet.protections.addProtection(
       protectionDescription,
-      capabilityProviderSet.ok,
       draupnir.protectedRoomsSet,
       draupnir
     );
@@ -138,19 +123,20 @@ const CommonProtectionSettingParameters = tuple(
 );
 
 interface SettingChangeSummary<
-  Key extends string = string,
-  TSettings extends UnknownSettings<string> = UnknownSettings<string>,
+  TConfig extends UnknownConfig = UnknownConfig,
+  Key extends keyof EDStatic<TConfig> = keyof EDStatic<TConfig>,
 > {
-  readonly oldValue: unknown;
-  readonly newValue: unknown;
-  readonly description: ProtectionSetting<Key, TSettings>;
+  readonly oldValue: EDStatic<TConfig>[Key];
+  readonly newValue: EDStatic<TConfig>[Key];
+  readonly propertyKey: Key;
+  readonly description: ConfigDescription<TConfig>;
 }
 
 export type ProtectionsConfigCommandContext<ProtectionContext = unknown> = {
   readonly protectionContext: ProtectionContext;
   readonly protectionsManager: ProtectionsManager<ProtectionContext>;
   readonly protectedRoomsSet: ProtectedRoomsSet;
-}
+};
 
 export const DraupnirProtectionsConfigSetCommand = describeCommand({
   summary:
@@ -161,7 +147,11 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
     description: "The new value to give the protection setting",
   }),
   async executor(
-    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
+    {
+      protectionsManager,
+      protectionContext,
+      protectedRoomsSet,
+    }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -178,11 +168,9 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
       return detailsResult;
     }
     const details = detailsResult.ok;
-    const newSettings = details.protectionSettings.setValue(
-      details.previousSettings,
-      settingName,
-      value
-    );
+    const newSettings = details.description
+      .toMirror()
+      .setValue(details.previousSettings, settingName, value);
     if (isError(newSettings)) {
       return newSettings;
     }
@@ -205,7 +193,11 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
     description: "An item to add to the collection setting.",
   }),
   async executor(
-    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
+    {
+      protectionsManager,
+      protectionContext,
+      protectedRoomsSet,
+    }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -222,16 +214,16 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
       return detailsResult;
     }
     const details = detailsResult.ok;
-    const settingDescription = details.settingDescription;
-    if (!settingDescription.isCollectionSetting()) {
+    const propertyDescription =
+      details.description.getPropertyDescription(settingName);
+    if (!propertyDescription.isArray) {
       return ActionError.Result(
         `${protectionName}'s setting ${settingName} is not a collection protection setting, and cannot be used with the add or remove commands.`
       );
     }
-    const newSettings = settingDescription.addItem(
-      details.previousSettings,
-      value
-    );
+    const newSettings = details.description
+      .toMirror()
+      .addItem(details.previousSettings, settingName, value);
     if (isError(newSettings)) {
       return newSettings;
     }
@@ -254,7 +246,11 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
     description: "An item to add to the collection setting.",
   }),
   async executor(
-    { protectionsManager, protectionContext, protectedRoomsSet }: ProtectionsConfigCommandContext,
+    {
+      protectionsManager,
+      protectionContext,
+      protectedRoomsSet,
+    }: ProtectionsConfigCommandContext,
     _info,
     _keywords,
     _rest,
@@ -271,26 +267,29 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
       return detailsResult;
     }
     const details = detailsResult.ok;
-    const settingDescription = details.settingDescription;
-    if (!settingDescription.isCollectionSetting()) {
+    const settingDescription = details.description;
+    const propertyDescription =
+      settingDescription.getPropertyDescription(settingName);
+    if (!propertyDescription.isArray) {
       return ActionError.Result(
         `${protectionName}'s setting ${settingName} is not a collection protection setting, and cannot be used with the add or remove commands.`
       );
     }
-    const newSettings = settingDescription.removeItem(
-      details.previousSettings,
-      value
-    );
-    if (isError(newSettings)) {
-      return newSettings;
-    }
+    const newSettings = settingDescription
+      .toMirror()
+      .filterItems(
+        details.previousSettings,
+        settingName,
+        (item) => item !== value
+      );
     return await changeSettingsForCommands(
       protectionContext,
       protectedRoomsSet,
       protectionsManager,
       details,
-      settingName,
-      newSettings.ok
+      // Yeha I know this sucks but either fix it or fuck off, it'll be fine.
+      settingName as never,
+      newSettings.ok as never
     );
   },
 });
@@ -298,17 +297,11 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
 function renderSettingChangeSummary(
   summary: SettingChangeSummary
 ): DocumentNode {
-  const oldJSON = summary.description.toJSON({
-    [summary.description.key]: summary.oldValue,
-  });
-  const newJSON = summary.description.toJSON({
-    [summary.description.key]: summary.newValue,
-  });
   return (
     <fragment>
-      Setting {summary.description.key} changed from{" "}
-      <code>{JSON.stringify(oldJSON)}</code> to{" "}
-      <code>{JSON.stringify(newJSON)}</code>
+      Setting {summary.propertyKey} changed from{" "}
+      <code>{TextPresentationRenderer.render(summary.oldValue)}</code> to{" "}
+      <code>{TextPresentationRenderer.render(summary.newValue)}</code>
     </fragment>
   );
 }
@@ -326,13 +319,16 @@ for (const command of [
       return Ok(<root>{renderSettingChangeSummary(result.ok)}</root>);
     },
   });
-  DraupnirContextToCommandContextTranslator.registerTranslation(command, function (draupnir: Draupnir) {
-    return {
-      protectionContext: draupnir,
-      protectionsManager: draupnir.protectedRoomsSet.protections,
-      protectedRoomsSet: draupnir.protectedRoomsSet,
-    };
-  });
+  DraupnirContextToCommandContextTranslator.registerTranslation(
+    command,
+    function (draupnir: Draupnir) {
+      return {
+        protectionContext: draupnir,
+        protectionsManager: draupnir.protectedRoomsSet.protections,
+        protectedRoomsSet: draupnir.protectedRoomsSet,
+      };
+    }
+  );
 }
 
 function findProtectionDescriptionForCommand(
@@ -347,26 +343,14 @@ function findProtectionDescriptionForCommand(
   return Ok(protectionDescription);
 }
 
-function findSettingDescriptionForCommand(
-  settings: ProtectionSettings,
-  settingName: string
-): ActionResult<ProtectionSetting<string, UnknownSettings<string>>> {
-  const setting = settings.getDescription(settingName);
-  if (setting === undefined) {
-    return ActionError.Result(
-      `Unable to find a protection setting named ${settingName}`
-    );
-  }
-  return Ok(setting);
-}
-
 interface SettingDetails<
-  TSettings extends UnknownSettings<string> = UnknownSettings<string>,
+  TConfig extends UnknownConfig = UnknownConfig,
+  Key extends keyof EDStatic<TConfig> = keyof EDStatic<TConfig>,
 > {
-  readonly protectionDescription: ProtectionDescription<Draupnir, TSettings>;
-  readonly protectionSettings: ProtectionSettings;
-  readonly settingDescription: ProtectionSetting<string, TSettings>;
-  readonly previousSettings: TSettings;
+  readonly protectionDescription: ProtectionDescription<Draupnir, TConfig>;
+  readonly previousSettings: EDStatic<TConfig>;
+  readonly propertyKey: Key;
+  readonly description: ConfigDescription<TConfig>;
 }
 
 async function findSettingDetailsForCommand(
@@ -380,24 +364,17 @@ async function findSettingDetailsForCommand(
     return protectionDescription;
   }
   const settingsDescription = protectionDescription.ok.protectionSettings;
-  const settingDescription = findSettingDescriptionForCommand(
-    settingsDescription,
-    settingName
+  const previousSettings = await protectionsManager.getProtectionSettings(
+    protectionDescription.ok
   );
-  if (isError(settingDescription)) {
-    return settingDescription;
-  }
-  const previousSettings =
-    await protectionsManager.getProtectionSettings(
-      protectionDescription.ok
-    );
   if (isError(previousSettings)) {
     return previousSettings;
   }
   return Ok({
     protectionDescription: protectionDescription.ok,
-    protectionSettings: settingsDescription,
-    settingDescription: settingDescription.ok,
+    propertyKey:
+      settingName as keyof typeof settingsDescription.schema.properties,
+    description: protectionDescription.ok.protectionSettings,
     previousSettings: previousSettings.ok,
   });
 }
@@ -409,18 +386,18 @@ async function findSettingDetailsForCommand(
 
 async function changeSettingsForCommands<
   ProtectionContext = unknown,
-  TSettings extends UnknownSettings<string> = UnknownSettings<string>,
+  TConfig extends UnknownConfig = UnknownConfig,
 >(
   context: ProtectionContext,
   protectedRoomsSet: ProtectedRoomsSet,
   protectionsManager: ProtectionsManager<ProtectionContext>,
-  details: SettingDetails<TSettings>,
+  details: SettingDetails<TConfig>,
   settingName: string,
-  newSettings: TSettings
-): Promise<ActionResult<SettingChangeSummary>> {
+  newSettings: EDStatic<TConfig>
+): Promise<ActionResult<SettingChangeSummary<TConfig>>> {
   const changeResult =
     await protectedRoomsSet.protections.changeProtectionSettings(
-      details.protectionDescription,
+      details.protectionDescription as unknown as ProtectionDescription,
       protectedRoomsSet,
       context,
       newSettings
@@ -429,9 +406,10 @@ async function changeSettingsForCommands<
     return changeResult;
   }
   return Ok({
-    description: details.settingDescription,
-    oldValue: details.previousSettings[settingName],
-    newValue: newSettings[settingName],
+    description: details.description,
+    oldValue: details.previousSettings[settingName as keyof EDStatic<TConfig>],
+    newValue: newSettings[settingName as keyof EDStatic<TConfig>],
+    propertyKey: settingName as keyof EDStatic<TConfig>,
   });
 }
 
