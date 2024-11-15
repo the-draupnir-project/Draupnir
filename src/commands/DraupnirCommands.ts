@@ -49,6 +49,7 @@ import {
 } from "./WatchUnwatchCommand";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import { DraupnirSafeModeCommand } from "./SafeModeCommand";
+import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
@@ -83,6 +84,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
     "config",
     "set",
   ])
+  .internCommand(DraupnirProtectionsShowCommand, ["protections", "show"])
   .internCommand(DraupnirRedactCommand, ["redact"])
   .internCommand(DraupnirResolveAliasCommand, ["resolve"])
   .internCommand(DraupnirListProtectedRoomsCommand, ["rooms"])

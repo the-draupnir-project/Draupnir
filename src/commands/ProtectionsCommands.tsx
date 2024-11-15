@@ -28,7 +28,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
   StringPresentationType,
-  TextPresentationRenderer,
   TopPresentationSchema,
   describeCommand,
   tuple,
@@ -170,7 +169,8 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
     const details = detailsResult.ok;
     const newSettings = details.description
       .toMirror()
-      .setValue(details.previousSettings, settingName, value);
+      // we have to reserialize or present the argument or we'll be SOL.
+      .setSerializedValue(details.previousSettings, settingName, String(value));
     if (isError(newSettings)) {
       return newSettings;
     }
@@ -223,7 +223,11 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
     }
     const newSettings = details.description
       .toMirror()
-      .addItem(details.previousSettings, settingName, value);
+      // We technically need to print the argument "readbly" but i don't think
+      // we have a way to do that.
+      // at least without getting the argument from the argument stream in
+      // interface-manager so that we still have its presentation type.
+      .addSerializedItem(details.previousSettings, settingName, String(value));
     if (isError(newSettings)) {
       return newSettings;
     }
@@ -297,11 +301,17 @@ export const DraupnirProtectionsConfigRemoveCommand = describeCommand({
 function renderSettingChangeSummary(
   summary: SettingChangeSummary
 ): DocumentNode {
+  const renderProperty = (value: unknown) => {
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    return String(value);
+  };
   return (
     <fragment>
       Setting {summary.propertyKey} changed from{" "}
-      <code>{TextPresentationRenderer.render(summary.oldValue)}</code> to{" "}
-      <code>{TextPresentationRenderer.render(summary.newValue)}</code>
+      <code>{renderProperty(summary.oldValue)}</code> to{" "}
+      <code>{renderProperty(summary.newValue)}</code>
     </fragment>
   );
 }

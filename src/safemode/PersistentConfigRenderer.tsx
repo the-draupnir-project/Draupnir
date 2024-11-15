@@ -32,6 +32,7 @@ const ConfigStatusIndicator = Object.freeze({
 export interface PersistentConfigRenderer {
   renderConfigStatus(config: PersistentConfigStatus): DocumentNode;
   renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode;
+  renderConfigDocumentation(description: ConfigDescription): DocumentNode;
 }
 
 function findError(
@@ -65,6 +66,15 @@ function renderConfigPropertyValue(value: unknown): DocumentNode {
       return renderRoomPill(value);
     } else if (value instanceof MatrixUserID) {
       return renderMentionPill(value.toString(), value.toString());
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return (
+          <fragment>
+            <code>[]</code> (empty array)
+          </fragment>
+        );
+      }
+      return <ul>{value.map((value) => renderConfigPropertyValue(value))}</ul>;
     } else {
       return (
         <fragment>
@@ -177,6 +187,25 @@ function renderBodgedConfig(config: PersistentConfigStatus): DocumentNode {
   );
 }
 
+function renderConfigDocumentation(
+  description: ConfigDescription
+): DocumentNode {
+  return (
+    <fragment>
+      <p>{description.schema.description ?? "No description"}</p>
+      <ul>
+        {description.properties().map((property) => (
+          <li>
+            <code>{property.name}</code>:{" "}
+            {property.description ?? "No description"}
+            <p>default value: {renderConfigPropertyValue(property.default)}</p>
+          </li>
+        ))}
+      </ul>
+    </fragment>
+  );
+}
+
 export const StandardPersistentConfigRenderer = Object.freeze({
   renderConfigStatus(config: PersistentConfigStatus): DocumentNode {
     if (typeof config.data !== "object" || config.data === null) {
@@ -185,7 +214,7 @@ export const StandardPersistentConfigRenderer = Object.freeze({
     return renderConfigDetails(
       config.error,
       config.description,
-      <fragment>
+      <ul>
         {config.description
           .properties()
           .map((property) =>
@@ -195,7 +224,7 @@ export const StandardPersistentConfigRenderer = Object.freeze({
               config.error?.errors ?? []
             )
           )}
-      </fragment>
+      </ul>
     );
   },
   renderAdaptorStatus(info: PersistentConfigStatus[]): DocumentNode {
@@ -210,4 +239,5 @@ export const StandardPersistentConfigRenderer = Object.freeze({
       </fragment>
     );
   },
+  renderConfigDocumentation,
 }) satisfies PersistentConfigRenderer;
