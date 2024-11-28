@@ -19,7 +19,7 @@ import {
   PolicyRuleChange,
   ProtectedRoomsSet,
   ProtectionDescription,
-  UnknownSettings,
+  UnknownConfig,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -46,7 +46,7 @@ export type PolicyChangeNotificationCapabilitites = Record<never, never>;
 export type PolicyChangeNotificationProtectionDescription =
   ProtectionDescription<
     Draupnir,
-    UnknownSettings<string>,
+    UnknownConfig,
     PolicyChangeNotificationCapabilitites
   >;
 

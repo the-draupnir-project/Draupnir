@@ -22,6 +22,7 @@ import {
   RoomEvent,
   RoomMembershipRevision,
   RoomMessage,
+  UnknownConfig,
   UserConsequences,
   Value,
   describeProtection,
@@ -40,7 +41,7 @@ type WordListCapabilities = {
   eventConsequences: EventConsequences;
 };
 
-type WordListSettings = Record<never, never>;
+type WordListSettings = UnknownConfig;
 
 type WordListDescription = ProtectionDescription<
   Draupnir,
@@ -48,7 +49,7 @@ type WordListDescription = ProtectionDescription<
   WordListCapabilities
 >;
 
-describeProtection<WordListCapabilities, Draupnir, WordListSettings>({
+describeProtection<WordListCapabilities, Draupnir>({
   name: "WordListProtection",
   description:
     "If a user posts a monitored word a set amount of time after joining, they\

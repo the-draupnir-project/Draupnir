@@ -33,9 +33,9 @@ import {
   Task,
   describeProtection,
   isError,
-  UnknownSettings,
   UserConsequences,
   Membership,
+  UnknownConfig,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -203,7 +203,7 @@ export type BanPropagationProtectionCapabilities = {
 export type BanPropagationProtectionCapabilitiesDescription =
   ProtectionDescription<
     Draupnir,
-    UnknownSettings<string>,
+    UnknownConfig,
     BanPropagationProtectionCapabilities
   >;
 

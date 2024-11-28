@@ -22,6 +22,7 @@ import {
   RoomEvent,
   RoomMembershipRevision,
   RoomMessage,
+  UnknownConfig,
   UserConsequences,
   Value,
   describeProtection,
@@ -33,8 +34,6 @@ import {
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 
-type FirstMessageIsImageProtectionSettings = Record<never, never>;
-
 export type FirstMessageIsImageProtectionCapabilities = {
   userConsequences: UserConsequences;
   eventConsequences: EventConsequences;
@@ -42,15 +41,11 @@ export type FirstMessageIsImageProtectionCapabilities = {
 
 export type FirstMessageIsImageProtectionDescription = ProtectionDescription<
   Draupnir,
-  FirstMessageIsImageProtectionSettings,
+  UnknownConfig,
   FirstMessageIsImageProtectionCapabilities
 >;
 
-describeProtection<
-  FirstMessageIsImageProtectionCapabilities,
-  Draupnir,
-  FirstMessageIsImageProtectionSettings
->({
+describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir>({
   name: "FirstMessageIsImageProtection",
   description:
     "If the first thing a user does after joining is to post an image or video, \

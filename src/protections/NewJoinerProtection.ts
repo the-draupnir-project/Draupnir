@@ -14,7 +14,7 @@ import {
   Protection,
   ProtectionDescription,
   RoomMembershipRevision,
-  UnknownSettings,
+  UnknownConfig,
   UserConsequences,
   describeProtection,
   isError,
@@ -25,7 +25,7 @@ import { userServerName } from "@the-draupnir-project/matrix-basic-types";
 
 export type NewJoinerProtectionDescription = ProtectionDescription<
   unknown,
-  UnknownSettings<string>,
+  UnknownConfig,
   NewJoinerProtectionCapabilities
 >;
 

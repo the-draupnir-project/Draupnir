@@ -19,6 +19,7 @@ import {
   ProtectionDescription,
   RoomEvent,
   RoomMessage,
+  UnknownConfig,
   Value,
   describeProtection,
 } from "matrix-protection-suite";
@@ -29,7 +30,7 @@ import {
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 
-type MessageIsMediaProtectionSettings = Record<never, never>;
+type MessageIsMediaProtectionSettings = UnknownConfig;
 
 type MessageIsMediaCapabilities = {
   eventConsequences: EventConsequences;
@@ -41,11 +42,7 @@ type MessageIsMediaProtectionDescription = ProtectionDescription<
   MessageIsMediaCapabilities
 >;
 
-describeProtection<
-  MessageIsMediaCapabilities,
-  Draupnir,
-  MessageIsMediaProtectionSettings
->({
+describeProtection<MessageIsMediaCapabilities, Draupnir>({
   name: "MessageIsMediaProtection",
   description:
     "If a user posts an image or video, that message will be redacted. No bans are issued.",

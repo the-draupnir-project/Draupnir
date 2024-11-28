@@ -19,6 +19,7 @@ import {
   MjolnirEnabledProtectionsEventType,
   MjolnirPolicyRoomsConfig,
   MjolnirProtectedRoomsConfig,
+  MjolnirProtectionSettingsConfig,
   MjolnirProtectionSettingsEventType,
   MjolnirProtectionsConfig,
   Ok,
@@ -33,6 +34,7 @@ import {
   RoomStateManager,
   StandardProtectedRoomsManager,
   StandardProtectedRoomsSet,
+  StandardProtectionCapabilityProviderSetConfig,
   StandardProtectionsManager,
   StandardSetMembership,
   StandardSetRoomState,
@@ -40,7 +42,7 @@ import {
 } from "matrix-protection-suite";
 import {
   BotSDKAccountDataConfigBackend,
-  BotSDKMatrixStateData,
+  BotSDKRoomStateConfigBackend,
   MatrixSendClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
@@ -134,10 +136,16 @@ async function makeProtectionsManager(
   return Ok(
     new StandardProtectionsManager(
       protectionsConfigResult.ok,
-      new BotSDKMatrixStateData(
-        MjolnirProtectionSettingsEventType,
-        result.ok,
-        client
+      new StandardProtectionCapabilityProviderSetConfig(),
+      new MjolnirProtectionSettingsConfig((description) =>
+        Ok(
+          new BotSDKRoomStateConfigBackend(
+            client,
+            managementRoom.toRoomIDOrAlias(),
+            MjolnirProtectionSettingsEventType,
+            description.name
+          )
+        )
       )
     )
   );

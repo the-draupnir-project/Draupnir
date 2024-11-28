@@ -11,15 +11,14 @@
 import {
   AbstractProtection,
   ActionResult,
+  EDStatic,
   EventConsequences,
   EventReport,
   Ok,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  SafeIntegerProtectionSetting,
-  StandardProtectionSettings,
-  StringUserIDSetProtectionSettings,
+  StringUserIDSchema,
   UserConsequences,
   describeProtection,
   isError,
@@ -29,15 +28,36 @@ import {
   StringUserID,
   StringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { Type } from "@sinclair/typebox";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
 
-type TrustedReportersProtectionSettings = {
-  mxids: Set<StringUserID>;
-  alertThreshold: number;
-  redactThreshold: number;
-  banThreshold: number;
-};
+const TrustedReportersProtectionSettings = Type.Object({
+  mxids: Type.Array(StringUserIDSchema, {
+    default: [],
+    uniqueItems: true,
+    description: "The users who are marked as trusted reporters.",
+  }),
+  alertThreshold: Type.Integer({
+    default: 3,
+    description:
+      "The number of reports from trusted reporters required before sending an alert to the management room.",
+  }),
+  redactThreshold: Type.Integer({
+    default: -1,
+    description:
+      "The number of reports from trusted reporters required before the relevant event is redacted.",
+  }),
+  banThreshold: Type.Integer({
+    default: -1,
+    description:
+      "The number of reports from trusted reporters required before the reported user banned.",
+  }),
+});
+
+type TrustedReportersProtectionSettings = EDStatic<
+  typeof TrustedReportersProtectionSettings
+>;
 
 type TrustedReportersCapabilities = {
   userConsequences: UserConsequences;
@@ -46,14 +66,14 @@ type TrustedReportersCapabilities = {
 
 type TrustedReportersDescription = ProtectionDescription<
   Draupnir,
-  TrustedReportersProtectionSettings,
+  typeof TrustedReportersProtectionSettings,
   TrustedReportersCapabilities
 >;
 
 describeProtection<
   TrustedReportersCapabilities,
   Draupnir,
-  TrustedReportersProtectionSettings
+  typeof TrustedReportersProtectionSettings
 >({
   name: "TrustedReporters",
   description:
@@ -66,6 +86,7 @@ describeProtection<
     userConsequences: "StandardUserConsequences",
     eventConsequences: "StandardEventConsequences",
   },
+  configSchema: TrustedReportersProtectionSettings,
   factory: function (
     description,
     protectedRoomsSet,
@@ -74,7 +95,7 @@ describeProtection<
     rawSettings
   ) {
     const parsedSettings =
-      description.protectionSettings.parseSettings(rawSettings);
+      description.protectionSettings.parseConfig(rawSettings);
     if (isError(parsedSettings)) {
       return parsedSettings;
     }
@@ -88,22 +109,6 @@ describeProtection<
       )
     );
   },
-  protectionSettings:
-    new StandardProtectionSettings<TrustedReportersProtectionSettings>(
-      {
-        mxids: new StringUserIDSetProtectionSettings("mxids"),
-        alertThreshold: new SafeIntegerProtectionSetting("alertThreshold"),
-        redactThreshold: new SafeIntegerProtectionSetting("redactThreshold"),
-        banThreshold: new SafeIntegerProtectionSetting("banThreshold"),
-      },
-      {
-        mxids: new Set(),
-        alertThreshold: 3,
-        // -1 means 'disabled'
-        redactThreshold: -1,
-        banThreshold: -1,
-      }
-    ),
 });
 
 /*
@@ -115,7 +120,7 @@ export class TrustedReporters
   implements Protection<TrustedReportersDescription>
 {
   private recentReported = new Map<StringEventID, Set<StringUserID>>();
-
+  private readonly reporters = new Set<StringUserID>();
   private readonly userConsequences: UserConsequences;
   private readonly eventConsequences: EventConsequences;
   public constructor(
@@ -128,12 +133,13 @@ export class TrustedReporters
     super(description, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
+    this.reporters = new Set(settings.mxids);
   }
 
   public async handleEventReport(
     report: EventReport
   ): Promise<ActionResult<void>> {
-    if (!this.settings.mxids.has(report.sender)) {
+    if (!this.reporters.has(report.sender)) {
       // not a trusted user, we're not interested
       return Ok(undefined);
     }

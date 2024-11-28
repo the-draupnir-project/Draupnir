@@ -19,6 +19,7 @@ import {
   ProtectionDescription,
   StandardDeduplicator,
   Task,
+  UnknownConfig,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -46,7 +47,7 @@ import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manag
 const log = new Logger("JoinRoomsOnInviteProtection");
 
 export type JoinRoomsOnInviteProtectionCapabilities = Record<string, never>;
-export type JoinRoomsOnInviteProtectionSettings = Record<string, unknown>;
+export type JoinRoomsOnInviteProtectionSettings = UnknownConfig;
 
 export type JoinRoomsOnInviteProtectionDescription = ProtectionDescription<
   Draupnir,
