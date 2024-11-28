@@ -7,7 +7,10 @@
 // This modified file incorporates work from mjolnir
 // https://github.com/matrix-org/mjolnir
 // </text>
-import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
 import {
   renderMentionPill,
   renderRoomPill,
@@ -138,18 +141,43 @@ async function promptBanPropagation(
   );
 }
 
-async function promptUnbanPropagation(
-  draupnir: Draupnir,
+function renderUnbanPrompt(
   membershipChange: MembershipChange,
   roomID: StringRoomID,
-  rulesMatchingUser: ListMatches[]
-): Promise<void> {
-  const reactionMap = new Map<string, string>(
-    Object.entries({ "unban from all": "unban from all" })
-  );
-  const promptSendResult = await sendMatrixEventsFromDeadDocument(
-    draupnir.clientPlatform.toRoomMessageSender(),
-    draupnir.managementRoomID,
+  rulesMatchingUser: ListMatches[],
+  roomsBannedFrom: MatrixRoomID[]
+): DocumentNode {
+  const renderRules = () => {
+    if (rulesMatchingUser.length === 0) {
+      return <p>There are no rules matching this user.</p>;
+    }
+    return (
+      <p>
+        There are rules in Draupnir's watched lists matching this user:
+        <ul>
+          {rulesMatchingUser.map((match) => (
+            <li>{renderListRules(match)}</li>
+          ))}
+        </ul>
+      </p>
+    );
+  };
+  const renderRoomBans = () => {
+    if (roomsBannedFrom.length === 0) {
+      return <p>The user is not banned from any rooms.</p>;
+    }
+    return (
+      <p>
+        The user is banned from the following rooms:
+        <ul>
+          {roomsBannedFrom.map((room) => (
+            <li>{renderRoomPill(room)}</li>
+          ))}
+        </ul>
+      </p>
+    );
+  };
+  return (
     <root>
       The user{" "}
       {renderMentionPill(
@@ -160,16 +188,33 @@ async function promptUnbanPropagation(
       {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by{" "}
       {membershipChange.sender} for{" "}
       <code>{membershipChange.content.reason ?? "<no reason supplied>"}</code>
-      .<br />
-      However there are rules in Draupnir's watched lists matching this user:
-      <ul>
-        {rulesMatchingUser.map((match) => (
-          <li>{renderListRules(match)}</li>
-        ))}
-      </ul>
+      {renderRules()}
+      {renderRoomBans()}
       Would you like to remove these rules and unban the user from all protected
       rooms?
-    </root>,
+    </root>
+  );
+}
+
+async function promptUnbanPropagation(
+  draupnir: Draupnir,
+  membershipChange: MembershipChange,
+  roomID: StringRoomID,
+  rulesMatchingUser: ListMatches[],
+  roomsBannedFrom: MatrixRoomID[]
+): Promise<void> {
+  const reactionMap = new Map<string, string>(
+    Object.entries({ "unban from all": "unban from all" })
+  );
+  const promptSendResult = await sendMatrixEventsFromDeadDocument(
+    draupnir.clientPlatform.toRoomMessageSender(),
+    draupnir.managementRoomID,
+    renderUnbanPrompt(
+      membershipChange,
+      roomID,
+      rulesMatchingUser,
+      roomsBannedFrom
+    ),
     {
       additionalContent: draupnir.reactionHandler.createAnnotation(
         UNBAN_PROPAGATION_PROMPT_LISTENER,
@@ -302,7 +347,13 @@ export class BanPropagationProtection
       draupnir.protectedRoomsSet.issuerManager,
       draupnir.policyRoomManager
     );
-    if (rulesMatchingUser.length === 0) {
+    const roomsBannedFrom =
+      this.protectedRoomsSet.setMembership.allRooms.filter(
+        (revision) =>
+          revision.membershipForUser(change.userID)?.membership ===
+          Membership.Ban
+      );
+    if (rulesMatchingUser.length === 0 && roomsBannedFrom.length === 0) {
       return; // user is already unbanned.
     }
     const addRule = (
@@ -339,7 +390,8 @@ export class BanPropagationProtection
           matches: rules,
           profile: info.watchedListProfile,
         };
-      })
+      }),
+      roomsBannedFrom.map((revision) => revision.room)
     );
   }
 
