@@ -471,6 +471,12 @@ function renderProtectionsSummary(
 ): DocumentNode {
   return (
     <fragment>
+      To show details about a specific protection, use{" "}
+      <code>
+        !draupnir protections show {"<"}protection name{">"}
+      </code>{" "}
+      command.
+      <br />
       Available protections:
       <ul>
         {protectionsSummary.map((summary) => (
