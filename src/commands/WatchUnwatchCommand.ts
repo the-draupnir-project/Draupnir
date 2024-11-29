@@ -19,7 +19,7 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
+import { Result, ResultError } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
 import {
   DraupnirContextToCommandContextTranslator,
@@ -48,6 +48,14 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
     const policyRoom = await roomResolver.resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
+    }
+    if (
+      issuerManager.allWatchedLists.some(
+        (profile) =>
+          profile.room.toRoomIDOrAlias() === policyRoom.ok.toRoomIDOrAlias()
+      )
+    ) {
+      return ResultError.Result("We are already watching this list.");
     }
     return await issuerManager.watchList(
       PropagationType.Direct,
