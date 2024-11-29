@@ -13,6 +13,7 @@ import {
   PolicyListConfig,
   PropagationType,
   RoomResolver,
+  isError,
   isOk,
 } from "matrix-protection-suite";
 import { createMock } from "ts-auto-mock";
@@ -49,6 +50,20 @@ describe("Test the WatchUnwatchCommmands", function () {
       policyRoom
     );
     expect(isOk(result)).toBe(true);
+  });
+  it("Draupnir watch command should return an error if the room is already being watched", async function () {
+    const issuerManagerWithWatchedList = createMock<PolicyListConfig>({
+      allWatchedLists: [
+        { room: policyRoom, propagation: PropagationType.Direct, options: {} },
+      ],
+    });
+    const result = await CommandExecutorHelper.execute(
+      DraupnirWatchPolicyRoomCommand,
+      { issuerManager: issuerManagerWithWatchedList, roomResolver },
+      {},
+      policyRoom
+    );
+    expect(isError(result)).toBe(true);
   });
   it("DraupnirUnwatchCommand", async function () {
     const result = await CommandExecutorHelper.execute(
