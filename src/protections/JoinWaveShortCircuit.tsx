@@ -92,12 +92,10 @@ export class JoinWaveShortCircuitProtection
   implements DraupnirProtection<JoinWaveShortCircuitProtectionDescription>
 {
   private joinBuckets: {
-    [roomID: StringRoomID]:
-      | {
-          lastBucketStart: Date;
-          numberOfJoins: number;
-        }
-      | undefined;
+    [roomID: StringRoomID]: {
+      lastBucketStart: Date;
+      numberOfJoins: number;
+    };
   } = {};
 
   constructor(
@@ -131,23 +129,21 @@ export class JoinWaveShortCircuitProtection
     if (change.membershipChangeType !== MembershipChangeType.Joined) {
       return;
     }
-
-    // If either the roomId bucket didn't exist, or the bucket has expired, create a new one
-    if (
-      !this.joinBuckets[roomID] ||
-      this.hasExpired(this.joinBuckets[roomID].lastBucketStart)
-    ) {
-      this.joinBuckets[roomID] = {
+    const roomBucket =
+      this.joinBuckets[roomID] ??
+      ((bucket) => ((this.joinBuckets[roomID] = bucket), bucket))({
         lastBucketStart: new Date(),
         numberOfJoins: 0,
-      };
+      });
+    if (this.hasExpired(roomBucket.lastBucketStart)) {
+      roomBucket.lastBucketStart = new Date();
+      roomBucket.numberOfJoins = 0;
     }
-
-    if (++this.joinBuckets[roomID].numberOfJoins >= this.settings.maxPer) {
+    if (++roomBucket.numberOfJoins >= this.settings.maxPer) {
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.WARN,
         "JoinWaveShortCircuit",
-        `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes (since ${this.joinBuckets[roomID].lastBucketStart.toString()})`,
+        `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes (since ${roomBucket.lastBucketStart.toString()})`,
         roomID
       );
 
