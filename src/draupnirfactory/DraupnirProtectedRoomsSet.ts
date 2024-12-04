@@ -136,7 +136,16 @@ async function makeProtectionsManager(
   return Ok(
     new StandardProtectionsManager(
       protectionsConfigResult.ok,
-      new StandardProtectionCapabilityProviderSetConfig(),
+      new StandardProtectionCapabilityProviderSetConfig((description) =>
+        Ok(
+          new BotSDKRoomStateConfigBackend(
+            client,
+            managementRoom.toRoomIDOrAlias(),
+            "me.marewolf.draupnir.set_capability_provider",
+            description.name
+          )
+        )
+      ),
       new MjolnirProtectionSettingsConfig((description) =>
         Ok(
           new BotSDKRoomStateConfigBackend(

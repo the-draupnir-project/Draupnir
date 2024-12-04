@@ -50,6 +50,7 @@ import {
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import { DraupnirSafeModeCommand } from "./SafeModeCommand";
 import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
+import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
@@ -67,6 +68,10 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirImportCommand, ["import"])
   .internCommand(DraupnirKickCommand, ["kick"])
   .internCommand(DraupnirListProtectionsCommand, ["protections"])
+  .internCommand(DraupnirProtectionsCapabilityCommand, [
+    "protections",
+    "capability",
+  ])
   .internCommand(DraupnirProtectionsEnableCommand, ["protections", "enable"])
   .internCommand(DraupnirProtectionsDisableCommand, ["protections", "disable"])
   .internCommand(DraupnirProtectionsConfigAddCommand, [
