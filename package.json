@@ -80,7 +80,7 @@
   },
   "overrides": {
     "matrix-bot-sdk": "$@vector-im/matrix-bot-sdk",
-    "@vector-im/matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.6.6-element.1"
+    "@vector-im/matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.7.1-element.6"
   },
   "engines": {
     "node": ">=20.0.0"
