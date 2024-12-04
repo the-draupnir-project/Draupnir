@@ -36,8 +36,16 @@ const DEFAULT_TIMESCALE_MINUTES = 60;
 const ONE_MINUTE = 60_000; // 1min in ms
 
 const JoinWaveShortCircuitProtectionSettings = Type.Object({
-  maxPer: Type.Integer({ default: DEFAULT_MAX_PER_TIMESCALE }),
-  timescaleMinutes: Type.Integer({ default: DEFAULT_TIMESCALE_MINUTES }),
+  maxPer: Type.Integer({
+    default: DEFAULT_MAX_PER_TIMESCALE,
+    description:
+      "The maximum number of users that can join a room in the timescaleMinutes timescale before the room is set to invite-only.",
+  }),
+  timescaleMinutes: Type.Integer({
+    default: DEFAULT_TIMESCALE_MINUTES,
+    description:
+      "The timescale in minutes over which the maxPer users can join before the room is set to invite-only.",
+  }),
 });
 
 type JoinWaveShortCircuitProtectionSettings = EDStatic<
@@ -60,7 +68,7 @@ describeProtection<
 >({
   name: "JoinWaveShortCircuitProtection",
   description:
-    "If X amount of users join in Y time, set the room to invite-only.",
+    "If a wave of users join in a given time frame, then the protection can set the room to invite-only.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
   configSchema: JoinWaveShortCircuitProtectionSettings,
