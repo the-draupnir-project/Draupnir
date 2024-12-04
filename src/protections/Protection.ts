@@ -8,7 +8,10 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import { CommandTable } from "@the-draupnir-project/interface-manager";
 import { Protection } from "matrix-protection-suite";
 
 export interface DraupnirProtection<TProtectionDescription>
-  extends Protection<TProtectionDescription> {}
+  extends Protection<TProtectionDescription> {
+  commandTable?: CommandTable;
+}

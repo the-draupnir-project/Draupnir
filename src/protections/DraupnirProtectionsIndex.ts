@@ -24,3 +24,16 @@ import "./WordList";
 
 // import capability renderers and glue too.
 import "../capabilities/capabilityIndex";
+import { DraupnirTopLevelCommands } from "../commands/DraupnirCommandTable";
+import { getAllProtections } from "matrix-protection-suite";
+import { CommandTable } from "@the-draupnir-project/interface-manager";
+
+// now add commands mare
+for (const protection of getAllProtections()) {
+  if ("commandTable" in protection && protection.commandTable !== undefined) {
+    DraupnirTopLevelCommands.importTable(
+      protection.commandTable as CommandTable,
+      []
+    );
+  }
+}
