@@ -13,6 +13,7 @@ import {
   ActionResult,
   CapabilitySet,
   EDStatic,
+  JoinRulesEvent,
   Logger,
   MembershipChange,
   MembershipChangeType,
@@ -26,8 +27,21 @@ import {
 import { LogLevel } from "matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 import { Type } from "@sinclair/typebox";
+import {
+  DeadDocumentJSX,
+  StandardCommandTable,
+  describeCommand,
+  tuple,
+} from "@the-draupnir-project/interface-manager";
+import { Result } from "@gnuxie/typescript-result";
+import { DraupnirInterfaceAdaptor } from "../commands/DraupnirCommandPrerequisites";
+import { LazyLeakyBucket, LeakyBucket } from "../queues/LeakyBucket";
+import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
 const log = new Logger("JoinWaveShortCircuitProtection");
 
@@ -36,8 +50,16 @@ const DEFAULT_TIMESCALE_MINUTES = 60;
 const ONE_MINUTE = 60_000; // 1min in ms
 
 const JoinWaveShortCircuitProtectionSettings = Type.Object({
-  maxPer: Type.Integer({ default: DEFAULT_MAX_PER_TIMESCALE }),
-  timescaleMinutes: Type.Integer({ default: DEFAULT_TIMESCALE_MINUTES }),
+  maxPer: Type.Integer({
+    default: DEFAULT_MAX_PER_TIMESCALE,
+    description:
+      "The maximum number of users that can join a room in the timescaleMinutes timescale before the room is set to invite-only.",
+  }),
+  timescaleMinutes: Type.Integer({
+    default: DEFAULT_TIMESCALE_MINUTES,
+    description:
+      "The timescale in minutes over which the maxPer users can join before the room is set to invite-only.",
+  }),
 });
 
 type JoinWaveShortCircuitProtectionSettings = EDStatic<
@@ -53,6 +75,10 @@ type JoinWaveShortCircuitProtectionDescription = ProtectionDescription<
   JoinWaveShortCircuitProtectionCapabilities
 >;
 
+export const JoinWaveCommandTable = new StandardCommandTable(
+  "JoinWaveShortCircuitProtection"
+);
+
 describeProtection<
   JoinWaveShortCircuitProtectionCapabilities,
   Draupnir,
@@ -60,7 +86,7 @@ describeProtection<
 >({
   name: "JoinWaveShortCircuitProtection",
   description:
-    "If X amount of users join in Y time, set the room to invite-only.",
+    "If a wave of users join in a given time frame, then the protection can set the room to invite-only.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
   configSchema: JoinWaveShortCircuitProtectionSettings,
@@ -91,14 +117,7 @@ export class JoinWaveShortCircuitProtection
   extends AbstractProtection<JoinWaveShortCircuitProtectionDescription>
   implements DraupnirProtection<JoinWaveShortCircuitProtectionDescription>
 {
-  private joinBuckets: {
-    [roomID: StringRoomID]:
-      | {
-          lastBucketStart: Date;
-          numberOfJoins: number;
-        }
-      | undefined;
-  } = {};
+  public joinBuckets: LeakyBucket<StringRoomID>;
 
   constructor(
     description: JoinWaveShortCircuitProtectionDescription,
@@ -110,6 +129,10 @@ export class JoinWaveShortCircuitProtection
     super(description, capabilities, protectedRoomsSet, {
       requiredStatePermissions: ["m.room.join_rules"],
     });
+    this.joinBuckets = new LazyLeakyBucket(
+      this.settings.maxPer,
+      this.timescaleMilliseconds()
+    );
   }
   public async handleMembershipChange(
     revision: RoomMembershipRevision,
@@ -131,23 +154,29 @@ export class JoinWaveShortCircuitProtection
     if (change.membershipChangeType !== MembershipChangeType.Joined) {
       return;
     }
-
-    // If either the roomId bucket didn't exist, or the bucket has expired, create a new one
-    if (
-      !this.joinBuckets[roomID] ||
-      this.hasExpired(this.joinBuckets[roomID].lastBucketStart)
-    ) {
-      this.joinBuckets[roomID] = {
-        lastBucketStart: new Date(),
-        numberOfJoins: 0,
-      };
-    }
-
-    if (++this.joinBuckets[roomID].numberOfJoins >= this.settings.maxPer) {
+    const numberOfJoins = this.joinBuckets.addToken(roomID);
+    if (numberOfJoins >= this.settings.maxPer) {
+      // we should check that we haven't already set the room to invite only
+      const revision = this.protectedRoomsSet.setRoomState.getRevision(roomID);
+      if (revision === undefined) {
+        throw new TypeError(
+          `Shouldn't be possible to not have the room state revision for a protected room yet`
+        );
+      }
+      const joinRules = revision.getStateEvent<JoinRulesEvent>(
+        "m.room.join_rules",
+        ""
+      );
+      if ((joinRules?.content.join_rule ?? "public") !== "public") {
+        log.info(
+          `Room ${roomID} is already invite-only, not changing join rules`
+        );
+        return;
+      }
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.WARN,
         "JoinWaveShortCircuit",
-        `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes (since ${this.joinBuckets[roomID].lastBucketStart.toString()})`,
+        `Setting ${roomID} to invite-only as more than ${this.settings.maxPer} users have joined over the last ${this.settings.timescaleMinutes} minutes.`,
         roomID
       );
 
@@ -169,47 +198,63 @@ export class JoinWaveShortCircuitProtection
     }
   }
 
-  private hasExpired(at: Date): boolean {
-    return new Date().getTime() - at.getTime() > this.timescaleMilliseconds();
-  }
-
   private timescaleMilliseconds(): number {
     return this.settings.timescaleMinutes * ONE_MINUTE;
   }
-
-  /**
-     * Yeah i know this is evil but
-     * We need to figure this out once we allow protections to have their own
-     * command tables somehow.
-     * which will probably entail doing the symbol case hacks from Utena for camel case etc.
-    public async status(keywords, subcommands): Promise<DocumentNode> {
-        const withExpired = subcommand.includes("withExpired");
-        const withStart = subcommand.includes("withStart");
-
-        let html = `<b>Short Circuit join buckets (max ${this.settings.maxPer.value} per ${this.settings.timescaleMinutes.value} minutes}):</b><br/><ul>`;
-        let text = `Short Circuit join buckets (max ${this.settings.maxPer.value} per ${this.settings.timescaleMinutes.value} minutes):\n`;
-
-        for (const roomId of Object.keys(this.joinBuckets)) {
-            const bucket = this.joinBuckets[roomId];
-            const isExpired = this.hasExpired(bucket.lastBucketStart);
-
-            if (isExpired && !withExpired) {
-                continue;
-            }
-
-            const startText = withStart ? ` (since ${bucket.lastBucketStart})` : "";
-            const expiredText = isExpired ? ` (bucket expired since ${new Date(bucket.lastBucketStart.getTime() + this.timescaleMilliseconds())})` : "";
-
-            html += `<li><a href="https://matrix.to/#/${roomId}">${roomId}</a>: ${bucket.numberOfJoins} joins${startText}${expiredText}.</li>`;
-            text += `* ${roomId}: ${bucket.numberOfJoins} joins${startText}${expiredText}.\n`;
-        }
-
-        html += "</ul>";
-
-        return {
-            html,
-            text,
-        }
-    }
-    */
 }
+
+const JoinWaveStatusCommand = describeCommand({
+  summary: "Show the current status of the JoinWaveShortCircuitProtection",
+  parameters: tuple(),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest
+  ): Promise<Result<JoinWaveShortCircuitProtection | undefined>> {
+    return Ok(
+      draupnir.protectedRoomsSet.protections.findEnabledProtection(
+        JoinWaveShortCircuitProtection.name
+      ) as JoinWaveShortCircuitProtection | undefined
+    );
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(JoinWaveStatusCommand, {
+  JSXRenderer(result) {
+    if (isError(result)) {
+      return Ok(undefined);
+    }
+    if (result.ok === undefined) {
+      return Ok(
+        <root>The JoinWaveShortCircuitProtection has not been enabled.</root>
+      );
+    }
+    const joinBuckets = result.ok.joinBuckets.getAllTokens();
+    return Ok(
+      <root>
+        <b>
+          Recent room joins (max {result.ok.settings.maxPer} per{" "}
+          {result.ok.settings.timescaleMinutes} minutes):
+        </b>
+        {joinBuckets.size === 0 ? (
+          <p>No rooms have had join events since the protection was enabled.</p>
+        ) : (
+          <fragment></fragment>
+        )}
+        <ul>
+          {[...joinBuckets.entries()].map(([roomID, joinCount]) => {
+            return (
+              <li>
+                {renderRoomPill(MatrixRoomReference.fromRoomID(roomID, []))}{" "}
+                {joinCount} joins.
+              </li>
+            );
+          })}
+        </ul>
+      </root>
+    );
+  },
+});
+
+JoinWaveCommandTable.internCommand(JoinWaveStatusCommand, ["status"]);

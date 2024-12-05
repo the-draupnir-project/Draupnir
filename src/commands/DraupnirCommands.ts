@@ -51,6 +51,7 @@ import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import { DraupnirSafeModeCommand } from "./SafeModeCommand";
 import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
+import { JoinWaveCommandTable } from "../protections/JoinWaveShortCircuit";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
@@ -107,3 +108,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
 
 DraupnirCommands.importTable(SynapseAdminCommands, []);
 DraupnirTopLevelCommands.importTable(DraupnirCommands, ["draupnir"]);
+DraupnirTopLevelCommands.importTable(JoinWaveCommandTable, [
+  "draupnir",
+  "joinwave",
+]);
