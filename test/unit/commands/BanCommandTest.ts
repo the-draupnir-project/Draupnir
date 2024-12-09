@@ -7,6 +7,7 @@ import {
   MatrixRoomIDPresentationType,
   MatrixUserIDPresentationType,
   PromptRequiredError,
+  StandardCommandTable,
 } from "@the-draupnir-project/interface-manager";
 import {
   MatrixRoomID,
@@ -29,6 +30,7 @@ import { createMock } from "ts-auto-mock";
 import expect from "expect";
 import { DraupnirBanCommand } from "../../../src/commands/Ban";
 
+const dummyTable = new StandardCommandTable("test");
 const DraupnirUserID = `@draupnir:ourserver.example.com` as StringUserID;
 
 async function createProtectedRooms() {
@@ -72,6 +74,7 @@ describe("Test the DraupnirBanCommand", function () {
     const { protectedRoomsSet, policyRoomManager } =
       await createProtectedRooms();
     const banResult = await CommandExecutorHelper.parseAndInvoke(
+      dummyTable,
       DraupnirBanCommand,
       {
         policyRoomManager,
@@ -104,6 +107,7 @@ describe("Test the DraupnirBanCommand", function () {
       );
     }
     const banResult = await CommandExecutorHelper.parseAndInvoke(
+      dummyTable,
       DraupnirBanCommand,
       {
         policyRoomManager,
