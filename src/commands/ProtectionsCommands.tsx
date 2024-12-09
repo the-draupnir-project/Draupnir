@@ -169,8 +169,7 @@ export const DraupnirProtectionsConfigSetCommand = describeCommand({
     const details = detailsResult.ok;
     const newSettings = details.description
       .toMirror()
-      // we have to reserialize or present the argument or we'll be SOL.
-      .setSerializedValue(details.previousSettings, settingName, String(value));
+      .setValue(details.previousSettings, settingName, value);
     if (isError(newSettings)) {
       return newSettings;
     }

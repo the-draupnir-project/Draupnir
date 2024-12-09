@@ -7,8 +7,20 @@
 // https://github.com/the-draupnir-project/Draupnir
 // </text>
 
-import { StandardCommandTable } from "@the-draupnir-project/interface-manager";
+import {
+  StandardCommandTable,
+  StringFromMatrixEventReferenceTranslator,
+  StringFromMatrixRoomAliasTranslator,
+  StringFromMatrixRoomIDTranslator,
+  StringFromMatrixUserIDTranslator,
+  StringFromNumberTranslator,
+} from "@the-draupnir-project/interface-manager";
 
 export const DraupnirTopLevelCommands = new StandardCommandTable(
   "draupnir top level"
-);
+)
+  .internPresentationTypeTranslator(StringFromNumberTranslator)
+  .internPresentationTypeTranslator(StringFromMatrixRoomIDTranslator)
+  .internPresentationTypeTranslator(StringFromMatrixRoomAliasTranslator)
+  .internPresentationTypeTranslator(StringFromMatrixUserIDTranslator)
+  .internPresentationTypeTranslator(StringFromMatrixEventReferenceTranslator);
