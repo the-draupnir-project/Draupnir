@@ -39,9 +39,12 @@ const log = new Logger("BasicFloodingProtection");
 export const DEFAULT_MAX_PER_MINUTE = 10;
 const TIMESTAMP_THRESHOLD = 30000; // 30s out of phase
 
-const BasicFloodingProtectionSettings = Type.Object({
-  maxPerMinute: Type.Integer({ default: DEFAULT_MAX_PER_MINUTE }),
-});
+const BasicFloodingProtectionSettings = Type.Object(
+  {
+    maxPerMinute: Type.Integer({ default: DEFAULT_MAX_PER_MINUTE }),
+  },
+  { title: "BasicFloodingProtectionSettings" }
+);
 type BasicFloodingProtectionSettings = EDStatic<
   typeof BasicFloodingProtectionSettings
 >;
