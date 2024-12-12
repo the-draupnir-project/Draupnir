@@ -32,28 +32,31 @@ import { Type } from "@sinclair/typebox";
 
 const MAX_REPORTED_EVENT_BACKLOG = 20;
 
-const TrustedReportersProtectionSettings = Type.Object({
-  mxids: Type.Array(StringUserIDSchema, {
-    default: [],
-    uniqueItems: true,
-    description: "The users who are marked as trusted reporters.",
-  }),
-  alertThreshold: Type.Integer({
-    default: 3,
-    description:
-      "The number of reports from trusted reporters required before sending an alert to the management room.",
-  }),
-  redactThreshold: Type.Integer({
-    default: -1,
-    description:
-      "The number of reports from trusted reporters required before the relevant event is redacted.",
-  }),
-  banThreshold: Type.Integer({
-    default: -1,
-    description:
-      "The number of reports from trusted reporters required before the reported user banned.",
-  }),
-});
+const TrustedReportersProtectionSettings = Type.Object(
+  {
+    mxids: Type.Array(StringUserIDSchema, {
+      default: [],
+      uniqueItems: true,
+      description: "The users who are marked as trusted reporters.",
+    }),
+    alertThreshold: Type.Integer({
+      default: 3,
+      description:
+        "The number of reports from trusted reporters required before sending an alert to the management room.",
+    }),
+    redactThreshold: Type.Integer({
+      default: -1,
+      description:
+        "The number of reports from trusted reporters required before the relevant event is redacted.",
+    }),
+    banThreshold: Type.Integer({
+      default: -1,
+      description:
+        "The number of reports from trusted reporters required before the reported user banned.",
+    }),
+  },
+  { title: "TrustedReportersProtectionSettings" }
+);
 
 type TrustedReportersProtectionSettings = EDStatic<
   typeof TrustedReportersProtectionSettings
