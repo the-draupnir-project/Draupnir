@@ -163,14 +163,12 @@ function formattedArgumentHint(error: ArgumentParseError): string {
     error.partialCommand.stream.getPosition()
   );
   let commandContext = "Command context:";
-  for (const designator of error.partialCommand.designator) {
-    commandContext += ` ${designator}`;
-  }
   for (const argument of argumentsUpToError) {
-    commandContext += ` ${JSON.stringify(argument)}`;
+    commandContext += ` ${TextPresentationRenderer.render(argument)}`;
   }
-  const badArgument = ` ${TextPresentationRenderer.render(error.partialCommand.stream.peekItem())}\n${Array(commandContext.length + 1).join(" ")} ^ expected ${printPresentationSchema(error.parameter.acceptor)} here`;
-  return commandContext + badArgument;
+  const badArgument = error.partialCommand.stream.peekItem();
+  const badArgumentHint = ` ${badArgument === undefined ? "undefined" : TextPresentationRenderer.render(badArgument)}\n${Array(commandContext.length + 1).join(" ")} ^ expected ${printPresentationSchema(error.parameter.acceptor)} here`;
+  return commandContext + badArgumentHint;
 }
 
 export async function reactToEventWithResult(
