@@ -14,6 +14,53 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.0.0-beta.9] 2024-12-14
+
+### Fixed
+
+- The `!draupnir protections config <protection> <set/add/remove> <value>`
+  commands are now working again. A tutorial has been written explaining how to
+  use these commands
+  https://the-draupnir-project.github.io/draupnir-documentation/protections/configuring-protections.
+  Reviewed by @FSG-Cat.
+
+- The `BanPropagationProtection` now shows a prompt for all unbans, even when
+  there is no matching rule. This is to make it easier to unban a user from all
+  the rooms draupnir is protecting, and not just when removing policy rules.
+  Reported by @mahdi1234 in
+  https://github.com/the-draupnir-project/Draupnir/issues/622.
+
+- The `JoinWaveShortCircuitProtection` has been improved:
+
+  - The `JoinWaveShortCircuitProtection` now uses a leaky bucket token
+    algorithm, prior to this the entire bucket got dumped after a preconfigured
+    time.
+  - The status command for the protection has returned and will show how full
+    each bucket is.
+
+- A bug where providing a bad or missing argument could render the help hint
+  poorly or crash draupnir has been fixed.
+  https://github.com/the-draupnir-project/Draupnir/issues/642.
+
+### Added
+
+- A new `!draupnir protections show <protection>` command that can display all
+  of the settings and capability providers for a protection.
+
+- A new command
+  `!draupnir protections capability <capability name> <provider name>` to
+  configure a protection's active capabilitity providers. This is experimental
+  and is intended to be used in conjunction with the
+  `!draupnir protections show <protection>` command. It's not clear whether we
+  will demonstrate protection capabilities before or after the upcoming `2.0.0`
+  release.
+
+### Special thanks
+
+Special thanks to @TheArcaneBrony, @ll-SKY-ll, @MTRNord, and @daedric7 for
+providing support to myself and others in
+[#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org).
+
 ## [v2.0.0-beta.8] - 2024-10-22
 
 ### Changed
