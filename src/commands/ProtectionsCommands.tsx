@@ -428,6 +428,20 @@ interface ProtectionsSummary {
   readonly protection?: Protection<ProtectionDescription>;
 }
 
+function sortProtectionsListByEnabledAndAlphanumerical(
+  summaries: ProtectionsSummary[]
+): ProtectionsSummary[] {
+  return summaries.sort((a, b) => {
+    if (a.isEnabled && !b.isEnabled) {
+      return -1;
+    }
+    if (!a.isEnabled && b.isEnabled) {
+      return 1;
+    }
+    return a.description.name.localeCompare(b.description.name);
+  });
+}
+
 export const DraupnirListProtectionsCommand = describeCommand({
   summary: "List all available protections.",
   parameters: [],
@@ -452,7 +466,7 @@ export const DraupnirListProtectionsCommand = describeCommand({
         });
       }
     }
-    return Ok(summaries);
+    return Ok(sortProtectionsListByEnabledAndAlphanumerical(summaries));
   },
 });
 
