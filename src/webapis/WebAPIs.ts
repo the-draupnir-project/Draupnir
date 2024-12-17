@@ -16,6 +16,8 @@ import { IConfig } from "../config";
 import {
   StringRoomID,
   StringEventID,
+  isStringRoomID,
+  isStringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { Logger, Task } from "matrix-protection-suite";
 
@@ -87,12 +89,24 @@ export class WebAPIs {
             "X-Requested-With, Content-Type, Authorization, Date"
           );
           response.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+          const roomID = request.params.room_id;
+          const eventID = request.params.event_id;
+          if (!isStringRoomID(roomID)) {
+            throw new TypeError(
+              `Invalid roomID provided when processing a report, check your webproxy: ${roomID}`
+            );
+          }
+          if (!isStringEventID(eventID)) {
+            throw new TypeError(
+              `Invalid eventID provided when processing a report, check your webproxy: ${eventID}`
+            );
+          }
           void Task(
             this.handleReport({
               request,
               response,
-              roomID: request.params.room_id as StringRoomID,
-              eventID: request.params.event_id as StringEventID,
+              roomID,
+              eventID,
             })
           );
         }
