@@ -261,7 +261,7 @@ export class WebAPIs {
       // Match the spec behavior of `/report`: return 200 and an empty JSON.
       response.status(200).json({});
     } catch (ex) {
-      log.warn("Error responding to an abuse report", roomID, eventID, ex);
+      log.error("Error responding to an abuse report", roomID, eventID, ex);
       response.status(503);
     }
   }
