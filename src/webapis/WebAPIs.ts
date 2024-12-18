@@ -92,14 +92,22 @@ export class WebAPIs {
           const roomID = request.params.room_id;
           const eventID = request.params.event_id;
           if (!isStringRoomID(roomID)) {
-            throw new TypeError(
+            log.error(
               `Invalid roomID provided when processing a report, check your webproxy: ${roomID}`
             );
+            response
+              .status(400)
+              .send({ errcode: "M_INVALID_PARAM", error: "Invalid room ID" });
+            return;
           }
           if (!isStringEventID(eventID)) {
-            throw new TypeError(
+            log.error(
               `Invalid eventID provided when processing a report, check your webproxy: ${eventID}`
             );
+            response
+              .status(400)
+              .send({ errcode: "M_INVALID_PARAM", error: "Invalid event ID" });
+            return;
           }
           void Task(
             this.handleReport({
