@@ -155,7 +155,7 @@ export const DraupnirBanCommand = describeCommand({
         return resolvedRoomReference;
       }
       return await policyListEditor.banEntity(
-        PolicyRuleType.Server,
+        PolicyRuleType.Room,
         resolvedRoomReference.ok.toRoomIDOrAlias(),
         reason
       );
