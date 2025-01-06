@@ -159,7 +159,7 @@ export const DraupnirKickCommand = describeCommand({
       for (const member of revision.members()) {
         if (
           kickRule.test(member.userID) &&
-          ["join", "invite"].includes(member.membership)
+          ["invite", "join", "knock"].includes(member.membership)
         ) {
           addUserToKick(
             usersToKick,
