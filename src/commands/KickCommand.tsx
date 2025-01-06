@@ -16,6 +16,7 @@ import {
   RoomResolver,
   SetRoomMembership,
   isError,
+  Membership,
 } from "matrix-protection-suite";
 import {
   StringUserID,
@@ -157,31 +158,26 @@ export const DraupnirKickCommand = describeCommand({
     const usersToKick: UsersToKick = new Map();
     for (const revision of roomsToKickWithin) {
       for (const member of revision.members()) {
-        switch (member.membership)
+        switch (member.membership) {
           case Membership.Join:
           case Membership.Invite:
           case Membership.Knock: {
-            if (kickRule.test(membership.userID)) {
+            if (kickRule.test(member.userID)) {
               addUserToKick(
                 usersToKick,
                 revision.room.toRoomIDOrAlias(),
                 member.userID
               );
+              if (!isDryRun) {
+                taskQueue.push(() => {
+                  return roomKicker.kickUser(
+                    revision.room.toRoomIDOrAlias(),
+                    member.userID,
+                    reason
+                  );
+                });
+              }
             }
-          }
-          addUserToKick(
-            usersToKick,
-            revision.room.toRoomIDOrAlias(),
-            member.userID
-          );
-          if (!isDryRun) {
-            taskQueue.push(() => {
-              return roomKicker.kickUser(
-                revision.room.toRoomIDOrAlias(),
-                member.userID,
-                reason
-              );
-            });
           }
         }
       }
