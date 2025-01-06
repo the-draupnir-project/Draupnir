@@ -132,13 +132,6 @@ export const DraupnirUnbanCommand = describeCommand({
       },
     }
   ),
-  keywords: {
-    keywordDescriptions: {
-      true: {
-        isFlag: true,
-      },
-    },
-  },
   async executor(
     context: DraupnirUnbanCommandContext,
     _info,
@@ -153,7 +146,6 @@ export const DraupnirUnbanCommand = describeCommand({
       issuerManager,
       clientUserID,
       unlistedUserRedactionQueue,
-      managementRoomOutput,
     } = context;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
@@ -200,24 +192,11 @@ export const DraupnirUnbanCommand = describeCommand({
     }
     if (typeof entity === "string" || entity instanceof MatrixUserID) {
       const rawEnttiy = typeof entity === "string" ? entity : entity.toString();
-      const isGlob = (string: string) =>
-        string.includes("*") ? true : string.includes("?");
       const rule = new MatrixGlob(entity.toString());
       if (isStringUserID(rawEnttiy)) {
         unlistedUserRedactionQueue.removeUser(rawEnttiy);
       }
-      if (
-        !isGlob(rawEnttiy) ||
-        keywords.getKeywordValue<boolean>("true", false)
-      ) {
-        await unbanUserFromRooms(context, rule);
-      } else {
-        await managementRoomOutput.logMessage(
-          LogLevel.WARN,
-          "Unban",
-          "Running unban without `unban <list> <user> true` will not override existing room level bans"
-        );
-      }
+      await unbanUserFromRooms(context, rule);
     }
     return Ok(undefined);
   },
