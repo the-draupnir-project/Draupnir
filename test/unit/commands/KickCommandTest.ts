@@ -81,7 +81,7 @@ describe("Test the KickCommand", function () {
       DraupnirKickCommand,
       {
         taskQueue,
-        setMembership: protectedRoomsSet.setMembership,
+        setMembership: protectedRoomsSet.setRoomMembership,
         roomKicker,
         roomResolver,
         noop: false,
@@ -103,7 +103,7 @@ describe("Test the KickCommand", function () {
       DraupnirKickCommand,
       {
         taskQueue,
-        setMembership: protectedRoomsSet.setMembership,
+        setMembership: protectedRoomsSet.setRoomMembership,
         roomKicker: createMock<RoomKicker>(),
         roomResolver,
         noop: false,
@@ -132,7 +132,7 @@ describe("Test the KickCommand", function () {
       DraupnirKickCommand,
       {
         taskQueue,
-        setMembership: protectedRoomsSet.setMembership,
+        setMembership: protectedRoomsSet.setRoomMembership,
         roomKicker,
         roomResolver,
         noop: false,

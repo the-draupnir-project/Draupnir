@@ -14,7 +14,7 @@ import {
   Ok,
   RoomKicker,
   RoomResolver,
-  SetMembership,
+  SetRoomMembership,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -78,7 +78,7 @@ function renderUsersToKick(usersToKick: UsersToKick): DocumentNode {
 export type DraupnirKickCommandContext = {
   roomKicker: RoomKicker;
   roomResolver: RoomResolver;
-  setMembership: SetMembership;
+  setMembership: SetRoomMembership;
   taskQueue: ThrottlingQueue;
   noop: boolean;
 };
@@ -185,7 +185,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
     return {
       roomKicker: draupnir.clientPlatform.toRoomKicker(),
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
-      setMembership: draupnir.protectedRoomsSet.setMembership,
+      setMembership: draupnir.protectedRoomsSet.setRoomMembership,
       taskQueue: draupnir.taskQueue,
       noop: draupnir.config.noop,
     };

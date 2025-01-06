@@ -348,7 +348,7 @@ export class BanPropagationProtection
       draupnir.policyRoomManager
     );
     const roomsBannedFrom =
-      this.protectedRoomsSet.setMembership.allRooms.filter(
+      this.protectedRoomsSet.setRoomMembership.allRooms.filter(
         (revision) =>
           revision.membershipForUser(change.userID)?.membership ===
           Membership.Ban

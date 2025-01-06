@@ -16,7 +16,7 @@ import {
   PolicyRuleType,
   RoomResolver,
   RoomUnbanner,
-  SetMembership,
+  SetRoomMembership,
 } from "matrix-protection-suite";
 import { LogLevel } from "matrix-bot-sdk";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
@@ -93,7 +93,7 @@ export type DraupnirUnbanCommandContext = {
   issuerManager: PolicyListConfig;
   roomResolver: RoomResolver;
   clientUserID: StringUserID;
-  setMembership: SetMembership;
+  setMembership: SetRoomMembership;
   managementRoomOutput: ManagementRoomOutput;
   noop: boolean;
   roomUnbanner: RoomUnbanner;
@@ -231,7 +231,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       issuerManager: draupnir.protectedRoomsSet.issuerManager,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
       clientUserID: draupnir.clientUserID,
-      setMembership: draupnir.protectedRoomsSet.setMembership,
+      setMembership: draupnir.protectedRoomsSet.setRoomMembership,
       managementRoomOutput: draupnir.managementRoomOutput,
       noop: draupnir.config.noop,
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
