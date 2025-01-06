@@ -157,7 +157,7 @@ export const DraupnirKickCommand = describeCommand({
     const usersToKick: UsersToKick = new Map();
     for (const revision of roomsToKickWithin) {
       for (const member of revision.members()) {
-        if (kickRule.test(member.userID)) {
+        if (kickRule.test(member.userID) && member.membership === "join") {
           addUserToKick(
             usersToKick,
             revision.room.toRoomIDOrAlias(),
