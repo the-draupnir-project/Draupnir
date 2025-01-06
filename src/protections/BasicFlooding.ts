@@ -168,6 +168,11 @@ export class BasicFloodingProtection
     room: MatrixRoomID,
     event: RoomEvent
   ): Promise<ActionResult<void>> {
+    // If the sender is draupnir, ignore the message
+    if (event["sender"] === this.draupnir.clientUserID) {
+      log.info(`Ignoring message from self: ${event.event_id}`);
+      return Ok(undefined);
+    }
     const forUser = lastEventsForUser(
       this.lastEvents,
       event.room_id,
