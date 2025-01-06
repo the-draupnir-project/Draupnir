@@ -150,6 +150,12 @@ export class WordListProtection
         event.content["body"];
       const roomID = room.toRoomIDOrAlias();
 
+      // If the sender is draupnir, ignore the message
+      if (event["sender"] === this.draupnir.clientUserID) {
+        log.info(`Ignoring message from self: ${event.event_id}`);
+        return Ok(undefined);
+      }
+
       // Check conditions first
       if (minsBeforeTrusting > 0) {
         const roomEntry = this.justJoined.get(roomID);
