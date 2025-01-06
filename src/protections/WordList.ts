@@ -138,6 +138,11 @@ export class WordListProtection
     room: MatrixRoomID,
     event: RoomEvent
   ): Promise<ActionResult<void>> {
+    // If the sender is draupnir, ignore the message
+    if (event["sender"] === this.draupnir.clientUserID) {
+      log.info(`Ignoring message from self: ${event.event_id}`);
+      return Ok(undefined);
+    }
     const minsBeforeTrusting =
       this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
     if (Value.Check(RoomMessage, event)) {
@@ -149,12 +154,6 @@ export class WordListProtection
           event.content["formatted_body"]) ||
         event.content["body"];
       const roomID = room.toRoomIDOrAlias();
-
-      // If the sender is draupnir, ignore the message
-      if (event["sender"] === this.draupnir.clientUserID) {
-        log.info(`Ignoring message from self: ${event.event_id}`);
-        return Ok(undefined);
-      }
 
       // Check conditions first
       if (minsBeforeTrusting > 0) {
