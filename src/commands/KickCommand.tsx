@@ -157,10 +157,18 @@ export const DraupnirKickCommand = describeCommand({
     const usersToKick: UsersToKick = new Map();
     for (const revision of roomsToKickWithin) {
       for (const member of revision.members()) {
-        if (
-          kickRule.test(member.userID) &&
-          ["invite", "join", "knock"].includes(member.membership)
-        ) {
+        switch (member.membership)
+          case Membership.Join:
+          case Membership.Invite:
+          case Membership.Knock: {
+            if (kickRule.test(membership.userID)) {
+              addUserToKick(
+                usersToKick,
+                revision.room.toRoomIDOrAlias(),
+                member.userID
+              );
+            }
+          }
           addUserToKick(
             usersToKick,
             revision.room.toRoomIDOrAlias(),
