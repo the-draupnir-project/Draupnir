@@ -13,11 +13,11 @@ import {
   Capability,
   DescriptionMeta,
   Ok,
-  PolicyListRevision,
   ResultForUsersInRoom,
   ResultForUsersInSet,
   RoomSetResult,
   StandardUserConsequencesContext,
+  TargetMember,
   UserConsequences,
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
@@ -139,10 +139,10 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     return Ok(undefined);
   }
   public async consequenceForUsersInRoomSet(
-    revision: PolicyListRevision
+    targets: TargetMember[]
   ): Promise<ActionResult<ResultForUsersInSet>> {
     const capabilityResult =
-      await this.capability.consequenceForUsersInRoomSet(revision);
+      await this.capability.consequenceForUsersInRoomSet(targets);
     if (isError(capabilityResult)) {
       const title = (
         <fragment>Applying policy revision to protected rooms</fragment>
@@ -173,11 +173,11 @@ class StandardUserConsequencesRenderer implements UserConsequences {
   }
   public async consequenceForUsersInRoom(
     roomID: StringRoomID,
-    revision: PolicyListRevision
+    targets: TargetMember[]
   ): Promise<ActionResult<ResultForUsersInRoom>> {
     const capabilityResult = await this.capability.consequenceForUsersInRoom(
       roomID,
-      revision
+      targets
     );
     if (isError(capabilityResult)) {
       const title = (
@@ -278,7 +278,7 @@ describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
     return capabilityProvider.factory(protectionDescription, {
       roomBanner: draupnir.clientPlatform.toRoomBanner(),
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
-      setMembership: draupnir.protectedRoomsSet.setMembership,
+      setMembership: draupnir.protectedRoomsSet.setRoomMembership,
     });
   },
 });

@@ -112,7 +112,7 @@ describe("Test the DraupnirUnbanCommand", function () {
       DraupnirUnbanCommand,
       {
         policyRoomManager: mockPolicyRoomManager,
-        setMembership: protectedRoomsSet.setMembership,
+        setMembership: protectedRoomsSet.setRoomMembership,
         managementRoomOutput: createMock<ManagementRoomOutput>(),
         roomResolver,
         issuerManager: protectedRoomsSet.issuerManager,

@@ -2645,17 +2645,17 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.11.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-2.1.1.tgz#30f46d70b9c39d4d51535f2ec34ff5bf9429b3d6"
-  integrity sha512-mF0MM/MiAYhWtRTy9TlBHVXomOoJ2dYnS/8NG3h1b71XJuhrgGmpgVfbJJV8dJ4aeIcwhTARf/1fJ5muLGavPQ==
+"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-2.2.0.tgz#bbcb290097430a2ba6c387bf40002517b38f0776"
+  integrity sha512-uMTWBYqz61ZjLDWyYpMNcyHPko0eLKOgkNhOIFhih7I6gMpHCuqq6rQz43r25oNP1oR3YbcuwyXLFFV0h3cgnA==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-2.1.1.tgz#82ca4ae80d400c51fb232c6ab1fb26782ba7d006"
-  integrity sha512-fIYw1LSBtqiNsGYA4OMxieeDmED4uGKPqBE2p4D7xW7d8RlgDSrmxUGrddSqiCcJKYjwKmy5V4c7YOpusIioHg==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-2.2.0.tgz#53aaa11159abcc5f79225b47da36dff0110e1ffb"
+  integrity sha512-w7a61RUeMcRBaXJF86g6W/hxycJ7o5thEm1SKkgoErrh4bWEivXL6zXn057j7I/hsvXolgXMsAIXpkHFajzjsQ==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"

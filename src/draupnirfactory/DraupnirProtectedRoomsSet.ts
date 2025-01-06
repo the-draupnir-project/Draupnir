@@ -36,7 +36,7 @@ import {
   StandardProtectedRoomsSet,
   StandardProtectionCapabilityProviderSetConfig,
   StandardProtectionsManager,
-  StandardSetMembership,
+  StandardSetRoomMembership,
   StandardSetRoomState,
   isError,
 } from "matrix-protection-suite";
@@ -184,7 +184,7 @@ export async function makeProtectedRoomsSet(
     roomStateManager,
     roomMembershipManager,
     clientPlatform.toRoomJoiner(),
-    StandardSetMembership.blankSet(),
+    StandardSetRoomMembership.blankSet(),
     StandardSetRoomState.blankSet()
   );
   if (isError(protectedRoomsManager)) {

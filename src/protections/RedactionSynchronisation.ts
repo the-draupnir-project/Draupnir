@@ -64,7 +64,7 @@ export class RedactionSynchronisationProtection
         rooms.push(room.toRoomIDOrAlias())
       );
     } else {
-      for (const roomMembership of this.protectedRoomsSet.setMembership
+      for (const roomMembership of this.protectedRoomsSet.setRoomMembership
         .allRooms) {
         const membership = roomMembership.membershipForUser(
           policy.entity as StringUserID
