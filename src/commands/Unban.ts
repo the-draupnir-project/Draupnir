@@ -101,8 +101,7 @@ export type DraupnirUnbanCommandContext = {
 };
 
 export const DraupnirUnbanCommand = describeCommand({
-  summary:
-    "Removes an entity from a policy list. If the entity is a glob, then the flag --true must be provided to unban users matching the glob from all protected rooms.",
+  summary: "Removes an entity from a policy list.",
   parameters: tuple(
     {
       name: "entity",
@@ -132,10 +131,14 @@ export const DraupnirUnbanCommand = describeCommand({
       },
     }
   ),
+  // This is a legacy option to unban the user from all rooms that we now ignore just so providing the option doesn't
+  // cause an error.
   keywords: {
     keywordDescriptions: {
       true: {
         isFlag: true,
+        description:
+          "Legacy, now redundant option to unban the user from all rooms.",
       },
     },
   },
@@ -153,7 +156,6 @@ export const DraupnirUnbanCommand = describeCommand({
       issuerManager,
       clientUserID,
       unlistedUserRedactionQueue,
-      managementRoomOutput,
     } = context;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
@@ -200,24 +202,11 @@ export const DraupnirUnbanCommand = describeCommand({
     }
     if (typeof entity === "string" || entity instanceof MatrixUserID) {
       const rawEnttiy = typeof entity === "string" ? entity : entity.toString();
-      const isGlob = (string: string) =>
-        string.includes("*") ? true : string.includes("?");
       const rule = new MatrixGlob(entity.toString());
       if (isStringUserID(rawEnttiy)) {
         unlistedUserRedactionQueue.removeUser(rawEnttiy);
       }
-      if (
-        !isGlob(rawEnttiy) ||
-        keywords.getKeywordValue<boolean>("true", false)
-      ) {
-        await unbanUserFromRooms(context, rule);
-      } else {
-        await managementRoomOutput.logMessage(
-          LogLevel.WARN,
-          "Unban",
-          "Running unban without `unban <list> <user> true` will not override existing room level bans"
-        );
-      }
+      await unbanUserFromRooms(context, rule);
     }
     return Ok(undefined);
   },
