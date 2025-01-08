@@ -12,7 +12,6 @@ import {
   ActionResult,
   Capability,
   DescriptionMeta,
-  Ok,
   PolicyListRevision,
   RoomSetResult,
   ServerACLConsequencesContext,
@@ -49,7 +48,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
   public async consequenceForServersInRoom(
     roomID: StringRoomID,
     revision: PolicyListRevision
-  ): Promise<ActionResult<void>> {
+  ): Promise<ActionResult<boolean>> {
     const capabilityResult = await this.capability.consequenceForServersInRoom(
       roomID,
       revision
@@ -71,8 +70,11 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
       );
       return capabilityResult;
     }
-    this.messageCollector.addOneliner(this.description, title);
-    return Ok(undefined);
+    // only add the message if we changed anything in the room.
+    if (capabilityResult.ok) {
+      this.messageCollector.addOneliner(this.description, title);
+    }
+    return capabilityResult;
   }
   public async consequenceForServersInRoomSet(
     revision: PolicyListRevision
