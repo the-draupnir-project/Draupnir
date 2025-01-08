@@ -170,7 +170,7 @@ export class BasicFloodingProtection
   ): Promise<ActionResult<void>> {
     // If the sender is draupnir, ignore the message
     if (event["sender"] === this.draupnir.clientUserID) {
-      log.info(`Ignoring message from self: ${event.event_id}`);
+      log.debug(`Ignoring message from self: ${event.event_id}`);
       return Ok(undefined);
     }
     const forUser = lastEventsForUser(
