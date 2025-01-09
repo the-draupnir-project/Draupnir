@@ -14,6 +14,50 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.0.0-beta.10] 2024-01-09
+
+### Changed
+
+- Make the unban command's `--true` option the default behaviour. Removing a
+  policy will automatically matching unban users from protected rooms. Changed
+  by @nexy7574 and reported in
+  https://github.com/the-draupnir-project/Draupnir/issues/648
+
+### Fixed
+
+- Stop the kick command from removing members who had left or were banned, Fixed
+  and reported by @nexy7574 in
+  https://github.com/the-draupnir-project/Draupnir/issues/649.
+
+- Stop room's being added as server policies. Fixed by @nexy7574 reported by
+  @FSG-Cat in https://github.com/the-draupnir-project/Draupnir/issues/458.
+
+- Stop Draupnir's `WordList` and `BasicFlooding` protections from reacting to
+  itself in the management room. Fixed by @nexy7574 reported by @TheArcaneBrony
+  in https://github.com/the-draupnir-project/Draupnir/issues/579.
+
+- Stop duplicate notice's that Draupnir is updating room ACL in
+  https://github.com/the-draupnir-project/Draupnir/issues/450.
+
+- Fixed serverACL's were not immediately updated after unwatching or watching a
+  new policy list. https://github.com/the-draupnir-project/Draupnir/issues/451.
+
+- Fixed an issue where remote aliases couldn't be resolved unless the homeserver
+  was already present in the room. Reported by @TheArcaneBrony in
+  https://github.com/the-draupnir-project/Draupnir/issues/460.
+
+- Fixed an issue where it was not possible to unwatch a policy room. Reported by
+  @JokerGermany in https://github.com/the-draupnir-project/Draupnir/issues/431,
+  and @nexy7574 in https://github.com/the-draupnir-project/Draupnir/issues/647.
+
+- Fixed an issue where if Draupnir was protecting a very large number of users
+  then CPU could be starved for as long as a minute while matching users against
+  policies. Reported by @TheArcaneBrony in
+  https://github.com/the-draupnir-project/Draupnir/issues/498.
+
+- Handle invalid forwarded reports properly. Reported by @Philantrop in
+  https://github.com/the-draupnir-project/Draupnir/issues/643.
+
 ## [v2.0.0-beta.9] 2024-12-14
 
 ### Fixed
