@@ -254,8 +254,7 @@ export type BanPropagationProtectionCapabilitiesDescription =
 
 export class BanPropagationProtection
   extends AbstractProtection<BanPropagationProtectionCapabilitiesDescription>
-  implements
-    DraupnirProtection<BanPropagationProtectionCapabilitiesDescription>
+  implements DraupnirProtection<BanPropagationProtectionCapabilitiesDescription>
 {
   private readonly userConsequences: UserConsequences;
 
