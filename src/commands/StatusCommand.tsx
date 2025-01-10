@@ -42,6 +42,7 @@ export interface ListInfo {
 
 export interface StatusInfo {
   numberOfProtectedRooms: number;
+  numberOfUniqueMembers: number;
   subscribedLists: ListInfo[];
   subscribedAndProtectedLists: ListInfo[];
   version: string;
@@ -112,6 +113,8 @@ export async function draupnirStatusInfo(
   );
   return {
     numberOfProtectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.length,
+    numberOfUniqueMembers:
+      draupnir.protectedRoomsSet.setMembership.currentRevision.uniqueMemberCount(),
     subscribedLists: unprotectedListProfiles,
     subscribedAndProtectedLists: protectedWatchedLists,
     documentationURL: DOCUMENTATION_URL,
@@ -156,6 +159,9 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
     <root>
       <b>Protected Rooms: </b>
       {info.numberOfProtectedRooms}
+      <br />
+      <b>Protected Users: </b>
+      {info.numberOfUniqueMembers}
       <br />
       {renderPolicyLists("Subscribed policy rooms", info.subscribedLists)}
       {renderPolicyLists(
