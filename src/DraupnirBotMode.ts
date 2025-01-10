@@ -304,11 +304,15 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     }
   }
 
+  public async stopWebAPIS(): Promise<void> {
+    await this.webAPIs?.stop();
+    this.webAPIs = null;
+  }
+
   private async stopDraupnir(): Promise<void> {
     this.draupnir?.stop();
     this.draupnir = null;
-    await this.webAPIs?.stop();
-    this.webAPIs = null;
+    await this.stopWebAPIS();
   }
 
   private stopSafeModeDraupnir(): void {
