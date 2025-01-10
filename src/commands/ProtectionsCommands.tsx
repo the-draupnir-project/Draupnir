@@ -469,6 +469,38 @@ function sortProtectionsListByEnabledAndAlphanumerical(
   });
 }
 
+export const DraupnirProtectionsConfigResetCommand = describeCommand({
+  summary: "Reset the protection settings for a named protection",
+  parameters: tuple({
+    name: "protection name",
+    acceptor: StringPresentationType,
+    description: "The name of the protection to be modified.",
+  }),
+  async executor(draupnir: Draupnir, _info, _keywords, _rest, protectionName) {
+    const protectionDescription = findProtection(protectionName);
+    if (protectionDescription === undefined) {
+      return ActionError.Result(
+        `Couldn't find a protection named ${protectionName}`
+      );
+    }
+    const newSettings =
+      protectionDescription.protectionSettings.getDefaultConfig();
+    return await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
+      protectionDescription as unknown as ProtectionDescription,
+      draupnir.protectedRoomsSet,
+      draupnir,
+      newSettings
+    );
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(
+  DraupnirProtectionsConfigResetCommand,
+  {
+    isAlwaysSupposedToUseDefaultRenderer: true,
+  }
+);
+
 export const DraupnirListProtectionsCommand = describeCommand({
   summary: "List all available protections.",
   parameters: [],
