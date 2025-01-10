@@ -139,13 +139,15 @@ export class ReportPoller {
     /*
      * This API endpoint returns an opaque `next_token` number that we
      * need to give back to subsequent requests for pagination, so here we
-     * save it in account data
+     * save it in account data. Except it's not opaque, and there's no way
+     * to use this API as a poll without cheating and using the total. Brill.
      */
-    if (response.ok.next_token) {
-      this.from = response.ok.next_token;
+    const nextToken = response.ok.next_token ?? response.ok.total ?? 0;
+    if (nextToken !== this.from) {
+      this.from = nextToken;
       try {
         await this.draupnir.client.setAccountData(REPORT_POLL_EVENT_TYPE, {
-          from: response.ok.next_token,
+          from: nextToken,
         });
       } catch (ex) {
         await this.draupnir.managementRoomOutput.logMessage(

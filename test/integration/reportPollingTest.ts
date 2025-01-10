@@ -12,49 +12,33 @@ import { MatrixClient } from "matrix-bot-sdk";
 import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import {
-  ActionResult,
-  Ok,
-  Protection,
-  ProtectionDescription,
-  describeConfig,
-} from "matrix-protection-suite";
-import {
   MatrixRoomReference,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Type } from "@sinclair/typebox";
 import { randomUUID } from "crypto";
 import expect from "expect";
-import { WebAPIs } from "../../src/webapis/WebAPIs";
+import { createMock } from "ts-auto-mock";
+import { ReportManager } from "../../src/report/ReportManager";
+import { ReportPoller } from "../../src/report/ReportPoller";
 
 describe("Test: Report polling", function () {
   let client: MatrixClient;
-  let forwardingOnlyWebAPIS: WebAPIs | undefined;
+  let reportPoller: ReportPoller | undefined;
   this.beforeEach(async function () {
     client = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "protection-settings" },
     });
   });
   this.afterEach(function () {
-    void forwardingOnlyWebAPIS?.stop();
-  })
+    reportPoller?.stop();
+  });
   it("Draupnir correctly retrieves a report from synapse", async function (
     this: DraupnirTestContext
   ) {
-    this.timeout(40000);
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
       throw new TypeError(`Test didn't setup properly`);
     }
-    // It's essential to stop the webapis so that we can make sure reports
-    // are only forwarded from polling.
-    // And also there is a major bug where the report handler can run during
-    // the cleanup for this test and cause hanging / crashes.
-    await this.toggle?.stopWebAPIS();
-    forwardingOnlyWebAPIS = new WebAPIs(draupnir.reportManager, this.config, {
-      isHandlingReports: false,
-    });
-    await forwardingOnlyWebAPIS.start();
     const protectedRoomId = await draupnir.client.createRoom({
       invite: [await client.getUserId()],
     });
@@ -65,41 +49,20 @@ describe("Test: Report polling", function () {
     const testReportReason = randomUUID();
     const reportsFound = new Set<string>();
     const duplicateReports = new Set<string>();
-    const testProtectionDescription: ProtectionDescription = {
-      name: "jYvufI",
-      description: "A test protection",
-      capabilities: {},
-      defaultCapabilities: {},
-      factory: function (
-        _description,
-        _protectedRoomsSet,
-        _context,
-        _capabilities,
-        _settings
-      ): ActionResult<Protection<ProtectionDescription>> {
-        return Ok({
-          handleEventReport(report) {
-            if (report.reason === testReportReason) {
-              if (reportsFound.has(report.event_id)) {
-                duplicateReports.add(report.event_id);
-              }
-              reportsFound.add(report.event_id);
-            }
-            return Promise.resolve(Ok(undefined));
-          },
-          description: testProtectionDescription,
-          requiredEventPermissions: [],
-          requiredPermissions: [],
-          requiredStatePermissions: [],
-        });
+    const reportManager = createMock<ReportManager>({
+      handleServerAbuseReport({ event, reason }) {
+        if (reason === testReportReason) {
+          if (reportsFound.has(event.event_id)) {
+            duplicateReports.add(event.event_id);
+          }
+          reportsFound.add(event.event_id);
+        }
+        return Promise.resolve(undefined);
       },
-      protectionSettings: describeConfig({ schema: Type.Object({}) }),
-    };
-    await draupnir.protectedRoomsSet.protections.addProtection(
-      testProtectionDescription,
-      draupnir.protectedRoomsSet,
-      draupnir
-    );
+    });
+    reportPoller = new ReportPoller(draupnir, reportManager, {
+      pollPeriod: 500,
+    });
     const reportEvent = async () => {
       const eventId = await client.sendMessage(protectedRoomId, {
         msgtype: "m.text",
@@ -113,12 +76,13 @@ describe("Test: Report polling", function () {
           reason: testReportReason,
         }
       );
-    }
+    };
+    reportPoller.start({ from: 1 });
     for (let i = 0; i < 20; i++) {
       await reportEvent();
     }
-    // wait for them to come down sync.
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // wait for them to come down the poll.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     expect(reportsFound.size).toBe(20);
     expect(duplicateReports.size).toBe(0);
   } as unknown as Mocha.AsyncFunc);
