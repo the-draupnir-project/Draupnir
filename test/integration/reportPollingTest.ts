@@ -16,7 +16,6 @@ import {
   Ok,
   Protection,
   ProtectionDescription,
-  Task,
   describeConfig,
 } from "matrix-protection-suite";
 import {
@@ -24,14 +23,21 @@ import {
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { Type } from "@sinclair/typebox";
+import { randomUUID } from "crypto";
+import expect from "expect";
+import { WebAPIs } from "../../src/webapis/WebAPIs";
 
 describe("Test: Report polling", function () {
   let client: MatrixClient;
+  let forwardingOnlyWebAPIS: WebAPIs | undefined;
   this.beforeEach(async function () {
     client = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "protection-settings" },
     });
   });
+  this.afterEach(function () {
+    void forwardingOnlyWebAPIS?.stop();
+  })
   it("Draupnir correctly retrieves a report from synapse", async function (
     this: DraupnirTestContext
   ) {
@@ -40,6 +46,15 @@ describe("Test: Report polling", function () {
     if (draupnir === undefined) {
       throw new TypeError(`Test didn't setup properly`);
     }
+    // It's essential to stop the webapis so that we can make sure reports
+    // are only forwarded from polling.
+    // And also there is a major bug where the report handler can run during
+    // the cleanup for this test and cause hanging / crashes.
+    await this.toggle?.stopWebAPIS();
+    forwardingOnlyWebAPIS = new WebAPIs(draupnir.reportManager, this.config, {
+      isHandlingReports: false,
+    });
+    await forwardingOnlyWebAPIS.start();
     const protectedRoomId = await draupnir.client.createRoom({
       invite: [await client.getUserId()],
     });
@@ -47,63 +62,64 @@ describe("Test: Report polling", function () {
     await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
       MatrixRoomReference.fromRoomID(protectedRoomId as StringRoomID)
     );
-
-    const eventId = await client.sendMessage(protectedRoomId, {
-      msgtype: "m.text",
-      body: "uwNd3q",
-    });
-    await new Promise((resolve) => {
-      const testProtectionDescription: ProtectionDescription = {
-        name: "jYvufI",
-        description: "A test protection",
-        capabilities: {},
-        defaultCapabilities: {},
-        factory: function (
-          _description,
-          _protectedRoomsSet,
-          _context,
-          _capabilities,
-          _settings
-        ): ActionResult<Protection<ProtectionDescription>> {
-          return Ok({
-            handleEventReport(report) {
-              if (report.reason === "x5h1Je") {
-                resolve(null);
+    const testReportReason = randomUUID();
+    const reportsFound = new Set<string>();
+    const duplicateReports = new Set<string>();
+    const testProtectionDescription: ProtectionDescription = {
+      name: "jYvufI",
+      description: "A test protection",
+      capabilities: {},
+      defaultCapabilities: {},
+      factory: function (
+        _description,
+        _protectedRoomsSet,
+        _context,
+        _capabilities,
+        _settings
+      ): ActionResult<Protection<ProtectionDescription>> {
+        return Ok({
+          handleEventReport(report) {
+            if (report.reason === testReportReason) {
+              if (reportsFound.has(report.event_id)) {
+                duplicateReports.add(report.event_id);
               }
-              return Promise.resolve(Ok(undefined));
-            },
-            description: testProtectionDescription,
-            requiredEventPermissions: [],
-            requiredPermissions: [],
-            requiredStatePermissions: [],
-          });
-        },
-        protectionSettings: describeConfig({ schema: Type.Object({}) }),
-      };
-      void Task(
-        (async () => {
-          await draupnir.protectedRoomsSet.protections.addProtection(
-            testProtectionDescription,
-            draupnir.protectedRoomsSet,
-            draupnir
-          );
-          await client.doRequest(
-            "POST",
-            `/_matrix/client/r0/rooms/${encodeURIComponent(protectedRoomId)}/report/${encodeURIComponent(eventId)}`,
-            "",
-            {
-              reason: "x5h1Je",
+              reportsFound.add(report.event_id);
             }
-          );
-        })()
+            return Promise.resolve(Ok(undefined));
+          },
+          description: testProtectionDescription,
+          requiredEventPermissions: [],
+          requiredPermissions: [],
+          requiredStatePermissions: [],
+        });
+      },
+      protectionSettings: describeConfig({ schema: Type.Object({}) }),
+    };
+    await draupnir.protectedRoomsSet.protections.addProtection(
+      testProtectionDescription,
+      draupnir.protectedRoomsSet,
+      draupnir
+    );
+    const reportEvent = async () => {
+      const eventId = await client.sendMessage(protectedRoomId, {
+        msgtype: "m.text",
+        body: "uwNd3q",
+      });
+      await client.doRequest(
+        "POST",
+        `/_matrix/client/r0/rooms/${encodeURIComponent(protectedRoomId)}/report/${encodeURIComponent(eventId)}`,
+        "",
+        {
+          reason: testReportReason,
+        }
       );
-    });
-    // So I kid you not, it seems like we can quit before the webserver for reports sends a respond to the client (via L#26)
-    // because the promise above gets resolved before we finish awaiting the report sending request on L#31,
-    // then mocha's cleanup code runs (and shuts down the webserver) before the webserver can respond.
-    // Wait a minute 😲😲🤯 it's not even supposed to be using the webserver if this is testing report polling.
-    // Ok, well apparently that needs a big refactor to change, but if you change the config before running this test,
-    // then you can ensure that report polling works. https://github.com/matrix-org/mjolnir/issues/326.
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    for (let i = 0; i < 20; i++) {
+      await reportEvent();
+    }
+    // wait for them to come down sync.
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    expect(reportsFound.size).toBe(20);
+    expect(duplicateReports.size).toBe(0);
   } as unknown as Mocha.AsyncFunc);
 });
