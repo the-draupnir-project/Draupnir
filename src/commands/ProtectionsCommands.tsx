@@ -12,6 +12,7 @@ import {
   ActionError,
   ActionResult,
   ConfigDescription,
+  ConfigParseError,
   EDStatic,
   Ok,
   ProtectedRoomsSet,
@@ -32,11 +33,12 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
+import { isOk, Result } from "@gnuxie/typescript-result";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
+import { StandardPersistentConfigRenderer } from "../safemode/PersistentConfigRenderer";
 
 export const DraupnirProtectionsEnableCommand = describeCommand({
   summary: "Enable a named protection.",
@@ -66,7 +68,32 @@ export const DraupnirProtectionsEnableCommand = describeCommand({
 });
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsEnableCommand, {
-  isAlwaysSupposedToUseDefaultRenderer: true,
+  JSXRenderer(result) {
+    if (isOk(result)) {
+      return Ok(undefined);
+    }
+    if (result.error instanceof ConfigParseError) {
+      return Ok(
+        <root>
+          <p>
+            Use the <code>!draupnir protections show</code> and{" "}
+            <code>!draupnir protections config remove</code> commands to modify
+            invalid values. Alternatively reset the protection settings to
+            default with <code>!draupnir protections config reset</code>.
+          </p>
+          {result.error.mostRelevantElaboration}
+          <br />
+          {StandardPersistentConfigRenderer.renderConfigStatus({
+            description: result.error.configDescription,
+            data: result.error.config,
+            error: result.error,
+          })}
+        </root>
+      );
+    }
+    // let the default renderer handle the error.
+    return Ok(undefined);
+  },
 });
 
 export const DraupnirProtectionsDisableCommand = describeCommand({
@@ -441,6 +468,38 @@ function sortProtectionsListByEnabledAndAlphanumerical(
     return a.description.name.localeCompare(b.description.name);
   });
 }
+
+export const DraupnirProtectionsConfigResetCommand = describeCommand({
+  summary: "Reset the protection settings for a named protection",
+  parameters: tuple({
+    name: "protection name",
+    acceptor: StringPresentationType,
+    description: "The name of the protection to be modified.",
+  }),
+  async executor(draupnir: Draupnir, _info, _keywords, _rest, protectionName) {
+    const protectionDescription = findProtection(protectionName);
+    if (protectionDescription === undefined) {
+      return ActionError.Result(
+        `Couldn't find a protection named ${protectionName}`
+      );
+    }
+    const newSettings =
+      protectionDescription.protectionSettings.getDefaultConfig();
+    return await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
+      protectionDescription as unknown as ProtectionDescription,
+      draupnir.protectedRoomsSet,
+      draupnir,
+      newSettings
+    );
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(
+  DraupnirProtectionsConfigResetCommand,
+  {
+    isAlwaysSupposedToUseDefaultRenderer: true,
+  }
+);
 
 export const DraupnirListProtectionsCommand = describeCommand({
   summary: "List all available protections.",

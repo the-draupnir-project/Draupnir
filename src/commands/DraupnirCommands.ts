@@ -24,6 +24,7 @@ import {
   DraupnirListProtectionsCommand,
   DraupnirProtectionsConfigAddCommand,
   DraupnirProtectionsConfigRemoveCommand,
+  DraupnirProtectionsConfigResetCommand,
   DraupnirProtectionsConfigSetCommand,
   DraupnirProtectionsDisableCommand,
   DraupnirProtectionsEnableCommand,
@@ -89,6 +90,11 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
     "protections",
     "config",
     "set",
+  ])
+  .internCommand(DraupnirProtectionsConfigResetCommand, [
+    "protections",
+    "config",
+    "reset",
   ])
   .internCommand(DraupnirProtectionsShowCommand, ["protections", "show"])
   .internCommand(DraupnirRedactCommand, ["redact"])
