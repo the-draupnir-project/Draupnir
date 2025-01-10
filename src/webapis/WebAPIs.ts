@@ -33,24 +33,13 @@ const AUTHORIZATION = new RegExp("Bearer (.*)");
 export class WebAPIs {
   private webController: express.Express = express();
   private httpServer?: Server | undefined;
-  /**
-   * This is a debug utility that we use to test whether we can poll for reports without breaking the harness
-   * or dynamically changing draupnir's config.
-   */
-  private isHandlingReports: boolean;
 
   constructor(
     private reportManager: StandardReportManager,
-    private readonly config: IConfig,
-    private readonly options?: { isHandlingReports?: boolean }
+    private readonly config: IConfig
   ) {
     // Setup JSON parsing.
     this.webController.use(express.json());
-    if (this.options?.isHandlingReports === undefined) {
-      this.isHandlingReports = true;
-    } else {
-      this.isHandlingReports = this.options.isHandlingReports;
-    }
   }
 
   /**
@@ -269,14 +258,13 @@ export class WebAPIs {
         event = await reporterClient.getEvent(roomID, eventID);
       }
       const reason = request.body["reason"];
-      if (this.isHandlingReports) {
-        await this.reportManager.handleServerAbuseReport({
-          roomID,
-          reporterId,
-          event,
-          reason,
-        });
-      }
+      await this.reportManager.handleServerAbuseReport({
+        roomID,
+        reporterId,
+        event,
+        reason,
+      });
+
       // Match the spec behavior of `/report`: return 200 and an empty JSON.
       response.status(200).json({});
     } catch (ex) {
