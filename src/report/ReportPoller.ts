@@ -53,9 +53,12 @@ export class ReportPoller {
 
   private readonly synapseAdminClient: SynapseAdminClient;
 
+  private readonly pollPeriod: number;
+
   constructor(
     private draupnir: Draupnir,
-    private manager: ReportManager
+    private manager: ReportManager,
+    options: { pollPeriod?: number } = {}
   ) {
     if (draupnir.synapseAdminClient === undefined) {
       throw new TypeError(
@@ -63,6 +66,7 @@ export class ReportPoller {
       );
     }
     this.synapseAdminClient = draupnir.synapseAdminClient;
+    this.pollPeriod = options.pollPeriod ?? 30_000; // a minute in milliseconds
   }
 
   private schedulePoll() {
@@ -75,7 +79,7 @@ export class ReportPoller {
        */
       this.timeout = setTimeout(
         this.tryGetAbuseReports.bind(this),
-        30_000 // a minute in milliseconds
+        this.pollPeriod
       );
     } else {
       throw new InvalidStateError("poll already scheduled");

@@ -11,7 +11,7 @@
 import { Server } from "http";
 import express from "express";
 import { MatrixClient } from "matrix-bot-sdk";
-import { ReportManager } from "../report/ReportManager";
+import { StandardReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
 import {
   StringRoomID,
@@ -40,7 +40,7 @@ export class WebAPIs {
   private isHandlingReports: boolean;
 
   constructor(
-    private reportManager: ReportManager,
+    private reportManager: StandardReportManager,
     private readonly config: IConfig,
     private readonly options?: { isHandlingReports?: boolean }
   ) {
@@ -268,7 +268,6 @@ export class WebAPIs {
         // with all Matrix homeservers, rather than just Synapse.
         event = await reporterClient.getEvent(roomID, eventID);
       }
-
       const reason = request.body["reason"];
       if (this.isHandlingReports) {
         await this.reportManager.handleServerAbuseReport({

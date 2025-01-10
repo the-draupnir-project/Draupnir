@@ -32,7 +32,7 @@ import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue"
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
-import { ReportManager } from "./report/ReportManager";
+import { StandardReportManager } from "./report/ReportManager";
 import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
 import {
   MatrixSendClient,
@@ -106,7 +106,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * Handle user reports from the homeserver.
    * FIXME: ReportManager should be a protection.
    */
-  public readonly reportManager: ReportManager;
+  public readonly reportManager: StandardReportManager;
 
   public readonly reactionHandler: MatrixReactionHandler;
 
@@ -157,7 +157,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       clientUserID,
       clientPlatform
     );
-    this.reportManager = new ReportManager(this);
+    this.reportManager = new StandardReportManager(this);
     if (config.pollReports) {
       this.reportPoller = new ReportPoller(this, this.reportManager);
     }
