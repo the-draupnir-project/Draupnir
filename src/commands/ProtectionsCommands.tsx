@@ -12,6 +12,7 @@ import {
   ActionError,
   ActionResult,
   ConfigDescription,
+  ConfigParseError,
   EDStatic,
   Ok,
   ProtectedRoomsSet,
@@ -32,11 +33,12 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
+import { isOk, Result } from "@gnuxie/typescript-result";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
+import { StandardPersistentConfigRenderer } from "../safemode/PersistentConfigRenderer";
 
 export const DraupnirProtectionsEnableCommand = describeCommand({
   summary: "Enable a named protection.",
@@ -66,7 +68,32 @@ export const DraupnirProtectionsEnableCommand = describeCommand({
 });
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsEnableCommand, {
-  isAlwaysSupposedToUseDefaultRenderer: true,
+  JSXRenderer(result) {
+    if (isOk(result)) {
+      return Ok(undefined);
+    }
+    if (result.error instanceof ConfigParseError) {
+      return Ok(
+        <root>
+          <p>
+            Use the <code>!draupnir protections show</code> and{" "}
+            <code>!draupnir protections config remove</code> commands to modify
+            invalid values. Alternatively reset the protection settings to
+            default with <code>!draupnir protections config reset</code>.
+          </p>
+          {result.error.mostRelevantElaboration}
+          <br />
+          {StandardPersistentConfigRenderer.renderConfigStatus({
+            description: result.error.configDescription,
+            data: result.error.config,
+            error: result.error,
+          })}
+        </root>
+      );
+    }
+    // let the default renderer handle the error.
+    return Ok(undefined);
+  },
 });
 
 export const DraupnirProtectionsDisableCommand = describeCommand({
