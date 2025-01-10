@@ -8,18 +8,19 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  MatrixSendClient,
+  SynapseAdminClient,
+} from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ReportManager } from "./ReportManager";
-import { LogLevel, LogService } from "matrix-bot-sdk";
+import { LogLevel } from "matrix-bot-sdk";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { Draupnir } from "../Draupnir";
 import {
   ActionException,
   ActionExceptionKind,
   Ok,
-  SynapseReport,
   Task,
-  Value,
   isError,
 } from "matrix-protection-suite";
 
@@ -50,10 +51,23 @@ export class ReportPoller {
    */
   private timeout: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly synapseAdminClient: SynapseAdminClient;
+
+  private readonly pollPeriod: number;
+
   constructor(
     private draupnir: Draupnir,
-    private manager: ReportManager
-  ) {}
+    private manager: ReportManager,
+    options: { pollPeriod?: number } = {}
+  ) {
+    if (draupnir.synapseAdminClient === undefined) {
+      throw new TypeError(
+        `Unable to find synapse admin client for report poller`
+      );
+    }
+    this.synapseAdminClient = draupnir.synapseAdminClient;
+    this.pollPeriod = options.pollPeriod ?? 30_000; // a minute in milliseconds
+  }
 
   private schedulePoll() {
     if (this.timeout === null) {
@@ -65,7 +79,7 @@ export class ReportPoller {
        */
       this.timeout = setTimeout(
         this.tryGetAbuseReports.bind(this),
-        30_000 // a minute in milliseconds
+        this.pollPeriod
       );
     } else {
       throw new InvalidStateError("poll already scheduled");
@@ -73,46 +87,19 @@ export class ReportPoller {
   }
 
   private async getAbuseReports() {
-    let response:
-      | {
-          event_reports: unknown[];
-          next_token: number | undefined;
-        }
-      | undefined;
-    try {
-      response = await this.draupnir.client.doRequest(
-        "GET",
-        "/_synapse/admin/v1/event_reports",
-        {
-          // short for direction: forward; i.e. show newest last
-          dir: "f",
-          from: this.from.toString(),
-        }
-      );
-    } catch (ex) {
+    const response = await this.synapseAdminClient.getAbuseReports({
+      direction: "f",
+      from: this.from,
+    });
+    if (isError(response)) {
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.ERROR,
         "getAbuseReports",
-        `failed to poll events: ${ex}`
+        `failed to poll events: ${response.error.toReadableString()}`
       );
       return;
     }
-    if (response === undefined) {
-      throw new TypeError(
-        `we should have got a response from /event_reports/, code is wrong.`
-      );
-    }
-    for (const rawReport of response.event_reports) {
-      const reportResult = Value.Decode(SynapseReport, rawReport);
-      if (isError(reportResult)) {
-        LogService.error(
-          "ReportPoller",
-          `Failed to decode a synapse report ${reportResult.error.uuid}`,
-          rawReport
-        );
-        continue;
-      }
-      const report = reportResult.ok;
+    for (const report of response.ok.event_reports) {
       // FIXME: shouldn't we have a SafeMatrixSendClient in the BotSDKMPS that gives us ActionResult's with
       // Decoded events.
       // Problem is that our current event model isn't going to match up with extensible events.
@@ -143,7 +130,7 @@ export class ReportPoller {
 
       await this.manager.handleServerAbuseReport({
         roomID: report.room_id,
-        reporterId: report.sender,
+        reporterId: report.user_id,
         event: event,
         ...(report.reason ? { reason: report.reason } : {}),
       });
@@ -152,13 +139,15 @@ export class ReportPoller {
     /*
      * This API endpoint returns an opaque `next_token` number that we
      * need to give back to subsequent requests for pagination, so here we
-     * save it in account data
+     * save it in account data. Except it's not opaque, and there's no way
+     * to use this API as a poll without cheating and using the total. Brill.
      */
-    if (response.next_token !== undefined) {
-      this.from = response.next_token;
+    const nextToken = response.ok.next_token ?? response.ok.total ?? 0;
+    if (nextToken !== this.from) {
+      this.from = nextToken;
       try {
         await this.draupnir.client.setAccountData(REPORT_POLL_EVENT_TYPE, {
-          from: response.next_token,
+          from: nextToken,
         });
       } catch (ex) {
         await this.draupnir.managementRoomOutput.logMessage(

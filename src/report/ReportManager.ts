@@ -102,10 +102,32 @@ enum Kind {
   ESCALATED_REPORT,
 }
 
+export interface ReportManager {
+  handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void;
+  handleServerAbuseReport({
+    roomID,
+    reporterId,
+    event,
+    reason,
+  }: {
+    roomID: StringRoomID;
+    reporterId: string;
+    event: RoomEvent;
+    reason?: string;
+  }): Promise<void>;
+  handleReaction({
+    roomID,
+    event,
+  }: {
+    roomID: StringRoomID;
+    event: RoomEvent;
+  }): Promise<void>;
+}
+
 /**
  * A class designed to respond to abuse reports.
  */
-export class ReportManager {
+export class StandardReportManager {
   private displayManager: DisplayManager;
   constructor(public draupnir: Draupnir) {
     this.displayManager = new DisplayManager(this);
@@ -580,7 +602,7 @@ interface IUIAction {
    * @param report Details on the abuse report.
    */
   canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     moderationroomID: string
   ): Promise<boolean>;
@@ -590,20 +612,20 @@ interface IUIAction {
    *
    * @param report Details on the abuse report.
    */
-  title(manager: ReportManager, report: IReport): Promise<string>;
+  title(manager: StandardReportManager, report: IReport): Promise<string>;
 
   /**
    * A human-readable help message to display for the end-user.
    *
    * @param report Details on the abuse report.
    */
-  help(manager: ReportManager, report: IReport): Promise<string>;
+  help(manager: StandardReportManager, report: IReport): Promise<string>;
 
   /**
    * Attempt to execute the action.
    */
   execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     moderationroomID: string,
     displayManager: DisplayManager
@@ -618,25 +640,25 @@ class IgnoreBadReport implements IUIAction {
   public emoji = "🚯";
   public needsConfirmation = true;
   public async canExecute(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<boolean> {
     return true;
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Ignore";
   }
   public async help(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Ignore bad report";
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReportWithAction
   ): Promise<string | undefined> {
     await manager.draupnir.client.sendEvent(
@@ -667,7 +689,7 @@ class RedactMessage implements IUIAction {
   public emoji = "🗍";
   public needsConfirmation = true;
   public async canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<boolean> {
     try {
@@ -681,16 +703,19 @@ class RedactMessage implements IUIAction {
     }
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Redact";
   }
-  public async help(_manager: ReportManager, report: IReport): Promise<string> {
+  public async help(
+    _manager: StandardReportManager,
+    report: IReport
+  ): Promise<string> {
     return `Redact event ${report.event_id}`;
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     _moderationroomID: string
   ): Promise<string | undefined> {
@@ -707,7 +732,7 @@ class KickAccused implements IUIAction {
   public emoji = "⚽";
   public needsConfirmation = true;
   public async canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<boolean> {
     try {
@@ -721,16 +746,19 @@ class KickAccused implements IUIAction {
     }
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Kick";
   }
-  public async help(_manager: ReportManager, report: IReport): Promise<string> {
+  public async help(
+    _manager: StandardReportManager,
+    report: IReport
+  ): Promise<string> {
     return `Kick ${htmlEscape(report.accused_id)} from room ${htmlEscape(report.room_alias_or_id)}`;
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<string | undefined> {
     await manager.draupnir.client.kickUser(report.accused_id, report.room_id);
@@ -746,7 +774,7 @@ class MuteAccused implements IUIAction {
   public emoji = "🤐";
   public needsConfirmation = true;
   public async canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<boolean> {
     try {
@@ -761,16 +789,19 @@ class MuteAccused implements IUIAction {
     }
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Mute";
   }
-  public async help(_manager: ReportManager, report: IReport): Promise<string> {
+  public async help(
+    _manager: StandardReportManager,
+    report: IReport
+  ): Promise<string> {
     return `Mute ${htmlEscape(report.accused_id)} in room ${htmlEscape(report.room_alias_or_id)}`;
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<string | undefined> {
     await manager.draupnir.client.setUserPowerLevel(
@@ -790,7 +821,7 @@ class BanAccused implements IUIAction {
   public emoji = "🚫";
   public needsConfirmation = true;
   public async canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<boolean> {
     try {
@@ -804,16 +835,19 @@ class BanAccused implements IUIAction {
     }
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Ban";
   }
-  public async help(_manager: ReportManager, report: IReport): Promise<string> {
+  public async help(
+    _manager: StandardReportManager,
+    report: IReport
+  ): Promise<string> {
     return `Ban ${htmlEscape(report.accused_id)} from room ${htmlEscape(report.room_alias_or_id)}`;
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport
   ): Promise<string | undefined> {
     await manager.draupnir.client.banUser(report.accused_id, report.room_id);
@@ -829,25 +863,25 @@ class Help implements IUIAction {
   public emoji = "❓";
   public needsConfirmation = false;
   public async canExecute(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<boolean> {
     return true;
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Help";
   }
   public async help(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "This help";
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     moderationroomID: string
   ): Promise<string | undefined> {
@@ -884,7 +918,7 @@ class EscalateToServerModerationRoom implements IUIAction {
   public emoji = "⏫";
   public needsConfirmation = true;
   public async canExecute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     moderationroomID: string
   ): Promise<boolean> {
@@ -901,16 +935,19 @@ class EscalateToServerModerationRoom implements IUIAction {
     return true;
   }
   public async title(
-    _manager: ReportManager,
+    _manager: StandardReportManager,
     _report: IReport
   ): Promise<string> {
     return "Escalate";
   }
-  public async help(manager: ReportManager, _report: IReport): Promise<string> {
+  public async help(
+    manager: StandardReportManager,
+    _report: IReport
+  ): Promise<string> {
     return `Escalate report to ${getHomeserver(await manager.draupnir.client.getUserId())} server moderators`;
   }
   public async execute(
-    manager: ReportManager,
+    manager: StandardReportManager,
     report: IReport,
     _moderationroomID: string,
     displayManager: DisplayManager
@@ -939,7 +976,7 @@ class EscalateToServerModerationRoom implements IUIAction {
 }
 
 class DisplayManager {
-  constructor(private owner: ReportManager) {}
+  constructor(private owner: StandardReportManager) {}
 
   /**
    * Display the report and any UI button.
