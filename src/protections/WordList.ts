@@ -193,12 +193,16 @@ export class WordListProtection
 
       const match = this.badWords.exec(message);
       if (match) {
-        const reason = `bad word: ${match[0]}`;
+        const reason = `Said a bad word. Moderators, consult the management room for more information.`;
         await this.userConsequences.consequenceForUserInRoom(
           roomID,
           event.sender,
           reason
         );
+        await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
+          msgtype: "m.notice",
+          body: `Banned ${event.sender} in ${roomID} for saying '${match[0]}'.`,
+        });
         await this.eventConsequences.consequenceForEvent(
           roomID,
           event.event_id,
