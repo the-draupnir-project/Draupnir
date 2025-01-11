@@ -26,6 +26,7 @@ import {
   UserConsequences,
   Value,
   describeProtection,
+  isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
@@ -33,6 +34,7 @@ import {
   StringRoomID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 const log = new Logger("WordList");
 
@@ -193,12 +195,24 @@ export class WordListProtection
 
       const match = this.badWords.exec(message);
       if (match) {
-        const reason = `bad word: ${match[0]}`;
+        const reason = `Said a bad word. Moderators, consult the management room for more information.`;
         await this.userConsequences.consequenceForUserInRoom(
           roomID,
           event.sender,
           reason
         );
+        const messageResult = await this.draupnir.client
+          .sendMessage(this.draupnir.managementRoomID, {
+            msgtype: "m.notice",
+            body: `Banned ${event.sender} in ${roomID} for saying '${match[0]}'.`,
+          })
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+        if (isError(messageResult)) {
+          log.error(
+            `Failed to send a message to the management room after banning ${event.sender} in ${roomID} for saying '${match[0]}'.`,
+            messageResult.error
+          );
+        }
         await this.eventConsequences.consequenceForEvent(
           roomID,
           event.event_id,
