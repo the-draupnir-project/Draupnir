@@ -201,10 +201,6 @@ export class WordListProtection
           event.sender,
           reason
         );
-        // await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
-        //   msgtype: "m.notice",
-        //   body: `Banned ${event.sender} in ${roomID} for saying '${match[0]}'.`,
-        // });
         const messageResult = await this.draupnir.client
           .sendMessage(this.draupnir.managementRoomID, {
             msgtype: "m.notice",
