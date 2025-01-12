@@ -43,6 +43,8 @@ import {
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { DraupnirBanCommandContext } from "./Ban";
 import { UnlistedUserRedactionQueue } from "../queues/UnlistedUserRedactionQueue";
+import { Draupnir } from "../Draupnir";
+import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 async function unbanUserFromRooms(
   {
@@ -50,8 +52,10 @@ async function unbanUserFromRooms(
     setMembership,
     roomUnbanner,
     noop,
+    draupnir,
   }: DraupnirUnbanCommandContext,
-  rule: MatrixGlob
+  rule: MatrixGlob,
+  invite: boolean = false
 ) {
   await managementRoomOutput.logMessage(
     LogLevel.INFO,
@@ -64,10 +68,14 @@ async function unbanUserFromRooms(
         continue;
       }
       if (rule.test(member.userID)) {
+        let logMessage = `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`;
+        if (invite) {
+          logMessage += ", and re-inviting them.";
+        }
         await managementRoomOutput.logMessage(
           LogLevel.DEBUG,
           "Unban",
-          `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`,
+          logMessage,
           revision.room.toRoomIDOrAlias()
         );
         if (!noop) {
@@ -75,6 +83,17 @@ async function unbanUserFromRooms(
             revision.room.toRoomIDOrAlias(),
             member.userID
           );
+          const inviteResult = await draupnir.client
+            .inviteUser(member.userID, revision.room.toRoomIDOrAlias())
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+          if (isError(inviteResult)) {
+            await managementRoomOutput.logMessage(
+              LogLevel.WARN,
+              "Unban",
+              `Failed to re-invite ${member.userID} to ${revision.room.toRoomIDOrAlias()}`,
+              revision.room.toRoomIDOrAlias()
+            );
+          }
         } else {
           await managementRoomOutput.logMessage(
             LogLevel.WARN,
@@ -98,6 +117,7 @@ export type DraupnirUnbanCommandContext = {
   noop: boolean;
   roomUnbanner: RoomUnbanner;
   unlistedUserRedactionQueue: UnlistedUserRedactionQueue;
+  draupnir: Draupnir;
 };
 
 export const DraupnirUnbanCommand = describeCommand({
@@ -139,6 +159,11 @@ export const DraupnirUnbanCommand = describeCommand({
         isFlag: true,
         description:
           "Legacy, now redundant option to unban the user from all rooms.",
+      },
+      invite: {
+        isFlag: true,
+        description:
+          "Re-invite the unbanned user to any rooms they were unbanned from.",
       },
     },
   },
@@ -206,7 +231,11 @@ export const DraupnirUnbanCommand = describeCommand({
       if (isStringUserID(rawEnttiy)) {
         unlistedUserRedactionQueue.removeUser(rawEnttiy);
       }
-      await unbanUserFromRooms(context, rule);
+      await unbanUserFromRooms(
+        context,
+        rule,
+        keywords.getKeywordValue("invite")
+      );
     }
     return Ok(undefined);
   },
@@ -225,6 +254,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       noop: draupnir.config.noop,
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       unlistedUserRedactionQueue: draupnir.unlistedUserRedactionQueue,
+      draupnir: draupnir,
     };
   }
 );
