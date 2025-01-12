@@ -14,6 +14,7 @@ import {
   PolicyListConfig,
   PolicyRoomManager,
   PolicyRuleType,
+  RoomInviter,
   RoomResolver,
   RoomUnbanner,
   SetRoomMembership,
@@ -43,8 +44,6 @@ import {
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { DraupnirBanCommandContext } from "./Ban";
 import { UnlistedUserRedactionQueue } from "../queues/UnlistedUserRedactionQueue";
-import { Draupnir } from "../Draupnir";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 async function unbanUserFromRooms(
   {
@@ -52,7 +51,7 @@ async function unbanUserFromRooms(
     setMembership,
     roomUnbanner,
     noop,
-    draupnir,
+    roomInviter,
   }: DraupnirUnbanCommandContext,
   rule: MatrixGlob,
   invite: boolean = false
@@ -83,9 +82,10 @@ async function unbanUserFromRooms(
             revision.room.toRoomIDOrAlias(),
             member.userID
           );
-          const inviteResult = await draupnir.client
-            .inviteUser(member.userID, revision.room.toRoomIDOrAlias())
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+          const inviteResult = await roomInviter.inviteUser(
+            revision.room,
+            member.userID
+          );
           if (isError(inviteResult)) {
             await managementRoomOutput.logMessage(
               LogLevel.WARN,
@@ -117,7 +117,7 @@ export type DraupnirUnbanCommandContext = {
   noop: boolean;
   roomUnbanner: RoomUnbanner;
   unlistedUserRedactionQueue: UnlistedUserRedactionQueue;
-  draupnir: Draupnir;
+  roomInviter: RoomInviter;
 };
 
 export const DraupnirUnbanCommand = describeCommand({
@@ -254,7 +254,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       noop: draupnir.config.noop,
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       unlistedUserRedactionQueue: draupnir.unlistedUserRedactionQueue,
-      draupnir: draupnir,
+      roomInviter: draupnir.clientPlatform.toRoomInviter(),
     };
   }
 );

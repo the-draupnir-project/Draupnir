@@ -17,6 +17,7 @@ import {
   PolicyRuleType,
   PowerLevelsEventContent,
   Recommendation,
+  RoomInviter,
   RoomResolver,
   RoomUnbanner,
   describeProtectedRoomsSet,
@@ -136,6 +137,11 @@ describe("Test the DraupnirUnbanCommand", function () {
         noop: false,
         roomUnbanner,
         unlistedUserRedactionQueue: createMock<UnlistedUserRedactionQueue>(),
+        roomInviter: createMock<RoomInviter>({
+          async inviteUser() {
+            return Ok(undefined);
+          },
+        }),
       },
       {
         rest: ["spam"],
