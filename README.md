@@ -39,7 +39,7 @@ However, Draupnir is primarily a room moderation bot and can be used without
 server administrative capabilities.
 
 **Draupnir is a forwards and backwards compatible drop in replacement for
-Mjolnir**.
+[Mjolnir](https://github.com/matrix-org/mjolnir)**.
 
 ### Prompt UX
 
