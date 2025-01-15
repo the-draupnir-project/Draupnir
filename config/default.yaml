@@ -208,7 +208,7 @@ protections:
 # homeserver and know that Draupnir is starting up quickly. If your homeserver can
 # respond quickly to Draupnir's requests for `/state` then you might not need this option.
 roomStateBackingStore:
-  enabled: false
+  enabled: true
 
 # Safe mode provides recovery options for some failure modes when Draupnir
 # fails to start. For example, if the bot fails to resolve a room alias in

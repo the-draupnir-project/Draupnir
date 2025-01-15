@@ -254,7 +254,7 @@ const defaultConfig: IConfig = {
     },
   },
   roomStateBackingStore: {
-    enabled: false,
+    enabled: true,
   },
   experimentalRustCrypto: false,
   configMeta: undefined,
