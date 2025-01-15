@@ -71,12 +71,6 @@ verifyPermissionsOnStartup: true
 # bot might not be trusted fully, yet. Default false (do bans/ACLs).
 noop: false
 
-# Set to true to use /joined_members instead of /state to figure out who is
-# in the room. Using /state is preferred because it means that users are
-# banned when they are invited instead of just when they join, though if your
-# server struggles with /state requests then set this to true.
-fasterMembershipChecks: false
-
 # A case-insensitive list of ban reasons to automatically redact a user's
 # messages for. Typically this is useful to avoid having to type two commands
 # to the bot. Use asterisks to represent globs (ie: "spam*testing" would match
@@ -84,9 +78,6 @@ fasterMembershipChecks: false
 automaticallyRedactForReasons:
   - "spam"
   - "advertising"
-
-# A list of rooms to protect (matrix.to URLs)
-protectedRooms: []
 
 # Set this option to true to protect every room the bot is joined to. Note that
 # this effectively makes the protectedRooms and associated commands useless because
@@ -114,21 +105,12 @@ commands:
   # If true, Mjolnir will respond to commands like !help and !ban instead of
   # requiring a prefix. This is useful if Mjolnir is the only bot running in
   # your management room.
-  #
-  # Note that Mjolnir can be pinged by display name instead of having to use
-  # the !mjolnir prefix. For example, "my_moderator_bot: ban @spammer:example.org"
-  # will ban a user.
-  allowNoPrefix: false
 
   # In addition to the bot's display name, !mjolnir, and optionally no prefix
   # above, the bot will respond to these names. The items here can be used either
   # as display names or prefixed with exclamation points.
   additionalPrefixes:
     - "mjolnir_bot"
-
-  # If true, ban commands that use wildcard characters require confirmation with
-  # an extra `--force` argument
-  confirmWildcardBan: true
 
 # Configuration specific to certain toggleable protections
 protections:
