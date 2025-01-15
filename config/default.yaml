@@ -90,12 +90,6 @@ noop: false
 # DO NOT change this to `true` unless you are very confident that you know what you are doing.
 disableServerACL: false
 
-# Whether Draupnir should check member lists quicker (by using a different endpoint),
-# keep in mind that enabling this will miss invited (but not joined) users.
-#
-# Turn on if your bot is in (very) large rooms, or in large amounts of rooms.
-fasterMembershipChecks: false
-
 # A case-insensitive list of ban reasons to have the bot also automatically redact the user's messages for.
 #
 # If the bot sees you ban a user with a reason that is an (exact case-insensitive) match to this list,
