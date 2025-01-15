@@ -16,6 +16,9 @@ for installation instructions and usage guides.
 
 ## Features
 
+Draupnir's UX is centred around prompting you with questions to carry out
+specific moderation tasks by shadowing the actions taken by your Matrix Client.
+
 Draupnir has two main functions, the first is to synchronise bans for users and
 servers across all of the matrix rooms that you moderate. The second is to
 protect your community by applying policies from community curated policy lists,
@@ -24,60 +27,21 @@ for example the
 to your rooms around the clock. This means that communities can warn and protect
 each other of known threats.
 
-Draupnir also includes a series of protections that can be enabled that might
-help you in some scenarios.
+Draupnir and the list provided by the community moderation effort are the bread
+and butter essentials of moderating public spaces on Matrix.
 
-By default Draupnir includes support for user bans, redactions and server ACLs.
+Draupnir also includes a series of protections that can be enabled that can help
+you in given scenarios when your community is being targeted.
 
 Some support is also provided for server administrative functions, such as
 reviewing abuse reports, deactivating user accounts and shutting down rooms.
+However, Draupnir is primarily a room moderation bot and can be used without
+server administrative capabilities.
 
-### Differences from Mjolnir
+**Draupnir is a forwards and backwards compatible drop in replacement for
+Mjolnir**.
 
-> I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
-
-Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
-in order to radically refactor the code base and break a feature freeze.
-Draupnir has now completed this refactor and large sections of the the code base
-are now very distinct, as much of Draupnir was rewritten.
-
-Draupnir remains a drop in replacement for Mjolnir and is forwards and backwards
-compatible.
-
-#### Changes in `v2.0.0-beta.*` (pre-release)
-
-- Draupnir's new core efficiently caches room state and room membership allowing
-  Draupnir to be much more responsive than Mjolnir.
-
-- Draupnir is much less dependant on commands and will automatically send
-  prompts to the management room. Prompts are sent for inviting Draupnir to
-  protect rooms, watch policy lists, ban users, and unban users.
-
-- Draupnir offers a
-  [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
-  allowing Draupnir startup quickly, even when deployed at distance from the
-  homeserver.
-
-- Draupnir's core functionality is implemented as protections, which can be
-  dynamically turned on and off.
-
-- Most effort has been spent refactoring the code base, paving the way for
-  future feature development and adjacent projects. This includes the rewrite of
-  the core of Draupnir into the
-  [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
-  providing all the Matrix client code required to operate a protection
-  platform. The
-  [interface-manager](https://github.com/the-draupnir-project/interface-manager)
-  providing an advanced command-oriented interface (note, this does not mean
-  command-line interface). The
-  [matrix-basic-types](https://github.com/the-draupnir-project/matrix-basic-types)
-  library for dealing with Matrix's various string types. And finally the
-  introduction of [prettier](https://prettier.io/),
-  [eslint](https://eslint.org/) and
-  [typescript-eslint](https://typescript-eslint.io/) into Draupnir's development
-  tooling, modernising TypeScript development.
-
-#### Changes in latest `v1.87.0`
+### Prompt UX
 
 The main difference from Mjolnir is that it is no longer necessary to use
 commands for some functions. Banning a user in a protected room from your Matrix
@@ -103,25 +67,64 @@ unexpected errors much more easily.
     Yes, i know they don't align horizontally, you are welcome to suggest how
     this should be fixed.
 
+### Technical differences from Mjolnir and other moderation bots
+
+> I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
+
+Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
+in order to radically refactor the code base and break a feature freeze.
+Draupnir has now completed this refactor and large sections of the the code base
+are now very distinct, as much of Draupnir was rewritten.
+
+**Draupnir remains a forwards and backwards compatible drop in replacement for
+Mjolnir**.
+
+- Draupnir is much less dependant on commands and will automatically send
+  prompts to the management room. Prompts are sent for inviting Draupnir to
+  protect rooms, watch policy lists, ban users, and unban users.
+
+- Draupnir is much more responsive. Unlike Mjolnir and other bots, Draupnir does
+  not need to request any data from the homeserver before applying new bans or
+  to ban new users.
+
+- Draupnir uses an advanced persistent revision system for room state, members,
+  policies, and policy matches. By using revisions, Draupnir only has to process
+  room state once in terms of simple deltas as room state is updated.
+
+- Draupnir offers a
+  [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
+  allowing Draupnir startup quickly, even when deployed at distance from the
+  homeserver.
+
+- Draupnir's core functionality is implemented as protections, which can be
+  configured and dynamically turned on and off. If you can write even a little
+  JS/TS, Draupnir's behaviour can be radically changed or customized. And
+  because the core functionality is implemented with the extension system, there
+  are less limits.
+
+- A huge effort has been spent refactoring the code base, paving the way for
+  future feature development of Draupnir and adjacent projects. This includes
+  the rewrite of the core of Draupnir into the
+  [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
+  providing all the Matrix client code required to operate a protection
+  platform. The
+  [interface-manager](https://github.com/the-draupnir-project/interface-manager)
+  providing an advanced command-oriented interface (note, this does not mean
+  command-line interface). The
+  [matrix-basic-types](https://github.com/the-draupnir-project/matrix-basic-types)
+  library for dealing with Matrix's various string types. And finally the
+  introduction of [prettier](https://prettier.io/),
+  [eslint](https://eslint.org/) and
+  [typescript-eslint](https://typescript-eslint.io/) into Draupnir's development
+  tooling, modernising TypeScript development.
+
 ## Status
 
 Draupnir is being supported with a grant from NLnet, the goals of the work are
 described [here](https://marewolf.me/posts/draupnir/24-nlnet-goals.html)
 
-Currently The UX and code base of Draupnir has been overhauled and Draupnir is
-moving towards a 2.0.0 release.
-
-As Draupnir heads towards `v2.0.0`, releases will appear
-[here](https://github.com/Gnuxie/Draupnir/releases). Until `v2.0.0` there will
-be frequent changes to commands but all of these will be noted in the changes
-for that release.
-
-Currently, we are running a beta channel (`v2.0.0-beta.*`). As of now all
-functionality apart from dynamic configuration of protection settings is stable
-in the beta channel.
-
-For the latest stable release, see `v1.87.0`, the documentation for which can be
-found [here](https://github.com/the-draupnir-project/Draupnir/tree/v1.87.0).
+Currently The UX and code base of Draupnir has been overhauled and we have
+recently passed a huge milestone: Draupnir's 2.0.0 release.
 
 ### Migration
 
@@ -197,6 +200,12 @@ However, if you are uncomfortable with this, please do not activate this
 feature. Also, you should probably setup your `production.yaml` to ensure that
 the web server can only receive requests from your reverse proxy (e.g.
 `localhost`).
+
+### Legacy documentation (`v1.87.0` and below)
+
+For information about the legacy version of Draupnir, see `v1.87.0`, the
+documentation for which can be found
+[here](https://github.com/the-draupnir-project/Draupnir/tree/v1.87.0).
 
 ## Contributing & Opening Issues
 
