@@ -146,8 +146,9 @@ for first-time setup documentation.
 See the [configuration sample with documentation](config/default.yaml) for
 detailed information about Draupnir's configuration.
 
-See the [synapse module documentation](docs/synapse_module.md) for information
-on how to setup Draupnir's accompanying Synapse Module.
+See the
+[synapse module documentation](https://the-draupnir-project.github.io/draupnir-documentation/bot/synapse_module)
+for information on how to setup Draupnir's accompanying Synapse Module.
 
 ## Quickstart guide
 
