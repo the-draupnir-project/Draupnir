@@ -100,7 +100,6 @@ export interface IConfig {
   commands: {
     allowNoPrefix: boolean;
     additionalPrefixes: string[];
-    confirmWildcardBan: boolean;
     features: string[];
     ban: {
       defaultReasons: string[];
@@ -208,7 +207,6 @@ const defaultConfig: IConfig = {
   commands: {
     allowNoPrefix: false,
     additionalPrefixes: ["draupnir"],
-    confirmWildcardBan: true,
     features: ["synapse admin"],
     ban: {
       defaultReasons: ["spam", "brigading", "harassment", "disagreement"],

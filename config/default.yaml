@@ -164,10 +164,6 @@ commands:
   additionalPrefixes:
     - "draupnir"
 
-  # Whether or not commands with a wildcard (*) will require an additional `--force` argument
-  # in the command to be able to be submitted.
-  confirmWildcardBan: true
-
   # The default reasons to be prompted with if the reason is missing from a ban command.
   ban:
     defaultReasons:
