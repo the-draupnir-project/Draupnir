@@ -149,6 +149,14 @@ protections:
     # Set to zero to disable (users will always be banned if they say a bad word)
     minutesBeforeTrusting: 20
 
+# The room state backing store writes a copy of the room state for all protected
+# rooms to the data directory.
+# It is recommended to enable this option unless you deploy Draupnir close to the
+# homeserver and know that Draupnir is starting up quickly. If your homeserver can
+# respond quickly to Draupnir's requests for `/state` then you might not need this option.
+roomStateBackingStore:
+  enabled: false
+
 # Options for monitoring the health of the bot
 health:
   # healthz options. These options are best for use in container environments
