@@ -77,7 +77,6 @@ export interface IConfig {
   verifyPermissionsOnStartup: boolean;
   disableServerACL: boolean;
   noop: boolean;
-  protectedRooms: string[]; // matrix.to urls
   fasterMembershipChecks: boolean;
   automaticallyRedactForReasons: string[]; // case-insensitive globs
   protectAllJoinedRooms: boolean;
@@ -198,7 +197,6 @@ const defaultConfig: IConfig = {
   verifyPermissionsOnStartup: true,
   noop: false,
   disableServerACL: false,
-  protectedRooms: [],
   fasterMembershipChecks: false,
   automaticallyRedactForReasons: ["spam", "advertising"],
   protectAllJoinedRooms: false,
@@ -409,7 +407,6 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
   );
 
   config.managementRoom = managementRoomId;
-  config.protectedRooms = [];
   return config;
 }
 
