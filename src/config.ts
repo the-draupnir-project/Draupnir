@@ -77,7 +77,6 @@ export interface IConfig {
   verifyPermissionsOnStartup: boolean;
   disableServerACL: boolean;
   noop: boolean;
-  fasterMembershipChecks: boolean;
   automaticallyRedactForReasons: string[]; // case-insensitive globs
   protectAllJoinedRooms: boolean;
   /**
@@ -197,7 +196,6 @@ const defaultConfig: IConfig = {
   verifyPermissionsOnStartup: true,
   noop: false,
   disableServerACL: false,
-  fasterMembershipChecks: false,
   automaticallyRedactForReasons: ["spam", "advertising"],
   protectAllJoinedRooms: false,
   backgroundDelayMS: 500,
@@ -382,7 +380,6 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     "logLevel",
     "syncOnStartup",
     "verifyPermissionsOnStartup",
-    "fasterMembershipChecks",
     "automaticallyRedactForReasons",
     "protectAllJoinedRooms",
     "backgroundDelayMS",
