@@ -93,7 +93,7 @@ Mjolnir**.
 
 - Draupnir offers a
   [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
-  allowing Draupnir startup quickly, even when deployed at distance from the
+  allowing Draupnir to startup quickly, even when deployed at distance from the
   homeserver.
 
 - Draupnir's core functionality is implemented as protections, which can be
