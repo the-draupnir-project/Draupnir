@@ -111,15 +111,6 @@ automaticallyRedactForReasons:
   - "spam"
   - "advertising"
 
-# A list of rooms to protect. Draupnir will add this to the list it knows from its account data.
-#
-# It won't, however, add it to the account data.
-# Manually add the room via '!draupnir rooms add' to have it stay protected regardless if this config value changes.
-#
-# Note: These must be matrix.to URLs
-protectedRooms:
-  - "https://matrix.to/#/#yourroom:example.org"
-
 # Whether or not to add all joined rooms to the "protected rooms" list
 # (excluding the management room and watched policy list rooms, see below).
 #
