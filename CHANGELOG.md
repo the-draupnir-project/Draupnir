@@ -14,7 +14,42 @@ and this project adheres to
 
 ## [Unreleased] - None
 
-## [v2.0.0-beta.10] 2024-01-09
+## [v2.0.0-beta.11] 2025-01-16
+
+### Changed
+
+- Enable the room state backing store by default. This is configured with the
+  `roomStateBackingStore` setting in config. by @FSG-Cat.
+
+### Fixed
+
+- Fix the report poller so that it no longer repeatedly sends the same reports.
+
+- `WordListProtection`: No longer send the banned word in the banned reason, by
+  @nexy7574 in https://github.com/the-draupnir-project/Draupnir/pull/665.
+
+- Fixed the reporter field in the abuse report UX displaying as the sender when
+  the report came from the report poller. Reported by @HarHarLinks in
+  https://github.com/the-draupnir-project/Draupnir/issues/408.
+
+- Show invalid settings with red crosses in `!draupnir protections show`.
+
+### Added
+
+- The number of unique matrix users in the protected rooms set is now shown in
+  the status command as "protected users" .
+
+- `!draupnir protections config reset` command to restore the default protection
+  settings for a protection.
+
+### Removed
+
+- Several unused config options have been removed from the template.
+  `fasterMembershipChecks` no longer does anything or is needed.
+  `confirmWildcardBan` is not used. `protectedRooms` config option is not used
+  anymore because it has confusing semantics. by @FSG-Cat.
+
+## [v2.0.0-beta.10] 2025-01-09
 
 ### Changed
 
