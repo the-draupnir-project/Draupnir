@@ -14,6 +14,66 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.0.0] 2025-01-16
+
+### Upgrade Steps
+
+There are no manual upgrade steps, the new protections are automatically
+enabled. The only thing you should note is that Draupnir now enables the new
+`roomStateBackingStore` by default. This improves the startup time of Draupnir
+considerably but if you need to disable it, see the config documentation
+[here](https://github.com/the-draupnir-project/Draupnir/blob/69b666e56d89472c05175685267b333a7ab988fe/config/default.yaml#L186-L192).
+
+There are also no upgrade steps to upgrading to v2.0.0 from Mjolnir.
+
+Please see the
+[documentation](https://the-draupnir-project.github.io/draupnir-documentation/)
+if you are installing Draupnir for the first time.
+
+### What's changed
+
+TL;DR everything is so much better.
+
+- Draupnir is now much less dependant on commands and will automatically send
+  prompts to the management room. Prompts are sent for inviting Draupnir to
+  protect rooms, watch policy lists, banning users, and unbanning users.
+
+- Draupnir is much more responsive. Draupnir now does not need to request any
+  data from the homeserver before applying new bans or to ban new users.
+
+- Draupnir now uses a persistent revision system for room state, members,
+  policies, and policy matches. By using revisions, Draupnir only has to process
+  room state once in terms of simple deltas as room state is updated.
+
+- Draupnir offers a
+  [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/69b666e56d89472c05175685267b333a7ab988fe/config/default.yaml#L186-L192),
+  allowing Draupnir to startup quickly, even when deployed at distance from the
+  homeserver.
+
+- Protection messages have been revised to present information more efficiently
+  in the management room.
+
+- A safe mode has been introduced that can be used to recover Draupnir in
+  situations where watched lists or protected rooms become unjoinable.
+
+- All commands now use the new command-oriented
+  [interface-manager](https://github.com/the-draupnir-project/interface-manager).
+
+- Protection settings have been reworked. The `!draupnir protections show`
+  command now shows all configurable settings for a given protection and
+  describes how they can be modified.
+
+In addition to hundreds of other significant fixes, UX improvements, and other
+changes that would be too detailed to list in this changelog. For a full list of
+changes, please review the
+[CHANGELOG](https://github.com/the-draupnir-project/Draupnir/blob/main/CHANGELOG.md#v200-beta11-2025-01-16).
+
+Special thanks to all contributors who helped in the beta programme: @avdb13,
+@bluesomewhere, @daedric7, @deepbluev7, @FSG-Cat, @HarHarLinks,
+@guillaumechauvat, @jimmackenzie, @jjj333-p, @JokerGermany, @julianfoad,
+@Kladki, @ll-SKY-ll, @mahdi1234, @Mikaela, @morguildir, @MTRNord, @nexy7574,
+@Philantrop, @ShadowJonathan, @tcpipuk, @TheArcaneBrony
+
 ## [v2.0.0-beta.11] 2025-01-16
 
 ### Changed

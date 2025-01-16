@@ -92,7 +92,7 @@ Mjolnir**.
   room state once in terms of simple deltas as room state is updated.
 
 - Draupnir offers a
-  [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/main/config/default.yaml#L206-L212),
+  [room state backing store](https://github.com/the-draupnir-project/Draupnir/blob/69b666e56d89472c05175685267b333a7ab988fe/config/default.yaml#L186-L192),
   allowing Draupnir to startup quickly, even when deployed at distance from the
   homeserver.
 
