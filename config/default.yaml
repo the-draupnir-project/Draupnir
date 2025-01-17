@@ -10,7 +10,7 @@ rawHomeserverUrl: "https://matrix.org"
 # which would allow using secret management systems such as systemd's service credentials.
 accessToken: "YOUR_TOKEN_HERE"
 
-# Options related to having the bot login itself.
+# Options related to having Draupnir login itself.
 pantalaimon:
   # Set to `true` when the bot is to login and fetch the access token on its own.
   #
