@@ -302,7 +302,7 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
     isPasswordPathOptionUsed: isCommandLineOptionPresent(
       process.argv,
       "--pantalaimon-password-path"
-    ) ?? isCommandLineOptionPresent(
+    ) || isCommandLineOptionPresent(
       process.argv,
       "--password-path"
     ),
