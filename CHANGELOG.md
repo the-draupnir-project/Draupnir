@@ -14,6 +14,19 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.0.1] 2025-01-18
+
+### Fixed
+
+- Fixed an issue where the `!draupnir unban` and the unban prompt actually
+  banned users again at the room level instead of unbanning them. Matching
+  policy rules were still removed. This bug was introduced in
+  [v2.0.0-beta.5](https://github.com/the-draupnir-project/Draupnir/releases/tag/v2.0.0-beta.5).
+  Thanks to @nexy7574 for helping to debug the issue.
+
+- Fixed an issue where default protections would be renabled on restart if
+  disabled, thanks to @ll-SKY-ll and @mahdi1234 for helping with debugging this.
+
 ## [v2.0.0] 2025-01-16
 
 ### Upgrade Steps
