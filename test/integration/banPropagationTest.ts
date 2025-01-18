@@ -7,6 +7,7 @@ import { newTestUser } from "./clientHelper";
 import { getFirstEventMatching } from "./commands/commandUtils";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 import {
+  MembershipChangeType,
   NoticeMessageContent,
   PolicyRuleType,
   PropagationType,
@@ -17,6 +18,7 @@ import {
 import {
   MatrixRoomReference,
   StringRoomID,
+  StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 
 // We will need to disable this in tests that are banning people otherwise it will cause
@@ -55,17 +57,22 @@ describe("Ban propagation test", function () {
       const moderator = await newTestUser(this.config.homeserverUrl, {
         name: { contains: "moderator" },
       });
+      const spammer = await newTestUser(this.config.homeserverUrl, {
+        name: { contains: "spam" },
+      });
+      const spamUserID = (await spammer.getUserId()) as StringUserID;
       await moderator.joinRoom(draupnir.managementRoomID);
       const protectedRooms = await Promise.all(
         [...Array(5)].map(async (_) => {
           const room = await moderator.createRoom({
-            invite: [draupnir.clientUserID],
+            invite: [draupnir.clientUserID, spamUserID],
           });
           await draupnir.client.joinRoom(room);
           await moderator.setUserPowerLevel(draupnir.clientUserID, room, 100);
           await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
             MatrixRoomReference.fromRoomID(room as StringRoomID)
           );
+          await spammer.joinRoom(room);
           return room;
         })
       );
@@ -91,11 +98,7 @@ describe("Ban propagation test", function () {
         targetRoom: draupnir.managementRoomID,
         lookAfterEvent: async function () {
           // ban a user in one of our protected rooms using the moderator
-          await moderator.banUser(
-            "@test:example.com",
-            protectedRooms[0],
-            "spam"
-          );
+          await moderator.banUser(spamUserID, protectedRooms[0], "spam");
           return undefined;
         },
         predicate: function (event: unknown): boolean {
@@ -119,11 +122,11 @@ describe("Ban propagation test", function () {
         draupnir.protectedRoomsSet.issuerManager.policyListRevisionIssuer
           .currentRevision;
       const rules = policyListRevisionAfterBan.allRulesMatchingEntity(
-        "@test:example.com",
+        spamUserID,
         PolicyRuleType.User
       );
       expect(rules.length).toBe(1);
-      expect(rules[0]?.entity).toBe("@test:example.com");
+      expect(rules[0]?.entity).toBe(spamUserID);
       expect(rules[0]?.reason).toBe("spam");
 
       // now unban them >:3
@@ -132,7 +135,7 @@ describe("Ban propagation test", function () {
         targetRoom: draupnir.managementRoomID,
         lookAfterEvent: async function () {
           // ban a user in one of our protected rooms using the moderator
-          await moderator.unbanUser("@test:example.com", protectedRooms[0]);
+          await moderator.unbanUser(spamUserID, protectedRooms[0]);
           return undefined;
         },
         predicate: function (event: unknown): boolean {
@@ -156,10 +159,24 @@ describe("Ban propagation test", function () {
 
       const rulesAfterUnban =
         policyListRevisionAfterUnBan.allRulesMatchingEntity(
-          "@test:example.com",
+          spamUserID,
           PolicyRuleType.User
         );
       expect(rulesAfterUnban.length).toBe(0);
+      for (const room of protectedRooms) {
+        const membershipRevision =
+          draupnir.protectedRoomsSet.setRoomMembership.getRevision(
+            room as StringRoomID
+          );
+        if (membershipRevision === undefined) {
+          throw new TypeError(
+            `We should be able to get the membership for the protected room`
+          );
+        }
+        expect(
+          membershipRevision.membershipForUser(spamUserID)?.membershipChangeType
+        ).toBe(MembershipChangeType.Unbanned);
+      }
     } as unknown as Mocha.AsyncFunc
   );
 });
