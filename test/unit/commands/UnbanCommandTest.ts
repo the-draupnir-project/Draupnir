@@ -5,6 +5,7 @@
 import { CommandExecutorHelper } from "@the-draupnir-project/interface-manager";
 import {
   MatrixRoomID,
+  MatrixRoomReference,
   MatrixUserID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
@@ -75,14 +76,29 @@ describe("Test the DraupnirUnbanCommand", function () {
     },
   });
   it("Will add a user to the policy list when they are banned", async function () {
+    const { protectedRoomsSet, policyRoomManager, roomStateManager } =
+      await createProtectedRooms();
     const roomUnbanner = createMock<RoomUnbanner>({
-      async unbanUser(_room, userID, _reason) {
+      async unbanUser(roomOrRoomID, userID, reason) {
+        const room =
+          roomOrRoomID instanceof MatrixRoomID
+            ? roomOrRoomID
+            : MatrixRoomReference.fromRoomID(roomOrRoomID);
         expect(userID).toBe(ExistingBanUserID);
+        roomStateManager.appendState({
+          room,
+          membershipDescriptions: [
+            {
+              sender: DraupnirUserID,
+              target: userID,
+              membership: Membership.Leave,
+              ...(reason === undefined ? {} : { reason }),
+            },
+          ],
+        });
         return Ok(undefined);
       },
     });
-    const { protectedRoomsSet, policyRoomManager } =
-      await createProtectedRooms();
     const policyRoom = protectedRoomsSet.allProtectedRooms[0];
     if (policyRoom === undefined) {
       throw new TypeError(
@@ -128,5 +144,16 @@ describe("Test the DraupnirUnbanCommand", function () {
       policyRoom
     );
     expect(banResult.isOkay).toBe(true);
+    const membership = protectedRoomsSet.setRoomMembership.getRevision(
+      policyRoom.toRoomIDOrAlias()
+    );
+    if (membership === undefined) {
+      throw new TypeError(
+        `We should be able to get the membership for the protected policy room`
+      );
+    }
+    expect(membership.membershipForUser(ExistingBanUserID)?.membership).toBe(
+      Membership.Leave
+    );
   });
 });
