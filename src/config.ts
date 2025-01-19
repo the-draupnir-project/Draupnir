@@ -299,10 +299,9 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
       process.argv,
       "--access-token-path"
     ),
-    isPasswordPathOptionUsed: isCommandLineOptionPresent(
-      process.argv,
-      "--pantalaimon-password-path"
-    ),
+    isPasswordPathOptionUsed:
+      isCommandLineOptionPresent(process.argv, "--pantalaimon-password-path") ||
+      isCommandLineOptionPresent(process.argv, "--password-path"),
   };
 }
 
@@ -347,18 +346,14 @@ export function configRead(): IConfig {
     process.argv,
     "--access-token-path"
   );
-  const explicitPantalaimonPasswordPath = getCommandLineOption(
-    process.argv,
-    "--pantalaimon-password-path"
-  );
   if (explicitAccessTokenPath !== undefined) {
     config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8");
   }
-  if (explicitPantalaimonPasswordPath) {
-    config.pantalaimon.password = fs.readFileSync(
-      explicitPantalaimonPasswordPath,
-      "utf8"
-    );
+  const explicitPasswordPath =
+    getCommandLineOption(process.argv, "--pantalaimon-password-path") ??
+    getCommandLineOption(process.argv, "--password-path");
+  if (explicitPasswordPath) {
+    config.pantalaimon.password = fs.readFileSync(explicitPasswordPath, "utf8");
   }
   return config;
 }

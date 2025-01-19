@@ -1,5 +1,4 @@
 # Endpoint URL that Draupnir uses to interact with the matrix homeserver (client-server API),
-# set this to the pantalaimon URL if you're using that.
 homeserverUrl: "https://matrix.org"
 
 # Endpoint URL that Draupnir could use to fetch events related to reports (client-server API and /_synapse/),
@@ -11,12 +10,9 @@ rawHomeserverUrl: "https://matrix.org"
 # which would allow using secret management systems such as systemd's service credentials.
 accessToken: "YOUR_TOKEN_HERE"
 
-# Options related to Pantalaimon (https://github.com/matrix-org/pantalaimon)
+# Options related to having Draupnir login itself.
 pantalaimon:
-  # Whether or not Draupnir will use pantalaimon to access the matrix homeserver,
-  # set to `true` if you're using pantalaimon.
-  #
-  # Be sure to point homeserverUrl to the pantalaimon instance.
+  # Set to `true` when the bot is to login and fetch the access token on its own.
   #
   # Draupnir will log in using the given username and password once,
   # then store the resulting access token in a file under dataPath.
@@ -28,13 +24,13 @@ pantalaimon:
   # The password Draupnir will login with.
   #
   # After successfully logging in once, this will be ignored, so this value can be blanked after first startup.
-  # This option can be loaded from a file by passing "--pantalaimon-password-path <path>" at the command line,
+  # This option can be loaded from a file by passing "--password-path <path>" at the command line,
   # which would allow using secret management systems such as systemd's service credentials.
   password: your_password
 
 # Experimental usage of the matrix-bot-sdk rust crypto.
 # This can not be used with Pantalaimon.
-# Make sure to setup the bot as if you are not using pantalaimon for this.
+# Make sure Pantalaimon is disabled in Draupnir's configuration.
 #
 # Warning: At this time this is not considered production safe.
 experimentalRustCrypto: false
