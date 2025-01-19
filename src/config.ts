@@ -352,13 +352,13 @@ export function configRead(): IConfig {
     "--pantalaimon-password-path"
   );
   if (explicitAccessTokenPath !== undefined) {
-    config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8");
+    config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8").trim();
   }
   if (explicitPantalaimonPasswordPath) {
     config.pantalaimon.password = fs.readFileSync(
       explicitPantalaimonPasswordPath,
       "utf8"
-    );
+    ).trim();
   }
   return config;
 }
