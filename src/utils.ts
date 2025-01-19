@@ -492,14 +492,18 @@ function patchMatrixClientForRetry() {
         return cb(...result);
       } catch (err) {
         // Need to retry.
-        let retryAfterMs = attempt * attempt * REQUEST_RETRY_BASE_DURATION_MS;
-        if ("retry_after_ms" in err) {
-          try {
-            retryAfterMs = Number.parseInt(err.retry_after_ms, 10);
-          } catch (ex) {
-            // Use default value.
+        const retryAfterMs = (() => {
+          if (err instanceof MatrixError && err.retryAfterMs !== undefined) {
+            return err.retryAfterMs;
+          } else {
+            LogService.error(
+              "Draupnir.client",
+              "Unable to extract retry_after_ms from error, using fallback to create retry duration",
+              err
+            );
+            return attempt * attempt * REQUEST_RETRY_BASE_DURATION_MS;
           }
-        }
+        })();
         LogService.debug(
           "Draupnir.client",
           `Waiting ${retryAfterMs}ms before retrying ${params.method} ${params.uri}`
