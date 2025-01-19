@@ -67,14 +67,11 @@ async function unbanUserFromRooms(
         continue;
       }
       if (rule.test(member.userID)) {
-        let logMessage = `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`;
-        if (invite) {
-          logMessage += ", and re-inviting them.";
-        }
         await managementRoomOutput.logMessage(
           LogLevel.DEBUG,
           "Unban",
-          logMessage,
+          `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}` +
+            (invite ? ", and re-inviting them." : ""),
           revision.room.toRoomIDOrAlias()
         );
         if (!noop) {
