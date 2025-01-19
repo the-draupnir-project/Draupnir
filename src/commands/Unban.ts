@@ -14,6 +14,7 @@ import {
   PolicyListConfig,
   PolicyRoomManager,
   PolicyRuleType,
+  RoomInviter,
   RoomResolver,
   RoomUnbanner,
   SetRoomMembership,
@@ -50,8 +51,10 @@ async function unbanUserFromRooms(
     setMembership,
     roomUnbanner,
     noop,
+    roomInviter,
   }: DraupnirUnbanCommandContext,
-  rule: MatrixGlob
+  rule: MatrixGlob,
+  invite: boolean = false
 ) {
   await managementRoomOutput.logMessage(
     LogLevel.INFO,
@@ -67,7 +70,8 @@ async function unbanUserFromRooms(
         await managementRoomOutput.logMessage(
           LogLevel.DEBUG,
           "Unban",
-          `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}`,
+          `Unbanning ${member.userID} in ${revision.room.toRoomIDOrAlias()}` +
+            (invite ? ", and re-inviting them." : ""),
           revision.room.toRoomIDOrAlias()
         );
         if (!noop) {
@@ -75,6 +79,18 @@ async function unbanUserFromRooms(
             revision.room.toRoomIDOrAlias(),
             member.userID
           );
+          const inviteResult = await roomInviter.inviteUser(
+            revision.room,
+            member.userID
+          );
+          if (isError(inviteResult)) {
+            await managementRoomOutput.logMessage(
+              LogLevel.WARN,
+              "Unban",
+              `Failed to re-invite ${member.userID} to ${revision.room.toRoomIDOrAlias()}`,
+              revision.room.toRoomIDOrAlias()
+            );
+          }
         } else {
           await managementRoomOutput.logMessage(
             LogLevel.WARN,
@@ -98,6 +114,7 @@ export type DraupnirUnbanCommandContext = {
   noop: boolean;
   roomUnbanner: RoomUnbanner;
   unlistedUserRedactionQueue: UnlistedUserRedactionQueue;
+  roomInviter: RoomInviter;
 };
 
 export const DraupnirUnbanCommand = describeCommand({
@@ -139,6 +156,11 @@ export const DraupnirUnbanCommand = describeCommand({
         isFlag: true,
         description:
           "Legacy, now redundant option to unban the user from all rooms.",
+      },
+      invite: {
+        isFlag: true,
+        description:
+          "Re-invite the unbanned user to any rooms they were unbanned from.",
       },
     },
   },
@@ -206,7 +228,11 @@ export const DraupnirUnbanCommand = describeCommand({
       if (isStringUserID(rawEnttiy)) {
         unlistedUserRedactionQueue.removeUser(rawEnttiy);
       }
-      await unbanUserFromRooms(context, rule);
+      await unbanUserFromRooms(
+        context,
+        rule,
+        keywords.getKeywordValue("invite")
+      );
     }
     return Ok(undefined);
   },
@@ -225,6 +251,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       noop: draupnir.config.noop,
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       unlistedUserRedactionQueue: draupnir.unlistedUserRedactionQueue,
+      roomInviter: draupnir.clientPlatform.toRoomInviter(),
     };
   }
 );
