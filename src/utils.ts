@@ -492,14 +492,10 @@ function patchMatrixClientForRetry() {
         return cb(...result);
       } catch (err) {
         // Need to retry.
-        let retryAfterMs = attempt * attempt * REQUEST_RETRY_BASE_DURATION_MS;
-        if ("retry_after_ms" in err) {
-          try {
-            retryAfterMs = Number.parseInt(err.retry_after_ms, 10);
-          } catch (ex) {
-            // Use default value.
-          }
-        }
+        const retryAfterMs =
+          "retryAfterMs" in err
+            ? err.retryAfterMs
+            : attempt * attempt * REQUEST_RETRY_BASE_DURATION_MS;
         LogService.debug(
           "Draupnir.client",
           `Waiting ${retryAfterMs}ms before retrying ${params.method} ${params.uri}`
