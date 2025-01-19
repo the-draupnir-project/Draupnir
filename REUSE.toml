@@ -4,6 +4,12 @@ SPDX-PackageSupplier = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-PackageDownloadLocation = "https://github.com/the-draupnir-project/Draupnir"
 
 [[annotations]]
+path = ".github/ISSUE_TEMPLATE/bug-report.md"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
 path = "tsconfig.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
