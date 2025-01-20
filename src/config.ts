@@ -352,12 +352,11 @@ export function configRead(): IConfig {
     "--pantalaimon-password-path"
   );
   if (explicitAccessTokenPath !== undefined) {
-    config.accessToken = fs.readFileSync(explicitAccessTokenPath, "utf8");
+    config.accessToken = readSecretFromPath(explicitAccessTokenPath);
   }
   if (explicitPantalaimonPasswordPath) {
-    config.pantalaimon.password = fs.readFileSync(
-      explicitPantalaimonPasswordPath,
-      "utf8"
+    config.pantalaimon.password = readSecretFromPath(
+      explicitPantalaimonPasswordPath
     );
   }
   return config;
@@ -482,6 +481,15 @@ function getCommandLineOption(
 
   // No value was provided, or the next argument is another option
   throw new Error(`No value provided for ${optionName}`);
+}
+
+function readSecretFromPath(path: string): string {
+  // extract only the first line.
+  const secret = fs.readFileSync(path, "utf8").match(/^[^\r\n]*/)?.[0];
+  if (!secret) {
+    throw new TypeError(`There is no secret present in the file at ${path}`);
+  }
+  return secret;
 }
 
 type UnknownPropertyPaths = string[];
