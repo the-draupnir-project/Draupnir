@@ -10,10 +10,11 @@
 import {
   MatrixInterfaceCommandDispatcher,
   StandardMatrixInterfaceCommandDispatcher,
-  CommandPrefixExtractor,
   JSInterfaceCommandDispatcher,
   BasicInvocationInformation,
   StandardJSInterfaceCommandDispatcher,
+  CommandNormaliser,
+  makeCommandNormaliser,
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../Draupnir";
 import {
@@ -22,33 +23,29 @@ import {
   invocationInformationFromMatrixEventcontext,
 } from "./interface-manager/MPSMatrixInterfaceAdaptor";
 import { DraupnirHelpCommand } from "./Help";
-import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
 import "./DraupnirCommands";
+import { IConfig } from "../config";
 
-function makePrefixExtractor(draupnir: Draupnir): CommandPrefixExtractor {
-  const plainPrefixes = [
-    "!draupnir",
-    userLocalpart(draupnir.clientUserID),
-    draupnir.clientUserID,
-    ...draupnir.config.commands.additionalPrefixes,
-  ];
-  const allPossiblePrefixes = [
-    ...plainPrefixes.map((p) => `!${p}`),
-    ...plainPrefixes.map((p) => `${p}:`),
-    ...plainPrefixes,
-    ...(draupnir.config.commands.allowNoPrefix ? ["!"] : []),
-  ];
-  return (body) => {
-    const isPrefixUsed = allPossiblePrefixes.find((p) =>
-      body.toLowerCase().startsWith(p.toLowerCase())
-    );
-    return isPrefixUsed ? "draupnir" : undefined;
-  };
+export function makeDraupnirCommandNormaliser(
+  clientUserID: StringUserID,
+  config: IConfig
+): CommandNormaliser {
+  return makeCommandNormaliser(clientUserID, {
+    symbolPrefixes: ["!"],
+    isAllowedOnlySymbolPrefixes: config.commands.allowNoPrefix,
+    additionalPrefixes: ["draupnir", ...config.commands.additionalPrefixes],
+    getDisplayName: function (): string {
+      // TODO: We'll have the displayname cached somewhere one day and dynamically updated.
+      return "draupnir";
+    },
+    normalisedPrefix: "draupnir",
+  });
 }
 
 export function makeDraupnirCommandDispatcher(
@@ -62,7 +59,10 @@ export function makeDraupnirCommandDispatcher(
     invocationInformationFromMatrixEventcontext,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(draupnir),
+      commandNormaliser: makeDraupnirCommandNormaliser(
+        draupnir.clientUserID,
+        draupnir.config
+      ),
     }
   );
 }
@@ -76,7 +76,10 @@ export function makeDraupnirJSCommandDispatcher(
     draupnir,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(draupnir),
+      commandNormaliser: makeDraupnirCommandNormaliser(
+        draupnir.clientUserID,
+        draupnir.config
+      ),
     },
     DraupnirContextToCommandContextTranslator
   );

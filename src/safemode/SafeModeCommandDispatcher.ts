@@ -4,7 +4,6 @@
 
 import {
   BasicInvocationInformation,
-  CommandPrefixExtractor,
   JSInterfaceCommandDispatcher,
   MatrixInterfaceCommandDispatcher,
   StandardJSInterfaceCommandDispatcher,
@@ -16,35 +15,13 @@ import {
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
 } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 import { SafeModeCommands } from "./commands/SafeModeCommands";
 import { SafeModeHelpCommand } from "./commands/HelpCommand";
 import {
   SafeModeContextToCommandContextTranslator,
   SafeModeInterfaceAdaptor,
 } from "./commands/SafeModeAdaptor";
-
-function makePrefixExtractor(
-  safeModeDraupnir: SafeModeDraupnir
-): CommandPrefixExtractor {
-  const plainPrefixes = [
-    "!draupnir",
-    userLocalpart(safeModeDraupnir.clientUserID),
-    safeModeDraupnir.clientUserID,
-  ];
-  const allPossiblePrefixes = [
-    ...plainPrefixes.map((p) => `!${p}`),
-    ...plainPrefixes.map((p) => `${p}:`),
-    ...plainPrefixes,
-    ...(safeModeDraupnir.config.commands.allowNoPrefix ? ["!"] : []),
-  ];
-  return (body) => {
-    const isPrefixUsed = allPossiblePrefixes.find((p) =>
-      body.toLowerCase().startsWith(p.toLowerCase())
-    );
-    return isPrefixUsed ? "draupnir" : undefined;
-  };
-}
+import { makeDraupnirCommandNormaliser } from "../commands/DraupnirCommandDispatcher";
 
 export function makeSafeModeCommandDispatcher(
   safeModeDraupnir: SafeModeDraupnir
@@ -57,7 +34,10 @@ export function makeSafeModeCommandDispatcher(
     invocationInformationFromMatrixEventcontext,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(safeModeDraupnir),
+      commandNormaliser: makeDraupnirCommandNormaliser(
+        safeModeDraupnir.clientUserID,
+        safeModeDraupnir.config
+      ),
     }
   );
 }
@@ -71,7 +51,10 @@ export function makeSafeModeJSDispatcher(
     safeModeDraupnir,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(safeModeDraupnir),
+      commandNormaliser: makeDraupnirCommandNormaliser(
+        safeModeDraupnir.clientUserID,
+        safeModeDraupnir.config
+      ),
     },
     SafeModeContextToCommandContextTranslator
   );
