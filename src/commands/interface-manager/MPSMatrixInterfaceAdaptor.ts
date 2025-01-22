@@ -180,6 +180,9 @@ export const MPSCommandDispatcherCallbacks = {
       error.message
     );
   },
+  commandNormaliser(body) {
+    return body;
+  },
 } satisfies CommandDispatcherCallbacks<BasicInvocationInformation>;
 
 export const rendererFailedCB: MatrixInterfaceRendererFailedCB<

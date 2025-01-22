@@ -59,6 +59,7 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     public readonly cause: SafeModeCause,
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
+    public clientDisplayName: string,
     public readonly clientPlatform: ClientPlatform,
     public readonly managementRoom: MatrixRoomID,
     private readonly clientRooms: ClientRooms,

@@ -9,8 +9,9 @@
 
 import {
   BasicInvocationInformation,
-  CommandPrefixExtractor,
+  CommandNormaliser,
   JSInterfaceCommandDispatcher,
+  makeCommandNormaliser,
   MatrixInterfaceCommandDispatcher,
   StandardJSInterfaceCommandDispatcher,
   StandardMatrixInterfaceCommandDispatcher,
@@ -21,7 +22,6 @@ import {
   invocationInformationFromMatrixEventcontext,
 } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
-import { userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { AppserviceBotHelpCommand } from "./AppserviceBotHelp";
 import {
@@ -29,25 +29,20 @@ import {
   AppserviceAdaptorContextToCommandContextTranslator,
 } from "./AppserviceBotInterfaceAdaptor";
 
-function makePrefixExtractor(
+function makeAppserviceCommandNormaliser(
   appserviceContext: AppserviceAdaptorContext
-): CommandPrefixExtractor {
-  const plainPrefixes = [
-    "admin",
-    userLocalpart(appserviceContext.clientUserID),
-    appserviceContext.clientUserID,
-  ];
-  const allPossiblePrefixes = [
-    ...plainPrefixes.map((p) => `!${p}`),
-    ...plainPrefixes.map((p) => `${p}:`),
-    ...plainPrefixes,
-  ];
-  return (body) => {
-    const isPrefixUsed = allPossiblePrefixes.find((p) =>
-      body.toLowerCase().startsWith(p.toLowerCase())
-    );
-    return isPrefixUsed ? "admin" : undefined;
-  };
+): CommandNormaliser {
+  return makeCommandNormaliser(appserviceContext.clientUserID, {
+    symbolPrefixes: ["!"],
+    isAllowedOnlySymbolPrefixes: false,
+    additionalPrefixes: ["admin"],
+    getDisplayName: function (): string {
+      // TODO: I don't nkow how we're going to do this yet but we'll
+      // figure it out one day.
+      return "admin";
+    },
+    normalisedPrefix: "admin",
+  });
 }
 
 export function makeAppserviceBotCommandDispatcher(
@@ -61,7 +56,7 @@ export function makeAppserviceBotCommandDispatcher(
     invocationInformationFromMatrixEventcontext,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(appserviceContext),
+      commandNormaliser: makeAppserviceCommandNormaliser(appserviceContext),
     }
   );
 }
@@ -75,7 +70,7 @@ export function makeAppserviceJSCommandDispatcher(
     appserviceContext,
     {
       ...MPSCommandDispatcherCallbacks,
-      prefixExtractor: makePrefixExtractor(appserviceContext),
+      commandNormaliser: makeAppserviceCommandNormaliser(appserviceContext),
     },
     AppserviceAdaptorContextToCommandContextTranslator
   );

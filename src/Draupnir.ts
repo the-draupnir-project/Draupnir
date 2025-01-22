@@ -126,6 +126,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   private constructor(
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
+    public clientDisplayName: string,
     public readonly clientPlatform: ClientPlatform,
     public readonly managementRoomDetail: ManagementRoomDetail,
     public readonly clientRooms: ClientRooms,
@@ -186,6 +187,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public static async makeDraupnirBot(
     client: MatrixSendClient,
     clientUserID: StringUserID,
+    clientDisplayName: string,
     clientPlatform: ClientPlatform,
     managementRoomDetail: ManagementRoomDetail,
     clientRooms: ClientRooms,
@@ -240,6 +242,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     const draupnir = new Draupnir(
       client,
       clientUserID,
+      clientDisplayName,
       clientPlatform,
       managementRoomDetail,
       clientRooms,
