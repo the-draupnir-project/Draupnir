@@ -36,6 +36,7 @@ export function makeSafeModeCommandDispatcher(
       ...MPSCommandDispatcherCallbacks,
       commandNormaliser: makeDraupnirCommandNormaliser(
         safeModeDraupnir.clientUserID,
+        safeModeDraupnir,
         safeModeDraupnir.config
       ),
     }
@@ -53,6 +54,7 @@ export function makeSafeModeJSDispatcher(
       ...MPSCommandDispatcherCallbacks,
       commandNormaliser: makeDraupnirCommandNormaliser(
         safeModeDraupnir.clientUserID,
+        safeModeDraupnir,
         safeModeDraupnir.config
       ),
     },

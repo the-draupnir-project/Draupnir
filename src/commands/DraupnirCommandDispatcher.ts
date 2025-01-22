@@ -34,6 +34,7 @@ import { IConfig } from "../config";
 
 export function makeDraupnirCommandNormaliser(
   clientUserID: StringUserID,
+  displayNameIssuer: { clientDisplayName: string },
   config: IConfig
 ): CommandNormaliser {
   return makeCommandNormaliser(clientUserID, {
@@ -41,8 +42,7 @@ export function makeDraupnirCommandNormaliser(
     isAllowedOnlySymbolPrefixes: config.commands.allowNoPrefix,
     additionalPrefixes: ["draupnir", ...config.commands.additionalPrefixes],
     getDisplayName: function (): string {
-      // TODO: We'll have the displayname cached somewhere one day and dynamically updated.
-      return "draupnir";
+      return displayNameIssuer.clientDisplayName;
     },
     normalisedPrefix: "draupnir",
   });
@@ -61,6 +61,7 @@ export function makeDraupnirCommandDispatcher(
       ...MPSCommandDispatcherCallbacks,
       commandNormaliser: makeDraupnirCommandNormaliser(
         draupnir.clientUserID,
+        draupnir,
         draupnir.config
       ),
     }
@@ -78,6 +79,7 @@ export function makeDraupnirJSCommandDispatcher(
       ...MPSCommandDispatcherCallbacks,
       commandNormaliser: makeDraupnirCommandNormaliser(
         draupnir.clientUserID,
+        draupnir,
         draupnir.config
       ),
     },

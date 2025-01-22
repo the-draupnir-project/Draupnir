@@ -15,6 +15,7 @@ import {
   ClientForUserID,
   RoomStateManagerFactory,
   joinedRoomsSafe,
+  resultifyBotSDKRequestErrorWith404AsUndefined,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
 import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
@@ -101,9 +102,19 @@ export class DraupnirFactory {
       managementRoomMembership.ok,
       managementRoomState.ok
     );
+    const clientProfileResult = await client.getUserProfile(clientUserID).then(
+      (value) => Ok(value),
+      (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
+    );
+    if (isError(clientProfileResult)) {
+      return clientProfileResult.elaborate(
+        "Unable to fetch Draupnir's profile information"
+      );
+    }
     return await Draupnir.makeDraupnirBot(
       client,
       clientUserID,
+      clientProfileResult.ok?.displayname ?? clientUserID,
       clientPlatform,
       managementRoomDetail,
       clientRooms.ok,
@@ -136,11 +147,21 @@ export class DraupnirFactory {
       clientUserID,
       client
     );
+    const clientProfileResult = await client.getUserProfile(clientUserID).then(
+      (value) => Ok(value),
+      (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
+    );
+    if (isError(clientProfileResult)) {
+      return clientProfileResult.elaborate(
+        "Unable to fetch Draupnir's profile information"
+      );
+    }
     return Ok(
       new SafeModeDraupnir(
         cause,
         client,
         clientUserID,
+        clientProfileResult.ok?.displayname ?? clientUserID,
         clientPlatform,
         managementRoom,
         clientRooms.ok,
