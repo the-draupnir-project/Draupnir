@@ -14,6 +14,37 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.0.2] 2025-01-24
+
+### Added
+
+- The unban command now has an `--invite` option to re-invite any users that are
+  unbanned by the command. By @nexy7574 in
+  https://github.com/the-draupnir-project/Draupnir/pull/666.
+
+### Fixed
+
+- Draupnir will now refresh the room state cache in the background after startup
+  when the backing store is in use. Fixed by @Gnuxie.
+
+- Fixed issues where the bot wouldn't respond to pings from some SchildiChat,
+  Element Web, and Element X. Reported by @Cknight70 in
+  https://github.com/the-draupnir-project/Draupnir/issues/686. Fixed by @Gnuxie
+  in https://github.com/the-draupnir-project/Draupnir/pull/699
+
+- Fixed an issue where Draupnir would ignore the `Retry-After` http header and
+  so not rate limit Draupnir properly. Reported and fixed by @nexy7574 in
+  https://github.com/the-draupnir-project/Draupnir/pull/694.
+
+- Draupnir will respond when the `allowNoPrefix` config option is used. Reported
+  by @JacksonChen666 in
+  https://github.com/the-draupnir-project/Draupnir/issues/678. Fixed by @Gnuxie
+  in https://github.com/the-draupnir-project/Draupnir/pull/699.
+
+- Draupnir will now ignore newlines in secret files, previously Draupnir was
+  appending the newline to the secrets. Reported and fixed by @TheArcaneBrony in
+  https://github.com/the-draupnir-project/Draupnir/pull/696.
+
 ## [v2.0.1] 2025-01-18
 
 ### Fixed
