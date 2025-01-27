@@ -15,12 +15,12 @@ import {
   Task,
   UnknownConfig,
 } from "matrix-protection-suite";
-import { DraupnirProtection } from "./Protection";
-import { Draupnir } from "../Draupnir";
+import { DraupnirProtection } from "../Protection";
+import { Draupnir } from "../../Draupnir";
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { renderRoomSetResult } from "../capabilities/CommonRenderers";
+import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { renderRoomSetResult } from "../../capabilities/CommonRenderers";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 const log = new Logger("ProtectAllJoinedRooms");
