@@ -62,10 +62,14 @@ export class UnprotectPartedRooms {
 
   public handleMembershipChange(change: MembershipChange): void {
     if (change.userID === this.clientUserID) {
+      if (!this.protectedRoomsManager.isProtectedRoom(change.roomID)) {
+        return;
+      }
       switch (change.membershipChangeType) {
         case MembershipChangeType.Banned:
         case MembershipChangeType.Kicked:
         case MembershipChangeType.Left:
+          void this.handlePartedRoom(change);
       }
     }
   }
