@@ -49,6 +49,9 @@ export class RoomsSetBehaviour
     private readonly draupnir: Draupnir
   ) {
     super(description, capabilities, protectedRoomsSet, {});
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      void this.protectJoinedRooms.syncProtectedRooms();
+    }
   }
 
   public handleMembershipChange(

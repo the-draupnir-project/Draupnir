@@ -51,19 +51,18 @@ export class ProtectedJoinedRooms {
     }
   }
 
-  private async syncProtectedRooms() {
+  public async syncProtectedRooms() {
     const policyRooms =
       this.protectedRoomsSet.issuerManager.allWatchedLists.map((profile) =>
         profile.room.toRoomIDOrAlias()
       );
-    const roomsToProtect = this.clientRooms.allPreemptedRooms.filter(
-      (roomID) => {
+    const roomsToProtect =
+      this.clientRooms.currentRevision.allJoinedRooms.filter((roomID) => {
         return (
           !policyRooms.includes(roomID) &&
-          this.protectedRoomsSet.isProtectedRoom(roomID)
+          !this.protectedRoomsSet.isProtectedRoom(roomID)
         );
-      }
-    );
+      });
     const setResult = new RoomSetResultBuilder();
     for (const roomID of roomsToProtect) {
       const protectResult =
