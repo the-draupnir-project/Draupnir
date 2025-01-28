@@ -55,7 +55,9 @@ export class RoomsSetBehaviour
     _revision: RoomMembershipRevision,
     changes: MembershipChange[]
   ): Promise<Result<void>> {
-    this.protectJoinedRooms.handleMembershipChange(changes);
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      this.protectJoinedRooms.handleMembershipChange(changes);
+    }
     for (const change of changes) {
       this.unprotectedPartedRooms.handleMembershipChange(change);
     }
