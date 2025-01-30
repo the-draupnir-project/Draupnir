@@ -50,7 +50,6 @@ import { RendererMessageCollector } from "./capabilities/RendererMessageCollecto
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
 import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
-import { isInvitationForUser } from "./protections/invitation/inviteCore";
 import {
   StringRoomID,
   StringUserID,
@@ -318,10 +317,11 @@ export class Draupnir implements Client, MatrixAdaptorContext {
 
   public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
     if (
+      this.protectedRoomsSet.isProtectedRoom(roomID) &&
       Value.Check(MembershipEvent, event) &&
-      isInvitationForUser(event, this.clientUserID)
+      event.state_key === this.clientUserID
     ) {
-      this.protectedRoomsSet.handleExternalInvite(roomID, event);
+      this.protectedRoomsSet.handleExternalMembership(roomID, event);
     }
     this.managementRoomMessageListener(roomID, event);
     void Task(
