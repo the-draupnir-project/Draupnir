@@ -16,6 +16,7 @@ import {
   EventReport,
   LoggableConfigTracker,
   Logger,
+  Membership,
   MembershipEvent,
   Ok,
   PolicyRoomManager,
@@ -317,9 +318,12 @@ export class Draupnir implements Client, MatrixAdaptorContext {
 
   public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
     if (
-      this.protectedRoomsSet.isProtectedRoom(roomID) &&
       Value.Check(MembershipEvent, event) &&
-      event.state_key === this.clientUserID
+      event.state_key === this.clientUserID &&
+      // if the membership is join, make sure that we filter out protected rooms.
+      (event.content.membership === Membership.Join
+        ? !this.protectedRoomsSet.isProtectedRoom(roomID)
+        : true)
     ) {
       this.protectedRoomsSet.handleExternalMembership(roomID, event);
     }
