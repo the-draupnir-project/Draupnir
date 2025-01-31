@@ -6,6 +6,7 @@ import {
   AbstractProtection,
   describeProtection,
   MembershipChange,
+  MembershipEvent,
   ProtectedRoomsSet,
   ProtectionDescription,
   RoomMembershipRevision,
@@ -16,6 +17,7 @@ import { Draupnir } from "../../Draupnir";
 import { Ok, Result } from "@gnuxie/typescript-result";
 import { ProtectedJoinedRooms } from "./ProtectJoinedRooms";
 import { UnprotectPartedRooms } from "./UnprotectPartedRooms";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 export type RoomsSetBehaviourCapabailities = Record<string, never>;
 export type RoomsSetBehaviourSettings = UnknownConfig;
@@ -39,6 +41,7 @@ export class RoomsSetBehaviour
   );
   private readonly unprotectedPartedRooms = new UnprotectPartedRooms(
     this.draupnir.clientUserID,
+    this.draupnir.managementRoomID,
     this.protectedRoomsSet.protectedRoomsManager,
     this.draupnir.clientPlatform.toRoomMessageSender()
   );
@@ -65,6 +68,13 @@ export class RoomsSetBehaviour
       this.unprotectedPartedRooms.handleMembershipChange(change);
     }
     return Promise.resolve(Ok(undefined));
+  }
+
+  public handleExternalMembership(
+    roomID: StringRoomID,
+    event: MembershipEvent
+  ): void {
+    this.protectJoinedRooms.handleExternalMembership(roomID, event);
   }
 }
 

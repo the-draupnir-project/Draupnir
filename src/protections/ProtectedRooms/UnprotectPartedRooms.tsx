@@ -4,6 +4,7 @@
 
 import {
   MatrixRoomReference,
+  StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
@@ -17,11 +18,11 @@ import {
 import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
 
 export class UnprotectPartedRooms {
   constructor(
     private readonly clientUserID: StringUserID,
+    private readonly managementRoomID: StringRoomID,
     private readonly protectedRoomsManager: ProtectedRoomsManager,
     private readonly messageSender: RoomMessageSender
   ) {
@@ -35,19 +36,23 @@ export class UnprotectPartedRooms {
       void Task(
         sendMatrixEventsFromDeadDocument(
           this.messageSender,
-          room.toRoomIDOrAlias(),
+          this.managementRoomID,
           <root>
             Draupnir has been removed from {renderRoomPill(room)} and the room
             is now unprotected.
           </root>,
           {}
-        ) as Promise<Result<void>>
+        ),
+        {
+          description:
+            "Report recently unprotected rooms to the management room.",
+        }
       );
     } else {
       void Task(
         sendMatrixEventsFromDeadDocument(
           this.messageSender,
-          room.toRoomIDOrAlias(),
+          this.managementRoomID,
           <root>
             Draupnir has been removed from {renderRoomPill(room)} but we could
             not unprotect the room. Please use{" "}
@@ -55,7 +60,11 @@ export class UnprotectPartedRooms {
             room is still marked as protected.
           </root>,
           {}
-        ) as Promise<Result<void>>
+        ),
+        {
+          description:
+            "Report recently unprotected rooms to the management room.",
+        }
       );
     }
   }
