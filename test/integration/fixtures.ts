@@ -21,7 +21,6 @@ import {
   makeBotModeToggle,
   teardownManagementRoom,
 } from "./mjolnirSetupUtils";
-import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 
@@ -38,10 +37,6 @@ export const mochaHooks = {
         JSON.stringify(this.currentTest?.title)
       ); // Makes MatrixClient error logs a bit easier to parse.
       console.log("mochaHooks.beforeEach");
-      const test = MatrixRoomReference.fromPermalink(
-        "https://matrix.to/#/!JzRjamSLPHAikHkPab%3Alocalhost%3A9999?via=localhost:9999"
-      );
-      console.log(test);
       // Sometimes it takes a little longer to register users.
       this.timeout(30000);
       const config = (this.config = configRead());
