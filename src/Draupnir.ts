@@ -367,6 +367,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public stop(): void {
     this.clientRooms.off("timeline", this.timelineEventListener);
     this.reportPoller?.stop();
+    this.protectedRoomsSet.unregisterListeners();
   }
 
   public createRoomReference(roomID: StringRoomID): MatrixRoomID {
