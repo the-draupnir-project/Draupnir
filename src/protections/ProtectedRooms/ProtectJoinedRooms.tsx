@@ -9,23 +9,32 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   ClientRooms,
+  ConstantPeriodItemBatch,
   isError,
   Logger,
   MembershipChange,
   MembershipChangeType,
+  MembershipEvent,
   ProtectedRoomsSet,
   RoomMessageSender,
   RoomSetResultBuilder,
+  StandardBatcher,
   Task,
 } from "matrix-protection-suite";
 import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { renderRoomSetResult } from "../../capabilities/CommonRenderers";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("ProtectAllJoinedRooms");
 
 export class ProtectedJoinedRooms {
+  private readonly batcher = new StandardBatcher(
+    () =>
+      new ConstantPeriodItemBatch<StringRoomID, void>(
+        this.syncProtectedRooms.bind(this),
+        { waitPeriodMS: 1000 }
+      )
+  );
   public constructor(
     private readonly clientUserID: StringUserID,
     private readonly managementRoomID: StringRoomID,
@@ -35,6 +44,7 @@ export class ProtectedJoinedRooms {
   ) {
     // nothing to do.
   }
+
   handleMembershipChange(changes: MembershipChange[]): void {
     for (const change of changes) {
       if (change.userID === this.clientUserID) {
@@ -43,12 +53,19 @@ export class ProtectedJoinedRooms {
             continue;
           }
           default: {
-            void this.syncProtectedRooms();
+            this.batcher.add(change.roomID);
             return;
           }
         }
       }
     }
+  }
+
+  handleExternalMembership(
+    roomID: StringRoomID,
+    _event: MembershipEvent
+  ): void {
+    this.batcher.add(roomID);
   }
 
   public async syncProtectedRooms() {
@@ -87,7 +104,10 @@ export class ProtectedJoinedRooms {
             })}
           </root>,
           {}
-        ) as Promise<Result<void>>
+        ),
+        {
+          description: "Report newly protected rooms to the managmeent room.",
+        }
       );
     }
   }
