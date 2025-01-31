@@ -96,6 +96,10 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       this.roomStateManagerFactory.handleTimelineEvent(roomID, event);
       this.clientsInRoomMap.handleTimelineEvent(roomID, event);
     });
+    this.matrixEmitter.on("room.leave", (roomID, event) => {
+      this.roomStateManagerFactory.handleTimelineEvent(roomID, event);
+      this.clientsInRoomMap.handleTimelineEvent(roomID, event);
+    });
   }
   public static async create(
     client: MatrixSendClient,
