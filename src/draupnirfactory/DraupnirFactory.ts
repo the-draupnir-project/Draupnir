@@ -5,6 +5,7 @@
 import {
   ActionResult,
   ClientsInRoomMap,
+  Logger,
   Ok,
   StandardLoggableConfigTracker,
   isError,
@@ -13,6 +14,7 @@ import { Draupnir } from "../Draupnir";
 import {
   ClientCapabilityFactory,
   ClientForUserID,
+  MatrixSendClient,
   RoomStateManagerFactory,
   joinedRoomsSafe,
   resultifyBotSDKRequestErrorWith404AsUndefined,
@@ -27,6 +29,29 @@ import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
 import { SafeModeToggle } from "../safemode/SafeModeToggle";
 import { StandardManagementRoomDetail } from "../managementroom/ManagementRoomDetail";
+
+const log = new Logger("DraupnirFactory");
+
+async function safelyFetchProfile(
+  client: MatrixSendClient,
+  clientUserID: StringUserID
+): Promise<{ displayname?: string } | undefined> {
+  const clientProfileResult = await client.getUserProfile(clientUserID).then(
+    (value) => Ok(value),
+    (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
+  );
+  // We opt to report to the log rather than fail outright. Because this is on the critical startup path
+  // and when we did crash, we had unexplained server behaviour https://github.com/the-draupnir-project/Draupnir/issues/703
+  if (isError(clientProfileResult)) {
+    log.error(
+      "Unable to fetch Draupnir's profile information, please report this error to the developers",
+      clientProfileResult.error
+    );
+    return undefined;
+  } else {
+    return clientProfileResult.ok;
+  }
+}
 
 export class DraupnirFactory {
   public constructor(
@@ -102,19 +127,11 @@ export class DraupnirFactory {
       managementRoomMembership.ok,
       managementRoomState.ok
     );
-    const clientProfileResult = await client.getUserProfile(clientUserID).then(
-      (value) => Ok(value),
-      (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
-    );
-    if (isError(clientProfileResult)) {
-      return clientProfileResult.elaborate(
-        "Unable to fetch Draupnir's profile information"
-      );
-    }
+    const clientProfile = await safelyFetchProfile(client, clientUserID);
     return await Draupnir.makeDraupnirBot(
       client,
       clientUserID,
-      clientProfileResult.ok?.displayname ?? clientUserID,
+      clientProfile?.displayname ?? clientUserID,
       clientPlatform,
       managementRoomDetail,
       clientRooms.ok,
@@ -147,21 +164,13 @@ export class DraupnirFactory {
       clientUserID,
       client
     );
-    const clientProfileResult = await client.getUserProfile(clientUserID).then(
-      (value) => Ok(value),
-      (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
-    );
-    if (isError(clientProfileResult)) {
-      return clientProfileResult.elaborate(
-        "Unable to fetch Draupnir's profile information"
-      );
-    }
+    const clientProfile = await safelyFetchProfile(client, clientUserID);
     return Ok(
       new SafeModeDraupnir(
         cause,
         client,
         clientUserID,
-        clientProfileResult.ok?.displayname ?? clientUserID,
+        clientProfile?.displayname ?? clientUserID,
         clientPlatform,
         managementRoom,
         clientRooms.ok,
