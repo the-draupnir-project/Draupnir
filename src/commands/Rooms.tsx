@@ -21,6 +21,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   DeadDocumentJSX,
+  DocumentNode,
   MatrixRoomReferencePresentationSchema,
   describeCommand,
   tuple,
@@ -29,36 +30,79 @@ import { Draupnir } from "../Draupnir";
 import { Result } from "@gnuxie/typescript-result";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 
+type ListRoomsCommandInfo = {
+  joinedAndProtectedRooms: MatrixRoomID[];
+  joinedAndUnprotectedRooms: MatrixRoomID[];
+  partedAndProtectedRooms: MatrixRoomID[];
+};
+
 export const DraupnirListProtectedRoomsCommand = describeCommand({
   summary: "List all of the protected rooms.",
   parameters: [],
-  async executor({
-    protectedRoomsSet,
-  }: Draupnir): Promise<Result<MatrixRoomID[]>> {
-    return Ok(protectedRoomsSet.allProtectedRooms);
+  async executor(draupnir: Draupnir): Promise<Result<ListRoomsCommandInfo>> {
+    const allJoinedRooms = draupnir.clientRooms.currentRevision.allJoinedRooms;
+    const allProtectedRooms = draupnir.protectedRoomsSet.allProtectedRooms;
+    return Ok({
+      joinedAndProtectedRooms: allProtectedRooms.filter((room) =>
+        allJoinedRooms.includes(room.toRoomIDOrAlias())
+      ),
+      joinedAndUnprotectedRooms: allJoinedRooms
+        .filter(
+          (roomID) =>
+            !allProtectedRooms.find((room) => room.toRoomIDOrAlias() === roomID)
+        )
+        .map((roomID) => MatrixRoomReference.fromRoomID(roomID)),
+      partedAndProtectedRooms: allProtectedRooms.filter(
+        (room) => !allJoinedRooms.includes(room.toRoomIDOrAlias())
+      ),
+    });
   },
 });
+
+function renderRoomList(
+  rooms: MatrixRoomID[],
+  options: { name: string }
+): DocumentNode {
+  if (rooms.length === 0) {
+    return <fragment></fragment>;
+  }
+  return (
+    <details>
+      <summary>
+        {options.name} ({rooms.length}):
+      </summary>
+      <ul>
+        {rooms.map((r) => (
+          <li>
+            <a href={r.toPermalink()}>{r.toRoomIDOrAlias()}</a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirListProtectedRoomsCommand, {
   JSXRenderer(result) {
     if (isError(result)) {
       return Ok(undefined);
     }
-    const rooms = result.ok;
     return Ok(
       <root>
-        <details>
-          <summary>
-            <b>Protected Rooms ({rooms.length}):</b>
-          </summary>
-          <ul>
-            {rooms.map((r) => (
-              <li>
-                <a href={r.toPermalink()}>{r.toRoomIDOrAlias()}</a>
-              </li>
-            ))}
-          </ul>
-        </details>
+        {result.ok.joinedAndProtectedRooms.length === 0 ? (
+          <b>There are no joined and protected rooms.</b>
+        ) : (
+          <fragment></fragment>
+        )}
+        {renderRoomList(result.ok.joinedAndProtectedRooms, {
+          name: "Protected rooms",
+        })}
+        {renderRoomList(result.ok.joinedAndUnprotectedRooms, {
+          name: "Joined, but unprotected rooms",
+        })}
+        {renderRoomList(result.ok.partedAndProtectedRooms, {
+          name: "Parted rooms that are still marked as protected",
+        })}
       </root>
     );
   },
