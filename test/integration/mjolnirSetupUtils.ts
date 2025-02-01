@@ -21,6 +21,7 @@ import { IConfig } from "../../src/config";
 import { Draupnir } from "../../src/Draupnir";
 import { DraupnirBotModeToggle } from "../../src/DraupnirBotMode";
 import {
+  MatrixSendClient,
   SafeMatrixEmitter,
   SafeMatrixEmitterWrapper,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -152,6 +153,7 @@ export async function makeBotModeToggle(
       client.setAccountData(MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE, {
         references: [],
       }),
+      leaveAllRooms(client),
     ]);
   }
   await overrideRatelimitForUser(
@@ -196,4 +198,11 @@ export async function teardownManagementRoom(
 ) {
   await client.deleteRoomAlias(alias);
   await client.leaveRoom(roomId);
+}
+
+export async function leaveAllRooms(client: MatrixSendClient): Promise<void> {
+  const joinedRooms = await client.getJoinedRooms();
+  await Promise.allSettled(
+    joinedRooms.map((roomID) => client.leaveRoom(roomID))
+  );
 }

@@ -17,6 +17,7 @@ import {
 import { RedactionSynchronisationProtection } from "./RedactionSynchronisation";
 import { PolicyChangeNotification } from "./PolicyChangeNotification";
 import { JoinRoomsOnInviteProtection } from "./invitation/JoinRoomsOnInviteProtection";
+import { RoomsSetBehaviour } from "./ProtectedRooms/RoomsSetBehaviourProtection";
 
 export const DefaultEnabledProtectionsMigration =
   new SchemedDataManager<MjolnirEnabledProtectionsEvent>([
@@ -141,6 +142,27 @@ export const DefaultEnabledProtectionsMigration =
       return Ok({
         enabled: [...enabledProtections],
         [DRAUPNIR_SCHEMA_VERSION_KEY]: 5,
+      });
+    },
+    async function enableRoomsSetBehaviourProtection(input, toVersion) {
+      if (!Value.Check(MjolnirEnabledProtectionsEvent, input)) {
+        return ActionError.Result(
+          `The data for ${MjolnirEnabledProtectionsEventType} is corrupted.`
+        );
+      }
+      const enabledProtections = new Set(input.enabled);
+      const protection = findProtection(RoomsSetBehaviour.name);
+      if (protection === undefined) {
+        const message = `Cannot find the ${RoomsSetBehaviour.name} protection`;
+        return ActionException.Result(message, {
+          exception: new TypeError(message),
+          exceptionKind: ActionExceptionKind.Unknown,
+        });
+      }
+      enabledProtections.add(protection.name);
+      return Ok({
+        enabled: [...enabledProtections],
+        [DRAUPNIR_SCHEMA_VERSION_KEY]: toVersion,
       });
     },
   ]);

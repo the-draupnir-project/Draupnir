@@ -19,6 +19,7 @@ import "./MessageIsMedia";
 import "./MessageIsVoice";
 import "./NewJoinerProtection";
 import "./PolicyChangeNotification";
+import "./ProtectedRooms/RoomsSetBehaviourProtection";
 import "./TrustedReporters";
 import "./WordList";
 

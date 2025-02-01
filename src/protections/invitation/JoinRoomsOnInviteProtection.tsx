@@ -83,7 +83,7 @@ export class JoinRoomsOnInviteProtection
     this.watchRoomsOnInvite.handleProtectionDisable();
   }
 
-  handleExternalInvite(roomID: StringRoomID, event: MembershipEvent): void {
+  handleExternalMembership(roomID: StringRoomID, event: MembershipEvent): void {
     if (!isInvitationForUser(event, this.protectedRoomsSet.userID)) {
       return;
     }

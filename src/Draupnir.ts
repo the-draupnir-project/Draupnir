@@ -16,6 +16,7 @@ import {
   EventReport,
   LoggableConfigTracker,
   Logger,
+  Membership,
   MembershipEvent,
   Ok,
   PolicyRoomManager,
@@ -50,7 +51,6 @@ import { RendererMessageCollector } from "./capabilities/RendererMessageCollecto
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
 import { draupnirStatusInfo, renderStatusInfo } from "./commands/StatusCommand";
-import { isInvitationForUser } from "./protections/invitation/inviteCore";
 import {
   StringRoomID,
   StringUserID,
@@ -319,9 +319,13 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public handleTimelineEvent(roomID: StringRoomID, event: RoomEvent): void {
     if (
       Value.Check(MembershipEvent, event) &&
-      isInvitationForUser(event, this.clientUserID)
+      event.state_key === this.clientUserID &&
+      // if the membership is join, make sure that we filter out protected rooms.
+      (event.content.membership === Membership.Join
+        ? !this.protectedRoomsSet.isProtectedRoom(roomID)
+        : true)
     ) {
-      this.protectedRoomsSet.handleExternalInvite(roomID, event);
+      this.protectedRoomsSet.handleExternalMembership(roomID, event);
     }
     this.managementRoomMessageListener(roomID, event);
     void Task(
