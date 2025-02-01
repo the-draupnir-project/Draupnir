@@ -81,7 +81,7 @@ export class RoomsSetBehaviour
 describeProtection<RoomsSetBehaviourCapabailities, Draupnir>({
   name: RoomsSetBehaviour.name,
   description:
-    "Unprotects parted rooms and updated the list of protected rooms.",
+    "Unprotects parted rooms and update the list of protected rooms.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
   factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
