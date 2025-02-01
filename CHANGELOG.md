@@ -14,6 +14,22 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+### Fixed
+
+- `config.protectAllJoinedRooms` was unimplemented in versions `v2.0.2` and
+  below. This went under the radar in the beta programme because it would have
+  only been detectable for first time testers migrating over. Reported by
+  @cremesk.
+
+- Draupnir will now automatically unprotect rooms when the bot is kicked, and
+  send an alert to the management room.
+
+### Added
+
+- `RoomSetBehaviourProtection` to add the
+  `config.protectAllJoinedRoomsFunctionality`. This is also responsible for
+  unprotecting rooms as the bot is removed from them.
+
 ## [v2.0.2] 2025-01-24
 
 ### Added
