@@ -74,7 +74,9 @@ export class RoomsSetBehaviour
     roomID: StringRoomID,
     event: MembershipEvent
   ): void {
-    this.protectJoinedRooms.handleExternalMembership(roomID, event);
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      this.protectJoinedRooms.handleExternalMembership(roomID, event);
+    }
   }
 }
 
