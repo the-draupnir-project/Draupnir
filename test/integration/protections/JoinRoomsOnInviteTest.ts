@@ -41,8 +41,12 @@ describe("JoinRoomsOnInvite", function () {
       ).toBe(true);
       // now test that kicking them works
       await Promise.all(
-        protectedRooms.map((roomID) =>
-          moderator.kickUser(draupnir.clientUserID, roomID)
+        protectedRooms.map((roomID, i) =>
+          moderator.kickUser(
+            draupnir.clientUserID,
+            roomID,
+            i === 0 ? "don't want this bot" : undefined
+          )
         )
       );
       await new Promise((resolve) => setTimeout(resolve, 1000));

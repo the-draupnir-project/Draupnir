@@ -16,7 +16,10 @@ import {
   Task,
 } from "matrix-protection-suite";
 import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { renderRoomPill } from "../../commands/interface-manager/MatrixHelpRenderer";
+import {
+  renderMentionPill,
+  renderRoomPill,
+} from "../../commands/interface-manager/MatrixHelpRenderer";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 export class UnprotectPartedRooms {
@@ -32,15 +35,27 @@ export class UnprotectPartedRooms {
   public async handlePartedRoom(change: MembershipChange): Promise<void> {
     const room = MatrixRoomReference.fromRoomID(change.roomID);
     const unprotectResult = await this.protectedRoomsManager.removeRoom(room);
+    const removalDescription = (
+      <fragment>
+        Draupnir has been removed from {renderRoomPill(room)} by{" "}
+        {renderMentionPill(change.sender, change.sender)}
+        {change.content.reason ? (
+          <fragment>
+            {" "}
+            for reason: <code>{change.content.reason}</code>
+          </fragment>
+        ) : (
+          ""
+        )}
+        .
+      </fragment>
+    );
     if (isOk(unprotectResult)) {
       void Task(
         sendMatrixEventsFromDeadDocument(
           this.messageSender,
           this.managementRoomID,
-          <root>
-            Draupnir has been removed from {renderRoomPill(room)} and the room
-            is now unprotected.
-          </root>,
+          <root>{removalDescription} The room is now unprotected.</root>,
           {}
         ),
         {
@@ -54,10 +69,9 @@ export class UnprotectPartedRooms {
           this.messageSender,
           this.managementRoomID,
           <root>
-            Draupnir has been removed from {renderRoomPill(room)} but we could
-            not unprotect the room. Please use{" "}
-            <code>!draupnir rooms remove {room.toRoomIDOrAlias()}</code> if the
-            room is still marked as protected.
+            {removalDescription} Draupnir could not unprotect the room. Please
+            use <code>!draupnir rooms remove {room.toRoomIDOrAlias()}</code> if
+            the room is still marked as protected.
           </root>,
           {}
         ),
