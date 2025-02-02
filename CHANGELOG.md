@@ -14,21 +14,44 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+## [v2.1.0] - 2025-02-02
+
 ### Fixed
 
 - `config.protectAllJoinedRooms` was unimplemented in versions `v2.0.2` and
   below. This went under the radar in the beta programme because it would have
   only been detectable for first time testers migrating over. Reported by
-  @cremesk.
+  @cremesk and @HReflex.
 
 - Draupnir will now automatically unprotect rooms when the bot is kicked, and
   send an alert to the management room.
+
+- `config.commands.allowNoPrefix` will include the full command arguments again.
+  Reported by @JacksonChen666 and @heftig in
+  https://github.com/the-draupnir-project/Draupnir/issues/707.
+
+- Fixed an issue where the `ProtectedRoomsSet` would not be disposed on entering
+  safe mode via the `!draupnir safe mode` command. This would cause duplicate
+  protections to apply out of date policies to protected rooms. Reported by
+  @TheArcaneBrony in
+  https://github.com/the-draupnir-project/Draupnir/issues/687.
+
+- An issue where sometimes Draupnir would crash if it were unable to fetch its
+  own profile from the homeserver. We just fallback to nothing if this was the
+  case https://github.com/the-draupnir-project/Draupnir/issues/703. Reported by
+  @JokerGermany i think.
 
 ### Added
 
 - `RoomSetBehaviourProtection` to add the
   `config.protectAllJoinedRoomsFunctionality`. This is also responsible for
   unprotecting rooms as the bot is removed from them.
+
+- The `!draupnir rooms` command will now distinguish between joined and
+  protected rooms, joined but unprotected rooms, and protected but parted rooms.
+
+Thank you to everyone who has been promptly reporting bugs and making these
+fixes possible <3
 
 ## [v2.0.2] 2025-01-24
 
