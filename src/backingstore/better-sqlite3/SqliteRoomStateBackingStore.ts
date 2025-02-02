@@ -67,7 +67,7 @@ export class SqliteRoomStateBackingStore
     this.ensureSchema();
   }
 
-  public handleRevision(
+  private updateBackingStore(
     revision: RoomStateRevision,
     changes: StateChange[]
   ): void {
@@ -102,9 +102,37 @@ export class SqliteRoomStateBackingStore
     });
     const roomInfo = this.getRoomMeta(revision.room.toRoomIDOrAlias());
     if (roomInfo === undefined) {
-      doCompleteWriteback();
+      try {
+        doCompleteWriteback();
+      } catch (e) {
+        log.error(
+          `Unable to create initial room state for ${revision.room.toPermalink()} into the room state backing store`,
+          e
+        );
+      }
     } else {
-      replace(changes.map((change) => change.state));
+      try {
+        replace(changes.map((change) => change.state));
+      } catch (e) {
+        log.error(
+          `Unable to update the room state for ${revision.room.toPermalink()} as a result of ${changes.length} changes`,
+          e
+        );
+      }
+    }
+  }
+
+  public handleRevision(
+    revision: RoomStateRevision,
+    changes: StateChange[]
+  ): void {
+    try {
+      this.updateBackingStore(revision, changes);
+    } catch (e) {
+      log.error(
+        `Unable to update the backing store for revision of the room ${revision.room.toPermalink()}`,
+        e
+      );
     }
   }
 
