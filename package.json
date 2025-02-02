@@ -52,7 +52,7 @@
     "@gnuxie/typescript-result": "^1.0.0",
     "@sentry/node": "^7.17.2",
     "@sinclair/typebox": "0.34.13",
-    "@the-draupnir-project/interface-manager": "4.0.0",
+    "@the-draupnir-project/interface-manager": "4.0.1",
     "@the-draupnir-project/matrix-basic-types": "^0.2.0",
     "better-sqlite3": "^9.4.3",
     "body-parser": "^1.20.2",
