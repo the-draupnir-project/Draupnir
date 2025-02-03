@@ -96,9 +96,6 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsShowCommand, {
         </span>
         <p>{protectionInfo.description.description}</p>
         <h3>Protection settings</h3>
-        {StandardPersistentConfigRenderer.renderConfigDocumentation(
-          protectionInfo.description.protectionSettings
-        )}
         {StandardPersistentConfigRenderer.renderConfigStatus({
           description: protectionInfo.description.protectionSettings,
           error: undefined,
