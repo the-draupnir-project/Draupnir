@@ -138,7 +138,7 @@ function renderCapabilityProvider(
     <details>
       <summary>
         <code>{name}</code>: interface:{" "}
-        <code>{capabilityProvider.interface.name}</code>
+        <code>{capabilityProvider.interface.name}</code>, active capability
         provider: <code>{capabilityProvider.name}</code>
       </summary>
       interface description: {capabilityProvider.interface.description}
@@ -162,6 +162,13 @@ function renderCapabilityProviderSet(set: CapabilityProviderSet): DocumentNode {
           <li>{renderCapabilityProvider(name, provider)}</li>
         ))}
       </ul>
+      To change the active capability provider for a protection capability, use
+      the{" "}
+      <code>
+        !draupnir protections capability {"<"}protection name{">"} {"<"}
+        capability name{">"} {"<"}capability provider name{">"}
+      </code>{" "}
+      command.
     </fragment>
   );
 }
