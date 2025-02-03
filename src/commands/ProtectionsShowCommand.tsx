@@ -16,6 +16,7 @@ import {
   CapabilityProviderSet,
   Protection,
   ProtectionDescription,
+  findCompatibleCapabilityProviders,
   findProtection,
 } from "matrix-protection-suite";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
@@ -113,8 +114,13 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsShowCommand, {
         </p>
 
         <h3>Capability provider set</h3>
-        {renderCapabilityProviderSet(
-          protectionInfo.activeCapabilityProviderSet
+        {Object.keys(protectionInfo.activeCapabilityProviderSet).length ===
+        0 ? (
+          <p>There are no configurable capabilities for this protection.</p>
+        ) : (
+          renderCapabilityProviderSet(
+            protectionInfo.activeCapabilityProviderSet
+          )
         )}
       </root>
     );
@@ -125,14 +131,26 @@ function renderCapabilityProvider(
   name: string,
   capabilityProvider: CapabilityProviderDescription
 ): DocumentNode {
+  const compatibleProviders = findCompatibleCapabilityProviders(
+    capabilityProvider.interface.name
+  );
   return (
-    <fragment>
-      <p>
+    <details>
+      <summary>
         <code>{name}</code>: interface:{" "}
         <code>{capabilityProvider.interface.name}</code>
         provider: <code>{capabilityProvider.name}</code>
-      </p>
-    </fragment>
+      </summary>
+      interface description: {capabilityProvider.interface.description}
+      <h4>compatible capabilities:</h4>
+      <ul>
+        {compatibleProviders.map((capability) => (
+          <li>
+            <code>{capability.name}</code> - {capability.description}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
