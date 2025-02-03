@@ -120,7 +120,7 @@ SafeModeInterfaceAdaptor.describeRenderer(SafeModeRecoverCommand, {
     return Ok(
       <root>
         <fragment>
-          The recovery following recovery option has sucessfully been applied:
+          The following recovery option has been applied successfully:
           <br />
           {recoveryOption.description}
           <br />
