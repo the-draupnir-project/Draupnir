@@ -16,6 +16,7 @@ import {
   CapabilityProviderSet,
   Protection,
   ProtectionDescription,
+  findCompatibleCapabilityProviders,
   findProtection,
 } from "matrix-protection-suite";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
@@ -113,8 +114,13 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsShowCommand, {
         </p>
 
         <h3>Capability provider set</h3>
-        {renderCapabilityProviderSet(
-          protectionInfo.activeCapabilityProviderSet
+        {Object.keys(protectionInfo.activeCapabilityProviderSet).length ===
+        0 ? (
+          <p>There are no configurable capabilities for this protection.</p>
+        ) : (
+          renderCapabilityProviderSet(
+            protectionInfo.activeCapabilityProviderSet
+          )
         )}
       </root>
     );
@@ -125,14 +131,35 @@ function renderCapabilityProvider(
   name: string,
   capabilityProvider: CapabilityProviderDescription
 ): DocumentNode {
+  const compatibleProviders = findCompatibleCapabilityProviders(
+    capabilityProvider.interface.name
+  );
   return (
-    <fragment>
-      <p>
-        <code>{name}</code>: interface:{" "}
-        <code>{capabilityProvider.interface.name}</code>
+    <details>
+      <summary>
+        capability name: <code>{name}</code>, interface:{" "}
+        <code>{capabilityProvider.interface.name}</code>, active capability
         provider: <code>{capabilityProvider.name}</code>
-      </p>
-    </fragment>
+      </summary>
+      interface description: {capabilityProvider.interface.description}
+      <h4>
+        compatible capability providers for{" "}
+        <code>{capabilityProvider.interface.name}</code>:
+      </h4>
+      <ul>
+        {compatibleProviders.map((capability) => (
+          <li>
+            <code>{capability.name}</code>
+            {capability === capabilityProvider ? (
+              <fragment> (active)</fragment>
+            ) : (
+              <fragment></fragment>
+            )}{" "}
+            - {capability.description}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -144,6 +171,13 @@ function renderCapabilityProviderSet(set: CapabilityProviderSet): DocumentNode {
           <li>{renderCapabilityProvider(name, provider)}</li>
         ))}
       </ul>
+      To change the active capability provider for a protection capability, use
+      the{" "}
+      <code>
+        !draupnir protections capability {"<"}protection name{">"} {"<"}
+        capability name{">"} {"<"}capability provider name{">"}
+      </code>{" "}
+      command.
     </fragment>
   );
 }
