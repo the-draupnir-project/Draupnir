@@ -14,6 +14,7 @@ import {
 import {
   ConfigDescription,
   ConfigParseError,
+  ConfigPropertyDescription,
   ConfigPropertyError,
   ConfigPropertyUseError,
 } from "matrix-protection-suite";
@@ -126,22 +127,29 @@ function renderConfigPropertyError(
 }
 
 function renderConfigProperty(
-  propertyKey: string,
+  configProperty: ConfigPropertyDescription,
   data: Record<string, unknown>,
   errors: ConfigPropertyError[]
 ): DocumentNode {
-  const propertyValue = data[propertyKey];
-  const error = findError(propertyKey, errors);
+  const propertyValue = data[configProperty.name];
+  const error = findError(configProperty.name, errors);
   if (Array.isArray(propertyValue)) {
     return (
       <li>
         <details>
           <summary>
-            {renderConfigPropertyError(error)} <code>{propertyKey}</code>:
+            {renderConfigPropertyError(error)}{" "}
+            <code>{configProperty.name}</code>:
           </summary>
+          {configProperty.description ?? "No description provided."}
           <ul>
             {propertyValue.map((value, index) =>
-              renderConfigPropertyItem(propertyKey, index, value, errors)
+              renderConfigPropertyItem(
+                configProperty.name,
+                index,
+                value,
+                errors
+              )
             )}
           </ul>
         </details>
@@ -150,8 +158,10 @@ function renderConfigProperty(
   }
   return (
     <li>
-      {renderConfigPropertyError(error)}
-      <code>{propertyKey}</code>: {renderConfigPropertyValue(propertyValue)}
+      {renderConfigPropertyError(error)} <code>{configProperty.name}</code>:{" "}
+      {renderConfigPropertyValue(propertyValue)}, default value:{" "}
+      {renderConfigPropertyValue(configProperty.default)}.
+      {configProperty.description ?? "No description provided."}
     </li>
   );
 }
@@ -219,7 +229,7 @@ export const StandardPersistentConfigRenderer = Object.freeze({
           .properties()
           .map((property) =>
             renderConfigProperty(
-              property.name,
+              property,
               config.data as Record<string, unknown>,
               config.error?.errors ?? []
             )
