@@ -137,16 +137,25 @@ function renderCapabilityProvider(
   return (
     <details>
       <summary>
-        <code>{name}</code>: interface:{" "}
+        capability name: <code>{name}</code>, interface:{" "}
         <code>{capabilityProvider.interface.name}</code>, active capability
         provider: <code>{capabilityProvider.name}</code>
       </summary>
       interface description: {capabilityProvider.interface.description}
-      <h4>compatible capabilities:</h4>
+      <h4>
+        compatible capability providers for{" "}
+        <code>{capabilityProvider.interface.name}</code>:
+      </h4>
       <ul>
         {compatibleProviders.map((capability) => (
           <li>
-            <code>{capability.name}</code> - {capability.description}
+            <code>{capability.name}</code>
+            {capability === capabilityProvider ? (
+              <fragment> (active)</fragment>
+            ) : (
+              <fragment></fragment>
+            )}{" "}
+            - {capability.description}
           </li>
         ))}
       </ul>
