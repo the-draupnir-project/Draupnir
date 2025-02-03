@@ -141,7 +141,8 @@ function renderConfigProperty(
             {renderConfigPropertyError(error)}{" "}
             <code>{configProperty.name}</code>:
           </summary>
-          {configProperty.description ?? "No description provided."}
+          {configProperty.description ?? "No description provided."} default
+          value: {renderConfigPropertyValue(configProperty.default)}.
           <ul>
             {propertyValue.map((value, index) =>
               renderConfigPropertyItem(
@@ -159,9 +160,9 @@ function renderConfigProperty(
   return (
     <li>
       {renderConfigPropertyError(error)} <code>{configProperty.name}</code>:{" "}
-      {renderConfigPropertyValue(propertyValue)}, default value:{" "}
+      {configProperty.description ?? "No description provided."} default value:{" "}
       {renderConfigPropertyValue(configProperty.default)}.
-      {configProperty.description ?? "No description provided."}
+      <p>{renderConfigPropertyValue(propertyValue)}</p>
     </li>
   );
 }
