@@ -87,7 +87,7 @@ void (async function () {
     const eventDecoder = DefaultEventDecoder;
     const store = config.roomStateBackingStore.enabled
       ? new SqliteRoomStateBackingStore(
-          path.join(config.dataPath, "room-state-backing-store.db"),
+          path.join(storagePath, "room-state-backing-store.db"),
           eventDecoder
         )
       : undefined;
