@@ -18,12 +18,13 @@ import {
 } from "matrix-bot-sdk";
 import { ClientRequest, IncomingMessage } from "http";
 import * as Sentry from "@sentry/node";
-
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
 import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { RoomEvent } from "matrix-protection-suite";
+import { Logger, RoomEvent } from "matrix-protection-suite";
+
+const log = new Logger("utils");
 
 export function htmlEscape(input: string): string {
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
@@ -103,9 +104,7 @@ export async function redactUserMessagesIn(
   noop = false
 ) {
   for (const targetRoomId of targetRoomIds) {
-    await managementRoom.logMessage(
-      LogLevel.DEBUG,
-      "utils#redactUserMessagesIn",
+    log.debug(
       `Fetching sent messages for ${userIdOrGlob} in ${targetRoomId} to redact...`,
       targetRoomId
     );
@@ -118,9 +117,7 @@ export async function redactUserMessagesIn(
         limit,
         async (eventsToRedact) => {
           for (const victimEvent of eventsToRedact) {
-            await managementRoom.logMessage(
-              LogLevel.DEBUG,
-              "utils#redactUserMessagesIn",
+            log.debug(
               `Redacting ${victimEvent["event_id"]} in ${targetRoomId}`,
               targetRoomId
             );
@@ -128,8 +125,7 @@ export async function redactUserMessagesIn(
               await client
                 .redactEvent(targetRoomId, victimEvent["event_id"])
                 .catch((error: unknown) => {
-                  LogService.error(
-                    "utils#redactUserMessagesIn",
+                  log.error(
                     `Error while trying to redact messages for ${userIdOrGlob} in ${targetRoomId}:`,
                     error,
                     targetRoomId

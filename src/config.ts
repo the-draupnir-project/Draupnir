@@ -70,10 +70,8 @@ export interface IConfig {
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
   managementRoom: string;
-  verboseLogging: boolean;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
   logMutedModules: string[];
-  syncOnStartup: boolean;
   verifyPermissionsOnStartup: boolean;
   disableServerACL: boolean;
   noop: boolean;
@@ -188,10 +186,8 @@ const defaultConfig: IConfig = {
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
   managementRoom: "!noop:example.org",
-  verboseLogging: false,
   logLevel: "INFO",
   logMutedModules: ["MatrixHttpClient", "MatrixClientLite"],
-  syncOnStartup: true,
   verifyPermissionsOnStartup: true,
   noop: false,
   disableServerACL: false,
@@ -373,9 +369,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
   // on every created Draupnir, which would result in very confusing error messages.
   const allowedKeys = [
     "commands",
-    "verboseLogging",
     "logLevel",
-    "syncOnStartup",
     "verifyPermissionsOnStartup",
     "automaticallyRedactForReasons",
     "protectAllJoinedRooms",

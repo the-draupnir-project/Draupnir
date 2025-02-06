@@ -41,7 +41,7 @@ export interface ManagementRoomOutput {
   managementRoomID: StringRoomID;
   /**
    * Log a message to the management room and the console, replaces any room ids in additionalRoomIds with pills.
-   * @param level Used to determine whether to hide the message or not depending on `config.verboseLogging`.
+   * @param level Used to determine whether to hide the message or not depending on `config.logLevel`.
    * @param module Used to help find where in the source the message is coming from (when logging to the console).
    * @param message The message we want to log.
    * @param additionalRoomIds The roomIds in the message that we want to be replaced by room pills.
@@ -173,7 +173,8 @@ export default class StandardManagementRoomOutput
     if (!Array.isArray(additionalRoomIds))
       additionalRoomIds = [additionalRoomIds];
 
-    if (this.config.verboseLogging || LogLevel.INFO.includes(level)) {
+    const levelsIncluded = LogLevel[this.config.logLevel];
+    if (levelsIncluded.includes(level)) {
       let clientMessage = message;
       if (level === LogLevel.WARN) clientMessage = `⚠ | ${message}`;
       if (level === LogLevel.ERROR) clientMessage = `‼ | ${message}`;
