@@ -57,10 +57,6 @@ verboseLogging: false
 # This should be at INFO or DEBUG in order to get support for Mjolnir problems.
 logLevel: "DEBUG"
 
-# Set to false to disable synchronizing the ban lists on startup. If true, this
-# is the same as running !mjolnir sync immediately after startup.
-syncOnStartup: true
-
 # Set to false to prevent Mjolnir from checking its permissions on startup. This
 # is recommended to be left as "true" to catch room permission problems (state
 # resets, etc) before Mjolnir is needed.

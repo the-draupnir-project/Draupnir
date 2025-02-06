@@ -74,10 +74,6 @@ verboseLogging: false
 # This should be at INFO or DEBUG in order to get support for Draupnir problems.
 logLevel: "INFO"
 
-# Whether or not Draupnir should synchronize policy lists immediately after startup.
-# Equivalent to running '!draupnir sync'.
-syncOnStartup: true
-
 # Whether or not Draupnir should check moderation permissions in all protected rooms on startup.
 # Equivalent to running `!draupnir verify`.
 verifyPermissionsOnStartup: true
