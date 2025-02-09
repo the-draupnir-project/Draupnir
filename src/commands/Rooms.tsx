@@ -13,6 +13,7 @@ import {
   ActionExceptionKind,
   ActionResult,
   Ok,
+  Revision,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -29,11 +30,25 @@ import {
 import { Draupnir } from "../Draupnir";
 import { Result } from "@gnuxie/typescript-result";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  listInfo as getListInfo,
+  ListInfo,
+  renderPolicyList,
+} from "./StatusCommand";
+
+type RoomListItem = {
+  // used for room pill rendering
+  room: MatrixRoomID;
+  mostRecentRevision?: Revision;
+};
 
 type ListRoomsCommandInfo = {
-  joinedAndProtectedRooms: MatrixRoomID[];
-  joinedAndUnprotectedRooms: MatrixRoomID[];
-  partedAndProtectedRooms: MatrixRoomID[];
+  joinedAndProtectedLists: ListInfo[];
+  joinedAndWatchedLists: ListInfo[];
+  partedAndWatchedLists: ListInfo[];
+  joinedAndProtectedRooms: RoomListItem[];
+  joinedAndUnprotectedRooms: RoomListItem[];
+  partedAndProtectedRooms: RoomListItem[];
 };
 
 export const DraupnirListProtectedRoomsCommand = describeCommand({
@@ -42,25 +57,77 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
   async executor(draupnir: Draupnir): Promise<Result<ListRoomsCommandInfo>> {
     const allJoinedRooms = draupnir.clientRooms.currentRevision.allJoinedRooms;
     const allProtectedRooms = draupnir.protectedRoomsSet.allProtectedRooms;
+    const listInfo = await getListInfo(
+      draupnir.protectedRoomsSet.issuerManager,
+      draupnir.policyRoomManager
+    );
+    const makeRoomListItem = (room: MatrixRoomID) => {
+      const revision = draupnir.protectedRoomsSet.setRoomState.getRevision(
+        room.toRoomIDOrAlias()
+      );
+      if (revision) {
+        return { room, mostRecentRevision: revision.revisionID };
+      } else {
+        return { room };
+      }
+    };
     return Ok({
-      joinedAndProtectedRooms: allProtectedRooms.filter((room) =>
-        allJoinedRooms.includes(room.toRoomIDOrAlias())
+      joinedAndProtectedLists: listInfo.filter(
+        (list) =>
+          allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias()) &&
+          allProtectedRooms.find(
+            (room) =>
+              room.toRoomIDOrAlias() === list.revision.room.toRoomIDOrAlias()
+          )
       ),
+      joinedAndWatchedLists: listInfo.filter(
+        (list) =>
+          allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias()) &&
+          !allProtectedRooms.find(
+            (room) =>
+              room.toRoomIDOrAlias() === list.revision.room.toRoomIDOrAlias()
+          )
+      ),
+      partedAndWatchedLists: listInfo.filter(
+        (list) => !allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias())
+      ),
+      joinedAndProtectedRooms: allProtectedRooms
+        .filter((room) => allJoinedRooms.includes(room.toRoomIDOrAlias()))
+        .map(makeRoomListItem),
       joinedAndUnprotectedRooms: allJoinedRooms
         .filter(
           (roomID) =>
             !allProtectedRooms.find((room) => room.toRoomIDOrAlias() === roomID)
         )
-        .map((roomID) => MatrixRoomReference.fromRoomID(roomID)),
-      partedAndProtectedRooms: allProtectedRooms.filter(
-        (room) => !allJoinedRooms.includes(room.toRoomIDOrAlias())
-      ),
+        .map((roomID) =>
+          makeRoomListItem(MatrixRoomReference.fromRoomID(roomID))
+        ),
+      partedAndProtectedRooms: allProtectedRooms
+        .filter((room) => !allJoinedRooms.includes(room.toRoomIDOrAlias()))
+        .map(makeRoomListItem),
     });
   },
 });
 
+function renderPolicyLists(
+  rooms: ListInfo[],
+  options: { name: string }
+): DocumentNode {
+  if (rooms.length === 0) {
+    return <fragment></fragment>;
+  }
+  return (
+    <details>
+      <summary>
+        {options.name} ({rooms.length}):
+      </summary>
+      <ul>{rooms.map(renderPolicyList)}</ul>
+    </details>
+  );
+}
+
 function renderRoomList(
-  rooms: MatrixRoomID[],
+  rooms: RoomListItem[],
   options: { name: string }
 ): DocumentNode {
   if (rooms.length === 0) {
@@ -72,9 +139,20 @@ function renderRoomList(
         {options.name} ({rooms.length}):
       </summary>
       <ul>
-        {rooms.map((r) => (
+        {rooms.map((item) => (
           <li>
-            <a href={r.toPermalink()}>{r.toRoomIDOrAlias()}</a>
+            <a href={item.room.toPermalink()}>{item.room.toRoomIDOrAlias()}</a>{" "}
+            {"mostRecentRevision" in item ? (
+              <fragment>
+                (last update:{" "}
+                <code>
+                  {new Date(item.mostRecentRevision.time).toLocaleString()}
+                </code>
+                )
+              </fragment>
+            ) : (
+              <fragment></fragment>
+            )}
           </li>
         ))}
       </ul>
@@ -94,6 +172,15 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirListProtectedRoomsCommand, {
         ) : (
           <fragment></fragment>
         )}
+        {renderPolicyLists(result.ok.joinedAndProtectedLists, {
+          name: "Joined and protected policy rooms",
+        })}
+        {renderPolicyLists(result.ok.joinedAndWatchedLists, {
+          name: "Joined and watched unprotected policy rooms",
+        })}
+        {renderPolicyLists(result.ok.partedAndWatchedLists, {
+          name: "Parted policy rooms that are still marked as watched",
+        })}
         {renderRoomList(result.ok.joinedAndProtectedRooms, {
           name: "Protected rooms",
         })}

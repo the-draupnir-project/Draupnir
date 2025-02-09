@@ -123,22 +123,26 @@ export async function draupnirStatusInfo(
   };
 }
 
+export function renderPolicyList(list: ListInfo): DocumentNode {
+  return (
+    <li>
+      <a href={list.revision.room.toPermalink()}>
+        {list.revision.room.toRoomIDOrAlias()}
+      </a>{" "}
+      &#32; ({list.revision.shortcode ?? "<no shortcode>"}) propagation:{" "}
+      {list.watchedListProfile.propagation} &#32; (rules:{" "}
+      {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers,{" "}
+      {list.revision.allRulesOfType(PolicyRuleType.User).length} users,{" "}
+      {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms) (last
+      update:{" "}
+      <code>{new Date(list.revision.revisionID.time).toLocaleString()}</code>)
+    </li>
+  );
+}
+
 export function renderStatusInfo(info: StatusInfo): DocumentNode {
   const renderPolicyLists = (header: string, lists: ListInfo[]) => {
-    const renderedLists = lists.map((list) => {
-      return (
-        <li>
-          <a href={list.revision.room.toPermalink()}>
-            {list.revision.room.toRoomIDOrAlias()}
-          </a>{" "}
-          &#32; ({list.revision.shortcode ?? "<no shortcode>"}) propagation:{" "}
-          {list.watchedListProfile.propagation} &#32; (rules:{" "}
-          {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers,{" "}
-          {list.revision.allRulesOfType(PolicyRuleType.User).length} users,{" "}
-          {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms)
-        </li>
-      );
-    });
+    const renderedLists = lists.map(renderPolicyList);
     return (
       <fragment>
         <b>{header}</b>
