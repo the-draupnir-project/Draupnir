@@ -9,9 +9,8 @@
 // </text>
 
 import {
-  PolicyListConfig,
-  PropagationType,
   RoomResolver,
+  WatchedPolicyRooms,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -27,7 +26,7 @@ import {
 } from "./DraupnirCommandPrerequisites";
 
 export type DraupnirWatchUnwatchCommandContext = {
-  issuerManager: PolicyListConfig;
+  watchedPolicyRooms: WatchedPolicyRooms;
   roomResolver: RoomResolver;
 };
 
@@ -39,7 +38,7 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
   async executor(
-    { issuerManager, roomResolver }: DraupnirWatchUnwatchCommandContext,
+    { watchedPolicyRooms, roomResolver }: DraupnirWatchUnwatchCommandContext,
     _info,
     _keywords,
     _rest,
@@ -50,18 +49,14 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
       return policyRoom;
     }
     if (
-      issuerManager.allWatchedLists.some(
+      watchedPolicyRooms.allRooms.some(
         (profile) =>
           profile.room.toRoomIDOrAlias() === policyRoom.ok.toRoomIDOrAlias()
       )
     ) {
       return ResultError.Result("We are already watching this list.");
     }
-    return await issuerManager.watchList(
-      PropagationType.Direct,
-      policyRoom.ok,
-      {}
-    );
+    return await watchedPolicyRooms.watchPolicyRoomDirectly(policyRoom.ok);
   },
 });
 
@@ -73,7 +68,7 @@ export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
   async executor(
-    { issuerManager, roomResolver }: DraupnirWatchUnwatchCommandContext,
+    { watchedPolicyRooms, roomResolver }: DraupnirWatchUnwatchCommandContext,
     _info,
     _keywords,
     _rest,
@@ -83,10 +78,7 @@ export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
     if (isError(policyRoom)) {
       return policyRoom;
     }
-    return await issuerManager.unwatchList(
-      PropagationType.Direct,
-      policyRoom.ok
-    );
+    return await watchedPolicyRooms.unwatchPolicyRoom(policyRoom.ok);
   },
 });
 
@@ -100,7 +92,7 @@ for (const command of [
   DraupnirContextToCommandContextTranslator.registerTranslation(
     command,
     (draupnir: Draupnir) => ({
-      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      watchedPolicyRooms: draupnir.protectedRoomsSet.watchedPolicyRooms,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
     })
   );

@@ -11,16 +11,15 @@
 import {
   isError,
   Ok,
-  PolicyListConfig,
   PolicyRoomManager,
   PolicyRuleType,
   RoomInviter,
   RoomResolver,
   RoomUnbanner,
   SetRoomMembership,
+  WatchedPolicyRooms,
 } from "matrix-protection-suite";
 import { LogLevel } from "matrix-bot-sdk";
-import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
   isStringUserID,
   MatrixGlob,
@@ -36,13 +35,12 @@ import {
   tuple,
   union,
 } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
+import { Result, ResultError } from "@gnuxie/typescript-result";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
-import { DraupnirBanCommandContext } from "./Ban";
 import { UnlistedUserRedactionQueue } from "../queues/UnlistedUserRedactionQueue";
 
 async function unbanUserFromRooms(
@@ -106,7 +104,7 @@ async function unbanUserFromRooms(
 
 export type DraupnirUnbanCommandContext = {
   policyRoomManager: PolicyRoomManager;
-  issuerManager: PolicyListConfig;
+  watchedPolicyRooms: WatchedPolicyRooms;
   roomResolver: RoomResolver;
   clientUserID: StringUserID;
   setMembership: SetRoomMembership;
@@ -139,7 +137,7 @@ export const DraupnirUnbanCommand = describeCommand({
       prompt: async function ({
         policyRoomManager,
         clientUserID,
-      }: DraupnirBanCommandContext) {
+      }: DraupnirUnbanCommandContext) {
         return Ok({
           suggestions: policyRoomManager
             .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
@@ -175,21 +173,23 @@ export const DraupnirUnbanCommand = describeCommand({
     const {
       roomResolver,
       policyRoomManager,
-      issuerManager,
-      clientUserID,
+      watchedPolicyRooms,
       unlistedUserRedactionQueue,
     } = context;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
-        ? await findPolicyRoomIDFromShortcode(
-            issuerManager,
-            policyRoomManager,
-            clientUserID,
-            policyRoomDesignator
+        ? Ok(
+            watchedPolicyRooms.findPolicyRoomFromShortcode(policyRoomDesignator)
+              ?.room
           )
         : Ok(policyRoomDesignator);
     if (isError(policyRoomReference)) {
       return policyRoomReference;
+    }
+    if (policyRoomReference.ok === undefined) {
+      return ResultError.Result(
+        `Unable to find a policy room from the shortcode ${policyRoomDesignator.toString()}`
+      );
     }
     const policyRoom = await roomResolver.resolveRoom(policyRoomReference.ok);
     if (isError(policyRoom)) {
@@ -243,7 +243,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
   function (draupnir) {
     return {
       policyRoomManager: draupnir.policyRoomManager,
-      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      watchedPolicyRooms: draupnir.protectedRoomsSet.watchedPolicyRooms,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
       clientUserID: draupnir.clientUserID,
       setMembership: draupnir.protectedRoomsSet.setRoomMembership,

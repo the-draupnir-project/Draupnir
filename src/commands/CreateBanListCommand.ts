@@ -8,22 +8,9 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  ActionError,
-  ActionResult,
-  Ok,
-  PolicyListConfig,
-  PolicyRoomManager,
-  PolicyRuleType,
-  PropagationType,
-  isError,
-} from "matrix-protection-suite";
-import { listInfo } from "./StatusCommand";
+import { ActionResult, isError } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import {
-  MatrixRoomID,
-  StringUserID,
-} from "@the-draupnir-project/matrix-basic-types";
+import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   BasicInvocationInformation,
   ParsedKeywords,
@@ -52,11 +39,10 @@ export async function createList(
   if (isError(newList)) {
     return newList;
   }
-  const watchResult = await draupnir.protectedRoomsSet.issuerManager.watchList(
-    PropagationType.Direct,
-    newList.ok,
-    {}
-  );
+  const watchResult =
+    await draupnir.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
+      newList.ok
+    );
   if (isError(watchResult)) {
     return watchResult;
   }
@@ -87,36 +73,3 @@ export const DraupnirListCreateCommand = describeCommand({
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirListCreateCommand, {
   isAlwaysSupposedToUseDefaultRenderer: true,
 });
-
-export async function findPolicyRoomIDFromShortcode(
-  issuerManager: PolicyListConfig,
-  policyRoomManager: PolicyRoomManager,
-  editingClientUserID: StringUserID,
-  shortcode: string
-): Promise<ActionResult<MatrixRoomID>> {
-  const info = await listInfo(issuerManager, policyRoomManager);
-  const matchingRevisions = info.filter(
-    (list) => list.revision.shortcode === shortcode
-  );
-  if (matchingRevisions.length === 0 || matchingRevisions[0] === undefined) {
-    return ActionError.Result(
-      `Could not find a policy room from the shortcode: ${shortcode}`
-    );
-  } else if (matchingRevisions.length === 1) {
-    return Ok(matchingRevisions[0].revision.room);
-  } else {
-    const remainingRevisions = matchingRevisions.filter((revision) =>
-      revision.revision.isAbleToEdit(editingClientUserID, PolicyRuleType.User)
-    );
-    if (
-      remainingRevisions.length !== 1 ||
-      remainingRevisions[0] === undefined
-    ) {
-      return ActionError.Result(
-        `The shortcode ${shortcode} is ambiguous and is currently used by ${remainingRevisions.length} lists.`
-      );
-    } else {
-      return Ok(remainingRevisions[0].revision.room);
-    }
-  }
-}

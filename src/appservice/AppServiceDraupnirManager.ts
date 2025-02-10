@@ -23,7 +23,6 @@ import {
   ActionExceptionKind,
   ActionResult,
   Ok,
-  PropagationType,
   Task,
   isError,
 } from "matrix-protection-suite";
@@ -412,9 +411,7 @@ async function createFirstList(
   if (isError(addRoomResult)) {
     return addRoomResult;
   }
-  return await draupnir.protectedRoomsSet.issuerManager.watchList(
-    PropagationType.Direct,
-    policyRoom.ok,
-    {}
+  return await draupnir.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
+    policyRoom.ok
   );
 }

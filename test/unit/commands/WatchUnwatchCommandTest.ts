@@ -10,9 +10,9 @@ import {
 import expect from "expect";
 import {
   Ok,
-  PolicyListConfig,
   PropagationType,
   RoomResolver,
+  WatchedPolicyRooms,
   isError,
   isOk,
 } from "matrix-protection-suite";
@@ -27,10 +27,9 @@ describe("Test the WatchUnwatchCommmands", function () {
   const policyRoom = MatrixRoomReference.fromRoomID(
     "!room:example.com" as StringRoomID
   );
-  const issuerManager = createMock<PolicyListConfig>({
-    async watchList(propagation, room, _options) {
+  const watchedPolicyRooms = createMock<WatchedPolicyRooms>({
+    async watchPolicyRoomDirectly(room) {
       expect(room).toBe(policyRoom);
-      expect(propagation).toBe(PropagationType.Direct);
       return Ok(undefined);
     },
   });
@@ -45,21 +44,19 @@ describe("Test the WatchUnwatchCommmands", function () {
   it("DraupnirWatchCommand", async function () {
     const result = await CommandExecutorHelper.execute(
       DraupnirWatchPolicyRoomCommand,
-      { issuerManager, roomResolver },
+      { watchedPolicyRooms, roomResolver },
       {},
       policyRoom
     );
     expect(isOk(result)).toBe(true);
   });
   it("Draupnir watch command should return an error if the room is already being watched", async function () {
-    const issuerManagerWithWatchedList = createMock<PolicyListConfig>({
-      allWatchedLists: [
-        { room: policyRoom, propagation: PropagationType.Direct, options: {} },
-      ],
+    const issuerManagerWithWatchedList = createMock<WatchedPolicyRooms>({
+      allRooms: [{ room: policyRoom, propagation: PropagationType.Direct }],
     });
     const result = await CommandExecutorHelper.execute(
       DraupnirWatchPolicyRoomCommand,
-      { issuerManager: issuerManagerWithWatchedList, roomResolver },
+      { watchedPolicyRooms: issuerManagerWithWatchedList, roomResolver },
       {},
       policyRoom
     );
@@ -68,7 +65,7 @@ describe("Test the WatchUnwatchCommmands", function () {
   it("DraupnirUnwatchCommand", async function () {
     const result = await CommandExecutorHelper.execute(
       DraupnirUnwatchPolicyRoomCommand,
-      { issuerManager, roomResolver },
+      { watchedPolicyRooms, roomResolver },
       {},
       policyRoom
     );

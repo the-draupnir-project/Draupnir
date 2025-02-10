@@ -15,7 +15,6 @@ import {
   MembershipEvent,
   Ok,
   PermalinkSchema,
-  PropagationType,
   ProtectedRoomsSet,
   RoomEvent,
   RoomStateRevision,
@@ -215,11 +214,10 @@ export class WatchRoomsOnInvite {
           );
           return;
         }
-        const addResult = await this.protectedRoomsSet.issuerManager.watchList(
-          PropagationType.Direct,
-          resolvedRoom.ok,
-          {}
-        );
+        const addResult =
+          await this.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
+            resolvedRoom.ok
+          );
         if (isError(addResult)) {
           addResult.elaborate(
             `Could not watch the policy room: ${resolvedRoom.ok.toPermalink()}`

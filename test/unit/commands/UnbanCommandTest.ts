@@ -132,7 +132,7 @@ describe("Test the DraupnirUnbanCommand", function () {
         setMembership: protectedRoomsSet.setRoomMembership,
         managementRoomOutput: createMock<ManagementRoomOutput>(),
         roomResolver,
-        issuerManager: protectedRoomsSet.issuerManager,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
         noop: false,
         roomUnbanner,

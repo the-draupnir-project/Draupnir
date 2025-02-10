@@ -79,7 +79,7 @@ describe("Test the DraupnirBanCommand", function () {
       {
         policyRoomManager,
         roomResolver,
-        issuerManager: protectedRoomsSet.issuerManager,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
       },
@@ -112,7 +112,7 @@ describe("Test the DraupnirBanCommand", function () {
       {
         policyRoomManager,
         roomResolver,
-        issuerManager: protectedRoomsSet.issuerManager,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
       },
@@ -165,7 +165,7 @@ describe("Test the DraupnirBanCommand", function () {
       {
         policyRoomManager,
         roomResolver,
-        issuerManager: protectedRoomsSet.issuerManager,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
       },

@@ -14,7 +14,6 @@ import {
   PolicyRule,
   isError,
 } from "matrix-protection-suite";
-import { listInfo } from "./StatusCommand";
 import {
   StringRoomID,
   MatrixRoomID,
@@ -90,16 +89,12 @@ export const DraupnirListRulesCommand = describeCommand({
   summary: "Lists the rules currently in use by Draupnir.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<Result<ListMatches[]>> {
-    const infoResult = await listInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
-    );
     return Ok(
-      infoResult.map((policyRoom) => ({
-        room: policyRoom.revision.room,
-        roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-        profile: policyRoom.watchedListProfile,
-        matches: policyRoom.revision.allRules(),
+      draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.map((profile) => ({
+        room: profile.revision.room,
+        roomID: profile.revision.room.toRoomIDOrAlias(),
+        profile: profile,
+        matches: profile.revision.allRules(),
       }))
     );
   },
@@ -127,19 +122,13 @@ export const DraupnirRulesMatchingCommand = describeCommand({
     _rest,
     entity
   ): Promise<Result<ListMatches[]>> {
-    const policyRooms = await listInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
-    );
     return Ok(
-      policyRooms.map((policyRoom) => {
+      draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.map((profile) => {
         return {
-          room: policyRoom.revision.room,
-          roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-          matches: policyRoom.revision.allRulesMatchingEntity(
-            entity.toString()
-          ),
-          profile: policyRoom.watchedListProfile,
+          room: profile.revision.room,
+          roomID: profile.revision.room.toRoomIDOrAlias(),
+          matches: profile.revision.allRulesMatchingEntity(entity.toString()),
+          profile: profile,
         };
       })
     );
