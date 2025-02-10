@@ -31,8 +31,8 @@ import { Draupnir } from "../Draupnir";
 import { Result } from "@gnuxie/typescript-result";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 import {
-  listInfo as getListInfo,
-  ListInfo,
+  getWatchedPolicyRoomsInfo,
+  WatchedPolicyRoomInfo,
   renderPolicyList,
 } from "./StatusCommand";
 
@@ -43,9 +43,9 @@ type RoomListItem = {
 };
 
 type ListRoomsCommandInfo = {
-  joinedAndProtectedLists: ListInfo[];
-  joinedAndWatchedLists: ListInfo[];
-  partedAndWatchedLists: ListInfo[];
+  joinedAndProtectedLists: WatchedPolicyRoomInfo[];
+  joinedAndWatchedLists: WatchedPolicyRoomInfo[];
+  partedAndWatchedLists: RoomListItem[];
   joinedAndProtectedRooms: RoomListItem[];
   joinedAndUnprotectedRooms: RoomListItem[];
   partedAndProtectedRooms: RoomListItem[];
@@ -57,10 +57,15 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
   async executor(draupnir: Draupnir): Promise<Result<ListRoomsCommandInfo>> {
     const allJoinedRooms = draupnir.clientRooms.currentRevision.allJoinedRooms;
     const allProtectedRooms = draupnir.protectedRoomsSet.allProtectedRooms;
-    const listInfo = await getListInfo(
+    const listInfo = await getWatchedPolicyRoomsInfo(
       draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
+      draupnir.policyRoomManager,
+      draupnir.clientRooms.currentRevision.allJoinedRooms,
+      draupnir.protectedRoomsSet.allProtectedRooms
     );
+    if (isError(listInfo)) {
+      return listInfo;
+    }
     const makeRoomListItem = (room: MatrixRoomID) => {
       const revision = draupnir.protectedRoomsSet.setRoomState.getRevision(
         room.toRoomIDOrAlias()
@@ -72,24 +77,10 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
       }
     };
     return Ok({
-      joinedAndProtectedLists: listInfo.filter(
-        (list) =>
-          allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias()) &&
-          allProtectedRooms.find(
-            (room) =>
-              room.toRoomIDOrAlias() === list.revision.room.toRoomIDOrAlias()
-          )
-      ),
-      joinedAndWatchedLists: listInfo.filter(
-        (list) =>
-          allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias()) &&
-          !allProtectedRooms.find(
-            (room) =>
-              room.toRoomIDOrAlias() === list.revision.room.toRoomIDOrAlias()
-          )
-      ),
-      partedAndWatchedLists: listInfo.filter(
-        (list) => !allJoinedRooms.includes(list.revision.room.toRoomIDOrAlias())
+      joinedAndProtectedLists: listInfo.ok.subscribedAndProtectedLists,
+      joinedAndWatchedLists: listInfo.ok.subscribedLists,
+      partedAndWatchedLists: listInfo.ok.subscribedButPartedLists.map(
+        (profile) => makeRoomListItem(profile.room)
       ),
       joinedAndProtectedRooms: allProtectedRooms
         .filter((room) => allJoinedRooms.includes(room.toRoomIDOrAlias()))
@@ -110,7 +101,7 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
 });
 
 function renderPolicyLists(
-  rooms: ListInfo[],
+  rooms: WatchedPolicyRoomInfo[],
   options: { name: string }
 ): DocumentNode {
   if (rooms.length === 0) {
@@ -178,7 +169,7 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirListProtectedRoomsCommand, {
         {renderPolicyLists(result.ok.joinedAndWatchedLists, {
           name: "Joined and watched unprotected policy rooms",
         })}
-        {renderPolicyLists(result.ok.partedAndWatchedLists, {
+        {renderRoomList(result.ok.partedAndWatchedLists, {
           name: "Parted policy rooms that are still marked as watched",
         })}
         {renderRoomList(result.ok.joinedAndProtectedRooms, {

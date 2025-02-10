@@ -20,8 +20,10 @@ import {
 } from "matrix-protection-suite";
 import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
+  MatrixRoomID,
   MatrixRoomReference,
   MatrixUserID,
+  StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
@@ -57,6 +59,8 @@ export type DraupnirBanCommandContext = {
   defaultReasons: string[];
   roomResolver: RoomResolver;
   clientUserID: StringUserID;
+  allJoinedRooms: StringRoomID[];
+  protectedRooms: MatrixRoomID[];
 };
 
 export const DraupnirBanCommand = describeCommand({
@@ -108,6 +112,8 @@ export const DraupnirBanCommand = describeCommand({
       policyRoomManager,
       roomResolver,
       clientUserID,
+      allJoinedRooms,
+      protectedRooms,
     }: DraupnirBanCommandContext,
     _info: BasicInvocationInformation,
     _keywords,
@@ -120,6 +126,8 @@ export const DraupnirBanCommand = describeCommand({
         ? await findPolicyRoomIDFromShortcode(
             issuerManager,
             policyRoomManager,
+            allJoinedRooms,
+            protectedRooms,
             clientUserID,
             policyRoomDesignator
           )
@@ -172,6 +180,8 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       defaultReasons: draupnir.config.commands.ban.defaultReasons,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
       clientUserID: draupnir.clientUserID,
+      allJoinedRooms: draupnir.clientRooms.currentRevision.allJoinedRooms,
+      protectedRooms: draupnir.protectedRoomsSet.allProtectedRooms,
     };
   }
 );

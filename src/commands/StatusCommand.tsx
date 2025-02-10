@@ -1,4 +1,4 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2022 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -26,60 +26,103 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import {
+  MatrixRoomID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { Result } from "@gnuxie/typescript-result";
 
 export const DraupnirStatusCommand = describeCommand({
   summary: "Show the status of the bot.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<ActionResult<StatusInfo>> {
-    return Ok(await draupnirStatusInfo(draupnir));
+    return await draupnirStatusInfo(draupnir);
   },
 });
 
-export interface ListInfo {
+export interface WatchedPolicyRoomInfo {
   watchedListProfile: PolicyRoomWatchProfile;
   revision: PolicyRoomRevision;
 }
 
-export interface StatusInfo {
+export type WatchedPolicyRoomsInfo = {
+  subscribedLists: WatchedPolicyRoomInfo[];
+  subscribedAndProtectedLists: WatchedPolicyRoomInfo[];
+  subscribedButPartedLists: PolicyRoomWatchProfile[];
+};
+
+export type StatusInfo = {
   numberOfProtectedRooms: number;
   numberOfUniqueMembers: number;
-  subscribedLists: ListInfo[];
-  subscribedAndProtectedLists: ListInfo[];
   version: string;
   repository: string;
   documentationURL: string;
+} & WatchedPolicyRoomsInfo;
+
+async function findRevisionIssuers(
+  policyRoomManager: PolicyRoomManager,
+  profiles: PolicyRoomWatchProfile[]
+): Promise<Result<WatchedPolicyRoomInfo[]>> {
+  const issuers: WatchedPolicyRoomInfo[] = [];
+  for (const profile of profiles) {
+    const issuerResult = await policyRoomManager.getPolicyRoomRevisionIssuer(
+      profile.room
+    );
+    if (isError(issuerResult)) {
+      return issuerResult.elaborate(
+        "Unable to find a policy room revision issuer for a watched policy list"
+      );
+    }
+    issuers.push({
+      watchedListProfile: profile,
+      revision: issuerResult.ok.currentRevision,
+    });
+  }
+  return Ok(issuers);
 }
 
-export async function listInfo(
+export async function getWatchedPolicyRoomsInfo(
   issuerManager: PolicyListConfig,
-  policyRoomManager: PolicyRoomManager
-): Promise<ListInfo[]> {
+  policyRoomManager: PolicyRoomManager,
+  allJoinedRooms: StringRoomID[],
+  protectedRooms: MatrixRoomID[]
+): Promise<Result<WatchedPolicyRoomsInfo>> {
   const watchedListProfiles = issuerManager.allWatchedLists;
-  const issuerResults = await Promise.all(
-    watchedListProfiles.map((profile) =>
-      policyRoomManager.getPolicyRoomRevisionIssuer(profile.room)
+  const subscribedAndProtectedLists = await findRevisionIssuers(
+    policyRoomManager,
+    watchedListProfiles.filter(
+      (profile) =>
+        allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
+        protectedRooms.find(
+          (protectedRoom) =>
+            protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
+        )
     )
   );
-  return issuerResults.map((result) => {
-    if (isError(result)) {
-      throw result.expect(
-        "We should be able to get the issuers for all of the watched lits."
-      );
-    }
-    const revision = result.ok.currentRevision;
-    const associatedProfile = watchedListProfiles.find(
+  if (isError(subscribedAndProtectedLists)) {
+    return subscribedAndProtectedLists;
+  }
+  const subscribedLists = await findRevisionIssuers(
+    policyRoomManager,
+    watchedListProfiles.filter(
       (profile) =>
-        profile.room.toRoomIDOrAlias() === revision.room.toRoomIDOrAlias()
-    );
-    if (associatedProfile === undefined) {
-      throw new TypeError(
-        `Shouldn't be possible to have got a result for a list profile we don't have`
-      );
-    }
-    return {
-      watchedListProfile: associatedProfile,
-      revision: revision,
-    };
+        allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
+        !protectedRooms.find(
+          (protectedRoom) =>
+            protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
+        )
+    )
+  );
+  if (isError(subscribedLists)) {
+    return subscribedLists;
+  }
+  const subscribedButPartedLists = watchedListProfiles.filter(
+    (profile) => !allJoinedRooms.includes(profile.room.toRoomIDOrAlias())
+  );
+  return Ok({
+    subscribedLists: subscribedLists.ok,
+    subscribedAndProtectedLists: subscribedAndProtectedLists.ok,
+    subscribedButPartedLists,
   });
 }
 
@@ -95,35 +138,30 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
 // FIXME: need a shoutout to dependencies in here and NOTICE info.
 export async function draupnirStatusInfo(
   draupnir: Draupnir
-): Promise<StatusInfo> {
-  const watchedListInfo = await listInfo(
+): Promise<Result<StatusInfo>> {
+  const watchedListInfo = await getWatchedPolicyRoomsInfo(
     draupnir.protectedRoomsSet.issuerManager,
-    draupnir.policyRoomManager
+    draupnir.policyRoomManager,
+    draupnir.clientRooms.currentRevision.allJoinedRooms,
+    draupnir.protectedRoomsSet.allProtectedRooms
   );
-  const protectedWatchedLists = watchedListInfo.filter((info) =>
-    draupnir.protectedRoomsSet.isProtectedRoom(
-      info.revision.room.toRoomIDOrAlias()
-    )
-  );
-  const unprotectedListProfiles = watchedListInfo.filter(
-    (info) =>
-      !draupnir.protectedRoomsSet.isProtectedRoom(
-        info.revision.room.toRoomIDOrAlias()
-      )
-  );
-  return {
+  if (isError(watchedListInfo)) {
+    return watchedListInfo;
+  }
+  return Ok({
     numberOfProtectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.length,
     numberOfUniqueMembers:
       draupnir.protectedRoomsSet.setMembership.currentRevision.uniqueMemberCount(),
-    subscribedLists: unprotectedListProfiles,
-    subscribedAndProtectedLists: protectedWatchedLists,
+    subscribedLists: watchedListInfo.ok.subscribedLists,
+    subscribedAndProtectedLists: watchedListInfo.ok.subscribedAndProtectedLists,
+    subscribedButPartedLists: watchedListInfo.ok.subscribedButPartedLists,
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
     repository: PACKAGE_JSON["repository"] ?? "Unknown",
-  };
+  });
 }
 
-export function renderPolicyList(list: ListInfo): DocumentNode {
+export function renderPolicyList(list: WatchedPolicyRoomInfo): DocumentNode {
   return (
     <li>
       <a href={list.revision.room.toPermalink()}>
@@ -141,7 +179,10 @@ export function renderPolicyList(list: ListInfo): DocumentNode {
 }
 
 export function renderStatusInfo(info: StatusInfo): DocumentNode {
-  const renderPolicyLists = (header: string, lists: ListInfo[]) => {
+  const renderPolicyLists = (
+    header: string,
+    lists: WatchedPolicyRoomInfo[]
+  ) => {
     const renderedLists = lists.map(renderPolicyList);
     return (
       <fragment>

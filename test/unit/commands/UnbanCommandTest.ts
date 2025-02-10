@@ -142,6 +142,10 @@ describe("Test the DraupnirUnbanCommand", function () {
             return Ok(undefined);
           },
         }),
+        allJoinedRooms: protectedRoomsSet.allProtectedRooms.map((room) =>
+          room.toRoomIDOrAlias()
+        ),
+        protectedRooms: protectedRoomsSet.allProtectedRooms,
       },
       {
         rest: ["spam"],

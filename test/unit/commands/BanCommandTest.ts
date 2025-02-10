@@ -82,6 +82,10 @@ describe("Test the DraupnirBanCommand", function () {
         issuerManager: protectedRoomsSet.issuerManager,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
+        allJoinedRooms: protectedRoomsSet.allProtectedRooms.map((room) =>
+          room.toRoomIDOrAlias()
+        ),
+        protectedRooms: protectedRoomsSet.allProtectedRooms,
       },
       {},
       MatrixUserIDPresentationType.wrap(
@@ -115,6 +119,10 @@ describe("Test the DraupnirBanCommand", function () {
         issuerManager: protectedRoomsSet.issuerManager,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
+        allJoinedRooms: protectedRoomsSet.allProtectedRooms.map((room) =>
+          room.toRoomIDOrAlias()
+        ),
+        protectedRooms: protectedRoomsSet.allProtectedRooms,
       },
       {},
       MatrixUserIDPresentationType.wrap(
@@ -168,6 +176,10 @@ describe("Test the DraupnirBanCommand", function () {
         issuerManager: protectedRoomsSet.issuerManager,
         defaultReasons: ["spam"],
         clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
+        allJoinedRooms: protectedRoomsSet.allProtectedRooms.map((room) =>
+          room.toRoomIDOrAlias()
+        ),
+        protectedRooms: protectedRoomsSet.allProtectedRooms,
       },
       {
         rest: ["spam"],

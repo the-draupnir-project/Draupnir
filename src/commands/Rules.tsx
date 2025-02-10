@@ -14,7 +14,7 @@ import {
   PolicyRule,
   isError,
 } from "matrix-protection-suite";
-import { listInfo } from "./StatusCommand";
+import { getWatchedPolicyRoomsInfo } from "./StatusCommand";
 import {
   StringRoomID,
   MatrixRoomID,
@@ -90,12 +90,20 @@ export const DraupnirListRulesCommand = describeCommand({
   summary: "Lists the rules currently in use by Draupnir.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<Result<ListMatches[]>> {
-    const infoResult = await listInfo(
+    const infoResult = await getWatchedPolicyRoomsInfo(
       draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
+      draupnir.policyRoomManager,
+      draupnir.clientRooms.currentRevision.allJoinedRooms,
+      draupnir.protectedRoomsSet.allProtectedRooms
     );
+    if (isError(infoResult)) {
+      return infoResult;
+    }
     return Ok(
-      infoResult.map((policyRoom) => ({
+      [
+        ...infoResult.ok.subscribedAndProtectedLists,
+        ...infoResult.ok.subscribedLists,
+      ].map((policyRoom) => ({
         room: policyRoom.revision.room,
         roomID: policyRoom.revision.room.toRoomIDOrAlias(),
         profile: policyRoom.watchedListProfile,
@@ -127,12 +135,20 @@ export const DraupnirRulesMatchingCommand = describeCommand({
     _rest,
     entity
   ): Promise<Result<ListMatches[]>> {
-    const policyRooms = await listInfo(
+    const policyRooms = await getWatchedPolicyRoomsInfo(
       draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
+      draupnir.policyRoomManager,
+      draupnir.clientRooms.currentRevision.allJoinedRooms,
+      draupnir.protectedRoomsSet.allProtectedRooms
     );
+    if (isError(policyRooms)) {
+      return policyRooms;
+    }
     return Ok(
-      policyRooms.map((policyRoom) => {
+      [
+        ...policyRooms.ok.subscribedAndProtectedLists,
+        ...policyRooms.ok.subscribedLists,
+      ].map((policyRoom) => {
         return {
           room: policyRoom.revision.room,
           roomID: policyRoom.revision.room.toRoomIDOrAlias(),

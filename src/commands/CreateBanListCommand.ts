@@ -18,10 +18,11 @@ import {
   PropagationType,
   isError,
 } from "matrix-protection-suite";
-import { listInfo } from "./StatusCommand";
+import { getWatchedPolicyRoomsInfo } from "./StatusCommand";
 import { Draupnir } from "../Draupnir";
 import {
   MatrixRoomID,
+  StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
@@ -91,13 +92,24 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirListCreateCommand, {
 export async function findPolicyRoomIDFromShortcode(
   issuerManager: PolicyListConfig,
   policyRoomManager: PolicyRoomManager,
+  allJoinedRooms: StringRoomID[],
+  protectedRooms: MatrixRoomID[],
   editingClientUserID: StringUserID,
   shortcode: string
 ): Promise<ActionResult<MatrixRoomID>> {
-  const info = await listInfo(issuerManager, policyRoomManager);
-  const matchingRevisions = info.filter(
-    (list) => list.revision.shortcode === shortcode
+  const info = await getWatchedPolicyRoomsInfo(
+    issuerManager,
+    policyRoomManager,
+    allJoinedRooms,
+    protectedRooms
   );
+  if (isError(info)) {
+    return info;
+  }
+  const matchingRevisions = [
+    ...info.ok.subscribedAndProtectedLists,
+    ...info.ok.subscribedLists,
+  ].filter((list) => list.revision.shortcode === shortcode);
   if (matchingRevisions.length === 0 || matchingRevisions[0] === undefined) {
     return ActionError.Result(
       `Could not find a policy room from the shortcode: ${shortcode}`

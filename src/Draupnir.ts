@@ -298,17 +298,24 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    * This means this is only used in the index.ts.
    */
   public async startupComplete(): Promise<void> {
-    const statusInfo = await draupnirStatusInfo(this);
     try {
       await this.managementRoomOutput.logMessage(
         LogLevel.INFO,
         "Draupnir@startup",
         "Startup complete. Now monitoring rooms."
       );
+      const statusInfo = await draupnirStatusInfo(this);
+      if (isError(statusInfo)) {
+        log.error(
+          `Was unable to get the status information for draupnir`,
+          statusInfo.error
+        );
+        return;
+      }
       await sendMatrixEventsFromDeadDocument(
         this.clientPlatform.toRoomMessageSender(),
         this.managementRoomID,
-        renderStatusInfo(statusInfo),
+        renderStatusInfo(statusInfo.ok),
         {}
       );
     } catch (ex) {

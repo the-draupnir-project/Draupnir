@@ -43,7 +43,7 @@ import {
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
-import { listInfo } from "../commands/StatusCommand";
+import { getWatchedPolicyRoomsInfo } from "../commands/StatusCommand";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import {
   MatrixRoomID,
@@ -342,10 +342,6 @@ export class BanPropagationProtection
       PolicyRuleType.User,
       Recommendation.Ban
     );
-    const policyRoomInfo = await listInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager
-    );
     const roomsBannedFrom =
       this.protectedRoomsSet.setRoomMembership.allRooms.filter(
         (revision) =>
@@ -370,14 +366,28 @@ export class BanPropagationProtection
       (map, rule) => addRule(map, rule),
       new Map<StringRoomID, PolicyRule[]>()
     );
+    const policyRoomInfo = await getWatchedPolicyRoomsInfo(
+      draupnir.protectedRoomsSet.issuerManager,
+      draupnir.policyRoomManager,
+      draupnir.clientRooms.currentRevision.allJoinedRooms,
+      draupnir.protectedRoomsSet.allProtectedRooms
+    );
+    if (isError(policyRoomInfo)) {
+      log.error(
+        `Unable to fetch policy rooms info to be able to prompt to unban ${change.userID}`,
+        policyRoomInfo.error
+      );
+      return;
+    }
     await promptUnbanPropagation(
       this.draupnir,
       change,
       change.roomID,
       [...rulesByPolicyRoom.entries()].map(([policyRoomID, rules]) => {
-        const info = policyRoomInfo.find(
-          (i) => i.revision.room.toRoomIDOrAlias() === policyRoomID
-        );
+        const info = [
+          ...policyRoomInfo.ok.subscribedAndProtectedLists,
+          ...policyRoomInfo.ok.subscribedLists,
+        ].find((i) => i.revision.room.toRoomIDOrAlias() === policyRoomID);
         if (info === undefined) {
           throw new TypeError(
             `Shouldn't be possible to have a rule from an unwatched list.`

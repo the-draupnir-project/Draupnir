@@ -24,7 +24,9 @@ import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
   isStringUserID,
   MatrixGlob,
+  MatrixRoomID,
   MatrixUserID,
+  StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
@@ -115,6 +117,8 @@ export type DraupnirUnbanCommandContext = {
   roomUnbanner: RoomUnbanner;
   unlistedUserRedactionQueue: UnlistedUserRedactionQueue;
   roomInviter: RoomInviter;
+  allJoinedRooms: StringRoomID[];
+  protectedRooms: MatrixRoomID[];
 };
 
 export const DraupnirUnbanCommand = describeCommand({
@@ -178,12 +182,16 @@ export const DraupnirUnbanCommand = describeCommand({
       issuerManager,
       clientUserID,
       unlistedUserRedactionQueue,
+      allJoinedRooms,
+      protectedRooms,
     } = context;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
         ? await findPolicyRoomIDFromShortcode(
             issuerManager,
             policyRoomManager,
+            allJoinedRooms,
+            protectedRooms,
             clientUserID,
             policyRoomDesignator
           )
@@ -252,6 +260,8 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       unlistedUserRedactionQueue: draupnir.unlistedUserRedactionQueue,
       roomInviter: draupnir.clientPlatform.toRoomInviter(),
+      allJoinedRooms: draupnir.clientRooms.currentRevision.allJoinedRooms,
+      protectedRooms: draupnir.protectedRoomsSet.allProtectedRooms,
     };
   }
 );
