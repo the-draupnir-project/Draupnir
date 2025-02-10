@@ -304,18 +304,11 @@ export class Draupnir implements Client, MatrixAdaptorContext {
         "Draupnir@startup",
         "Startup complete. Now monitoring rooms."
       );
-      const statusInfo = await draupnirStatusInfo(this);
-      if (isError(statusInfo)) {
-        log.error(
-          `Was unable to get the status information for draupnir`,
-          statusInfo.error
-        );
-        return;
-      }
+      const statusInfo = draupnirStatusInfo(this);
       await sendMatrixEventsFromDeadDocument(
         this.clientPlatform.toRoomMessageSender(),
         this.managementRoomID,
-        renderStatusInfo(statusInfo.ok),
+        renderStatusInfo(statusInfo),
         {}
       );
     } catch (ex) {

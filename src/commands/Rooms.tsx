@@ -62,9 +62,6 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
       draupnir.clientRooms.currentRevision.allJoinedRooms,
       draupnir.protectedRoomsSet.allProtectedRooms
     );
-    if (isError(listInfo)) {
-      return listInfo;
-    }
     const makeRoomListItem = (room: MatrixRoomID) => {
       const revision = draupnir.protectedRoomsSet.setRoomState.getRevision(
         room.toRoomIDOrAlias()
@@ -76,9 +73,9 @@ export const DraupnirListProtectedRoomsCommand = describeCommand({
       }
     };
     return Ok({
-      joinedAndProtectedLists: listInfo.ok.subscribedAndProtectedLists,
-      joinedAndWatchedLists: listInfo.ok.subscribedLists,
-      partedAndWatchedLists: listInfo.ok.subscribedButPartedLists,
+      joinedAndProtectedLists: listInfo.subscribedAndProtectedLists,
+      joinedAndWatchedLists: listInfo.subscribedLists,
+      partedAndWatchedLists: listInfo.subscribedButPartedLists,
       joinedAndProtectedRooms: allProtectedRooms
         .filter((room) => allJoinedRooms.includes(room.toRoomIDOrAlias()))
         .map(makeRoomListItem),

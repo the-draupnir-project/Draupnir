@@ -28,13 +28,12 @@ import {
   MatrixRoomID,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Result } from "@gnuxie/typescript-result";
 
 export const DraupnirStatusCommand = describeCommand({
   summary: "Show the status of the bot.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<ActionResult<StatusInfo>> {
-    return await draupnirStatusInfo(draupnir);
+    return Ok(draupnirStatusInfo(draupnir));
   },
 });
 
@@ -56,7 +55,7 @@ export function groupWatchedPolicyRoomsByProtectionStatus(
   watchedPolicyRooms: WatchedPolicyRooms,
   allJoinedRooms: StringRoomID[],
   protectedRooms: MatrixRoomID[]
-): Result<WatchedPolicyRoomsInfo> {
+): WatchedPolicyRoomsInfo {
   const watchedListProfiles = watchedPolicyRooms.allRooms;
   const subscribedAndProtectedLists = watchedListProfiles.filter(
     (profile) =>
@@ -77,11 +76,11 @@ export function groupWatchedPolicyRoomsByProtectionStatus(
   const subscribedButPartedLists = watchedListProfiles.filter(
     (profile) => !allJoinedRooms.includes(profile.room.toRoomIDOrAlias())
   );
-  return Ok({
+  return {
     subscribedLists: subscribedLists,
     subscribedAndProtectedLists: subscribedAndProtectedLists,
     subscribedButPartedLists,
-  });
+  };
 }
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
@@ -94,28 +93,23 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
 });
 
 // FIXME: need a shoutout to dependencies in here and NOTICE info.
-export async function draupnirStatusInfo(
-  draupnir: Draupnir
-): Promise<Result<StatusInfo>> {
+export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
   const watchedListInfo = groupWatchedPolicyRoomsByProtectionStatus(
     draupnir.protectedRoomsSet.watchedPolicyRooms,
     draupnir.clientRooms.currentRevision.allJoinedRooms,
     draupnir.protectedRoomsSet.allProtectedRooms
   );
-  if (isError(watchedListInfo)) {
-    return watchedListInfo;
-  }
-  return Ok({
+  return {
     numberOfProtectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.length,
     numberOfUniqueMembers:
       draupnir.protectedRoomsSet.setMembership.currentRevision.uniqueMemberCount(),
-    subscribedLists: watchedListInfo.ok.subscribedLists,
-    subscribedAndProtectedLists: watchedListInfo.ok.subscribedAndProtectedLists,
-    subscribedButPartedLists: watchedListInfo.ok.subscribedButPartedLists,
+    subscribedLists: watchedListInfo.subscribedLists,
+    subscribedAndProtectedLists: watchedListInfo.subscribedAndProtectedLists,
+    subscribedButPartedLists: watchedListInfo.subscribedButPartedLists,
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
     repository: PACKAGE_JSON["repository"] ?? "Unknown",
-  });
+  };
 }
 
 export function renderPolicyList(list: WatchedPolicyRoom): DocumentNode {
