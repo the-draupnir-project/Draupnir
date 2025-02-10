@@ -69,10 +69,9 @@ export class ProtectedJoinedRooms {
   }
 
   public async syncProtectedRooms() {
-    const policyRooms =
-      this.protectedRoomsSet.issuerManager.allWatchedLists.map((profile) =>
-        profile.room.toRoomIDOrAlias()
-      );
+    const policyRooms = this.protectedRoomsSet.watchedPolicyRooms.allRooms.map(
+      (profile) => profile.room.toRoomIDOrAlias()
+    );
     const roomsToProtect =
       this.clientRooms.currentRevision.allJoinedRooms.filter((roomID) => {
         return (

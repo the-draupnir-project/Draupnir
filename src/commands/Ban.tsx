@@ -1,4 +1,4 @@
-// Copyright 2022 - 2023 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -16,14 +16,11 @@ import {
   Ok,
   PolicyRoomManager,
   RoomResolver,
-  PolicyListConfig,
+  WatchedPolicyRooms,
 } from "matrix-protection-suite";
-import { findPolicyRoomIDFromShortcode } from "./CreateBanListCommand";
 import {
-  MatrixRoomID,
   MatrixRoomReference,
   MatrixUserID,
-  StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
@@ -40,6 +37,7 @@ import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
+import { ResultError } from "@gnuxie/typescript-result";
 
 export async function findPolicyRoomEditorFromRoomReference(
   roomResolver: RoomResolver,
@@ -55,12 +53,10 @@ export async function findPolicyRoomEditorFromRoomReference(
 
 export type DraupnirBanCommandContext = {
   policyRoomManager: PolicyRoomManager;
-  issuerManager: PolicyListConfig;
+  watchedPolicyRooms: WatchedPolicyRooms;
   defaultReasons: string[];
   roomResolver: RoomResolver;
   clientUserID: StringUserID;
-  allJoinedRooms: StringRoomID[];
-  protectedRooms: MatrixRoomID[];
 };
 
 export const DraupnirBanCommand = describeCommand({
@@ -108,12 +104,9 @@ export const DraupnirBanCommand = describeCommand({
   },
   async executor(
     {
-      issuerManager,
+      watchedPolicyRooms,
       policyRoomManager,
       roomResolver,
-      clientUserID,
-      allJoinedRooms,
-      protectedRooms,
     }: DraupnirBanCommandContext,
     _info: BasicInvocationInformation,
     _keywords,
@@ -123,17 +116,18 @@ export const DraupnirBanCommand = describeCommand({
   ): Promise<ActionResult<string>> {
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
-        ? await findPolicyRoomIDFromShortcode(
-            issuerManager,
-            policyRoomManager,
-            allJoinedRooms,
-            protectedRooms,
-            clientUserID,
-            policyRoomDesignator
+        ? Ok(
+            watchedPolicyRooms.findPolicyRoomFromShortcode(policyRoomDesignator)
+              ?.room
           )
         : Ok(policyRoomDesignator);
     if (isError(policyRoomReference)) {
       return policyRoomReference;
+    }
+    if (policyRoomReference.ok === undefined) {
+      return ResultError.Result(
+        `Unable to find a policy room from the shortcode ${policyRoomDesignator.toString()}`
+      );
     }
     const policyListEditorResult = await findPolicyRoomEditorFromRoomReference(
       roomResolver,
@@ -176,12 +170,10 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
   function (draupnir) {
     return {
       policyRoomManager: draupnir.policyRoomManager,
-      issuerManager: draupnir.protectedRoomsSet.issuerManager,
+      watchedPolicyRooms: draupnir.protectedRoomsSet.watchedPolicyRooms,
       defaultReasons: draupnir.config.commands.ban.defaultReasons,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
       clientUserID: draupnir.clientUserID,
-      allJoinedRooms: draupnir.clientRooms.currentRevision.allJoinedRooms,
-      protectedRooms: draupnir.protectedRoomsSet.allProtectedRooms,
     };
   }
 );

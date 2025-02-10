@@ -43,7 +43,6 @@ import {
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
-import { getWatchedPolicyRoomsInfo } from "../commands/StatusCommand";
 import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import {
   MatrixRoomID,
@@ -310,15 +309,14 @@ export class BanPropagationProtection
       this.handleBan(ban);
     }
     for (const unban of unbans) {
-      void Task(this.handleUnban(unban, this.draupnir));
+      void Task(this.handleUnban(unban));
     }
     return Ok(undefined);
   }
 
   private handleBan(change: MembershipChange): void {
     const policyRevision =
-      this.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-        .currentRevision;
+      this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
     const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
       change.userID,
       PolicyRuleType.User,
@@ -330,13 +328,9 @@ export class BanPropagationProtection
     void Task(promptBanPropagation(this.draupnir, change));
   }
 
-  private async handleUnban(
-    change: MembershipChange,
-    draupnir: Draupnir
-  ): Promise<void> {
+  private async handleUnban(change: MembershipChange): Promise<void> {
     const policyRevision =
-      this.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-        .currentRevision;
+      this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
     const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
       change.userID,
       PolicyRuleType.User,
@@ -366,38 +360,25 @@ export class BanPropagationProtection
       (map, rule) => addRule(map, rule),
       new Map<StringRoomID, PolicyRule[]>()
     );
-    const policyRoomInfo = await getWatchedPolicyRoomsInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager,
-      draupnir.clientRooms.currentRevision.allJoinedRooms,
-      draupnir.protectedRoomsSet.allProtectedRooms
-    );
-    if (isError(policyRoomInfo)) {
-      log.error(
-        `Unable to fetch policy rooms info to be able to prompt to unban ${change.userID}`,
-        policyRoomInfo.error
-      );
-      return;
-    }
     await promptUnbanPropagation(
       this.draupnir,
       change,
       change.roomID,
       [...rulesByPolicyRoom.entries()].map(([policyRoomID, rules]) => {
-        const info = [
-          ...policyRoomInfo.ok.subscribedAndProtectedLists,
-          ...policyRoomInfo.ok.subscribedLists,
-        ].find((i) => i.revision.room.toRoomIDOrAlias() === policyRoomID);
-        if (info === undefined) {
+        const profile =
+          this.draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.find(
+            (i) => i.revision.room.toRoomIDOrAlias() === policyRoomID
+          );
+        if (profile === undefined) {
           throw new TypeError(
             `Shouldn't be possible to have a rule from an unwatched list.`
           );
         }
         return {
-          room: info.revision.room,
+          room: profile.revision.room,
           roomID: policyRoomID,
           matches: rules,
-          profile: info.watchedListProfile,
+          profile: profile,
         };
       }),
       roomsBannedFrom.map((revision) => revision.room)
@@ -465,8 +446,7 @@ export class BanPropagationProtection
       // the unban from lists code should be moved to a standard consequence.
       const errors: RoomUpdateError[] = [];
       const policyRevision =
-        this.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-          .currentRevision;
+        this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
         context.target,
         PolicyRuleType.User,

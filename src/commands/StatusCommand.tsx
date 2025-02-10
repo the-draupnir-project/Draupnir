@@ -12,11 +12,9 @@ import { DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import {
   ActionResult,
   Ok,
-  PolicyListConfig,
-  PolicyRoomManager,
-  PolicyRoomRevision,
-  PolicyRoomWatchProfile,
   PolicyRuleType,
+  WatchedPolicyRoom,
+  WatchedPolicyRooms,
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
@@ -40,15 +38,10 @@ export const DraupnirStatusCommand = describeCommand({
   },
 });
 
-export interface WatchedPolicyRoomInfo {
-  watchedListProfile: PolicyRoomWatchProfile;
-  revision: PolicyRoomRevision;
-}
-
 export type WatchedPolicyRoomsInfo = {
-  subscribedLists: WatchedPolicyRoomInfo[];
-  subscribedAndProtectedLists: WatchedPolicyRoomInfo[];
-  subscribedButPartedLists: PolicyRoomWatchProfile[];
+  subscribedLists: WatchedPolicyRoom[];
+  subscribedAndProtectedLists: WatchedPolicyRoom[];
+  subscribedButPartedLists: WatchedPolicyRoom[];
 };
 
 export type StatusInfo = {
@@ -59,69 +52,34 @@ export type StatusInfo = {
   documentationURL: string;
 } & WatchedPolicyRoomsInfo;
 
-async function findRevisionIssuers(
-  policyRoomManager: PolicyRoomManager,
-  profiles: PolicyRoomWatchProfile[]
-): Promise<Result<WatchedPolicyRoomInfo[]>> {
-  const issuers: WatchedPolicyRoomInfo[] = [];
-  for (const profile of profiles) {
-    const issuerResult = await policyRoomManager.getPolicyRoomRevisionIssuer(
-      profile.room
-    );
-    if (isError(issuerResult)) {
-      return issuerResult.elaborate(
-        "Unable to find a policy room revision issuer for a watched policy list"
-      );
-    }
-    issuers.push({
-      watchedListProfile: profile,
-      revision: issuerResult.ok.currentRevision,
-    });
-  }
-  return Ok(issuers);
-}
-
-export async function getWatchedPolicyRoomsInfo(
-  issuerManager: PolicyListConfig,
-  policyRoomManager: PolicyRoomManager,
+export function groupWatchedPolicyRoomsByProtectionStatus(
+  watchedPolicyRooms: WatchedPolicyRooms,
   allJoinedRooms: StringRoomID[],
   protectedRooms: MatrixRoomID[]
-): Promise<Result<WatchedPolicyRoomsInfo>> {
-  const watchedListProfiles = issuerManager.allWatchedLists;
-  const subscribedAndProtectedLists = await findRevisionIssuers(
-    policyRoomManager,
-    watchedListProfiles.filter(
-      (profile) =>
-        allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
-        protectedRooms.find(
-          (protectedRoom) =>
-            protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
-        )
-    )
+): Result<WatchedPolicyRoomsInfo> {
+  const watchedListProfiles = watchedPolicyRooms.allRooms;
+  const subscribedAndProtectedLists = watchedListProfiles.filter(
+    (profile) =>
+      allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
+      protectedRooms.find(
+        (protectedRoom) =>
+          protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
+      )
   );
-  if (isError(subscribedAndProtectedLists)) {
-    return subscribedAndProtectedLists;
-  }
-  const subscribedLists = await findRevisionIssuers(
-    policyRoomManager,
-    watchedListProfiles.filter(
-      (profile) =>
-        allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
-        !protectedRooms.find(
-          (protectedRoom) =>
-            protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
-        )
-    )
+  const subscribedLists = watchedListProfiles.filter(
+    (profile) =>
+      allJoinedRooms.includes(profile.room.toRoomIDOrAlias()) &&
+      !protectedRooms.find(
+        (protectedRoom) =>
+          protectedRoom.toRoomIDOrAlias() === profile.room.toRoomIDOrAlias()
+      )
   );
-  if (isError(subscribedLists)) {
-    return subscribedLists;
-  }
   const subscribedButPartedLists = watchedListProfiles.filter(
     (profile) => !allJoinedRooms.includes(profile.room.toRoomIDOrAlias())
   );
   return Ok({
-    subscribedLists: subscribedLists.ok,
-    subscribedAndProtectedLists: subscribedAndProtectedLists.ok,
+    subscribedLists: subscribedLists,
+    subscribedAndProtectedLists: subscribedAndProtectedLists,
     subscribedButPartedLists,
   });
 }
@@ -139,9 +97,8 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
 export async function draupnirStatusInfo(
   draupnir: Draupnir
 ): Promise<Result<StatusInfo>> {
-  const watchedListInfo = await getWatchedPolicyRoomsInfo(
-    draupnir.protectedRoomsSet.issuerManager,
-    draupnir.policyRoomManager,
+  const watchedListInfo = groupWatchedPolicyRoomsByProtectionStatus(
+    draupnir.protectedRoomsSet.watchedPolicyRooms,
     draupnir.clientRooms.currentRevision.allJoinedRooms,
     draupnir.protectedRoomsSet.allProtectedRooms
   );
@@ -161,14 +118,14 @@ export async function draupnirStatusInfo(
   });
 }
 
-export function renderPolicyList(list: WatchedPolicyRoomInfo): DocumentNode {
+export function renderPolicyList(list: WatchedPolicyRoom): DocumentNode {
   return (
     <li>
       <a href={list.revision.room.toPermalink()}>
         {list.revision.room.toRoomIDOrAlias()}
       </a>{" "}
       &#32; ({list.revision.shortcode ?? "<no shortcode>"}) propagation:{" "}
-      {list.watchedListProfile.propagation} &#32; (rules:{" "}
+      {list.propagation} &#32; (rules:{" "}
       {list.revision.allRulesOfType(PolicyRuleType.Server).length} servers,{" "}
       {list.revision.allRulesOfType(PolicyRuleType.User).length} users,{" "}
       {list.revision.allRulesOfType(PolicyRuleType.Room).length} rooms) (last
@@ -179,10 +136,7 @@ export function renderPolicyList(list: WatchedPolicyRoomInfo): DocumentNode {
 }
 
 export function renderStatusInfo(info: StatusInfo): DocumentNode {
-  const renderPolicyLists = (
-    header: string,
-    lists: WatchedPolicyRoomInfo[]
-  ) => {
+  const renderPolicyLists = (header: string, lists: WatchedPolicyRoom[]) => {
     const renderedLists = lists.map(renderPolicyList);
     return (
       <fragment>

@@ -10,7 +10,6 @@ import {
   MembershipChangeType,
   NoticeMessageContent,
   PolicyRuleType,
-  PropagationType,
   RoomMessage,
   Value,
   findProtection,
@@ -86,10 +85,8 @@ describe("Ban propagation test", function () {
         100
       );
       await draupnir.client.joinRoom(policyListId);
-      await draupnir.protectedRoomsSet.issuerManager.watchList(
-        PropagationType.Direct,
-        MatrixRoomReference.fromRoomID(policyListId as StringRoomID),
-        {}
+      await draupnir.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
+        MatrixRoomReference.fromRoomID(policyListId as StringRoomID)
       );
 
       // check for the prompt
@@ -119,8 +116,7 @@ describe("Ban propagation test", function () {
       await new Promise((resolve) => setTimeout(resolve, 10000));
 
       const policyListRevisionAfterBan =
-        draupnir.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-          .currentRevision;
+        draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       const rules = policyListRevisionAfterBan.allRulesMatchingEntity(
         spamUserID,
         PolicyRuleType.User
@@ -154,8 +150,7 @@ describe("Ban propagation test", function () {
       );
       await new Promise((resolve) => setTimeout(resolve, 10000));
       const policyListRevisionAfterUnBan =
-        draupnir.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-          .currentRevision;
+        draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
 
       const rulesAfterUnban =
         policyListRevisionAfterUnBan.allRulesMatchingEntity(

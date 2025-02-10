@@ -38,6 +38,7 @@ import {
   StandardProtectionsManager,
   StandardSetRoomMembership,
   StandardSetRoomState,
+  StandardWatchedPolicyRooms,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -59,7 +60,6 @@ const log = new Logger("DraupnirProtectedRoomsSet");
 
 async function makePolicyListConfig(
   client: MatrixSendClient,
-  policyRoomManager: PolicyRoomManager,
   roomJoiner: RoomJoiner
 ): Promise<ActionResult<PolicyListConfig>> {
   const result = await MjolnirPolicyRoomsConfig.createFromStore(
@@ -67,7 +67,6 @@ async function makePolicyListConfig(
       client,
       MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE
     ),
-    policyRoomManager,
     roomJoiner
   );
   return result;
@@ -192,11 +191,18 @@ export async function makeProtectedRoomsSet(
   }
   const policyListConfig = await makePolicyListConfig(
     client,
-    policyRoomManager,
     clientPlatform.toRoomJoiner()
   );
   if (isError(policyListConfig)) {
     return policyListConfig;
+  }
+  const watchedPolicyRooms = await StandardWatchedPolicyRooms.create(
+    policyListConfig.ok,
+    policyRoomManager,
+    clientPlatform.toRoomJoiner()
+  );
+  if (isError(watchedPolicyRooms)) {
+    return watchedPolicyRooms;
   }
   const protectionsConfig = await makeProtectionsManager(
     client,
@@ -209,7 +215,7 @@ export async function makeProtectedRoomsSet(
     return protectionsConfig;
   }
   const protectedRoomsSet = new StandardProtectedRoomsSet(
-    policyListConfig.ok,
+    watchedPolicyRooms.ok,
     protectedRoomsManager.ok,
     protectionsConfig.ok,
     userID,

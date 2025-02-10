@@ -14,7 +14,6 @@ import {
   PolicyRule,
   isError,
 } from "matrix-protection-suite";
-import { getWatchedPolicyRoomsInfo } from "./StatusCommand";
 import {
   StringRoomID,
   MatrixRoomID,
@@ -90,24 +89,12 @@ export const DraupnirListRulesCommand = describeCommand({
   summary: "Lists the rules currently in use by Draupnir.",
   parameters: [],
   async executor(draupnir: Draupnir): Promise<Result<ListMatches[]>> {
-    const infoResult = await getWatchedPolicyRoomsInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager,
-      draupnir.clientRooms.currentRevision.allJoinedRooms,
-      draupnir.protectedRoomsSet.allProtectedRooms
-    );
-    if (isError(infoResult)) {
-      return infoResult;
-    }
     return Ok(
-      [
-        ...infoResult.ok.subscribedAndProtectedLists,
-        ...infoResult.ok.subscribedLists,
-      ].map((policyRoom) => ({
-        room: policyRoom.revision.room,
-        roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-        profile: policyRoom.watchedListProfile,
-        matches: policyRoom.revision.allRules(),
+      draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.map((profile) => ({
+        room: profile.revision.room,
+        roomID: profile.revision.room.toRoomIDOrAlias(),
+        profile: profile,
+        matches: profile.revision.allRules(),
       }))
     );
   },
@@ -135,27 +122,13 @@ export const DraupnirRulesMatchingCommand = describeCommand({
     _rest,
     entity
   ): Promise<Result<ListMatches[]>> {
-    const policyRooms = await getWatchedPolicyRoomsInfo(
-      draupnir.protectedRoomsSet.issuerManager,
-      draupnir.policyRoomManager,
-      draupnir.clientRooms.currentRevision.allJoinedRooms,
-      draupnir.protectedRoomsSet.allProtectedRooms
-    );
-    if (isError(policyRooms)) {
-      return policyRooms;
-    }
     return Ok(
-      [
-        ...policyRooms.ok.subscribedAndProtectedLists,
-        ...policyRooms.ok.subscribedLists,
-      ].map((policyRoom) => {
+      draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.map((profile) => {
         return {
-          room: policyRoom.revision.room,
-          roomID: policyRoom.revision.room.toRoomIDOrAlias(),
-          matches: policyRoom.revision.allRulesMatchingEntity(
-            entity.toString()
-          ),
-          profile: policyRoom.watchedListProfile,
+          room: profile.revision.room,
+          roomID: profile.revision.room.toRoomIDOrAlias(),
+          matches: profile.revision.allRulesMatchingEntity(entity.toString()),
+          profile: profile,
         };
       })
     );

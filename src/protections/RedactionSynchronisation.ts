@@ -124,8 +124,7 @@ export class RedactionSynchronisationProtection
         change.membershipChangeType === MembershipChangeType.Rejoined
       ) {
         const policyRevision =
-          this.protectedRoomsSet.issuerManager.policyListRevisionIssuer
-            .currentRevision;
+          this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
         const matchingPolicy = policyRevision.findRuleMatchingEntity(
           change.userID,
           PolicyRuleType.User,
