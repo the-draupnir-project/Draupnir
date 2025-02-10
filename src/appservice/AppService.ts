@@ -225,16 +225,22 @@ export class MjolnirAppService {
   ): Promise<MjolnirAppService> {
     Logger.configure(config.logging ?? { console: "debug" });
     const dataStore = new PgDataStore(config.db.connectionString);
-    await dataStore.init();
-    const service = await MjolnirAppService.makeMjolnirAppService(
-      config,
-      dataStore,
-      DefaultEventDecoder,
-      registrationFilePath
-    );
-    // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
-    await service.start(port);
-    return service;
+    try {
+      await dataStore.init();
+      const service = await MjolnirAppService.makeMjolnirAppService(
+        config,
+        dataStore,
+        DefaultEventDecoder,
+        registrationFilePath
+      );
+      // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
+      await service.start(port);
+      return service;
+    } catch (e: unknown) {
+      log.error("Failed to start the appservice", e);
+      await dataStore.close();
+      throw e;
+    }
   }
 
   public onUserQuery(_queriedUser: MatrixUser) {

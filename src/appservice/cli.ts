@@ -11,7 +11,6 @@
 import { Cli } from "matrix-appservice-bridge";
 import { MjolnirAppService } from "./AppService";
 import { IConfig } from "./config/config";
-import { Task } from "matrix-protection-suite";
 
 /**
  * This file provides the entrypoint for the appservice mode for draupnir.
@@ -31,15 +30,7 @@ const cli = new Cli({
     if (config === null) {
       throw new Error("Couldn't load config");
     }
-    void Task(
-      (async () => {
-        await MjolnirAppService.run(
-          port,
-          config,
-          cli.getRegistrationFilePath()
-        );
-      })()
-    );
+    void MjolnirAppService.run(port, config, cli.getRegistrationFilePath());
   },
 });
 
