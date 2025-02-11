@@ -54,6 +54,7 @@ import { DraupnirSafeModeCommand } from "./SafeModeCommand";
 import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
 import { JoinWaveCommandTable } from "../protections/JoinWaveShortCircuit";
+import { DraupnirRoomsStateGetCommand } from "./RoomState";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
@@ -103,6 +104,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirListProtectedRoomsCommand, ["rooms"])
   .internCommand(DraupnirRoomsAddCommand, ["rooms", "add"])
   .internCommand(DraupnirRoomsRemoveCommand, ["rooms", "remove"])
+  .internCommand(DraupnirRoomsStateGetCommand, ["rooms", "state", "get"])
   .internCommand(DraupnirListRulesCommand, ["rules"])
   .internCommand(DraupnirRulesMatchingCommand, ["rules", "matching"])
   .internCommand(DraupnirRulesMatchingMembersCommand, [
