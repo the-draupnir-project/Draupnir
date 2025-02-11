@@ -266,6 +266,7 @@ describeCapabilityRenderer<UserConsequences, Draupnir>({
       capability
     );
   },
+  isDefaultForInterface: true,
 });
 
 describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
@@ -280,5 +281,18 @@ describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       setMembership: draupnir.protectedRoomsSet.setRoomMembership,
     });
+  },
+});
+
+describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
+  name: "SimulatedUserConsequences",
+  glueMethod: function (
+    protectionDescription,
+    draupnir,
+    capabilityProvider
+  ): Capability {
+    return capabilityProvider.factory(protectionDescription, {
+      setMembership: draupnir.protectedRoomsSet.setRoomMembership,
+    } as StandardUserConsequencesContext);
   },
 });

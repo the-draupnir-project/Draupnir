@@ -81,6 +81,7 @@ describeCapabilityRenderer<EventConsequences, Draupnir>({
       capability
     );
   },
+  isDefaultForInterface: true,
 });
 
 describeCapabilityContextGlue<Draupnir, { eventRedacter: RoomEventRedacter }>({

@@ -154,6 +154,7 @@ describeCapabilityRenderer<ServerConsequences, Draupnir>({
       capability
     );
   },
+  isDefaultForInterface: true,
 });
 
 describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
@@ -167,5 +168,18 @@ describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
       stateEventSender: draupnir.clientPlatform.toRoomStateEventSender(),
       protectedRoomsSet: draupnir.protectedRoomsSet,
     });
+  },
+});
+
+describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
+  name: "SimulatedServerConsequences",
+  glueMethod: function (
+    protectionDescription,
+    draupnir,
+    capabilityProvider
+  ): Capability {
+    return capabilityProvider.factory(protectionDescription, {
+      protectedRoomsSet: draupnir.protectedRoomsSet,
+    } as ServerACLConsequencesContext);
   },
 });
