@@ -9,6 +9,7 @@
 // </text>
 
 import {
+  MemberPolicyMatches,
   Ok,
   PolicyRoomWatchProfile,
   PolicyRule,
@@ -31,6 +32,7 @@ import {
 import { Result } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { renderMentionPill } from "./interface-manager/MatrixHelpRenderer";
 
 function renderListMatches(
   result: Result<ListMatches[]>
@@ -51,15 +53,16 @@ function renderListMatches(
   );
 }
 
+function renderRuleSummary(rule: PolicyRule) {
+  return (
+    <li>
+      {rule.kind} (<code>{rule.recommendation}</code>):{" "}
+      <code>{rule.entity}</code> ({rule.reason})
+    </li>
+  );
+}
+
 export function renderListRules(list: ListMatches) {
-  const renderRuleSummary = (rule: PolicyRule) => {
-    return (
-      <li>
-        {rule.kind} (<code>{rule.recommendation}</code>):{" "}
-        <code>{rule.entity}</code> ({rule.reason})
-      </li>
-    );
-  };
   return (
     <fragment>
       <a href={list.room.toPermalink()}>{list.roomID}</a> propagation:{" "}
@@ -137,4 +140,40 @@ export const DraupnirRulesMatchingCommand = describeCommand({
 
 DraupnirInterfaceAdaptor.describeRenderer(DraupnirRulesMatchingCommand, {
   JSXRenderer: renderListMatches,
+});
+
+export const DraupnirRulesMatchingMembersCommand = describeCommand({
+  summary:
+    "Lists the rule that are matching matching members of protected rooms",
+  parameters: tuple(),
+  async executor(draupnir: Draupnir): Promise<Result<MemberPolicyMatches[]>> {
+    const revision =
+      draupnir.protectedRoomsSet.setPoliciesMatchingMembership.currentRevision;
+    return Ok(revision.allMembersWithRules());
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirRulesMatchingMembersCommand, {
+  JSXRenderer(result) {
+    if (isError(result)) {
+      return Ok(undefined);
+    }
+    return Ok(
+      <root>
+        <h4>Rules matching members of protected rooms:</h4>
+        <ul>
+          {result.ok.map((memberPolicies) => (
+            <li>
+              {renderMentionPill(memberPolicies.userID, memberPolicies.userID)}:
+              <ul>
+                {memberPolicies.policies.map((policy) =>
+                  renderRuleSummary(policy)
+                )}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </root>
+    );
+  },
 });
