@@ -38,6 +38,7 @@ import {
 import {
   DraupnirListRulesCommand,
   DraupnirRulesMatchingCommand,
+  DraupnirRulesMatchingMembersCommand,
 } from "./Rules";
 import { DraupnirDisplaynameCommand } from "./SetDisplayNameCommand";
 import { DraupnirSetPowerLevelCommand } from "./SetPowerLevelCommand";
@@ -104,6 +105,11 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirRoomsRemoveCommand, ["rooms", "remove"])
   .internCommand(DraupnirListRulesCommand, ["rules"])
   .internCommand(DraupnirRulesMatchingCommand, ["rules", "matching"])
+  .internCommand(DraupnirRulesMatchingMembersCommand, [
+    "rules",
+    "matching",
+    "members",
+  ])
   .internCommand(DraupnirSafeModeCommand, ["safe", "mode"])
   .internCommand(DraupnirDisplaynameCommand, ["displayname"])
   .internCommand(DraupnirSetPowerLevelCommand, ["powerlevel"])
