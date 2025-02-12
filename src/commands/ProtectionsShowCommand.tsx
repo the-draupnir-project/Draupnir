@@ -177,6 +177,11 @@ function renderCapabilityProviderSet(set: CapabilityProviderSet): DocumentNode {
         !draupnir protections capability {"<"}protection name{">"} {"<"}
         capability name{">"} {"<"}capability provider name{">"}
       </code>{" "}
+      command. To reset the capability provider set to its default capabilities,
+      use the{" "}
+      <code>
+        !draupnir protections capability reset {"<"}protection name{">"}
+      </code>{" "}
       command.
     </fragment>
   );
