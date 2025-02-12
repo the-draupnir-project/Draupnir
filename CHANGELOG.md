@@ -14,6 +14,14 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+### Added
+
+- Simulated capabilities for all available protection capabilities. These allow
+  protections to run without effects.
+
+- A command `!draupnir protections capability reset <protection name>` to
+  restore the default capability set.
+
 ## [v2.1.0] - 2025-02-02
 
 ### Fixed
