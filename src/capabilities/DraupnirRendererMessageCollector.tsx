@@ -7,6 +7,7 @@ import {
   RendererMessageCollector,
 } from "./RendererMessageCollector";
 import {
+  Capability,
   DescriptionMeta,
   RoomMessageSender,
   Task,
@@ -17,8 +18,6 @@ import {
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
 import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { Result } from "@gnuxie/typescript-result";
-
 export class DraupnirRendererMessageCollector
   implements RendererMessageCollector
 {
@@ -28,21 +27,37 @@ export class DraupnirRendererMessageCollector
   ) {
     // nothing to do.
   }
-  private sendMessage(document: DocumentNode): void {
+  private sendMessage(capability: Capability, document: DocumentNode): void {
     void Task(
       sendMatrixEventsFromDeadDocument(
         this.roomMessageSender,
         this.managementRoomID,
-        <root>{document}</root>,
+        <root>
+          {capability.isSimulated ? (
+            <fragment>⚠️ (preview) </fragment>
+          ) : (
+            <fragment></fragment>
+          )}
+          {document}
+        </root>,
         {}
-      ) as Promise<Result<void>>
+      )
     );
   }
-  addMessage(protection: DescriptionMeta, message: DocumentNode): void {
-    this.sendMessage(message);
+  addMessage(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void {
+    this.sendMessage(capability, message);
   }
-  addOneliner(protection: DescriptionMeta, message: DocumentNode): void {
+  addOneliner(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void {
     this.sendMessage(
+      capability,
       <fragment>
         <code>{protection.name}</code>: {message}
       </fragment>

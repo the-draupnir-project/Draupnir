@@ -57,6 +57,7 @@ class StandardEventConsequencesRenderer implements EventConsequences {
     if (isError(capabilityResult)) {
       this.messageCollector.addOneliner(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -65,7 +66,7 @@ class StandardEventConsequencesRenderer implements EventConsequences {
       );
       return capabilityResult;
     }
-    this.messageCollector.addOneliner(this.description, title);
+    this.messageCollector.addOneliner(this.description, this.capability, title);
     return capabilityResult;
   }
 }
