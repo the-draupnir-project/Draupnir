@@ -127,6 +127,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -135,7 +136,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
       );
       return capabilityResult;
     }
-    this.messageCollector.addOneliner(this.description, title);
+    this.messageCollector.addOneliner(this.description, this.capability, title);
     return Ok(undefined);
   }
   public async consequenceForUsersInRoomSet(
@@ -149,6 +150,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
       );
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -163,6 +165,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     }
     this.messageCollector.addMessage(
       this.description,
+      this.capability,
       renderResultForUserInSetMap(usersInSetMap, {
         ingword: "Banning",
         nnedword: "banned",
@@ -188,6 +191,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
       );
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -202,6 +206,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     }
     this.messageCollector.addMessage(
       this.description,
+      this.capability,
       renderResultForUsersInRoom(resultMap, {
         summary: (
           <fragment>
@@ -233,6 +238,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
       );
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -247,6 +253,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
     }
     this.messageCollector.addMessage(
       this.description,
+      this.capability,
       renderRoomSetResultForUser(usersInSetMap, userID, "unbanned", {
         description: this.description,
       })
@@ -266,6 +273,7 @@ describeCapabilityRenderer<UserConsequences, Draupnir>({
       capability
     );
   },
+  isDefaultForInterface: true,
 });
 
 describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
@@ -280,5 +288,18 @@ describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
       roomUnbanner: draupnir.clientPlatform.toRoomUnbanner(),
       setMembership: draupnir.protectedRoomsSet.setRoomMembership,
     });
+  },
+});
+
+describeCapabilityContextGlue<Draupnir, StandardUserConsequencesContext>({
+  name: "SimulatedUserConsequences",
+  glueMethod: function (
+    protectionDescription,
+    draupnir,
+    capabilityProvider
+  ): Capability {
+    return capabilityProvider.factory(protectionDescription, {
+      setMembership: draupnir.protectedRoomsSet.setRoomMembership,
+    } as StandardUserConsequencesContext);
   },
 });

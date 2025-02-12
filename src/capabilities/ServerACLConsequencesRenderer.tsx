@@ -62,6 +62,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -72,7 +73,11 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     }
     // only add the message if we changed anything in the room.
     if (capabilityResult.ok) {
-      this.messageCollector.addOneliner(this.description, title);
+      this.messageCollector.addOneliner(
+        this.description,
+        this.capability,
+        title
+      );
     }
     return capabilityResult;
   }
@@ -85,6 +90,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -95,6 +101,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     }
     this.messageCollector.addMessage(
       this.description,
+      this.capability,
       renderRoomSetResult(capabilityResult.ok, {
         summary: (
           <fragment>
@@ -121,6 +128,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
         this.description,
+        this.capability,
         renderFailedSingularConsequence(
           this.description,
           title,
@@ -131,6 +139,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     }
     this.messageCollector.addMessage(
       this.description,
+      this.capability,
       renderRoomSetResult(capabilityResult.ok, {
         summary: (
           <fragment>
@@ -154,6 +163,7 @@ describeCapabilityRenderer<ServerConsequences, Draupnir>({
       capability
     );
   },
+  isDefaultForInterface: true,
 });
 
 describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
@@ -167,5 +177,18 @@ describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
       stateEventSender: draupnir.clientPlatform.toRoomStateEventSender(),
       protectedRoomsSet: draupnir.protectedRoomsSet,
     });
+  },
+});
+
+describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
+  name: "SimulatedServerConsequences",
+  glueMethod: function (
+    protectionDescription,
+    draupnir,
+    capabilityProvider
+  ): Capability {
+    return capabilityProvider.factory(protectionDescription, {
+      protectedRoomsSet: draupnir.protectedRoomsSet,
+    } as ServerACLConsequencesContext);
   },
 });

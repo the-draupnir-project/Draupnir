@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { DocumentNode } from "@the-draupnir-project/interface-manager";
-import { DescriptionMeta } from "matrix-protection-suite";
+import { Capability, DescriptionMeta } from "matrix-protection-suite";
 
 export enum MessageType {
   Document = "Document",
@@ -12,13 +12,22 @@ export enum MessageType {
 }
 
 export interface RendererMessageCollector {
-  addMessage(protection: DescriptionMeta, message: DocumentNode): void;
-  addOneliner(protection: DescriptionMeta, message: DocumentNode): void;
+  addMessage(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void;
+  addOneliner(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void;
   getMessages(): RendererMessage[];
 }
 
 export interface RendererMessage {
   protection: DescriptionMeta;
+  capability: Capability;
   message: DocumentNode;
   type: MessageType;
 }
@@ -33,17 +42,27 @@ export class AbstractRendererMessageCollector
   public getMessages(): RendererMessage[] {
     return this.messages;
   }
-  addMessage(protection: DescriptionMeta, message: DocumentNode): void {
+  addMessage(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void {
     this.messages.push({
       protection,
+      capability,
       message,
       type: MessageType.Document,
     });
   }
 
-  addOneliner(protection: DescriptionMeta, message: DocumentNode): void {
+  addOneliner(
+    protection: DescriptionMeta,
+    capability: Capability,
+    message: DocumentNode
+  ): void {
     this.messages.push({
       protection,
+      capability,
       message,
       type: MessageType.OneLine,
     });
