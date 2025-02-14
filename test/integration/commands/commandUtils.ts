@@ -11,7 +11,10 @@
 import { MatrixClient } from "matrix-bot-sdk";
 import { strict as assert } from "assert";
 import * as crypto from "crypto";
-import { MatrixEmitter } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  MatrixEmitter,
+  MatrixSendClient,
+} from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   NoticeMessageContent,
   ReactionEvent,
@@ -21,6 +24,11 @@ import {
   StringEventIDSchema,
 } from "matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
+import { Draupnir } from "../../../src/Draupnir";
+import {
+  StringEventID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
 
 export const ReplyContent = Type.Intersect([
   Type.Object({
@@ -248,4 +256,31 @@ export async function createBanList(
     "could not create a list to test with."
   );
   return listName;
+}
+
+export async function sendCommand(
+  draupnir: Draupnir,
+  command: string
+): Promise<{ eventID: StringEventID }> {
+  const eventID = (await draupnir.client.sendMessage(
+    draupnir.managementRoomID,
+    {
+      msgtype: "m.text",
+      body: command,
+    }
+  )) as StringEventID;
+  return { eventID };
+}
+
+export async function acceptPropmt(
+  client: MatrixSendClient,
+  roomID: StringRoomID,
+  eventID: StringEventID,
+  promptKey: string
+): Promise<void> {
+  // i suspect that adding a reaction using the unstable API doesn't work because it uses the usntable prefix
+  // whereas our schema doesn't have the unstable event type.
+  // we don't test for this anywhere and we should really unify the situation between draupnir, draupnir safe mode,
+  // and any new bots that just need all the same things.
+  await client.unstableApis.addReactionToEvent(roomID, eventID, promptKey);
 }

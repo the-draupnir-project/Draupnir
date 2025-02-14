@@ -45,7 +45,7 @@ import { DraupnirDisplaynameCommand } from "./SetDisplayNameCommand";
 import { DraupnirSetPowerLevelCommand } from "./SetPowerLevelCommand";
 import { SynapseAdminShutdownRoomCommand } from "./ShutdownRoomCommand";
 import { DraupnirStatusCommand } from "./StatusCommand";
-import { DraupnirUnbanCommand } from "./Unban";
+import { DraupnirUnbanCommand } from "./unban/Unban";
 import {
   DraupnirUnwatchPolicyRoomCommand,
   DraupnirWatchPolicyRoomCommand,
