@@ -25,7 +25,7 @@ import {
 } from "matrix-protection-suite";
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
-import { DraupnirUnbanCommand } from "../../../src/commands/Unban";
+import { DraupnirUnbanCommand } from "../../../src/commands/unban/Unban";
 import ManagementRoomOutput from "../../../src/managementroom/ManagementRoomOutput";
 import { UnlistedUserRedactionQueue } from "../../../src/queues/UnlistedUserRedactionQueue";
 
@@ -129,7 +129,7 @@ describe("Test the DraupnirUnbanCommand", function () {
       DraupnirUnbanCommand,
       {
         policyRoomManager: mockPolicyRoomManager,
-        setMembership: protectedRoomsSet.setRoomMembership,
+        setRoomMembership: protectedRoomsSet.setRoomMembership,
         managementRoomOutput: createMock<ManagementRoomOutput>(),
         roomResolver,
         watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
@@ -142,12 +142,14 @@ describe("Test the DraupnirUnbanCommand", function () {
             return Ok(undefined);
           },
         }),
+        setMembership: protectedRoomsSet.setMembership,
+        setPoliciesMatchingMembership:
+          protectedRoomsSet.setPoliciesMatchingMembership.currentRevision,
       },
       {
         rest: ["spam"],
       },
-      MatrixUserID.fromUserID(ExistingBanUserID),
-      policyRoom
+      MatrixUserID.fromUserID(ExistingBanUserID)
     );
     expect(banResult.isOkay).toBe(true);
     const membership = protectedRoomsSet.setRoomMembership.getRevision(
@@ -159,7 +161,7 @@ describe("Test the DraupnirUnbanCommand", function () {
       );
     }
     expect(membership.membershipForUser(ExistingBanUserID)?.membership).toBe(
-      Membership.Leave
+      Membership.Ban
     );
   });
 });
