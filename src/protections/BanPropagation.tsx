@@ -1,4 +1,4 @@
-// Copyright 2022 - 2024 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2022 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -15,8 +15,6 @@ import {
   renderMentionPill,
   renderRoomPill,
 } from "../commands/interface-manager/MatrixHelpRenderer";
-import { ListMatches, renderListRules } from "../commands/Rules";
-import { printActionResult } from "../models/RoomUpdateError";
 import {
   AbstractProtection,
   ActionResult,
@@ -24,15 +22,11 @@ import {
   MembershipChange,
   MembershipChangeType,
   Ok,
-  PermissionError,
-  PolicyRule,
   PolicyRuleType,
   ProtectedRoomsSet,
   ProtectionDescription,
   Recommendation,
-  RoomActionError,
   RoomMembershipRevision,
-  RoomUpdateError,
   Task,
   describeProtection,
   isError,
@@ -48,17 +42,20 @@ import {
   MatrixRoomID,
   StringRoomID,
   MatrixRoomReference,
-  StringUserID,
-  userServerName,
+  MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { sendConfirmationPrompt } from "../commands/interface-manager/MatrixPromptForConfirmation";
+import {
+  findUnbanInformationForMember,
+  UnbanMembersPreview,
+  renderUnbanMembersPreview,
+} from "../commands/unban/Unban";
 
 const log = new Logger("BanPropagationProtection");
 
 const BAN_PROPAGATION_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.ban_propagation";
-const UNBAN_PROPAGATION_PROMPT_LISTENER =
-  "ge.applied-langua.ge.draupnir.unban_propagation";
 
 // FIXME: https://github.com/the-draupnir-project/Draupnir/issues/160
 function makePolicyRoomReactionReferenceMap(
@@ -143,39 +140,8 @@ async function promptBanPropagation(
 function renderUnbanPrompt(
   membershipChange: MembershipChange,
   roomID: StringRoomID,
-  rulesMatchingUser: ListMatches[],
-  roomsBannedFrom: MatrixRoomID[]
+  unbanPreview: UnbanMembersPreview
 ): DocumentNode {
-  const renderRules = () => {
-    if (rulesMatchingUser.length === 0) {
-      return <p>There are no rules matching this user.</p>;
-    }
-    return (
-      <p>
-        There are rules in Draupnir's watched lists matching this user:
-        <ul>
-          {rulesMatchingUser.map((match) => (
-            <li>{renderListRules(match)}</li>
-          ))}
-        </ul>
-      </p>
-    );
-  };
-  const renderRoomBans = () => {
-    if (roomsBannedFrom.length === 0) {
-      return <p>The user is not banned from any rooms.</p>;
-    }
-    return (
-      <p>
-        The user is banned from the following rooms:
-        <ul>
-          {roomsBannedFrom.map((room) => (
-            <li>{renderRoomPill(room)}</li>
-          ))}
-        </ul>
-      </p>
-    );
-  };
   return (
     <root>
       The user{" "}
@@ -187,10 +153,10 @@ function renderUnbanPrompt(
       {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))} by{" "}
       {membershipChange.sender} for{" "}
       <code>{membershipChange.content.reason ?? "<no reason supplied>"}</code>
-      {renderRules()}
-      {renderRoomBans()}
+      <br />
       Would you like to remove these rules and unban the user from all protected
       rooms?
+      {renderUnbanMembersPreview(unbanPreview)}
     </root>
   );
 }
@@ -198,32 +164,22 @@ function renderUnbanPrompt(
 async function promptUnbanPropagation(
   draupnir: Draupnir,
   membershipChange: MembershipChange,
-  roomID: StringRoomID,
-  rulesMatchingUser: ListMatches[],
-  roomsBannedFrom: MatrixRoomID[]
+  roomID: StringRoomID
 ): Promise<void> {
-  const reactionMap = new Map<string, string>(
-    Object.entries({ "unban from all": "unban from all" })
+  const unbanPreview = findUnbanInformationForMember(
+    draupnir.protectedRoomsSet.setRoomMembership,
+    new MatrixUserID(membershipChange.userID),
+    draupnir.protectedRoomsSet.watchedPolicyRooms,
+    { inviteMembers: false }
   );
-  const promptSendResult = await sendMatrixEventsFromDeadDocument(
-    draupnir.clientPlatform.toRoomMessageSender(),
-    draupnir.managementRoomID,
-    renderUnbanPrompt(
-      membershipChange,
-      roomID,
-      rulesMatchingUser,
-      roomsBannedFrom
-    ),
+  const promptSendResult = await sendConfirmationPrompt(
+    draupnir,
     {
-      additionalContent: draupnir.reactionHandler.createAnnotation(
-        UNBAN_PROPAGATION_PROMPT_LISTENER,
-        reactionMap,
-        {
-          target: membershipChange.userID,
-          reason: membershipChange.content.reason,
-        }
-      ),
-    }
+      commandDesignator: ["draupnir", "unban"],
+      readItems: [membershipChange.userID],
+    },
+    renderUnbanPrompt(membershipChange, roomID, unbanPreview),
+    { roomID: draupnir.managementRoomID }
   );
   if (isError(promptSendResult)) {
     log.error(
@@ -232,12 +188,6 @@ async function promptUnbanPropagation(
     );
     return;
   }
-  await draupnir.reactionHandler.addReactionsToEvent(
-    draupnir.client,
-    draupnir.managementRoomID,
-    promptSendResult.ok[0] as string,
-    reactionMap
-  );
 }
 
 export type BanPropagationProtectionCapabilities = {
@@ -255,12 +205,8 @@ export class BanPropagationProtection
   extends AbstractProtection<BanPropagationProtectionCapabilitiesDescription>
   implements DraupnirProtection<BanPropagationProtectionCapabilitiesDescription>
 {
-  private readonly userConsequences: UserConsequences;
-
   private readonly banPropagationPromptListener =
     this.banReactionListener.bind(this);
-  private readonly unbanPropagationPromptListener =
-    this.unbanUserReactionListener.bind(this);
   constructor(
     description: BanPropagationProtectionCapabilitiesDescription,
     capabilities: BanPropagationProtectionCapabilities,
@@ -268,14 +214,9 @@ export class BanPropagationProtection
     private readonly draupnir: Draupnir
   ) {
     super(description, capabilities, protectedRoomsSet, {});
-    this.userConsequences = capabilities.userConsequences;
     this.draupnir.reactionHandler.on(
       BAN_PROPAGATION_PROMPT_LISTENER,
       this.banPropagationPromptListener
-    );
-    this.draupnir.reactionHandler.on(
-      UNBAN_PROPAGATION_PROMPT_LISTENER,
-      this.unbanPropagationPromptListener
     );
   }
 
@@ -283,10 +224,6 @@ export class BanPropagationProtection
     this.draupnir.reactionHandler.off(
       BAN_PROPAGATION_PROMPT_LISTENER,
       this.banPropagationPromptListener
-    );
-    this.draupnir.reactionHandler.off(
-      UNBAN_PROPAGATION_PROMPT_LISTENER,
-      this.unbanPropagationPromptListener
     );
   }
 
@@ -329,60 +266,7 @@ export class BanPropagationProtection
   }
 
   private async handleUnban(change: MembershipChange): Promise<void> {
-    const policyRevision =
-      this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-    const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
-      change.userID,
-      PolicyRuleType.User,
-      Recommendation.Ban
-    );
-    const roomsBannedFrom =
-      this.protectedRoomsSet.setRoomMembership.allRooms.filter(
-        (revision) =>
-          revision.membershipForUser(change.userID)?.membership ===
-          Membership.Ban
-      );
-    if (rulesMatchingUser.length === 0 && roomsBannedFrom.length === 0) {
-      return; // user is already unbanned.
-    }
-    const addRule = (
-      map: Map<StringRoomID, PolicyRule[]>,
-      rule: PolicyRule
-    ) => {
-      const listRoomID = rule.sourceEvent.room_id;
-      const entry =
-        map.get(listRoomID) ??
-        ((newEntry) => (map.set(listRoomID, newEntry), newEntry))([]);
-      entry.push(rule);
-      return map;
-    };
-    const rulesByPolicyRoom = rulesMatchingUser.reduce(
-      (map, rule) => addRule(map, rule),
-      new Map<StringRoomID, PolicyRule[]>()
-    );
-    await promptUnbanPropagation(
-      this.draupnir,
-      change,
-      change.roomID,
-      [...rulesByPolicyRoom.entries()].map(([policyRoomID, rules]) => {
-        const profile =
-          this.draupnir.protectedRoomsSet.watchedPolicyRooms.allRooms.find(
-            (i) => i.revision.room.toRoomIDOrAlias() === policyRoomID
-          );
-        if (profile === undefined) {
-          throw new TypeError(
-            `Shouldn't be possible to have a rule from an unwatched list.`
-          );
-        }
-        return {
-          room: profile.revision.room,
-          roomID: policyRoomID,
-          matches: rules,
-          profile: profile,
-        };
-      }),
-      roomsBannedFrom.map((revision) => revision.room)
-    );
+    await promptUnbanPropagation(this.draupnir, change, change.roomID);
   }
 
   private async banReactionListener(
@@ -433,103 +317,6 @@ export class BanPropagationProtection
       }
     } else {
       log.error(`The Ban Result map has been malformed somehow item:`, item);
-    }
-  }
-
-  private async unbanUserReactionListener(
-    key: string,
-    item: unknown,
-    context: BanPropagationMessageContext
-  ): Promise<void> {
-    if (item === "unban from all") {
-      // FIXME:
-      // the unban from lists code should be moved to a standard consequence.
-      const errors: RoomUpdateError[] = [];
-      const policyRevision =
-        this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-      const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
-        context.target,
-        PolicyRuleType.User,
-        Recommendation.Ban
-      );
-      const listsWithRules = new Set<StringRoomID>(
-        rulesMatchingUser.map((rule) => rule.sourceEvent.room_id)
-      );
-      const editablePolicyRooms =
-        this.draupnir.policyRoomManager.getEditablePolicyRoomIDs(
-          this.draupnir.clientUserID,
-          PolicyRuleType.User
-        );
-      for (const roomIDWithPolicy of listsWithRules) {
-        const editablePolicyRoom = editablePolicyRooms.find(
-          (room) => room.toRoomIDOrAlias() === roomIDWithPolicy
-        );
-        if (editablePolicyRoom === undefined) {
-          const roomID = MatrixRoomReference.fromRoomID(roomIDWithPolicy, [
-            userServerName(this.draupnir.clientUserID),
-          ]);
-          errors.push(
-            new PermissionError(
-              roomID,
-              `${this.draupnir.clientUserID} doesn't have the power level to remove the policy banning ${context.target} within ${roomID.toPermalink()}`
-            )
-          );
-          continue;
-        }
-        const editorResult =
-          await this.draupnir.policyRoomManager.getPolicyRoomEditor(
-            editablePolicyRoom
-          );
-        if (isError(editorResult)) {
-          errors.push(
-            RoomActionError.fromActionError(
-              editablePolicyRoom,
-              editorResult.error
-            )
-          );
-          continue;
-        }
-        const editor = editorResult.ok;
-        const unbanResult = await editor.unbanEntity(
-          PolicyRuleType.User,
-          context.target
-        );
-        if (isError(unbanResult)) {
-          errors.push(
-            RoomActionError.fromActionError(
-              editablePolicyRoom,
-              unbanResult.error
-            )
-          );
-          continue;
-        }
-      }
-      if (errors.length > 0) {
-        void Task(
-          printActionResult(
-            this.draupnir.clientPlatform.toRoomMessageSender(),
-            this.draupnir.managementRoomID,
-            errors,
-            {
-              title: `There were errors unbanning ${context.target} from all lists.`,
-            }
-          )
-        );
-      } else {
-        void Task(
-          (async () => {
-            await this.userConsequences.unbanUserFromRoomSet(
-              context.target as StringUserID,
-              "<no reason supplied>"
-            );
-          })()
-        );
-      }
-    } else {
-      log.error(
-        `unban reaction map is malformed got item for key ${key}:`,
-        item
-      );
     }
   }
 }

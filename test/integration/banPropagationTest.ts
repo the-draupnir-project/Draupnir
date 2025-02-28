@@ -146,7 +146,7 @@ describe("Ban propagation test", function () {
       await moderator.unstableApis.addReactionToEvent(
         draupnir.managementRoomID,
         unbanPrompt["event_id"],
-        "unban from all"
+        "OK"
       );
       await new Promise((resolve) => setTimeout(resolve, 10000));
       const policyListRevisionAfterUnBan =

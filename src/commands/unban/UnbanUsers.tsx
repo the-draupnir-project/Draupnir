@@ -14,7 +14,6 @@ import {
   SetRoomMembership,
   MembershipChange,
   Membership,
-  SetMembershipPolicyRevision,
   WatchedPolicyRooms,
   PolicyRule,
   Recommendation,
@@ -83,7 +82,6 @@ export function findMembersMatchingGlob(
   return [...map.values()];
 }
 export function findBanPoliciesMatchingUsers(
-  setMembershipPolicies: SetMembershipPolicyRevision,
   watchedPolicyRooms: WatchedPolicyRooms,
   users: StringUserID[]
 ): ListMatches[] {

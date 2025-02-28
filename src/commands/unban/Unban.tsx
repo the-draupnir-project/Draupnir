@@ -145,7 +145,6 @@ export const DraupnirUnbanCommand = describeCommand({
     {
       roomInviter,
       roomUnbanner,
-      setPoliciesMatchingMembership,
       policyRoomManager,
       watchedPolicyRooms,
       unlistedUserRedactionQueue,
@@ -160,21 +159,12 @@ export const DraupnirUnbanCommand = describeCommand({
     const inviteMembers =
       keywords.getKeywordValue<boolean>("invite", false) ?? false;
     if (entity instanceof MatrixUserID) {
-      const membersToUnban = findMembersMatchingGlob(
+      const unbanInformation = findUnbanInformationForMember(
         setRoomMembership,
-        new MatrixGlob(entity.toString()),
+        entity,
+        watchedPolicyRooms,
         { inviteMembers }
       );
-      const policyMatchesToRemove = findBanPoliciesMatchingUsers(
-        setPoliciesMatchingMembership,
-        watchedPolicyRooms,
-        membersToUnban.map((memberRooms) => memberRooms.member)
-      );
-      const unbanInformation = {
-        policyMatchesToRemove,
-        membersToUnban,
-        entity,
-      };
       if (!isNoConfirm) {
         return Ok(unbanInformation);
       } else {
@@ -228,6 +218,29 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
     };
   }
 );
+
+export function findUnbanInformationForMember(
+  setRoomMembership: SetRoomMembership,
+  entity: MatrixUserID,
+  watchedPolicyRooms: WatchedPolicyRooms,
+  { inviteMembers }: { inviteMembers: boolean }
+): UnbanMembersPreview {
+  const membersToUnban = findMembersMatchingGlob(
+    setRoomMembership,
+    new MatrixGlob(entity.toString()),
+    { inviteMembers }
+  );
+  const policyMatchesToRemove = findBanPoliciesMatchingUsers(
+    watchedPolicyRooms,
+    membersToUnban.map((memberRooms) => memberRooms.member)
+  );
+  const unbanInformation = {
+    policyMatchesToRemove,
+    membersToUnban,
+    entity,
+  };
+  return unbanInformation;
+}
 
 function renderPoliciesToRemove(policyMatches: ListMatches[]): DocumentNode {
   return (
@@ -298,7 +311,9 @@ function renderMemberRoomsPreview(memberRooms: MemberRooms): DocumentNode {
   );
 }
 
-function renderUnbanMembersPreview(preview: UnbanMembersPreview): DocumentNode {
+export function renderUnbanMembersPreview(
+  preview: UnbanMembersPreview
+): DocumentNode {
   return (
     <fragment>
       {preview.entity.isContainingGlobCharacters() ? (

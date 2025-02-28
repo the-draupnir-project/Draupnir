@@ -14,12 +14,13 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "./MPSMatrixInterfaceAdaptor";
 import {
+  DocumentNode,
   MatrixInterfaceAdaptorCallbacks,
   MatrixInterfaceCommandDispatcher,
   TextPresentationRenderer,
 } from "@the-draupnir-project/interface-manager";
 import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { Logger, Task, Value } from "matrix-protection-suite";
+import { Logger, RoomEvent, Task, Value } from "matrix-protection-suite";
 import {
   MatrixReactionHandler,
   ReactionListener,
@@ -69,18 +70,32 @@ export function makeConfirmationPromptListener(
   };
 }
 
-export const matrixEventsFromConfirmationPrompt = async function (
-  { client, clientPlatform, reactionHandler },
-  { event },
-  command,
-  document
-) {
+/**
+ * This utility allows protections to send confirmation prompts that appear like confirmation prompts
+ * for commands that have been sent without the `--no-confirm` option, but require confirmation.
+ */
+export async function sendConfirmationPrompt(
+  { client, clientPlatform, reactionHandler }: MatrixAdaptorContext,
+  {
+    commandDesignator,
+    readItems,
+  }: { commandDesignator: string[]; readItems: string[] },
+  document: DocumentNode,
+  {
+    roomID,
+    event,
+  }: { roomID?: StringRoomID | undefined; event?: RoomEvent | undefined }
+): Promise<Result<void>> {
+  const roomIDToUse = roomID ?? event?.room_id;
+  if (roomIDToUse === undefined) {
+    throw new TypeError(`You must provide either a room ID or an event`);
+  }
   const reactionMap = new Map<string, string>(
     Object.entries({ OK: "OK", Cancel: "Cancel" })
   );
   const sendResult = await sendMatrixEventsFromDeadDocument(
     clientPlatform.toRoomMessageSender(),
-    event.room_id,
+    roomIDToUse,
     document,
     {
       replyToEvent: event,
@@ -88,11 +103,8 @@ export const matrixEventsFromConfirmationPrompt = async function (
         COMMAND_CONFIRMATION_LISTENER,
         reactionMap,
         {
-          command_designator: command.designator,
-          read_items: command
-            .toPartialCommand()
-            .stream.source.slice(command.designator.length)
-            .map((p) => TextPresentationRenderer.render(p)),
+          command_designator: commandDesignator,
+          read_items: readItems,
         }
       ),
     }
@@ -104,8 +116,28 @@ export const matrixEventsFromConfirmationPrompt = async function (
     throw new TypeError(`We exepct to have sent at least one event`);
   }
   return await reactionHandler
-    .addReactionsToEvent(client, event.room_id, sendResult.ok[0], reactionMap)
+    .addReactionsToEvent(client, roomIDToUse, sendResult.ok[0], reactionMap)
     .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+}
+
+export const matrixEventsFromConfirmationPrompt = async function (
+  adaptorContext,
+  { event },
+  command,
+  document
+) {
+  return await sendConfirmationPrompt(
+    adaptorContext,
+    {
+      commandDesignator: command.designator,
+      readItems: command
+        .toPartialCommand()
+        .stream.source.slice(command.designator.length)
+        .map((p) => TextPresentationRenderer.render(p)),
+    },
+    document,
+    { event }
+  );
 } satisfies MatrixInterfaceAdaptorCallbacks<
   MatrixAdaptorContext,
   MatrixEventContext
