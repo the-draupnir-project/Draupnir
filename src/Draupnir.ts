@@ -77,6 +77,10 @@ import {
   StandardPresentationArgumentStream,
 } from "@the-draupnir-project/interface-manager";
 import { ManagementRoomDetail } from "./managementroom/ManagementRoomDetail";
+import {
+  COMMAND_CONFIRMATION_LISTENER,
+  makeConfirmationPromptListener,
+} from "./commands/interface-manager/MatrixPromptForConfirmation";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -173,6 +177,14 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     this.reactionHandler.on(
       DEFAUILT_ARGUMENT_PROMPT_LISTENER,
       makeListenerForPromptDefault(
+        this.commandRoomID,
+        this.commandDispatcher,
+        this.reactionHandler
+      )
+    );
+    this.reactionHandler.on(
+      COMMAND_CONFIRMATION_LISTENER,
+      makeConfirmationPromptListener(
         this.commandRoomID,
         this.commandDispatcher,
         this.reactionHandler
