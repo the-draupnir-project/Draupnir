@@ -30,9 +30,12 @@ import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQu
 import { ListMatches } from "../Rules";
 import { MemberRooms, UnbanMembersPreview, UnbanMembersResult } from "./Unban";
 
-export function findMembersMatchingGlob(
+export function matchMembers(
   setRoomMembership: SetRoomMembership,
-  glob: MatrixGlob,
+  matches: {
+    globs: MatrixGlob[];
+    literals: StringUserID[];
+  },
   options: { inviteMembers: boolean }
 ): MemberRooms[] {
   const map = new Map<StringUserID, MemberRooms>();
@@ -74,7 +77,10 @@ export function findMembersMatchingGlob(
   };
   for (const revision of setRoomMembership.allRooms) {
     for (const membership of revision.members()) {
-      if (glob.test(membership.userID)) {
+      if (
+        matches.literals.includes(membership.userID) ||
+        matches.globs.some((glob) => glob.test(membership.userID))
+      ) {
         addRoomMembership(membership, revision.room);
       }
     }

@@ -11,6 +11,8 @@
 import {
   Ok,
   PolicyRoomManager,
+  PolicyRuleType,
+  Recommendation,
   ResultForUsersInSet,
   RoomInviter,
   RoomResolver,
@@ -22,10 +24,12 @@ import {
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
 import {
+  isStringUserID,
   MatrixGlob,
   MatrixRoomID,
   MatrixUserID,
   StringUserID,
+  userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   DeadDocumentJSX,
@@ -45,9 +49,9 @@ import {
 import ManagementRoomOutput from "../../managementroom/ManagementRoomOutput";
 import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQueue";
 import {
-  findMembersMatchingGlob,
   findBanPoliciesMatchingUsers,
   unbanMembers,
+  matchMembers,
 } from "./UnbanUsers";
 import { findPoliciesToRemove, unbanEntity } from "./UnbanEntity";
 import { ListMatches, renderListRules } from "../Rules";
@@ -219,20 +223,73 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
   }
 );
 
+// FIXME: Move this to UnbanUsers.tsx
 export function findUnbanInformationForMember(
   setRoomMembership: SetRoomMembership,
   entity: MatrixUserID,
   watchedPolicyRooms: WatchedPolicyRooms,
   { inviteMembers }: { inviteMembers: boolean }
 ): UnbanMembersPreview {
-  const membersToUnban = findMembersMatchingGlob(
+  const membersMatchingEntity = matchMembers(
     setRoomMembership,
-    new MatrixGlob(entity.toString()),
+    {
+      ...(entity.isContainingGlobCharacters()
+        ? { globs: [new MatrixGlob(entity.toString())], literals: [] }
+        : { literals: [entity.toString()], globs: [] }),
+    },
     { inviteMembers }
   );
   const policyMatchesToRemove = findBanPoliciesMatchingUsers(
     watchedPolicyRooms,
-    membersToUnban.map((memberRooms) => memberRooms.member)
+    membersMatchingEntity.map((memberRooms) => memberRooms.member)
+  );
+  const globsToScan: MatrixGlob[] = [
+    ...(entity.isContainingGlobCharacters()
+      ? [new MatrixGlob(entity.toString())]
+      : []),
+  ];
+  const literalsToScan: StringUserID[] = [
+    ...(entity.isContainingGlobCharacters() ? [] : [entity.toString()]),
+  ];
+  for (const { matches } of policyMatchesToRemove) {
+    for (const match of matches) {
+      if (match.isGlob()) {
+        globsToScan.push(new MatrixGlob(match.entity));
+      } else if (isStringUserID(match.entity)) {
+        literalsToScan.push(match.entity);
+      }
+    }
+  }
+  const membersMatchingPoliciesAndEntity = matchMembers(
+    setRoomMembership,
+    { globs: globsToScan, literals: literalsToScan },
+    { inviteMembers }
+  );
+  const isMemberStillBannedAfterPolicyRemoval = (member: MemberRooms) => {
+    const policiesMatchingMember = [
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        member.member,
+        PolicyRuleType.User,
+        Recommendation.Ban
+      ),
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        userServerName(member.member),
+        PolicyRuleType.Server,
+        Recommendation.Ban
+      ),
+    ];
+    return (
+      policiesMatchingMember.filter(
+        (policy) =>
+          !policyMatchesToRemove
+            .flatMap((list) => list.matches)
+            .includes(policy)
+      ).length > 0
+    );
+  };
+  // Now we need to filter out only members that are completly free of policies.
+  const membersToUnban = membersMatchingPoliciesAndEntity.filter(
+    (member) => !isMemberStillBannedAfterPolicyRemoval(member)
   );
   const unbanInformation = {
     policyMatchesToRemove,
