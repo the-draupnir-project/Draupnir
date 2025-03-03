@@ -47,10 +47,10 @@ import {
 import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { sendConfirmationPrompt } from "../commands/interface-manager/MatrixPromptForConfirmation";
 import {
-  findUnbanInformationForMember,
   UnbanMembersPreview,
   renderUnbanMembersPreview,
 } from "../commands/unban/Unban";
+import { findUnbanInformationForMember } from "../commands/unban/UnbanUsers";
 
 const log = new Logger("BanPropagationProtection");
 

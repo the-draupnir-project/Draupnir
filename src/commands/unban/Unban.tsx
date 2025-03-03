@@ -22,7 +22,6 @@ import {
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
 import {
-  MatrixGlob,
   MatrixRoomID,
   MatrixUserID,
   StringUserID,
@@ -44,11 +43,7 @@ import {
 } from "../DraupnirCommandPrerequisites";
 import ManagementRoomOutput from "../../managementroom/ManagementRoomOutput";
 import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQueue";
-import {
-  findMembersMatchingGlob,
-  findBanPoliciesMatchingUsers,
-  unbanMembers,
-} from "./UnbanUsers";
+import { findUnbanInformationForMember, unbanMembers } from "./UnbanUsers";
 import { findPoliciesToRemove, unbanEntity } from "./UnbanEntity";
 import { ListMatches, renderListRules } from "../Rules";
 import { renderRoomSetResult } from "../../capabilities/CommonRenderers";
@@ -218,29 +213,6 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
     };
   }
 );
-
-export function findUnbanInformationForMember(
-  setRoomMembership: SetRoomMembership,
-  entity: MatrixUserID,
-  watchedPolicyRooms: WatchedPolicyRooms,
-  { inviteMembers }: { inviteMembers: boolean }
-): UnbanMembersPreview {
-  const membersToUnban = findMembersMatchingGlob(
-    setRoomMembership,
-    new MatrixGlob(entity.toString()),
-    { inviteMembers }
-  );
-  const policyMatchesToRemove = findBanPoliciesMatchingUsers(
-    watchedPolicyRooms,
-    membersToUnban.map((memberRooms) => memberRooms.member)
-  );
-  const unbanInformation = {
-    policyMatchesToRemove,
-    membersToUnban,
-    entity,
-  };
-  return unbanInformation;
-}
 
 function renderPoliciesToRemove(policyMatches: ListMatches[]): DocumentNode {
   return (

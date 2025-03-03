@@ -9,6 +9,8 @@ import {
   MatrixGlob,
   StringRoomID,
   userServerName,
+  isStringUserID,
+  MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   SetRoomMembership,
@@ -30,9 +32,12 @@ import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQu
 import { ListMatches } from "../Rules";
 import { MemberRooms, UnbanMembersPreview, UnbanMembersResult } from "./Unban";
 
-export function findMembersMatchingGlob(
+export function matchMembers(
   setRoomMembership: SetRoomMembership,
-  glob: MatrixGlob,
+  matches: {
+    globs: MatrixGlob[];
+    literals: StringUserID[];
+  },
   options: { inviteMembers: boolean }
 ): MemberRooms[] {
   const map = new Map<StringUserID, MemberRooms>();
@@ -74,13 +79,17 @@ export function findMembersMatchingGlob(
   };
   for (const revision of setRoomMembership.allRooms) {
     for (const membership of revision.members()) {
-      if (glob.test(membership.userID)) {
+      if (
+        matches.literals.includes(membership.userID) ||
+        matches.globs.some((glob) => glob.test(membership.userID))
+      ) {
         addRoomMembership(membership, revision.room);
       }
     }
   }
   return [...map.values()];
 }
+
 export function findBanPoliciesMatchingUsers(
   watchedPolicyRooms: WatchedPolicyRooms,
   users: StringUserID[]
@@ -195,4 +204,84 @@ export async function unbanMembers(
     usersUnbanned: unbanResultBuilder.getResult(),
     usersInvited: invitationsSent.getResult(),
   });
+}
+
+export function findUnbanInformationForMember(
+  setRoomMembership: SetRoomMembership,
+  entity: MatrixUserID,
+  watchedPolicyRooms: WatchedPolicyRooms,
+  { inviteMembers }: { inviteMembers: boolean }
+): UnbanMembersPreview {
+  const membersMatchingEntity = matchMembers(
+    setRoomMembership,
+    {
+      ...(entity.isContainingGlobCharacters()
+        ? { globs: [new MatrixGlob(entity.toString())], literals: [] }
+        : { literals: [entity.toString()], globs: [] }),
+    },
+    { inviteMembers }
+  );
+  // we need to also search for policies that match the literal rule given to us
+  const policyEntitiesToSearchFor = new Set([
+    ...membersMatchingEntity.map((memberRooms) => memberRooms.member),
+    entity.toString(),
+  ]);
+  const policyMatchesToRemove = findBanPoliciesMatchingUsers(
+    watchedPolicyRooms,
+    [...policyEntitiesToSearchFor]
+  );
+  const globsToScan: MatrixGlob[] = [
+    ...(entity.isContainingGlobCharacters()
+      ? [new MatrixGlob(entity.toString())]
+      : []),
+  ];
+  const literalsToScan: StringUserID[] = [
+    ...(entity.isContainingGlobCharacters() ? [] : [entity.toString()]),
+  ];
+  for (const { matches } of policyMatchesToRemove) {
+    for (const match of matches) {
+      if (match.isGlob()) {
+        globsToScan.push(new MatrixGlob(match.entity));
+      } else if (isStringUserID(match.entity)) {
+        literalsToScan.push(match.entity);
+      }
+    }
+  }
+  const membersMatchingPoliciesAndEntity = matchMembers(
+    setRoomMembership,
+    { globs: globsToScan, literals: literalsToScan },
+    { inviteMembers }
+  );
+  const isMemberStillBannedAfterPolicyRemoval = (member: MemberRooms) => {
+    const policiesMatchingMember = [
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        member.member,
+        PolicyRuleType.User,
+        Recommendation.Ban
+      ),
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        userServerName(member.member),
+        PolicyRuleType.Server,
+        Recommendation.Ban
+      ),
+    ];
+    return (
+      policiesMatchingMember.filter(
+        (policy) =>
+          !policyMatchesToRemove
+            .flatMap((list) => list.matches)
+            .includes(policy)
+      ).length > 0
+    );
+  };
+  // Now we need to filter out only members that are completly free of policies.
+  const membersToUnban = membersMatchingPoliciesAndEntity.filter(
+    (member) => !isMemberStillBannedAfterPolicyRemoval(member)
+  );
+  const unbanInformation = {
+    policyMatchesToRemove,
+    membersToUnban,
+    entity,
+  };
+  return unbanInformation;
 }
