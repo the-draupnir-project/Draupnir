@@ -14,6 +14,32 @@ and this project adheres to
 
 ## [Unreleased] - None
 
+### Changed
+
+- **The unban command no longer accepts a list argument**. The unban command now
+  features a preview and confirmation prompt unless the `--no-confirm` option is
+  provided. This preview shows all the policies that will have to be removed to
+  unban a user, all the rooms they will need to be unbanned from, and any rooms
+  that they will be invited to if the `--invite` option is used. Accepting the
+  prompt will then unban the user or entity from all watched lists and all
+  protected rooms.
+  ![image](https://github.com/user-attachments/assets/93ac16b1-048d-406e-84c9-6d628c2dd190)
+
+- The unban prompt in the ban propagation protection now includes a preview of
+  which rules will be removed and which rooms the user will be unbanned from.
+
+- `!draupnir protections show` now merges protection setting documentation and
+  current values into one section.
+  ![image](https://github.com/user-attachments/assets/26bcc16b-f85b-4639-9b8f-43f820158c7e)
+
+- Compatible capability providers are shown for the capability set in the
+  `!draupnir protections show` command.
+  ![image](https://github.com/user-attachments/assets/24c1040c-54df-4895-b8b7-37d261254bf9)
+
+- `!draupnir rooms` now shows a date alongside each room for when the room state
+  revision was last updated. The room layout has been changed to show which
+  rooms are protected, joined, and also show watched lists.
+
 ### Added
 
 - Simulated capabilities for all available protection capabilities. These allow
@@ -21,6 +47,22 @@ and this project adheres to
 
 - A command `!draupnir protections capability reset <protection name>` to
   restore the default capability set.
+
+- A `!draupnir rules matching members` command has been added to show all policy
+  rules that match members to protected rooms.
+
+### Fixed
+
+- Improved logging for unknown errors (see
+  [#733](https://github.com/the-draupnir-project/Draupnir/issues/733)).
+
+- The unban command no longer reinvites users by default.
+
+- Improve error handling in parts of the _room state backing store_. Reported by
+  @TheArcaneBrony. We are still trying to investigate what is causing the errors
+  in the first place in
+  [#691](https://github.com/the-draupnir-project/Draupnir/issues/691) and need
+  help.
 
 ## [v2.1.0] - 2025-02-02
 
