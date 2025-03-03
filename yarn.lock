@@ -319,10 +319,10 @@
     "@gnuxie/super-cool-stream" "^0.2.1"
     "@gnuxie/typescript-result" "^1.0.0"
 
-"@the-draupnir-project/matrix-basic-types@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-0.2.0.tgz#21502e4b9c0ad7b1cce077dc7d5ddefd768d0b42"
-  integrity sha512-plYd/Oi9/JPo+C5ga2D/8L41St+QpdfMwDjE3LuFnjF7TdmxEIw4rx/AFMqZk3KTMbukLQDQDCQF1ZFYmKI6WA==
+"@the-draupnir-project/matrix-basic-types@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-1.2.0.tgz#94d2a895aafd824a768942c34dec4683ca9449b5"
+  integrity sha512-1v1VCezE17hR5s12ob05uywZKxPxr1FXC8G1RG9TQXB7BBOcZPnVkebOtv/+qLjSwwOyqeHp2nHx9NNQrioXEQ==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     glob-to-regexp "^0.4.1"
@@ -2593,10 +2593,10 @@ matrix-appservice@^2.0.0:
     request-promise "^4.2.6"
     sanitize-html "^2.11.0"
 
-"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@2.10.0":
-  version "2.10.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-2.10.0.tgz#4ddaea4e6c566e6e31457f197c853b17e19497fc"
-  integrity sha512-nLlJKi2KHulS6gjeWJqoV9X6KXewI8OYeqlxOdY8EWKFU9HD23xzFoZjpo/2ey6S5l/U+2z5qaQ7AsO0DGoxpQ==
+"matrix-protection-suite-for-matrix-bot-sdk@npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@2.10.1":
+  version "2.10.1"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite-for-matrix-bot-sdk/-/matrix-protection-suite-for-matrix-bot-sdk-2.10.1.tgz#63ee16db0bcbadd8f52e472a349dae0253662783"
+  integrity sha512-vB0zhdZv8KTZ0FdyqG93CIW9TJHlyHUFCTBsfYsNFFtlVce5fzihL01GqPiJT1BMjLxwVZ84OAvGQa7I5a/DKw==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"
