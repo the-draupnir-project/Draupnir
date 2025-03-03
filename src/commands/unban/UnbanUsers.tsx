@@ -9,6 +9,8 @@ import {
   MatrixGlob,
   StringRoomID,
   userServerName,
+  isStringUserID,
+  MatrixUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   SetRoomMembership,
@@ -201,4 +203,79 @@ export async function unbanMembers(
     usersUnbanned: unbanResultBuilder.getResult(),
     usersInvited: invitationsSent.getResult(),
   });
+}
+
+export function findUnbanInformationForMember(
+  setRoomMembership: SetRoomMembership,
+  entity: MatrixUserID,
+  watchedPolicyRooms: WatchedPolicyRooms,
+  { inviteMembers }: { inviteMembers: boolean }
+): UnbanMembersPreview {
+  const membersMatchingEntity = matchMembers(
+    setRoomMembership,
+    {
+      ...(entity.isContainingGlobCharacters()
+        ? { globs: [new MatrixGlob(entity.toString())], literals: [] }
+        : { literals: [entity.toString()], globs: [] }),
+    },
+    { inviteMembers }
+  );
+  const policyMatchesToRemove = findBanPoliciesMatchingUsers(
+    watchedPolicyRooms,
+    membersMatchingEntity.map((memberRooms) => memberRooms.member)
+  );
+  const globsToScan: MatrixGlob[] = [
+    ...(entity.isContainingGlobCharacters()
+      ? [new MatrixGlob(entity.toString())]
+      : []),
+  ];
+  const literalsToScan: StringUserID[] = [
+    ...(entity.isContainingGlobCharacters() ? [] : [entity.toString()]),
+  ];
+  for (const { matches } of policyMatchesToRemove) {
+    for (const match of matches) {
+      if (match.isGlob()) {
+        globsToScan.push(new MatrixGlob(match.entity));
+      } else if (isStringUserID(match.entity)) {
+        literalsToScan.push(match.entity);
+      }
+    }
+  }
+  const membersMatchingPoliciesAndEntity = matchMembers(
+    setRoomMembership,
+    { globs: globsToScan, literals: literalsToScan },
+    { inviteMembers }
+  );
+  const isMemberStillBannedAfterPolicyRemoval = (member: MemberRooms) => {
+    const policiesMatchingMember = [
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        member.member,
+        PolicyRuleType.User,
+        Recommendation.Ban
+      ),
+      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
+        userServerName(member.member),
+        PolicyRuleType.Server,
+        Recommendation.Ban
+      ),
+    ];
+    return (
+      policiesMatchingMember.filter(
+        (policy) =>
+          !policyMatchesToRemove
+            .flatMap((list) => list.matches)
+            .includes(policy)
+      ).length > 0
+    );
+  };
+  // Now we need to filter out only members that are completly free of policies.
+  const membersToUnban = membersMatchingPoliciesAndEntity.filter(
+    (member) => !isMemberStillBannedAfterPolicyRemoval(member)
+  );
+  const unbanInformation = {
+    policyMatchesToRemove,
+    membersToUnban,
+    entity,
+  };
+  return unbanInformation;
 }
