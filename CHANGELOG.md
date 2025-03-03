@@ -12,17 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - None
+## [v2.2.0] - 2025-03-03
 
 ### Changed
 
-- **The unban command no longer accepts a list argument**. The unban command now
-  features a preview and confirmation prompt unless the `--no-confirm` option is
-  provided. This preview shows all the policies that will have to be removed to
-  unban a user, all the rooms they will need to be unbanned from, and any rooms
-  that they will be invited to if the `--invite` option is used. Accepting the
-  prompt will then unban the user or entity from all watched lists and all
-  protected rooms.
+- ⚠️ **The unban command no longer accepts a list argument**. The unban command
+  now features a preview and confirmation prompt unless the `--no-confirm`
+  option is provided. This preview shows all the policies that will have to be
+  removed to unban a user, all the rooms they will need to be unbanned from, and
+  any rooms that they will be invited to if the `--invite` option is used.
+  Accepting the prompt will then unban the user or entity from all watched lists
+  and all protected rooms.
   ![image](https://github.com/user-attachments/assets/93ac16b1-048d-406e-84c9-6d628c2dd190)
 
 - The unban prompt in the ban propagation protection now includes a preview of
@@ -63,6 +63,14 @@ and this project adheres to
   in the first place in
   [#691](https://github.com/the-draupnir-project/Draupnir/issues/691) and need
   help.
+
+- Fixed a bug where Draupnir would reply with a very hard to understand error
+  message to commands that had provided an extra argument.
+
+### Special thanks
+
+Special thanks to all contributors who helped in this release: @daedric7,
+@FSG-Cat, @JokerGermany, @ll-SKY-ll, @mahdi1234, @MTRNord, and @TheArcaneBrony
 
 ## [v2.1.0] - 2025-02-02
 
