@@ -35,6 +35,7 @@ import {
   Command,
   CommandTableEntry,
   LeafNode,
+  UnexpectedArgumentError,
 } from "@the-draupnir-project/interface-manager";
 import {
   MatrixAdaptorContext,
@@ -222,6 +223,24 @@ function renderArgumentParseError(error: ArgumentParseError): DocumentNode {
   );
 }
 
+function renderUnexpectedArgumentError(
+  error: UnexpectedArgumentError
+): DocumentNode {
+  return (
+    <root>
+      There was an unexpected argument provided for this command.
+      <br />
+      {renderCommandHelp(
+        error.partialCommand.description,
+        error.partialCommand.designator
+      )}
+      <br />
+      {error.message}
+      <br />
+    </root>
+  );
+}
+
 export async function matrixCommandRenderer<
   TAdaptorContext extends MatrixAdaptorContext,
   TEventContext extends MatrixEventContext,
@@ -238,6 +257,13 @@ export async function matrixCommandRenderer<
         clientPlatform.toRoomMessageSender(),
         commandRoomID,
         renderArgumentParseError(result.error),
+        { replyToEvent: event }
+      )) as Result<void>;
+    } else if (result.error instanceof UnexpectedArgumentError) {
+      return (await sendMatrixEventsFromDeadDocument(
+        clientPlatform.toRoomMessageSender(),
+        commandRoomID,
+        renderUnexpectedArgumentError(result.error),
         { replyToEvent: event }
       )) as Result<void>;
     } else if (result.error instanceof ActionException) {
