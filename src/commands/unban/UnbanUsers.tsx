@@ -89,6 +89,7 @@ export function matchMembers(
   }
   return [...map.values()];
 }
+
 export function findBanPoliciesMatchingUsers(
   watchedPolicyRooms: WatchedPolicyRooms,
   users: StringUserID[]
@@ -220,9 +221,14 @@ export function findUnbanInformationForMember(
     },
     { inviteMembers }
   );
+  // we need to also search for policies that match the literal rule given to us
+  const policyEntitiesToSearchFor = new Set([
+    ...membersMatchingEntity.map((memberRooms) => memberRooms.member),
+    entity.toString(),
+  ]);
   const policyMatchesToRemove = findBanPoliciesMatchingUsers(
     watchedPolicyRooms,
-    membersMatchingEntity.map((memberRooms) => memberRooms.member)
+    [...policyEntitiesToSearchFor]
   );
   const globsToScan: MatrixGlob[] = [
     ...(entity.isContainingGlobCharacters()
