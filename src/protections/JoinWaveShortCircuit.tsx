@@ -120,7 +120,7 @@ export class JoinWaveShortCircuitProtection
   extends AbstractProtection<JoinWaveShortCircuitProtectionDescription>
   implements DraupnirProtection<JoinWaveShortCircuitProtectionDescription>
 {
-  public joinBuckets: LeakyBucket<StringRoomID>;
+  public readonly joinBuckets: LeakyBucket<StringRoomID>;
 
   constructor(
     description: JoinWaveShortCircuitProtectionDescription,
@@ -203,6 +203,10 @@ export class JoinWaveShortCircuitProtection
 
   private timescaleMilliseconds(): number {
     return this.settings.timescaleMinutes * ONE_MINUTE;
+  }
+
+  public handleProtectionDisable(): void {
+    this.joinBuckets.stop();
   }
 }
 
