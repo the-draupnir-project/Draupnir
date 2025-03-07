@@ -15,7 +15,7 @@ import {
   StateEvent,
   isError,
 } from "matrix-protection-suite";
-import { BetterSqliteStore } from "./BetterSqliteStore";
+import { BetterSqliteStore, flatTransaction } from "./BetterSqliteStore";
 import { jsonReviver } from "../../utils";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
@@ -64,6 +64,7 @@ export class SqliteRoomStateBackingStore
     );
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
+    this.db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
     this.ensureSchema();
   }
 
@@ -85,8 +86,8 @@ export class SqliteRoomStateBackingStore
         JSON.stringify(event),
       ];
     };
-    // i don't understand why the library makes us do this but ok.
-    const replace = this.db.transaction((events: StateEvent[]) => {
+    // `flatTransaction` optimizes away unnecessary temporary files.
+    const replace = flatTransaction(this.db, (events: StateEvent[]) => {
       for (const event of events) {
         replaceStatement.run(createValue(event));
       }

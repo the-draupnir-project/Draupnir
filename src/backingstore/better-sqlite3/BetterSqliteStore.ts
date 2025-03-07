@@ -14,7 +14,7 @@ import { Logger } from "matrix-protection-suite";
 const log = new Logger("BetterSqliteStore");
 
 export function sqliteV0Schema(db: Database) {
-  // we have to prepare and run them seperatley becasue prepare checks if the
+  // we have to prepare and run them separately because `prepare` checks if the
   // table exists.
   const createTable = db.transaction(() => {
     db.prepare(
@@ -175,4 +175,21 @@ export abstract class BetterSqliteStore {
     }
     throw Error("Couldn't fetch schema version");
   }
+}
+
+/**
+ * Wraps `fn` in a transaction without creating nested SAVEPOINTs.
+ * Reduces the likelihood of temporary file creation.
+ * Initially investigated as part of #746.
+ *
+ * See https://www.sqlite.org/lang_savepoint.html
+ * See https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#transactionfunction---function
+ */
+export function flatTransaction<Arguments extends unknown[], Result>(
+  db: Database,
+  fn: (...args: Arguments) => Result
+) {
+  const t = db.transaction(fn);
+  return (...args: Arguments): Result =>
+    db.inTransaction ? fn(...args) : t(...args);
 }
