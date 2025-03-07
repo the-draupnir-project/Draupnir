@@ -14,6 +14,7 @@ import "./BasicFlooding";
 import "./FirstMessageIsImage";
 import "./JoinWaveShortCircuit";
 import "./RedactionSynchronisation";
+import "./MembershipChangeProtection";
 import "./MentionLimitProtection";
 import "./MessageIsMedia";
 import "./MessageIsVoice";
