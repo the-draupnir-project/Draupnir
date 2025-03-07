@@ -23,6 +23,8 @@ COPY --from=build-stage /tmp/src/package.json /
 
 ENV NODE_ENV=production
 ENV NODE_CONFIG_DIR=/data/config
+# Set SQLite's temporary directory. See #746 for context.
+ENV SQLITE_TMPDIR=/data
 
 CMD ["bot"]
 ENTRYPOINT ["./draupnir-entrypoint.sh"]
