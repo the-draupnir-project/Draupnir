@@ -36,6 +36,7 @@ import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
+  RoomStateBackingStore,
   StandardClientsInRoomMap,
   Task,
   isError,
@@ -48,6 +49,8 @@ import {
   isStringRoomAlias,
   isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
+import path from "path";
 
 const log = new Logger("AppService");
 /**
@@ -98,7 +101,8 @@ export class MjolnirAppService {
     config: IConfig,
     dataStore: DataStore,
     eventDecoder: EventDecoder,
-    registrationFilePath: string
+    registrationFilePath: string,
+    backingStore?: RoomStateBackingStore
   ) {
     const bridge = new Bridge({
       homeserverUrl: config.homeserver.url,
@@ -143,7 +147,8 @@ export class MjolnirAppService {
     const roomStateManagerFactory = new RoomStateManagerFactory(
       clientsInRoomMap,
       clientProvider,
-      eventDecoder
+      eventDecoder,
+      backingStore
     );
     const clientCapabilityFactory = new ClientCapabilityFactory(
       clientsInRoomMap,
@@ -226,11 +231,22 @@ export class MjolnirAppService {
     Logger.configure(config.logging ?? { console: "debug" });
     const dataStore = new PgDataStore(config.db.connectionString);
     await dataStore.init();
+    const storagePath = path.isAbsolute(config.dataPath)
+      ? config.dataPath
+      : path.join(__dirname, "../", config.dataPath);
+    const eventDecoder = DefaultEventDecoder;
+    const backingStore = config.roomStateBackingStore.enabled
+      ? new SqliteRoomStateBackingStore(
+          path.join(storagePath, "room-state-backing-store.db"),
+          eventDecoder
+        )
+      : undefined;
     const service = await MjolnirAppService.makeMjolnirAppService(
       config,
       dataStore,
       DefaultEventDecoder,
-      registrationFilePath
+      registrationFilePath,
+      backingStore
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);

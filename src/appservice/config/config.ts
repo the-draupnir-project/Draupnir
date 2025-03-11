@@ -33,6 +33,14 @@ export interface IConfig {
   adminRoom: string;
   /** configuration for matrix-appservice-bridge's Logger */
   logging?: LoggingOpts;
+
+  dataPath: string;
+
+  // Store room state using sqlite to improve startup time when Synapse responds
+  // slowly to requests for `/state`.
+  roomStateBackingStore: {
+    enabled?: boolean;
+  };
 }
 
 export function read(configPath: string): IConfig {
