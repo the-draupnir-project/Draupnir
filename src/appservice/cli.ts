@@ -10,8 +10,9 @@
 
 import { Cli } from "matrix-appservice-bridge";
 import { MjolnirAppService } from "./AppService";
-import { IConfig } from "./config/config";
 import { Task } from "matrix-protection-suite";
+import { AppserviceConfig } from "./config/config";
+import { Value } from "@sinclair/typebox/value";
 
 /**
  * This file provides the entrypoint for the appservice mode for draupnir.
@@ -27,7 +28,7 @@ const cli = new Cli({
   },
   generateRegistration: MjolnirAppService.generateRegistration,
   run: function (port: number) {
-    const config: IConfig | null = cli.getConfig() as unknown as IConfig | null;
+    const config = cli.getConfig();
     if (config === null) {
       throw new Error("Couldn't load config");
     }
@@ -35,7 +36,9 @@ const cli = new Cli({
       (async () => {
         await MjolnirAppService.run(
           port,
-          config,
+          // we use the matrix-appservice-bridge library to handle cli arguments for loading the config
+          // but we have to still validate it ourselves.
+          Value.Decode(AppserviceConfig, config),
           cli.getRegistrationFilePath()
         );
       })()

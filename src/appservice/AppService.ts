@@ -21,7 +21,7 @@ import {
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
 import { Api } from "./Api";
-import { IConfig } from "./config/config";
+import { AppserviceConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { getStoragePath, SOFTWARE_VERSION } from "../config";
@@ -30,7 +30,6 @@ import {
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
-  resolveRoomReferenceSafe,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ClientsInRoomMap,
@@ -43,11 +42,11 @@ import {
 } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 import {
+  isStringRoomAlias,
+  isStringRoomID,
   MatrixRoomReference,
   StringRoomID,
   StringUserID,
-  isStringRoomAlias,
-  isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
@@ -65,7 +64,7 @@ export class MjolnirAppService {
    * use `makeMjolnirAppService`.
    */
   private constructor(
-    public readonly config: IConfig,
+    public readonly config: AppserviceConfig,
     public readonly bridge: Bridge,
     public readonly draupnirManager: AppServiceDraupnirManager,
     public readonly accessControl: AccessControl,
@@ -97,7 +96,7 @@ export class MjolnirAppService {
    * @returns A new `MjolnirAppService`.
    */
   public static async makeMjolnirAppService(
-    config: IConfig,
+    config: AppserviceConfig,
     dataStore: DataStore,
     eventDecoder: EventDecoder,
     registrationFilePath: string,
@@ -122,24 +121,6 @@ export class MjolnirAppService {
       disableStores: true,
     });
     await bridge.initialise();
-    const adminRoom = (() => {
-      if (isStringRoomID(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomID(config.adminRoom);
-      } else if (isStringRoomAlias(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
-      } else {
-        const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
-        if (isError(parseResult)) {
-          throw new TypeError(
-            `${config.adminRoom} needs to be a room id, alias or permalink`
-          );
-        }
-        return parseResult.ok;
-      }
-    })();
-    const accessControlRoom = (
-      await resolveRoomReferenceSafe(bridge.getBot().getClient(), adminRoom)
-    ).expect("Unable to resolve the admin room");
     const clientsInRoomMap = new StandardClientsInRoomMap();
     const clientProvider = async (clientUserID: StringUserID) =>
       bridge.getIntent(clientUserID).matrixClient;
@@ -162,6 +143,24 @@ export class MjolnirAppService {
     const botRoomJoiner = clientCapabilityFactory
       .makeClientPlatform(botUserID, bridge.getBot().getClient())
       .toRoomJoiner();
+    const adminRoom = (() => {
+      if (isStringRoomID(config.adminRoom)) {
+        return MatrixRoomReference.fromRoomID(config.adminRoom);
+      } else if (isStringRoomAlias(config.adminRoom)) {
+        return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
+      } else {
+        const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
+        if (isError(parseResult)) {
+          throw new TypeError(
+            `${config.adminRoom} needs to be a room id, alias or permalink`
+          );
+        }
+        return parseResult.ok;
+      }
+    })();
+    const accessControlRoom = (
+      await botRoomJoiner.resolveRoom(adminRoom)
+    ).expect("Unable to resolve the admin room");
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
     const accessControl = (
@@ -224,7 +223,7 @@ export class MjolnirAppService {
    */
   public static async run(
     port: number,
-    config: IConfig,
+    config: AppserviceConfig,
     registrationFilePath: string
   ): Promise<MjolnirAppService> {
     Logger.configure(config.logging ?? { console: "debug" });
@@ -232,7 +231,7 @@ export class MjolnirAppService {
     await dataStore.init();
     const eventDecoder = DefaultEventDecoder;
     const storagePath = getStoragePath(config.dataPath);
-    const backingStore = config.roomStateBackingStore.enabled
+    const backingStore = config.roomStateBackingStore?.enabled
       ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
       : undefined;
     const service = await MjolnirAppService.makeMjolnirAppService(
