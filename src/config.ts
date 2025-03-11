@@ -540,3 +540,15 @@ export function getUnknownConfigPropertyPaths(config: unknown): string[] {
     []
   );
 }
+
+/**
+ * Ensures we have an absolute path for storage
+ *
+ * @param dataPath The dataPath from either the bot or appservice configs
+ * @returns The storagePath used for the databases
+ */
+export function getStoragePath(dataPath: string) {
+  return path.isAbsolute(dataPath)
+    ? dataPath
+    : path.join(__dirname, "../", dataPath);
+}

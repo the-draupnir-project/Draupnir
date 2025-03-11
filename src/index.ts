@@ -19,7 +19,7 @@ import {
   RustSdkCryptoStorageProvider,
 } from "matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
-import { configRead as configRead } from "./config";
+import { configRead as configRead, getStoragePath } from "./config";
 import { initializeSentry, patchMatrixClient } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -46,9 +46,7 @@ void (async function () {
   let bot: DraupnirBotModeToggle | null = null;
   let client: MatrixClient;
   try {
-    const storagePath = path.isAbsolute(config.dataPath)
-      ? config.dataPath
-      : path.join(__dirname, "../", config.dataPath);
+    const storagePath = getStoragePath(config.dataPath);
     const storage = new SimpleFsStorageProvider(
       path.join(storagePath, "bot.json")
     );
@@ -86,10 +84,7 @@ void (async function () {
     patchMatrixClient();
     const eventDecoder = DefaultEventDecoder;
     const store = config.roomStateBackingStore.enabled
-      ? new SqliteRoomStateBackingStore(
-          path.join(storagePath, "room-state-backing-store.db"),
-          eventDecoder
-        )
+      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
       : undefined;
     bot = await DraupnirBotModeToggle.create(
       client,

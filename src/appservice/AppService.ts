@@ -24,7 +24,7 @@ import { Api } from "./Api";
 import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
-import { SOFTWARE_VERSION } from "../config";
+import { getStoragePath, SOFTWARE_VERSION } from "../config";
 import { Registry } from "prom-client";
 import {
   ClientCapabilityFactory,
@@ -36,6 +36,7 @@ import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
+  RoomStateBackingStore,
   StandardClientsInRoomMap,
   Task,
   isError,
@@ -48,6 +49,7 @@ import {
   isStringRoomAlias,
   isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 
 const log = new Logger("AppService");
 /**
@@ -98,7 +100,8 @@ export class MjolnirAppService {
     config: IConfig,
     dataStore: DataStore,
     eventDecoder: EventDecoder,
-    registrationFilePath: string
+    registrationFilePath: string,
+    backingStore?: RoomStateBackingStore
   ) {
     const bridge = new Bridge({
       homeserverUrl: config.homeserver.url,
@@ -143,7 +146,8 @@ export class MjolnirAppService {
     const roomStateManagerFactory = new RoomStateManagerFactory(
       clientsInRoomMap,
       clientProvider,
-      eventDecoder
+      eventDecoder,
+      backingStore
     );
     const clientCapabilityFactory = new ClientCapabilityFactory(
       clientsInRoomMap,
@@ -226,11 +230,17 @@ export class MjolnirAppService {
     Logger.configure(config.logging ?? { console: "debug" });
     const dataStore = new PgDataStore(config.db.connectionString);
     await dataStore.init();
+    const eventDecoder = DefaultEventDecoder;
+    const storagePath = getStoragePath(config.dataPath);
+    const backingStore = config.roomStateBackingStore.enabled
+      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
+      : undefined;
     const service = await MjolnirAppService.makeMjolnirAppService(
       config,
       dataStore,
       DefaultEventDecoder,
-      registrationFilePath
+      registrationFilePath,
+      backingStore
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);

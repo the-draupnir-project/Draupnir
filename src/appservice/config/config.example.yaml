@@ -16,3 +16,9 @@ adminRoom: "#draupnir-admin:localhost:9999"
 # This is a web api that the widget connects to in order to interact with the appservice.
 webAPI:
   port: 9001
+
+# The directory the bot should store various bits of information in
+dataPath: "./test/harness/mjolnir-data/"
+
+roomStateBackingStore:
+  enabled: false

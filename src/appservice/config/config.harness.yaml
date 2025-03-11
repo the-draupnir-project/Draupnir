@@ -10,3 +10,9 @@ adminRoom: "#draupnir-admin:localhost:9999"
 
 webAPI:
   port: 9001
+
+# The directory the bot should store various bits of information in
+dataPath: "./test/harness/mjolnir-data/"
+
+roomStateBackingStore:
+  enabled: false
