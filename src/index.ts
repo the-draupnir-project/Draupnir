@@ -25,6 +25,7 @@ import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
 import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
+import { realpath } from "fs/promises";
 
 void (async function () {
   const config = configRead();
@@ -46,9 +47,7 @@ void (async function () {
   let bot: DraupnirBotModeToggle | null = null;
   let client: MatrixClient;
   try {
-    const storagePath = path.isAbsolute(config.dataPath)
-      ? config.dataPath
-      : path.join(__dirname, "../", config.dataPath);
+    const storagePath = await realpath(config.dataPath);
     const storage = new SimpleFsStorageProvider(
       path.join(storagePath, "bot.json")
     );
@@ -86,10 +85,7 @@ void (async function () {
     patchMatrixClient();
     const eventDecoder = DefaultEventDecoder;
     const store = config.roomStateBackingStore.enabled
-      ? new SqliteRoomStateBackingStore(
-          path.join(storagePath, "room-state-backing-store.db"),
-          eventDecoder
-        )
+      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
       : undefined;
     bot = await DraupnirBotModeToggle.create(
       client,

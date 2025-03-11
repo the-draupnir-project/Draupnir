@@ -50,7 +50,6 @@ import {
   isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
-import path from "path";
 
 const log = new Logger("AppService");
 /**
@@ -231,15 +230,9 @@ export class MjolnirAppService {
     Logger.configure(config.logging ?? { console: "debug" });
     const dataStore = new PgDataStore(config.db.connectionString);
     await dataStore.init();
-    const storagePath = path.isAbsolute(config.dataPath)
-      ? config.dataPath
-      : path.join(__dirname, "../", config.dataPath);
     const eventDecoder = DefaultEventDecoder;
     const backingStore = config.roomStateBackingStore.enabled
-      ? new SqliteRoomStateBackingStore(
-          path.join(storagePath, "room-state-backing-store.db"),
-          eventDecoder
-        )
+      ? SqliteRoomStateBackingStore.create(config.dataPath, eventDecoder)
       : undefined;
     const service = await MjolnirAppService.makeMjolnirAppService(
       config,

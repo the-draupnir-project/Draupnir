@@ -18,6 +18,7 @@ import {
 import { BetterSqliteStore, flatTransaction } from "./BetterSqliteStore";
 import { jsonReviver } from "../../utils";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import path from "path";
 
 const log = new Logger("SqliteRoomStateBackingStore");
 
@@ -66,6 +67,19 @@ export class SqliteRoomStateBackingStore
     this.db.pragma("foreign_keys = ON");
     this.db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
     this.ensureSchema();
+  }
+
+  public static create(
+    dataPath: string,
+    eventDecoder: EventDecoder
+  ): SqliteRoomStateBackingStore {
+    const storagePath = path.isAbsolute(dataPath)
+      ? dataPath
+      : path.join(__dirname, "../", dataPath);
+    return new SqliteRoomStateBackingStore(
+      path.join(storagePath, "room-state-backing-store.db"),
+      eventDecoder
+    );
   }
 
   private updateBackingStore(
