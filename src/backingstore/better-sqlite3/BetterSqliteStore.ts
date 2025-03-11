@@ -59,7 +59,7 @@ export type SchemaUpdateFunction = (db: Database) => void;
  * store.ensureSchema();
  * const data = await store.getData();
  */
-export abstract class BetterSqliteStore {
+export class BetterSqliteStore {
   private hasEnded = false;
   public readonly db: Database;
 
