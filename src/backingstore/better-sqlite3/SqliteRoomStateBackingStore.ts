@@ -70,12 +70,9 @@ export class SqliteRoomStateBackingStore
   }
 
   public static create(
-    dataPath: string,
+    storagePath: string,
     eventDecoder: EventDecoder
   ): SqliteRoomStateBackingStore {
-    const storagePath = path.isAbsolute(dataPath)
-      ? dataPath
-      : path.join(__dirname, "../", dataPath);
     return new SqliteRoomStateBackingStore(
       path.join(storagePath, "room-state-backing-store.db"),
       eventDecoder

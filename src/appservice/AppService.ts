@@ -24,7 +24,7 @@ import { Api } from "./Api";
 import { IConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
-import { SOFTWARE_VERSION } from "../config";
+import { getStoragePath, SOFTWARE_VERSION } from "../config";
 import { Registry } from "prom-client";
 import {
   ClientCapabilityFactory,
@@ -231,8 +231,9 @@ export class MjolnirAppService {
     const dataStore = new PgDataStore(config.db.connectionString);
     await dataStore.init();
     const eventDecoder = DefaultEventDecoder;
+    const storagePath = getStoragePath(config.dataPath);
     const backingStore = config.roomStateBackingStore.enabled
-      ? SqliteRoomStateBackingStore.create(config.dataPath, eventDecoder)
+      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
       : undefined;
     const service = await MjolnirAppService.makeMjolnirAppService(
       config,
