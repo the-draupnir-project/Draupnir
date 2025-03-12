@@ -27,15 +27,10 @@ type RoomTakedown = {
   ): Promise<Result<void>>;
 };
 
-export type RoomTakedowner = {
+export type RoomTakedownCapability = {
   isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>>;
   takedownRoom(roomID: StringRoomID): Promise<Result<void>>;
 };
-
-// FIXME:
-// the interface needs changing so that it is void, and the way tests check and
-// the way you render messages is through yet antoher interface that gets
-// passed key results.
 
 // FIXME:
 // This service probably needs to be responsible for instantiating the room audit
@@ -54,7 +49,7 @@ export class StandardRoomTakedown implements RoomTakedown {
   public constructor(
     private readonly hashStore: SHA256RoomHashStore,
     private readonly auditLog: RoomAuditLog,
-    private readonly takedowner: RoomTakedowner
+    private readonly takedownCapability: RoomTakedownCapability
   ) {
     // nothing to do
   }
@@ -68,7 +63,8 @@ export class StandardRoomTakedown implements RoomTakedown {
     roomID: StringRoomID,
     rule: LiteralPolicyRule
   ): Promise<Result<void>> {
-    const isRoomTakendownResult = await this.takedowner.isRoomTakendown(roomID);
+    const isRoomTakendownResult =
+      await this.takedownCapability.isRoomTakendown(roomID);
     if (isError(isRoomTakendownResult)) {
       return isRoomTakendownResult;
     }
@@ -77,7 +73,7 @@ export class StandardRoomTakedown implements RoomTakedown {
         `The room ${roomID} has already been takendown according to your homeserver`
       );
     }
-    const takedownResult = await this.takedowner.takedownRoom(roomID);
+    const takedownResult = await this.takedownCapability.takedownRoom(roomID);
     if (isError(takedownResult)) {
       return takedownResult;
     } else {
