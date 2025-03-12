@@ -32,17 +32,6 @@ export type RoomTakedowner = {
   takedownRoom(roomID: StringRoomID): Promise<Result<void>>;
 };
 
-
-// FIXME: I don't like this, this should be done via the capabilities system
-//        surely?
-/**
- * For e.g. reporting takedowns to the management room.
- * ah shit aren't you forgetting about capabilities? yeah i am at the moment.
- */
-export type RoomTakedownUXLog = {
-  handleTakedownResult(result: Result<unknown>, policy: LiteralPolicyRule): void;
-}
-
 // FIXME:
 // the interface needs changing so that it is void, and the way tests check and
 // the way you render messages is through yet antoher interface that gets
@@ -65,8 +54,7 @@ export class StandardRoomTakedown implements RoomTakedown {
   public constructor(
     private readonly hashStore: SHA256RoomHashStore,
     private readonly auditLog: RoomAuditLog,
-    private readonly takedowner: RoomTakedowner,
-    private readonly uxLog: RoomTakedownUXLog,
+    private readonly takedowner: RoomTakedowner
   ) {
     // nothing to do
   }
@@ -128,7 +116,6 @@ export class StandardRoomTakedown implements RoomTakedown {
           takedownResult.error
         );
       }
-      this.uxLog.handleTakedownResult(takedownResult, policy);
     }
     return Ok(undefined);
   }
