@@ -13,9 +13,14 @@ import {
   RoomHashRecord,
   SHA256RoomHashStore,
 } from "matrix-protection-suite";
-import { BetterSqliteOptions, BetterSqliteStore } from "./BetterSqliteStore";
+import {
+  BetterSqliteOptions,
+  BetterSqliteStore,
+  makeBetterSqliteDB,
+} from "./BetterSqliteStore";
 import { SHA256 } from "crypto-js";
 import { Database } from "better-sqlite3";
+import path from "path";
 
 // We will need some kind of audit database to store actions in against rooms
 
@@ -48,6 +53,17 @@ export class SqliteHashReversalStore
     );
     this.ensureSchema();
   }
+
+  public static createToplevel(storagePath: string): SqliteHashReversalStore {
+    const options = {
+      path: path.join(storagePath, "hash-store.db"),
+      WALMode: true,
+      foreignKeys: true,
+      fileMustExist: false,
+    };
+    return new SqliteHashReversalStore(options, makeBetterSqliteDB(options));
+  }
+
   public async findRoomHash(
     hash: string
   ): Promise<Result<StringRoomID | undefined>> {

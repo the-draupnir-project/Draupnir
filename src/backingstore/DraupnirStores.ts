@@ -3,14 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  EventDecoder,
   SHA256RoomHashStore,
   StandardSHA256RoomHashStore,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "../protections/RoomTakedown/RoomAuditLog";
+import { SqliteRoomStateBackingStore } from "./better-sqlite3/SqliteRoomStateBackingStore";
+import { SqliteHashReversalStore } from "./better-sqlite3/HashStore";
+import { SqliteRoomAuditLog } from "../protections/RoomTakedown/SqliteRoomAuditLog";
 
 export type TopLevelStores = {
-  hashStore?: Omit<SHA256RoomHashStore, "on" | "off">;
-  roomAuditLog?: RoomAuditLog;
+  hashStore?: Omit<SHA256RoomHashStore, "on" | "off"> | undefined;
+  roomAuditLog?: RoomAuditLog | undefined;
+  roomStateBackingStore?: SqliteRoomStateBackingStore | undefined;
 };
 
 /**
@@ -37,10 +42,26 @@ export function createDraupnirStores(
   topLevelStores: TopLevelStores
 ): DraupnirStores {
   return Object.freeze({
-    roomAudditLog: topLevelStores.roomAuditLog,
+    roomAuditLog: topLevelStores.roomAuditLog,
     hashStore: topLevelStores.hashStore
       ? new StandardSHA256RoomHashStore(topLevelStores.hashStore)
       : undefined,
     dispose() {},
-  });
+  } satisfies DraupnirStores);
+}
+
+export function makeTopLevelStores(
+  storagePath: string,
+  eventDecoder: EventDecoder,
+  {
+    isRoomStateBackingStoreEnabled,
+  }: { isRoomStateBackingStoreEnabled: boolean }
+): TopLevelStores {
+  return Object.freeze({
+    roomStateBackingStore: isRoomStateBackingStoreEnabled
+      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
+      : undefined,
+    hashStore: SqliteHashReversalStore.createToplevel(storagePath),
+    roomAuditLog: SqliteRoomAuditLog.createToplevel(storagePath),
+  } satisfies TopLevelStores);
 }
