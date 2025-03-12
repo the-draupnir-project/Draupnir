@@ -67,6 +67,8 @@ export class StandardRoomTakedown implements RoomTakedown {
     if (isError(takedownResult)) {
       return takedownResult;
     } else {
+      // FIXME: we should probably audit as simulated if the capability is simulated.
+      // or not audit at all because the protection preview might show things otherwise.
       return await this.auditLog.takedownRoom(rule);
     }
   }
