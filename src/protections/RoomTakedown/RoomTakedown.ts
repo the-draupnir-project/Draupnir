@@ -33,10 +33,6 @@ export type RoomTakedownCapability = {
   takedownRoom(roomID: StringRoomID): Promise<Result<void>>;
 };
 
-// FIXME:
-// This service probably needs to be responsible for instantiating the room audit
-// log and serving as a singleton.
-
 /**
  * This exists as the main handler for reacting to literal room policies
  * (that have been reversed from hashed policies elsewhere) AND
