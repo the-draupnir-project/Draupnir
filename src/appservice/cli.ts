@@ -10,7 +10,6 @@
 
 import { Cli } from "matrix-appservice-bridge";
 import { MjolnirAppService } from "./AppService";
-import { Task } from "matrix-protection-suite";
 import { AppserviceConfig } from "./config/config";
 import { Value } from "@sinclair/typebox/value";
 
@@ -32,16 +31,12 @@ const cli = new Cli({
     if (config === null) {
       throw new Error("Couldn't load config");
     }
-    void Task(
-      (async () => {
-        await MjolnirAppService.run(
-          port,
-          // we use the matrix-appservice-bridge library to handle cli arguments for loading the config
-          // but we have to still validate it ourselves.
-          Value.Decode(AppserviceConfig, config),
-          cli.getRegistrationFilePath()
-        );
-      })()
+    void MjolnirAppService.run(
+      port,
+      // we use the matrix-appservice-bridge library to handle cli arguments for loading the config
+      // but we have to still validate it ourselves.
+      Value.Decode(AppserviceConfig, config),
+      cli.getRegistrationFilePath()
     );
   },
 });
