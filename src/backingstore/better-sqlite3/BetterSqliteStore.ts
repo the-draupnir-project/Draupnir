@@ -34,6 +34,39 @@ export interface BetterSqliteOptions extends BetterSqlite3.Options {
    * Defaults to `true`.
    */
   autocreateSchemaTable?: boolean;
+
+  WALMode?: boolean;
+  foreignKeys?: boolean;
+}
+
+export function makeBetterSqliteDB(options: BetterSqliteOptions): Database {
+  const db = new BetterSqlite3(options.path, options);
+  if (options.path !== ":memory:") {
+    db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
+  }
+  if (options.WALMode) {
+    db.pragma("journal_mode = WAL");
+  }
+  if (options.foreignKeys) {
+    db.pragma("foreign_keys = ON");
+  }
+  let hasEnded = false;
+  process.once("beforeExit", () => {
+    // Ensure we clean up on exit
+    try {
+      log.info("Destroy called on db", options.path);
+      if (hasEnded) {
+        // No-op if end has already been called.
+        return;
+      }
+      hasEnded = true;
+      db.close();
+      log.info("connection ended on db", options.path);
+    } catch (ex) {
+      log.warn("Failed to cleanly exit", ex);
+    }
+  });
+  return db;
 }
 
 export type SchemaUpdateFunction = (db: Database) => void;
@@ -61,7 +94,6 @@ export type SchemaUpdateFunction = (db: Database) => void;
  */
 export class BetterSqliteStore {
   private hasEnded = false;
-  public readonly db: Database;
 
   public get latestSchema() {
     return this.schemas.length;
@@ -75,18 +107,10 @@ export class BetterSqliteStore {
    */
   constructor(
     private readonly schemas: SchemaUpdateFunction[],
-    private readonly opts: BetterSqliteOptions
+    private readonly opts: BetterSqliteOptions,
+    protected readonly db: Database
   ) {
     opts.autocreateSchemaTable = opts.autocreateSchemaTable ?? true;
-    this.db = new BetterSqlite3(opts.path, opts);
-    process.once("beforeExit", () => {
-      // Ensure we clean up on exit
-      try {
-        this.destroy();
-      } catch (ex) {
-        log.warn("Failed to cleanly exit", ex);
-      }
-    });
   }
 
   /**

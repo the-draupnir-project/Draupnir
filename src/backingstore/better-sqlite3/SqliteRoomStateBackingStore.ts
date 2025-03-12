@@ -15,10 +15,16 @@ import {
   StateEvent,
   isError,
 } from "matrix-protection-suite";
-import { BetterSqliteStore, flatTransaction } from "./BetterSqliteStore";
+import {
+  BetterSqliteOptions,
+  BetterSqliteStore,
+  flatTransaction,
+  makeBetterSqliteDB,
+} from "./BetterSqliteStore";
 import { jsonReviver } from "../../utils";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import path from "path";
+import { Database } from "better-sqlite3";
 
 const log = new Logger("SqliteRoomStateBackingStore");
 
@@ -48,7 +54,8 @@ export class SqliteRoomStateBackingStore
   private readonly roomInfoMap = new Map<StringRoomID, RoomInfo>();
   public readonly revisionListener = this.handleRevision.bind(this);
   public constructor(
-    path: string,
+    options: BetterSqliteOptions,
+    db: Database,
     private readonly eventDecoder: EventDecoder
   ) {
     super(
@@ -58,14 +65,9 @@ export class SqliteRoomStateBackingStore
             db.prepare(text).run();
           }
       ),
-      {
-        path,
-        fileMustExist: false,
-      }
+      options,
+      db
     );
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("foreign_keys = ON");
-    this.db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
     this.ensureSchema();
   }
 
@@ -73,8 +75,15 @@ export class SqliteRoomStateBackingStore
     storagePath: string,
     eventDecoder: EventDecoder
   ): SqliteRoomStateBackingStore {
+    const options = {
+      path: path.join(storagePath, "room-state-backing-store.db"),
+      WALMode: true,
+      foreignKeys: true,
+      fileMustExist: false,
+    };
     return new SqliteRoomStateBackingStore(
-      path.join(storagePath, "room-state-backing-store.db"),
+      options,
+      makeBetterSqliteDB(options),
       eventDecoder
     );
   }

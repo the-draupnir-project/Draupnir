@@ -15,6 +15,7 @@ import {
 } from "matrix-protection-suite";
 import { BetterSqliteOptions, BetterSqliteStore } from "./BetterSqliteStore";
 import { SHA256 } from "crypto-js";
+import { Database } from "better-sqlite3";
 
 // We will need some kind of audit database to store actions in against rooms
 
@@ -34,7 +35,7 @@ export class SqliteHashReversalStore
   extends BetterSqliteStore
   implements Omit<SHA256RoomHashStore, "on" | "off">
 {
-  constructor(options: BetterSqliteOptions) {
+  constructor(options: BetterSqliteOptions, db: Database) {
     super(
       schema.map(
         (text) =>
@@ -42,11 +43,9 @@ export class SqliteHashReversalStore
             db.prepare(text).run();
           }
       ),
-      options
+      options,
+      db
     );
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("foreign_keys = ON");
-    this.db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
     this.ensureSchema();
   }
   public async findRoomHash(
