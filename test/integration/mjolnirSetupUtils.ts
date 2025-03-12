@@ -165,6 +165,7 @@ export async function makeBotModeToggle(
     client,
     new SafeMatrixEmitterWrapper(client, DefaultEventDecoder),
     config,
+    {}, // we don't support top level stores for now.
     backingStore
   );
   // we don't want to send status on startup incase we want to test e2ee from the manual launch script.

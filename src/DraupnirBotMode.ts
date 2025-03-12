@@ -49,6 +49,7 @@ import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
+import { TopLevelStores } from "./backingstore/DraupnirStores";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -113,6 +114,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     client: MatrixSendClient,
     matrixEmitter: SafeMatrixEmitter,
     config: IConfig,
+    stores: TopLevelStores,
     backingStore?: RoomStateBackingStore
   ): Promise<DraupnirBotModeToggle> {
     const clientUserID = await client.getUserId();
@@ -169,7 +171,8 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientsInRoomMap,
       clientCapabilityFactory,
       clientProvider,
-      roomStateManagerFactory
+      roomStateManagerFactory,
+      stores
     );
     return new DraupnirBotModeToggle(
       clientUserID,

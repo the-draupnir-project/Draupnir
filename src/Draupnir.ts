@@ -82,6 +82,7 @@ import {
   makeConfirmationPromptListener,
 } from "./commands/interface-manager/MatrixPromptForConfirmation";
 import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
+import { DraupnirStores } from "./backingstore/DraupnirStores";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -145,6 +146,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly acceptInvitesFromRoom: MatrixRoomID,
     public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
     public readonly safeModeToggle: SafeModeToggle,
+    public readonly stores: DraupnirStores,
     public readonly synapseAdminClient: SynapseAdminClient | undefined,
     public readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ) {
@@ -212,6 +214,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     config: IConfig,
     loggableConfigTracker: LoggableConfigTracker,
     safeModeToggle: SafeModeToggle,
+    stores: DraupnirStores,
     synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ): Promise<ActionResult<Draupnir>> {
     const acceptInvitesFromRoom = await (async () => {
@@ -270,6 +273,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       acceptInvitesFromRoom.ok,
       acceptInvitesFromRoomIssuer.ok,
       safeModeToggle,
+      stores,
       new SynapseAdminClient(client, clientUserID),
       synapseHTTPAntispam
     );
@@ -388,6 +392,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     this.clientRooms.off("timeline", this.timelineEventListener);
     this.reportPoller?.stop();
     this.protectedRoomsSet.unregisterListeners();
+    this.stores.dispose();
   }
 
   public createRoomReference(roomID: StringRoomID): MatrixRoomID {
