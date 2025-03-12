@@ -35,7 +35,6 @@ import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
-  RoomStateBackingStore,
   StandardClientsInRoomMap,
   Task,
   isError,
@@ -50,8 +49,6 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
-
-// FIXME: Move roomStateBacking store into top level stores.
 
 const log = new Logger("AppService");
 /**
@@ -103,8 +100,7 @@ export class MjolnirAppService {
     dataStore: DataStore,
     eventDecoder: EventDecoder,
     registrationFilePath: string,
-    stores: TopLevelStores,
-    backingStore?: RoomStateBackingStore
+    stores: TopLevelStores
   ) {
     const bridge = new Bridge({
       homeserverUrl: config.homeserver.url,
@@ -132,7 +128,7 @@ export class MjolnirAppService {
       clientsInRoomMap,
       clientProvider,
       eventDecoder,
-      backingStore
+      stores.roomStateBackingStore
     );
     const clientCapabilityFactory = new ClientCapabilityFactory(
       clientsInRoomMap,
@@ -244,8 +240,7 @@ export class MjolnirAppService {
       dataStore,
       DefaultEventDecoder,
       registrationFilePath,
-      {}, // we don't support any stores in appservice atm except backing store.
-      backingStore
+      { roomStateBackingStore: backingStore } // we don't support any stores in appservice atm except backing store.
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);

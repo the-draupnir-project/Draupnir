@@ -29,9 +29,9 @@ import {
   DefaultEventDecoder,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
-  RoomStateBackingStore,
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
+import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
 
 patchMatrixClient();
 
@@ -127,14 +127,14 @@ let globalSafeEmitter: SafeMatrixEmitter | undefined;
 export async function makeBotModeToggle(
   config: IConfig,
   {
-    backingStore,
+    stores,
     eraseAccountData,
     allowSafeMode,
   }: {
-    backingStore?: RoomStateBackingStore;
+    stores: TopLevelStores;
     eraseAccountData?: boolean;
     allowSafeMode?: boolean;
-  } = {}
+  } = { stores: {} }
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));
@@ -165,8 +165,7 @@ export async function makeBotModeToggle(
     client,
     new SafeMatrixEmitterWrapper(client, DefaultEventDecoder),
     config,
-    {}, // we don't support top level stores for now.
-    backingStore
+    stores
   );
   // we don't want to send status on startup incase we want to test e2ee from the manual launch script.
   const mj = (

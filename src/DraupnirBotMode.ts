@@ -11,7 +11,6 @@
 import {
   StandardClientsInRoomMap,
   DefaultEventDecoder,
-  RoomStateBackingStore,
   ClientsInRoomMap,
   Task,
   Logger,
@@ -114,8 +113,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     client: MatrixSendClient,
     matrixEmitter: SafeMatrixEmitter,
     config: IConfig,
-    stores: TopLevelStores,
-    backingStore?: RoomStateBackingStore
+    stores: TopLevelStores
   ): Promise<DraupnirBotModeToggle> {
     const clientUserID = await client.getUserId();
     if (!isStringUserID(clientUserID)) {
@@ -165,7 +163,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientsInRoomMap,
       clientProvider,
       DefaultEventDecoder,
-      backingStore
+      stores.roomStateBackingStore
     );
     const draupnirFactory = new DraupnirFactory(
       clientsInRoomMap,
