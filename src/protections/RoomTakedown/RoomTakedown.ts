@@ -16,6 +16,7 @@ import {
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
+import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapability";
 
 const log = new Logger("RoomTakedown");
 
@@ -26,11 +27,6 @@ type RoomTakedown = {
     changes: PolicyRuleChange[]
   ): Promise<Result<void>>;
   checkAllRooms(revision: PolicyListRevision): Promise<Result<void>>;
-};
-
-export type RoomTakedownCapability = {
-  isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>>;
-  takedownRoom(roomID: StringRoomID): Promise<Result<void>>;
 };
 
 /**
