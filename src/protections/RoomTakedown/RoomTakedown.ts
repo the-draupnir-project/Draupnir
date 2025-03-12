@@ -25,6 +25,7 @@ type RoomTakedown = {
     revision: PolicyListRevision,
     changes: PolicyRuleChange[]
   ): Promise<Result<void>>;
+  checkAllRooms(revision: PolicyListRevision): Promise<Result<void>>;
 };
 
 export type RoomTakedownCapability = {
@@ -35,9 +36,6 @@ export type RoomTakedownCapability = {
 // FIXME:
 // This service probably needs to be responsible for instantiating the room audit
 // log and serving as a singleton.
-
-// FIXME:
-// we still do nothing when the service is started.
 
 /**
  * This exists as the main handler for reacting to literal room policies
@@ -101,6 +99,28 @@ export class StandardRoomTakedown implements RoomTakedown {
       }
     }
     for (const policy of roomsToTakedown) {
+      const takedownResult = await this.takedownRoom(
+        policy.entity as StringRoomID,
+        policy
+      );
+      if (isError(takedownResult)) {
+        log.error(
+          "Error while trying to takedown the room:",
+          policy.entity,
+          takedownResult.error
+        );
+      }
+    }
+    return Ok(undefined);
+  }
+
+  public async checkAllRooms(
+    revision: PolicyListRevision
+  ): Promise<Result<void>> {
+    const roomPolicies = revision
+      .allRulesOfType(PolicyRuleType.Room, Recommendation.Takedown)
+      .filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
+    for (const policy of roomPolicies) {
       const takedownResult = await this.takedownRoom(
         policy.entity as StringRoomID,
         policy
