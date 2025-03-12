@@ -14,8 +14,10 @@ import {
 import {
   BetterSqliteOptions,
   BetterSqliteStore,
+  makeBetterSqliteDB,
 } from "../../backingstore/better-sqlite3/BetterSqliteStore";
 import { Database } from "better-sqlite3";
+import path from "path";
 
 // NOTE: This should only be used to check in bulk whether rooms are taken down
 //       upon getting a policy, you probably always want to try again or
@@ -65,6 +67,16 @@ export class SqliteRoomAuditLog
     );
     this.ensureSchema();
     this.takedownRooms = new Set(this.loadTakendownRooms());
+  }
+
+  public static createToplevel(storagePath: string): SqliteRoomAuditLog {
+    const options = {
+      path: path.join(storagePath, "room-audit-log.db"),
+      WALMode: true,
+      foreignKeys: true,
+      fileMustExist: false,
+    };
+    return new SqliteRoomAuditLog(options, makeBetterSqliteDB(options));
   }
 
   public async takedownRoom(policy: LiteralPolicyRule): Promise<Result<void>> {
