@@ -37,12 +37,23 @@ down:
     - docker stop mjolnir-test-reverse-proxy || true
 
 modules:
-  - name: mjolnir
+  - name: HTTPAntispam
     build:
-      - cp -r synapse_antispam $MX_TEST_MODULE_DIR/
+      - git clone https://github.com/maunium/synapse-http-antispam.git
+        $MX_TEST_MODULE_DIR/
     config:
-      module: mjolnir.Module
-      config: {}
+      module: synapse_http_antispam.HTTPAntispam
+      config:
+        base_url: http://host.docker.internal:8082/api/1/spam_check
+        authorization: DEFAULT
+        enabled_callbacks:
+          - user_may_invite
+          - user_may_join_room
+          - check_event_for_spam
+        fail_open:
+          user_may_invite: true
+          user_may_join_room: true
+          check_event_for_spam: true
 
 homeserver:
   # Basic configuration.
