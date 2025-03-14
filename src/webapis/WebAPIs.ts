@@ -20,6 +20,7 @@ import {
   isStringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { Logger, Task } from "matrix-protection-suite";
+import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
 
 const log = new Logger("WebAPIs");
 
@@ -33,6 +34,10 @@ const AUTHORIZATION = new RegExp("Bearer (.*)");
 export class WebAPIs {
   private webController: express.Express = express();
   private httpServer?: Server | undefined;
+  public readonly synapseHTTPAntispam = new SynapseHttpAntispam(
+    this.webController,
+    this.config.web.synapseHTTPAntispam.authorization
+  );
 
   constructor(
     private reportManager: StandardReportManager,
@@ -58,6 +63,10 @@ export class WebAPIs {
         }
       );
     });
+    // enable synapse http antispam
+    if (this.config.web.synapseHTTPAntispam.enabled) {
+      this.synapseHTTPAntispam.register();
+    }
     // configure /report API.
     if (this.config.web.abuseReporting.enabled) {
       log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);

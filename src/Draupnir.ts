@@ -81,6 +81,7 @@ import {
   COMMAND_CONFIRMATION_LISTENER,
   makeConfirmationPromptListener,
 } from "./commands/interface-manager/MatrixPromptForConfirmation";
+import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -144,7 +145,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly acceptInvitesFromRoom: MatrixRoomID,
     public readonly acceptInvitesFromRoomIssuer: RoomMembershipRevisionIssuer,
     public readonly safeModeToggle: SafeModeToggle,
-    public readonly synapseAdminClient?: SynapseAdminClient
+    public readonly synapseAdminClient: SynapseAdminClient | undefined,
+    public readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ) {
     this.managementRoomOutput = new ManagementRoomOutput(
       this.managementRoomDetail,
@@ -209,7 +211,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     roomMembershipManager: RoomMembershipManager,
     config: IConfig,
     loggableConfigTracker: LoggableConfigTracker,
-    safeModeToggle: SafeModeToggle
+    safeModeToggle: SafeModeToggle,
+    synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ): Promise<ActionResult<Draupnir>> {
     const acceptInvitesFromRoom = await (async () => {
       if (config.autojoinOnlyIfManager) {
@@ -267,7 +270,8 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       acceptInvitesFromRoom.ok,
       acceptInvitesFromRoomIssuer.ok,
       safeModeToggle,
-      new SynapseAdminClient(client, clientUserID)
+      new SynapseAdminClient(client, clientUserID),
+      synapseHTTPAntispam
     );
     const loadResult = await protectedRoomsSet.protections.loadProtections(
       protectedRoomsSet,
