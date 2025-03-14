@@ -4,7 +4,11 @@
 
 import expect from "expect";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
-import { ActionException, isOk } from "matrix-protection-suite";
+import {
+  ActionException,
+  isOk,
+  MatrixException,
+} from "matrix-protection-suite";
 import { MatrixError } from "matrix-bot-sdk";
 
 describe("Test for http antispam callbacks", function () {
@@ -57,8 +61,15 @@ describe("Test for http antispam callbacks", function () {
     }
     // I'm pretty sure there are different versions of this being used in the code base
     // so instanceof fails :/ sucks balls mare
-    const matrixError = sendResult.error.exception as MatrixError;
-    expect(matrixError.error).toBe("no.");
-    expect(matrixError.errcode).toBe("M_FORBIDDEN");
+    // https://github.com/the-draupnir-project/Draupnir/issues/760
+    // https://github.com/the-draupnir-project/Draupnir/issues/759
+    if (sendResult.error instanceof MatrixException) {
+      expect(sendResult.error.matrixErrorMessage).toBe("no.");
+      expect(sendResult.error.matrixErrorCode).toBe("M_FORBIDDEN");
+    } else {
+      const matrixError = sendResult.error.exception as MatrixError;
+      expect(matrixError.error).toBe("no.");
+      expect(matrixError.errcode).toBe("M_FORBIDDEN");
+    }
   } as unknown as Mocha.AsyncFunc);
 });
