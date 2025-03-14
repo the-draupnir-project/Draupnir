@@ -6,6 +6,7 @@ import {
   AbstractProtection,
   ActionResult,
   describeProtection,
+  Logger,
   Ok,
   PolicyListRevision,
   PolicyRuleChange,
@@ -21,12 +22,13 @@ import { Draupnir } from "../../Draupnir";
 import { StandardRoomTakedown } from "./RoomTakedown";
 import { RoomAuditLog } from "./RoomAuditLog";
 import { SynapseAdminRoomTakedownCapability } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
+import { ResultError } from "@gnuxie/typescript-result";
+import {
+  RoomDiscovery,
+  SynapseHTTPAntispamRoomDiscovery,
+} from "./RoomDiscovery";
 
-// FIXME: We still haven't figured out how to poll for new rooms via the
-// Synapse admin API.
-
-// FIXME: We need to add the stores to draupnir somehow.
-// probably from the toplevel.
+const log = new Logger("RoomTakedownProtection");
 
 type RoomTakedownProtectionCapabilities = {
   roomTakedownCapability: RoomTakedownCapability;
@@ -48,7 +50,8 @@ export class RoomTakedownProtection
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     hashStore: SHA256RoomHashStore,
-    auditLog: RoomAuditLog
+    auditLog: RoomAuditLog,
+    private readonly roomDiscovery: RoomDiscovery | undefined
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.roomTakedown = new StandardRoomTakedown(
@@ -69,6 +72,10 @@ export class RoomTakedownProtection
   ): Promise<ActionResult<void>> {
     return this.roomTakedown.handlePolicyChange(revision, changes);
   }
+
+  handleProtectionDisable(): void {
+    this.roomDiscovery?.unregisterListeners();
+  }
 }
 
 describeProtection<RoomTakedownProtectionCapabilities, Draupnir>({
@@ -81,13 +88,35 @@ describeProtection<RoomTakedownProtectionCapabilities, Draupnir>({
     roomTakedownCapability: SynapseAdminRoomTakedownCapability.name,
   },
   factory(description, protectedRoomsSet, draupnir, capabilitySet, _settings) {
+    if (
+      draupnir.stores.hashStore === undefined ||
+      draupnir.stores.roomAuditLog === undefined
+    ) {
+      return ResultError.Result(
+        "This protection requires a hash store and audit log to be available to draupnir, and they are not in your configuration."
+      );
+    }
+    const roomDiscovery = (() => {
+      if (draupnir.synapseHTTPAntispam !== undefined) {
+        return new SynapseHTTPAntispamRoomDiscovery(
+          draupnir.synapseHTTPAntispam,
+          draupnir.stores.hashStore
+        );
+      } else {
+        log.warn(
+          "synapseHTTPAntispam is not configured for this draupnir, and will not be used for room discovery"
+        );
+        return undefined;
+      }
+    })();
     return Ok(
       new RoomTakedownProtection(
         description,
         capabilitySet,
         protectedRoomsSet,
-        draupnir.hashStore,
-        draupnir.auditLog
+        draupnir.stores.hashStore,
+        draupnir.stores.roomAuditLog,
+        roomDiscovery
       )
     );
   },
