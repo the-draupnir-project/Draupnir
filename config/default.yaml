@@ -273,6 +273,18 @@ web:
   abuseReporting:
     # Whether to enable this feature.
     enabled: false
+  # Whether to setup a endpoints for synapse-http-antispam
+  # https://github.com/maunium/synapse-http-antispam
+  # this is required for some features of Draupnir,
+  # such as support for room takedown policies.
+  #
+  # Please FOLLOW the instructions here:
+  # https://the-draupnir-project.github.io/draupnir-documentation/bot/synapse-http-antispam
+  synapseHTTPAntispam:
+    enabled: false
+    # This is a secret that you must place into your synapse module config
+    # https://github.com/maunium/synapse-http-antispam?tab=readme-ov-file#configuration
+    authorization: REPLACE_ME
 
 # Whether or not to actively poll synapse for abuse reports, to be used
 # instead of intercepting client calls to synapse's abuse endpoint, when that

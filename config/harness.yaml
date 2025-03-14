@@ -186,3 +186,6 @@ web:
   abuseReporting:
     # Whether to enable this feature.
     enabled: true
+  synapseHTTPAntispam:
+    enabled: true
+    authorization: DEFAULT

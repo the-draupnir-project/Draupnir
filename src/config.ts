@@ -40,6 +40,17 @@ export function getNonDefaultConfigProperties(
   ) {
     nonDefault.pantalaimon.password = "REDACTED";
   }
+  if (
+    "web" in nonDefault &&
+    typeof nonDefault["web"] === "object" &&
+    nonDefault["web"] !== null &&
+    "synapseHTTPAntispam" in nonDefault["web"] &&
+    typeof nonDefault["web"]["synapseHTTPAntispam"] === "object"
+  ) {
+    if (nonDefault["web"]["synapseHTTPAntispam"] !== null) {
+      nonDefault["web"]["synapseHTTPAntispam"].authorization = "REDACTED";
+    }
+  }
   return nonDefault;
 }
 
@@ -147,6 +158,10 @@ export interface IConfig {
     abuseReporting: {
       enabled: boolean;
     };
+    synapseHTTPAntispam: {
+      enabled: boolean;
+      authorization: string;
+    };
   };
   // Store room state using sqlite to improve startup time when Synapse responds
   // slowly to requests for `/state`.
@@ -241,6 +256,10 @@ const defaultConfig: IConfig = {
     address: "localhost",
     abuseReporting: {
       enabled: false,
+    },
+    synapseHTTPAntispam: {
+      enabled: false,
+      authorization: "DEFAULT",
     },
   },
   roomStateBackingStore: {

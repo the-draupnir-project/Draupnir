@@ -29,6 +29,7 @@ import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
 import { SafeModeToggle } from "../safemode/SafeModeToggle";
 import { StandardManagementRoomDetail } from "../managementroom/ManagementRoomDetail";
+import { DraupnirBotModeToggle } from "../DraupnirBotMode";
 
 const log = new Logger("DraupnirFactory");
 
@@ -141,7 +142,11 @@ export class DraupnirFactory {
       roomMembershipManager,
       config,
       configLogTracker,
-      toggle
+      toggle,
+      // synapseHTTPAntispam is only available in bot mode.
+      toggle instanceof DraupnirBotModeToggle
+        ? toggle.synapseHTTPAntispam
+        : undefined
     );
   }
 
