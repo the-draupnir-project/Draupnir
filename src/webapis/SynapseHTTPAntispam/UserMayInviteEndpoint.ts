@@ -23,8 +23,10 @@ export type UserMayInviteListenerArguments = Parameters<
   (details: UserMayInviteRequestBody) => void
 >;
 
-type UserMayInviteRequestBody = EDStatic<typeof UserMayInviteRequestBody>;
-const UserMayInviteRequestBody = Type.Object({
+export type UserMayInviteRequestBody = EDStatic<
+  typeof UserMayInviteRequestBody
+>;
+export const UserMayInviteRequestBody = Type.Object({
   inviter: StringUserIDSchema,
   invitee: StringUserIDSchema,
   room_id: StringRoomIDSchema,
