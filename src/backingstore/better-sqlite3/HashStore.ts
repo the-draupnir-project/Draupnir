@@ -18,7 +18,7 @@ import {
   BetterSqliteStore,
   makeBetterSqliteDB,
 } from "./BetterSqliteStore";
-import { SHA256 } from "crypto-js";
+import { enc, SHA256 } from "crypto-js";
 import { Database } from "better-sqlite3";
 import path from "path";
 
@@ -27,7 +27,7 @@ import path from "path";
 const schema = [
   `CREATE TABLE room_sha256 (
         room_id TEXT PRIMARY KEY NOT NULL,
-        sha256 BLOB NOT NULL
+        sha256 TEXT NOT NULL
   ) STRICT;`,
 ];
 
@@ -69,9 +69,11 @@ export class SqliteHashReversalStore
   ): Promise<Result<StringRoomID | undefined>> {
     try {
       return Ok(
-        this.db
-          .prepare(`SELECT room_id FROM room_sha256 WHERE sha256 = base64(?)`)
-          .get(hash) as StringRoomID | undefined
+        (
+          this.db
+            .prepare(`SELECT room_id FROM room_sha256 WHERE sha256 = ?`)
+            .get(hash) as RoomSha256 | null
+        )?.room_id ?? undefined
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -101,7 +103,7 @@ export class SqliteHashReversalStore
     // I can't believe there's not a builtin for this fml.
     try {
       const statement = this.db.prepare(
-        `SELECT (room_id, base64(sha256)) FROM room_sha256 WHERE sha256 IN (${sha256s.map(() => "base64(?)").join(",")})`
+        `SELECT room_id, sha256 FROM room_sha256 WHERE sha256 IN (${sha256s.map(() => "?").join(",")})`
       );
       return Ok(statement.all(sha256s) as RoomSha256[]);
     } catch (exception) {
@@ -164,14 +166,16 @@ export class SqliteHashReversalStore
         if (!existingRooms.find((row) => row.room_id === roomID)) {
           rowsToInsert.push({
             room_id: roomID,
-            sha256: SHA256(roomID).toString(),
+            sha256: enc.Base64.stringify(SHA256(roomID)),
           });
         }
       }
       const statement = this.db.prepare(
-        `REPLACE INTO room_sha256 VALUES ${roomIDs.map(() => `(?, base64(?))`).join(", ")}`
+        `REPLACE INTO room_sha256 VALUES ${roomIDs.map(() => `(?, ?)`).join(", ")}`
       );
-      statement.run(rowsToInsert.map((row) => [row.room_id, row.sha256]));
+      statement.run(
+        ...rowsToInsert.flatMap((row) => [row.room_id, row.sha256])
+      );
       return Ok(rowsToInsert);
     } catch (exception) {
       if (exception instanceof Error) {
