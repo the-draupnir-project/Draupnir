@@ -11,7 +11,6 @@
 import {
   StandardClientsInRoomMap,
   DefaultEventDecoder,
-  RoomStateBackingStore,
   ClientsInRoomMap,
   Task,
   Logger,
@@ -49,6 +48,7 @@ import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
+import { TopLevelStores } from "./backingstore/DraupnirStores";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -113,7 +113,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     client: MatrixSendClient,
     matrixEmitter: SafeMatrixEmitter,
     config: IConfig,
-    backingStore?: RoomStateBackingStore
+    stores: TopLevelStores
   ): Promise<DraupnirBotModeToggle> {
     const clientUserID = await client.getUserId();
     if (!isStringUserID(clientUserID)) {
@@ -163,13 +163,14 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientsInRoomMap,
       clientProvider,
       DefaultEventDecoder,
-      backingStore
+      stores.roomStateBackingStore
     );
     const draupnirFactory = new DraupnirFactory(
       clientsInRoomMap,
       clientCapabilityFactory,
       clientProvider,
-      roomStateManagerFactory
+      roomStateManagerFactory,
+      stores
     );
     return new DraupnirBotModeToggle(
       clientUserID,
