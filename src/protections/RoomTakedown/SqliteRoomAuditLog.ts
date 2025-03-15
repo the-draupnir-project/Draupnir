@@ -31,13 +31,13 @@ const schema = [
         room_id TEXT NOT NULL,
         state_key TEXT NOT NULL,
         type TEXT NOT NULL,
-        recommendation TEXT NOT NULL,
+        recommendation TEXT NOT NULL
     ) STRICT;`,
   `CREATE TABLE room_takedown (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     policy_id TEXT NOT NULL,
     target_room_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;`,
 ];
@@ -119,7 +119,7 @@ export class SqliteRoomAuditLog
 
   private loadTakendownRooms(): StringRoomID[] {
     return this.db
-      .prepare(`SELECT room_id FROM room_takedown`)
+      .prepare(`SELECT target_room_id FROM room_takedown`)
       .all() as StringRoomID[];
   }
   isRoomTakendown(roomID: StringRoomID): boolean {
