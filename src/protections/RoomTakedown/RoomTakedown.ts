@@ -20,7 +20,10 @@ import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapabilit
 
 const log = new Logger("RoomTakedown");
 
-type RoomTakedown = {
+// FIXME: How can we segment this so that rooms are takendown on prompt in
+// the abscence of policy approval?
+
+export type RoomTakedownService = {
   handleDiscoveredRooms(rooms: StringRoomID[]): Promise<Result<void>>;
   handlePolicyChange(
     revision: PolicyListRevision,
@@ -35,7 +38,7 @@ type RoomTakedown = {
  * moving discovered rooms into the hashStore. Although it's not clear
  * whether we need to do that?
  */
-export class StandardRoomTakedown implements RoomTakedown {
+export class StandardRoomTakedown implements RoomTakedownService {
   public constructor(
     private readonly hashStore: SHA256RoomHashStore,
     private readonly auditLog: RoomAuditLog,
@@ -43,6 +46,7 @@ export class StandardRoomTakedown implements RoomTakedown {
   ) {
     // nothing to do
   }
+  // FIXME: We don't use this
   public async handleDiscoveredRooms(
     rooms: StringRoomID[]
   ): Promise<Result<void>> {
@@ -85,6 +89,8 @@ export class StandardRoomTakedown implements RoomTakedown {
         change.rule.matchType === PolicyRuleMatchType.Literal &&
         change.rule.recommendation === Recommendation.Takedown
       ) {
+        // FIXME: We probably do not want check the audit log for new policies
+        // and instead let the capability decide
         if (
           !this.auditLog.isRoomTakendown(change.rule.entity as StringRoomID)
         ) {
@@ -114,6 +120,7 @@ export class StandardRoomTakedown implements RoomTakedown {
     const roomPolicies = revision
       .allRulesOfType(PolicyRuleType.Room, Recommendation.Takedown)
       .filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
+    // FIXME: We don't seem to check the audit log
     for (const policy of roomPolicies) {
       const takedownResult = await this.takedownRoom(
         policy.entity as StringRoomID,
