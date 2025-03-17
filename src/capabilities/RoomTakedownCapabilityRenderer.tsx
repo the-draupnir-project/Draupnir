@@ -5,11 +5,9 @@
 import {
   describeCapabilityRenderer,
   DescriptionMeta,
+  RoomBasicDetails,
 } from "matrix-protection-suite";
-import {
-  RoomTakedownCapability,
-  RoomTakedownDetails,
-} from "./RoomTakedownCapability";
+import { RoomTakedownCapability } from "./RoomTakedownCapability";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import {
   MatrixRoomReference,
@@ -37,7 +35,7 @@ function renderCodeOrDefault(
 
 function renderTakedown(
   roomID: StringRoomID,
-  details: RoomTakedownDetails
+  details: RoomBasicDetails
 ): DocumentNode {
   return (
     <details>
@@ -83,7 +81,7 @@ class StandardRoomTakedownCapabilityRenderer implements RoomTakedownCapability {
 
   public async takedownRoom(
     roomID: StringRoomID
-  ): Promise<Result<RoomTakedownDetails>> {
+  ): Promise<Result<RoomBasicDetails>> {
     const capabilityResult = await this.capability.takedownRoom(roomID);
     if (isError(capabilityResult)) {
       this.messageCollector.addOneliner(

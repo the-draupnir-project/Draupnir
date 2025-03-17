@@ -4,23 +4,17 @@
 
 import { Result } from "@gnuxie/typescript-result";
 import { Type } from "@sinclair/typebox";
-import {
-  StringRoomID,
-  StringUserID,
-} from "@the-draupnir-project/matrix-basic-types";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   Capability,
   CapabilityMethodSchema,
   describeCapabilityInterface,
+  RoomBasicDetails,
 } from "matrix-protection-suite";
 
-export type RoomTakedownDetails = Partial<{
-  creator: StringUserID | undefined;
-  room_id: StringRoomID;
-  name: string | undefined;
-  topic: string | undefined;
-  avatar: string | undefined;
-}>;
+export interface RoomDetailsProvider {
+  getRoomDetails(roomID: StringRoomID): Promise<Result<RoomBasicDetails>>;
+}
 
 export const RoomTakedownCapability = Type.Intersect([
   Type.Object({
@@ -35,7 +29,7 @@ export const RoomTakedownCapability = Type.Intersect([
 // to get those details on conduwuit.
 export type RoomTakedownCapability = {
   isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>>;
-  takedownRoom(roomID: StringRoomID): Promise<Result<RoomTakedownDetails>>;
+  takedownRoom(roomID: StringRoomID): Promise<Result<RoomBasicDetails>>;
 } & Capability;
 
 describeCapabilityInterface({

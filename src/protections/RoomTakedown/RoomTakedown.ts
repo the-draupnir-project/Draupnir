@@ -22,6 +22,10 @@ const log = new Logger("RoomTakedown");
 
 // FIXME: How can we segment this so that rooms are takendown on prompt in
 // the abscence of policy approval?
+// Probably by using a simulated capability that asks to confirm and then
+// does the takedown for real?
+// Probably by using an updated version of the shutdown command...
+// Ok no that all sucks we'll have to wait for policy approval...
 
 export type RoomTakedownService = {
   handleDiscoveredRooms(rooms: StringRoomID[]): Promise<Result<void>>;

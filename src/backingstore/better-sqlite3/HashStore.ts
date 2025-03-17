@@ -10,6 +10,7 @@ import {
   HashedLiteralPolicyRule,
   LiteralPolicyRule,
   makeReversedHashedPolicy,
+  RoomBasicDetails,
   RoomHashRecord,
   SHA256RoomHashStore,
 } from "matrix-protection-suite";
@@ -29,6 +30,14 @@ const schema = [
         room_id TEXT PRIMARY KEY NOT NULL,
         sha256 TEXT NOT NULL
   ) STRICT;`,
+  `CREATE TABLE room_detail (
+    room_id TEXT PRIMARY KEY NOT NULL,
+    creator TEXT,
+    name TEXT,
+    topic TEXT,
+    joined_members INTEGER
+  ) STRICT;
+`,
 ];
 
 type RoomSha256 = {
@@ -187,6 +196,35 @@ export class SqliteHashReversalStore
       if (exception instanceof Error) {
         return ActionException.Result(
           `Error while trying to update known hashed rooms`,
+          {
+            exception,
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
+        );
+      } else {
+        throw exception;
+      }
+    }
+  }
+
+  public async storeRoomDetails(
+    roomDetails: RoomBasicDetails
+  ): Promise<Result<void>> {
+    try {
+      const statement = this.db.prepare(`
+        REPLACE INTO room_detail SELECT
+        value ->> 'room_id',
+        value ->> 'creator',
+        value ->> 'name',
+        value ->> 'topic',
+        value ->> 'joined_members'
+        FROM json_each(?)`);
+      statement.run(JSON.stringify(roomDetails));
+      return Ok(undefined);
+    } catch (exception) {
+      if (exception instanceof Error) {
+        return ActionException.Result(
+          `Error while trying to store details about a hashed room`,
           {
             exception,
             exceptionKind: ActionExceptionKind.Unknown,

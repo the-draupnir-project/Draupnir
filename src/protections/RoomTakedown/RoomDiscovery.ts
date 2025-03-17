@@ -6,22 +6,34 @@ import {
   ConstantPeriodItemBatch,
   isError,
   Logger,
+  RoomBasicDetails,
+  RoomHashRecord,
   SHA256RoomHashStore,
   StandardBatcher,
+  Task,
 } from "matrix-protection-suite";
 import { CheckEventForSpamRequestBody } from "../../webapis/SynapseHTTPAntispam/CheckEventForSpamEndpoint";
 import { SynapseHttpAntispam } from "../../webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { UserMayInviteRequestBody } from "../../webapis/SynapseHTTPAntispam/UserMayInviteEndpoint";
 import { UserMayJoinRoomRequestBody } from "../../webapis/SynapseHTTPAntispam/UserMayJoinRoomEndpoint";
+import { EventEmitter } from "stream";
+import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
 
 const log = new Logger("SynapseHTTPAntispamRoomDiscovery");
 
+export type RoomDiscoveryListener = (details: RoomBasicDetails) => void;
+
 export interface RoomDiscovery {
   unregisterListeners(): void;
+  on(event: "RoomDiscovery", listener: RoomDiscoveryListener): this;
+  off(event: "RoomDiscovery", listener: RoomDiscoveryListener): this;
+  emit(event: "RoomDiscovery", details: RoomBasicDetails): void;
 }
-
-export class SynapseHTTPAntispamRoomDiscovery implements RoomDiscovery {
+export class SynapseHTTPAntispamRoomDiscovery
+  extends EventEmitter
+  implements RoomDiscovery
+{
   private readonly discoveredRooms = new Set<StringRoomID>();
   private readonly batcher = new StandardBatcher(
     () =>
@@ -32,8 +44,10 @@ export class SynapseHTTPAntispamRoomDiscovery implements RoomDiscovery {
   );
   constructor(
     private readonly synapseHTTPAntispam: SynapseHttpAntispam,
-    private readonly hashStore: SHA256RoomHashStore
+    private readonly hashStore: SHA256RoomHashStore,
+    private readonly roomDetailsProvider: RoomDetailsProvider
   ) {
+    super();
     synapseHTTPAntispam.checkEventForSpamHandles.registerNonBlockingHandle(
       this.handleCheckEventForSpam
     );
@@ -42,6 +56,36 @@ export class SynapseHTTPAntispamRoomDiscovery implements RoomDiscovery {
     );
     synapseHTTPAntispam.userMayJoinRoomHandles.registerNonBlockingHandle(
       this.handleUserMayJoin
+    );
+  }
+
+  private addRoomDetails(discoveredRooms: RoomHashRecord[]): void {
+    void Task(
+      (async () => {
+        for (const { room_id: roomID } of discoveredRooms) {
+          const detailsResult =
+            await this.roomDetailsProvider.getRoomDetails(roomID);
+          if (isError(detailsResult)) {
+            log.error(
+              "Error fetching details for a discovered room",
+              roomID,
+              detailsResult.error
+            );
+            continue;
+          }
+          this.emit("RoomDiscovery", detailsResult.ok);
+          const storeResult = await this.hashStore.storeRoomDetails(
+            detailsResult.ok
+          );
+          if (isError(storeResult)) {
+            log.error(
+              "Error storing room details for a room",
+              roomID,
+              detailsResult.ok
+            );
+          }
+        }
+      })()
     );
   }
 
@@ -61,6 +105,7 @@ export class SynapseHTTPAntispamRoomDiscovery implements RoomDiscovery {
     for (const roomID of entries) {
       this.discoveredRooms.add(roomID);
     }
+    this.addRoomDetails(storeResult.ok);
   }.bind(this);
 
   private readonly handleCheckEventForSpam = function (
