@@ -170,12 +170,18 @@ export class SqliteHashReversalStore
           });
         }
       }
-      const statement = this.db.prepare(
-        `REPLACE INTO room_sha256 VALUES ${roomIDs.map(() => `(?, ?)`).join(", ")}`
-      );
-      statement.run(
-        ...rowsToInsert.flatMap((row) => [row.room_id, row.sha256])
-      );
+
+      if (rowsToInsert.length > 0) {
+        const serializedRows = JSON.stringify(rowsToInsert);
+
+        const statement = this.db.prepare(`
+          REPLACE INTO room_sha256
+          SELECT value ->> 'room_id', value ->> 'sha256'
+          FROM json_each(?)
+        `);
+
+        statement.run(serializedRows);
+      }
       return Ok(rowsToInsert);
     } catch (exception) {
       if (exception instanceof Error) {
