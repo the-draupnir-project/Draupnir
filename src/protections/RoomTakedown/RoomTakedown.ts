@@ -70,9 +70,11 @@ export class StandardRoomTakedown implements RoomTakedownService {
     const takedownResult = await this.takedownCapability.takedownRoom(roomID);
     if (isError(takedownResult)) {
       return takedownResult;
+    }
+    // Only audit the takedown if the capability is not simulated.
+    if (this.takedownCapability.isSimulated) {
+      return Ok(undefined);
     } else {
-      // FIXME: we should probably audit as simulated if the capability is simulated.
-      // or not audit at all because the protection preview might show things otherwise.
       return await this.auditLog.takedownRoom(rule);
     }
   }
