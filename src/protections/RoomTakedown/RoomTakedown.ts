@@ -89,13 +89,7 @@ export class StandardRoomTakedown implements RoomTakedownService {
         change.rule.matchType === PolicyRuleMatchType.Literal &&
         change.rule.recommendation === Recommendation.Takedown
       ) {
-        // FIXME: We probably do not want check the audit log for new policies
-        // and instead let the capability decide
-        if (
-          !this.auditLog.isRoomTakendown(change.rule.entity as StringRoomID)
-        ) {
-          roomsToTakedown.push(change.rule);
-        }
+        roomsToTakedown.push(change.rule);
       }
     }
     for (const policy of roomsToTakedown) {
@@ -120,8 +114,10 @@ export class StandardRoomTakedown implements RoomTakedownService {
     const roomPolicies = revision
       .allRulesOfType(PolicyRuleType.Room, Recommendation.Takedown)
       .filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
-    // FIXME: We don't seem to check the audit log
     for (const policy of roomPolicies) {
+      if (this.auditLog.isRoomTakendown(policy.entity as StringRoomID)) {
+        continue; // room already takendown
+      }
       const takedownResult = await this.takedownRoom(
         policy.entity as StringRoomID,
         policy
