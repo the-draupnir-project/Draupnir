@@ -71,6 +71,7 @@ export class StandardRoomTakedown implements RoomTakedownService {
         `The room ${roomID} has already been takendown according to your homeserver`
       );
     }
+    const detailsResult = await this.takedownCapability.getRoomDetails(roomID);
     const takedownResult = await this.takedownCapability.takedownRoom(roomID);
     if (isError(takedownResult)) {
       return takedownResult;
@@ -78,9 +79,20 @@ export class StandardRoomTakedown implements RoomTakedownService {
     // Only audit the takedown if the capability is not simulated.
     if (this.takedownCapability.isSimulated) {
       return Ok(undefined);
-    } else {
-      return await this.auditLog.takedownRoom(rule);
     }
+    const details = (() => {
+      if (isError(detailsResult)) {
+        log.error(
+          "Unable to fetch details for room before takedown",
+          roomID,
+          detailsResult.error
+        );
+        return { room_id: roomID };
+      } else {
+        return detailsResult.ok;
+      }
+    })();
+    return await this.auditLog.takedownRoom(rule, details);
   }
 
   public async handlePolicyChange(

@@ -105,6 +105,12 @@ class StandardRoomTakedownCapabilityRenderer implements RoomTakedownCapability {
     );
     return capabilityResult;
   }
+
+  public async getRoomDetails(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    return await this.capability.getRoomDetails(roomID);
+  }
 }
 
 describeCapabilityRenderer<RoomTakedownCapability, Draupnir>({

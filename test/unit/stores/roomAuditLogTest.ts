@@ -14,6 +14,7 @@ import {
   Recommendation,
 } from "matrix-protection-suite";
 import expect from "expect";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 describe("RoomAuditLog test", function () {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
@@ -37,9 +38,25 @@ describe("RoomAuditLog test", function () {
         type: PolicyRuleType.Room,
       }) as never
     ).expect("Should bea ble to parse the policy rule.");
-    (await store.takedownRoom(ban as LiteralPolicyRule)).expect(
-      "Should be able to takedown a room"
-    );
+    (
+      await store.takedownRoom(ban as LiteralPolicyRule, {
+        room_id: bannedRoom.toRoomIDOrAlias(),
+        name: "Spam name",
+        topic: "Spam topic",
+        joined_members: 30,
+        creator: "@spam:example.com" as StringUserID,
+      })
+    ).expect("Should be able to takedown a room");
     expect(store.isRoomTakendown(bannedRoom.toRoomIDOrAlias())).toBe(true);
+    const takedownDetails = (
+      await store.getTakedownDetails(bannedRoom.toRoomIDOrAlias())
+    ).expect("Should be able to get takedown details");
+    expect(takedownDetails?.created_at).toBeDefined();
+    expect(takedownDetails?.creator).toBe("@spam:example.com");
+    expect(takedownDetails?.joined_members).toBe(30);
+    expect(takedownDetails?.name).toBe("Spam name");
+    expect(takedownDetails?.topic).toBe("Spam topic");
+    expect(takedownDetails?.room_id).toBe(bannedRoom.toRoomIDOrAlias());
+    expect(takedownDetails?.policy_id).toBeDefined();
   });
 });

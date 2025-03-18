@@ -47,6 +47,8 @@ export class SynapseAdminRoomTakedownCapability
   public constructor(private readonly adminClient: SynapseAdminClient) {
     // nothing to do mare.
   }
+
+  isSimulated?: true;
   public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {
     const blockStatusResponse = await this.adminClient.getBlockStatus(roomID);
     if (isError(blockStatusResponse)) {
@@ -80,5 +82,11 @@ export class SynapseAdminRoomTakedownCapability
     } else {
       return Ok(details);
     }
+  }
+
+  public async getRoomDetails(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    return await this.roomDetailsProvider.getRoomDetails(roomID);
   }
 }

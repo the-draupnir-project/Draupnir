@@ -30,7 +30,8 @@ export const RoomTakedownCapability = Type.Intersect([
 export type RoomTakedownCapability = {
   isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>>;
   takedownRoom(roomID: StringRoomID): Promise<Result<RoomBasicDetails>>;
-} & Capability;
+} & RoomDetailsProvider &
+  Capability;
 
 describeCapabilityInterface({
   name: "RoomTakedownCapability",

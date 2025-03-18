@@ -3,13 +3,24 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Result } from "@gnuxie/typescript-result";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule } from "matrix-protection-suite";
+import {
+  StringEventID,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { LiteralPolicyRule, RoomBasicDetails } from "matrix-protection-suite";
 
-// FIXME: Add a method for protection startup that takes all room ids from policies
-//        and only returns those not takendown
-// i just want to save progress so far first.
+export type RoomTakedownDetails = Omit<RoomBasicDetails, "avatar"> & {
+  policy_id: StringEventID;
+  created_at: number;
+};
+
 export interface RoomAuditLog {
-  takedownRoom(policy: LiteralPolicyRule): Promise<Result<void>>;
+  takedownRoom(
+    policy: LiteralPolicyRule,
+    details: RoomBasicDetails
+  ): Promise<Result<void>>;
   isRoomTakendown(roomID: StringRoomID): boolean;
+  getTakedownDetails(
+    roomID: StringRoomID
+  ): Promise<Result<RoomTakedownDetails | undefined>>;
 }
