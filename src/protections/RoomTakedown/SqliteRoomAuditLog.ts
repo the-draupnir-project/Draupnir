@@ -125,8 +125,11 @@ export class SqliteRoomAuditLog
         `REPLACE INTO policy_info (policy_id, sender_user_id, room_id, state_key, type, recommendation)
         VALUES (?, ?, ?, ?, ?, ?)`
       );
-      const takedownStatement = this.db.prepare(`
-        INSERT INTO room_takedown (policy_id, target_room_id) VALUES (?, ?)`);
+      const takedownStatement = this.db
+        .prepare(
+          `INSERT INTO room_takedown (policy_id, target_room_id) VALUES (?, ?) RETURNING id`
+        )
+        .pluck();
       const detailStatement = this.db.prepare(`
       INSERT INTO room_detail_at_takedown (takedown_id, room_id, creator, name, topic, joined_members)
       VALUES (?, ?, ?, ?, ?, ?)`);
@@ -139,12 +142,12 @@ export class SqliteRoomAuditLog
           policy.sourceEvent.type,
           policy.recommendation,
         ]);
-        const takedownRow = takedownStatement.run([
+        const takedownID = takedownStatement.get([
           policy.sourceEvent.event_id,
           policy.entity,
-        ]);
+        ]) as number;
         detailStatement.run([
-          takedownRow.lastInsertRowid,
+          takedownID,
           details.room_id,
           details.creator ?? null,
           details.name ?? null,
