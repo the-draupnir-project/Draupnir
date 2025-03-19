@@ -15,7 +15,6 @@ import {
   ProtectionDescription,
   RoomBasicDetails,
   RoomMessageSender,
-  HashedRoomDetails,
   StringRoomIDSchema,
   Task,
 } from "matrix-protection-suite";
@@ -87,7 +86,6 @@ export class RoomTakedownProtection
     description: RoomTakedownProtectionDescription,
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
-    hashStore: HashedRoomDetails,
     auditLog: RoomAuditLog,
     private readonly roomMessageSender: RoomMessageSender,
     private readonly discoveryNotificationEnabled: boolean,
@@ -97,7 +95,6 @@ export class RoomTakedownProtection
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.roomTakedown = new StandardRoomTakedown(
-      hashStore,
       auditLog,
       capabilities.roomTakedownCapability
     );
@@ -203,7 +200,6 @@ describeProtection<
         description,
         capabilitySet,
         protectedRoomsSet,
-        draupnir.stores.hashStore,
         draupnir.stores.roomAuditLog,
         draupnir.clientPlatform.toRoomMessageSender(),
         settings.discoveryNotificationEnabled,
