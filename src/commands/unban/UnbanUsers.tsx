@@ -27,6 +27,7 @@ import {
   isError,
   Ok,
   PolicyRuleType,
+  PolicyRuleMatchType,
 } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQueue";
 import { ListMatches } from "../Rules";
@@ -161,12 +162,10 @@ export async function unbanMembers(
       for (const policy of policyRoom.matches) {
         policiesRemoved.addResult(
           policyRoom.roomID,
-          // FIXME: Update editor to no longer match all matching entities.
-          (await policyRoomEditor.ok.removePolicy(
+          await policyRoomEditor.ok.removePolicyByStateKey(
             policy.kind,
-            policy.recommendation,
-            policy.entity
-          )) as Result<void>
+            policy.sourceEvent.state_key
+          )
         );
       }
     }
@@ -241,11 +240,16 @@ export function findUnbanInformationForMember(
   ];
   for (const { matches } of policyMatchesToRemove) {
     for (const match of matches) {
-      if (match.isGlob()) {
+      if (match.matchType === PolicyRuleMatchType.Glob) {
         globsToScan.push(new MatrixGlob(match.entity));
-      } else if (isStringUserID(match.entity)) {
+      } else if (
+        match.matchType === PolicyRuleMatchType.Literal &&
+        isStringUserID(match.entity)
+      ) {
         literalsToScan.push(match.entity);
       }
+      // HashedLiterals that match will be removed indriectly when their sourceEvent's
+      // get removed.
     }
   }
   const membersMatchingPoliciesAndEntity = matchMembers(
