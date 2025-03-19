@@ -161,6 +161,7 @@ export async function unbanMembers(
       for (const policy of policyRoom.matches) {
         policiesRemoved.addResult(
           policyRoom.roomID,
+          // FIXME: Update editor to no longer match all matching entities.
           (await policyRoomEditor.ok.removePolicy(
             policy.kind,
             policy.recommendation,

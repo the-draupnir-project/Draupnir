@@ -9,10 +9,14 @@
 // </text>
 
 import {
+  GlobPolicyRule,
+  HashedLiteralPolicyRule,
+  LiteralPolicyRule,
   MemberPolicyMatches,
   Ok,
   PolicyRoomWatchProfile,
   PolicyRule,
+  PolicyRuleMatchType,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -53,11 +57,35 @@ function renderListMatches(
   );
 }
 
+export function renderRuleHashes(rule: HashedLiteralPolicyRule): DocumentNode {
+  return (
+    <ul>
+      {Object.entries(rule.hashes).map(([algorithm, hash]) => (
+        <li>
+          <code>{algorithm}</code>: <code>{hash}</code>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function renderRuleClearText(
+  rule: LiteralPolicyRule | GlobPolicyRule
+): DocumentNode {
+  return (
+    <fragment>
+      <code>{rule.entity}</code> ({rule.reason ?? "<no reason supplied>"})
+    </fragment>
+  );
+}
+
 function renderRuleSummary(rule: PolicyRule) {
   return (
     <li>
       {rule.kind} (<code>{rule.recommendation}</code>):{" "}
-      <code>{rule.entity}</code> ({rule.reason})
+      {rule.matchType === PolicyRuleMatchType.HashedLiteral
+        ? renderRuleHashes(rule)
+        : renderRuleClearText(rule)}
     </li>
   );
 }
