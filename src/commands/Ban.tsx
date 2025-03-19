@@ -65,7 +65,7 @@ export const DraupnirBanCommand = describeCommand({
     {
       name: "entity",
       description:
-        "The entity to ban. This can be a user ID, room ID, or server name.",
+        "The entity to ban. This can be a user ID, or server name. For rooms please see the takedown command",
       acceptor: union(
         MatrixUserIDPresentationType,
         MatrixRoomReferencePresentationSchema,

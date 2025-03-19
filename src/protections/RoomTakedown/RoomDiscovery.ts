@@ -62,6 +62,8 @@ export class SynapseHTTPAntispamRoomDiscovery
     );
   }
 
+  // FIXME: Factor this out so that we can add room details and hash
+  // when the takedown command is run.
   private addRoomDetails(discoveredRooms: RoomHashRecord[]): void {
     void Task(
       (async () => {
