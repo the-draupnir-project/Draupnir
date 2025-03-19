@@ -216,15 +216,15 @@ export class SqliteRoomStateBackingStore
   }
 
   public forgetRoom(roomID: StringRoomID): Promise<ActionResult<void>> {
-    const deleteMetaStatement = this.db.prepare(
-      `DELETE FROM room_info WHERE room_id = ?`
-    );
     const deleteStateStatement = this.db.prepare(
       `DELETE FROM room_state_event WHERE room_id = ?`
     );
+    const deleteMetaStatement = this.db.prepare(
+      `DELETE FROM room_info WHERE room_id = ?`
+    );
     const deleteRoom = this.db.transaction(() => {
-      deleteMetaStatement.run(roomID);
       deleteStateStatement.run(roomID);
+      deleteMetaStatement.run(roomID); // needs to be last to avoid violating foriegn key cnostraint
     });
     try {
       deleteRoom();
@@ -240,12 +240,13 @@ export class SqliteRoomStateBackingStore
   }
 
   public async forgetAllRooms(): Promise<ActionResult<void>> {
-    for (const roomID of this.roomInfoMap.keys()) {
-      const result = await this.forgetRoom(roomID);
-      if (isError(result)) {
-        return result;
-      }
-    }
+    this.db.transaction(() => {
+      this.db.exec(`
+        DELETE FROM room_state_event;
+        DELETE FROM room_info;
+      `);
+      this.roomInfoMap.clear();
+    })();
     return Ok(undefined);
   }
 }
