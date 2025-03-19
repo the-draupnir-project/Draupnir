@@ -14,22 +14,85 @@ import {
   tuple,
   union,
 } from "@the-draupnir-project/interface-manager";
+import { findPolicyRoomEditorFromRoomReference } from "./Ban";
 import {
-  DraupnirBanCommandContext,
-  findPolicyRoomEditorFromRoomReference,
-} from "./Ban";
-import { isError, Ok, PolicyRuleType } from "matrix-protection-suite";
+  isError,
+  Logger,
+  Ok,
+  PolicyRoomManager,
+  PolicyRuleType,
+  RoomResolver,
+  SHA256RoomHashStore,
+  Task,
+  WatchedPolicyRooms,
+} from "matrix-protection-suite";
 import { Result, ResultError } from "@gnuxie/typescript-result";
 import {
   MatrixRoomID,
   MatrixUserID,
   StringEventID,
+  StringRoomID,
+  StringUserID,
+  userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
 import { renderRoomPill } from "./interface-manager/MatrixHelpRenderer";
+import { RoomDetailsProvider } from "../capabilities/RoomTakedownCapability";
+import { SynapseAdminRoomDetailsProvider } from "../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
+
+const log = new Logger("DraupnirTakedownCommand");
+
+/**
+ * Make sure that the hash store is up to date with the entity
+ */
+function handleRoomDiscovery(
+  roomID: StringRoomID,
+  store: SHA256RoomHashStore | undefined,
+  detailsProvider: RoomDetailsProvider | undefined
+): void {
+  if (store === undefined) {
+    log.warn(
+      "Unable to discover a room provided by the takedown command because the hash store has not been configured"
+    );
+    return;
+  }
+  if (detailsProvider === undefined) {
+    log.warn(
+      "Unable to discover a room provided by the takedown command because the details provider has not been configured"
+    );
+    return;
+  }
+  void Task(
+    (async () => {
+      const storeResult = await store.storeUndiscoveredRooms([roomID]);
+      if (isError(storeResult)) {
+        return storeResult.elaborate(
+          "Unable to store the room from takedown command into the hash store"
+        );
+      }
+      const detailsResult = await detailsProvider.getRoomDetails(roomID);
+      if (isError(detailsResult)) {
+        return detailsResult.elaborate(
+          "Failed to fetch details for a room discovered via the takedown command"
+        );
+      }
+      if (detailsResult.ok.creator === undefined) {
+        log.debug("Broken details", detailsResult.ok);
+        return ResultError.Result(
+          `No creator was provided so we cannot store the details for this room ${roomID}`
+        );
+      }
+      return await store.storeRoomIdentification({
+        roomID,
+        creator: detailsResult.ok.creator,
+        server: userServerName(detailsResult.ok.creator),
+      });
+    })()
+  );
+}
 
 export type TakedownPolicyPreview = {
   ruleType: PolicyRuleType;
@@ -61,7 +124,7 @@ export const DraupnirTakedownCommand = describeCommand({
       prompt: async function ({
         policyRoomManager,
         clientUserID,
-      }: DraupnirBanCommandContext) {
+      }: DraupnirTakedownCommandContext) {
         return Ok({
           suggestions: policyRoomManager
             .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
@@ -84,7 +147,9 @@ export const DraupnirTakedownCommand = describeCommand({
       watchedPolicyRooms,
       policyRoomManager,
       roomResolver,
-    }: DraupnirBanCommandContext,
+      hashStore,
+      detailsProvider,
+    }: DraupnirTakedownCommandContext,
     _info: BasicInvocationInformation,
     keywords,
     _rest,
@@ -146,7 +211,13 @@ export const DraupnirTakedownCommand = describeCommand({
     if (!keywords.getKeywordValue<boolean>("no-confirm", false)) {
       return preview;
     }
-    // FIXME: we should inform the hash store about the entity right around here
+    if (preview.ok.ruleType === PolicyRuleType.Room) {
+      handleRoomDiscovery(
+        preview.ok.entity as StringRoomID,
+        hashStore,
+        detailsProvider
+      );
+    }
     return await policyRoomEditor.takedownEntity(
       preview.ok.ruleType,
       preview.ok.entity,
@@ -191,6 +262,16 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirTakedownCommand, {
   },
 });
 
+export type DraupnirTakedownCommandContext = {
+  policyRoomManager: PolicyRoomManager;
+  watchedPolicyRooms: WatchedPolicyRooms;
+  defaultReasons: string[];
+  roomResolver: RoomResolver;
+  clientUserID: StringUserID;
+  hashStore: SHA256RoomHashStore | undefined;
+  detailsProvider: RoomDetailsProvider | undefined;
+};
+
 DraupnirContextToCommandContextTranslator.registerTranslation(
   DraupnirTakedownCommand,
   function (draupnir) {
@@ -200,6 +281,10 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       defaultReasons: draupnir.config.commands.ban.defaultReasons,
       roomResolver: draupnir.clientPlatform.toRoomResolver(),
       clientUserID: draupnir.clientUserID,
+      hashStore: draupnir.stores.hashStore,
+      detailsProvider: draupnir.synapseAdminClient
+        ? new SynapseAdminRoomDetailsProvider(draupnir.synapseAdminClient)
+        : undefined,
     };
   }
 );
