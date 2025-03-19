@@ -32,7 +32,8 @@ const SchemaText = [
   CREATE TABLE room_sha256 (
     room_id TEXT PRIMARY KEY NOT NULL,
     sha256 TEXT NOT NULL
-  ) STRICT;
+  ) STRICT, WITHOUT ROWID;
+  CREATE INDEX idx_sha256 ON room_sha256 (sha256, room_id);
   CREATE TABLE room_identification (
     room_id TEXT PRIMARY KEY NOT NULL,
     creator TEXT NOT NULL,
@@ -85,11 +86,10 @@ export class SqliteHashReversalStore
   ): Promise<Result<StringRoomID | undefined>> {
     try {
       return Ok(
-        (
-          this.db
-            .prepare(`SELECT room_id FROM room_sha256 WHERE sha256 = ?`)
-            .get(hash) as RoomSha256 | null
-        )?.room_id ?? undefined
+        this.db
+          .prepare(`SELECT room_id FROM room_sha256 WHERE sha256 = ?`)
+          .pluck()
+          .get(hash) as StringRoomID | undefined
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -115,13 +115,12 @@ export class SqliteHashReversalStore
         sha256s.push(policy.hashes["sha256"]);
       }
     }
-    // This query looks sketch and I don't like it but we're just putting in question marks and nothing else
-    // I can't believe there's not a builtin for this fml.
     try {
-      const statement = this.db.prepare(
-        `SELECT room_id, sha256 FROM room_sha256 WHERE sha256 IN (${sha256s.map(() => "?").join(",")})`
-      );
-      return Ok(statement.all(sha256s) as RoomSha256[]);
+      const statement = this.db.prepare(`
+        SELECT room_id, sha256
+        FROM room_sha256
+        WHERE sha256 IN (SELECT value FROM json_each(?))`);
+      return Ok(statement.all(JSON.stringify(sha256s)) as RoomSha256[]);
     } catch (exception) {
       if (exception instanceof Error) {
         return ActionException.Result(
@@ -162,14 +161,11 @@ export class SqliteHashReversalStore
   }
 
   private findExistingRooms(roomIDs: StringRoomID[]): RoomHashRecord[] {
-    if (roomIDs.length === 0) {
-      return [];
-    }
-    const placeholders = roomIDs.map(() => "?").join(", ");
-    const statement = this.db.prepare(
-      `SELECT room_id, sha256 FROM room_sha256 WHERE room_id IN (${placeholders})`
-    );
-    return statement.all(...roomIDs) as RoomHashRecord[];
+    const statement = this.db.prepare(`
+      SELECT room_id, sha256
+      FROM room_sha256
+      WHERE room_id IN (SELECT value FROM json_each(?))`);
+    return statement.all(JSON.stringify(roomIDs)) as RoomHashRecord[];
   }
 
   public async storeUndiscoveredRooms(
