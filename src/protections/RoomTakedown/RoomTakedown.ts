@@ -11,7 +11,6 @@ import {
   PolicyRuleMatchType,
   PolicyRuleType,
   Recommendation,
-  SHA256RoomHashStore,
   SimpleChangeType,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
@@ -28,7 +27,6 @@ const log = new Logger("RoomTakedown");
 // Ok no that all sucks we'll have to wait for policy approval...
 
 export type RoomTakedownService = {
-  handleDiscoveredRooms(rooms: StringRoomID[]): Promise<Result<void>>;
   handlePolicyChange(
     revision: PolicyListRevision,
     changes: PolicyRuleChange[]
@@ -44,17 +42,10 @@ export type RoomTakedownService = {
  */
 export class StandardRoomTakedown implements RoomTakedownService {
   public constructor(
-    private readonly hashStore: SHA256RoomHashStore,
     private readonly auditLog: RoomAuditLog,
     private readonly takedownCapability: RoomTakedownCapability
   ) {
     // nothing to do
-  }
-  // FIXME: We don't use this
-  public async handleDiscoveredRooms(
-    rooms: StringRoomID[]
-  ): Promise<Result<void>> {
-    return (await this.hashStore.storeUndiscoveredRooms(rooms)) as Result<void>;
   }
 
   private async takedownRoom(

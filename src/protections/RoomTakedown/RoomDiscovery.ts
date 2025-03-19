@@ -14,7 +14,10 @@ import {
 } from "matrix-protection-suite";
 import { CheckEventForSpamRequestBody } from "../../webapis/SynapseHTTPAntispam/CheckEventForSpamEndpoint";
 import { SynapseHttpAntispam } from "../../webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  StringRoomID,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 import { UserMayInviteRequestBody } from "../../webapis/SynapseHTTPAntispam/UserMayInviteEndpoint";
 import { UserMayJoinRoomRequestBody } from "../../webapis/SynapseHTTPAntispam/UserMayJoinRoomEndpoint";
 import { EventEmitter } from "stream";
@@ -74,9 +77,18 @@ export class SynapseHTTPAntispamRoomDiscovery
             continue;
           }
           this.emit("RoomDiscovery", detailsResult.ok);
-          const storeResult = await this.hashStore.storeRoomDetails(
-            detailsResult.ok
-          );
+          if (detailsResult.ok.creator == undefined) {
+            log.error(
+              "Creator is missing from room details, which isn't great",
+              detailsResult.ok
+            );
+            return;
+          }
+          const storeResult = await this.hashStore.storeRoomIdentification({
+            creator: detailsResult.ok.creator,
+            roomID: detailsResult.ok.room_id,
+            server: userServerName(detailsResult.ok.creator),
+          });
           if (isError(storeResult)) {
             log.error(
               "Error storing room details for a room",

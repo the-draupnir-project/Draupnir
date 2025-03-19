@@ -15,7 +15,7 @@ import {
   ProtectionDescription,
   RoomBasicDetails,
   RoomMessageSender,
-  SHA256RoomHashStore,
+  HashedRoomDetails,
   StringRoomIDSchema,
   Task,
 } from "matrix-protection-suite";
@@ -87,7 +87,7 @@ export class RoomTakedownProtection
     description: RoomTakedownProtectionDescription,
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
-    hashStore: SHA256RoomHashStore,
+    hashStore: HashedRoomDetails,
     auditLog: RoomAuditLog,
     private readonly roomMessageSender: RoomMessageSender,
     private readonly discoveryNotificationEnabled: boolean,

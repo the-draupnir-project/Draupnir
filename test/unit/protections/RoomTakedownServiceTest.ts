@@ -12,7 +12,6 @@ import {
   PolicyRuleType,
   randomRoomID,
   Recommendation,
-  SHA256RoomHashStore,
   SimpleChangeType,
   StandardPolicyListRevision,
 } from "matrix-protection-suite";
@@ -53,7 +52,6 @@ function makeServiceMocks(): {
 }
 
 describe("", function () {
-  const storeFake = createMock<SHA256RoomHashStore>({});
   it("Test rooms are takendown when policies are added", async function () {
     const policyRoom = randomRoomID([]);
     const bannedRoom = randomRoomID([]);
@@ -73,7 +71,6 @@ describe("", function () {
       takedownCapabilityItems,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
-      storeFake,
       auditLog,
       takedownCapability
     );
@@ -123,7 +120,6 @@ describe("", function () {
       takedownCapabilityItems,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
-      storeFake,
       auditLog,
       takedownCapability
     );

@@ -10,8 +10,8 @@ import {
   HashedLiteralPolicyRule,
   LiteralPolicyRule,
   makeReversedHashedPolicy,
-  RoomBasicDetails,
   RoomHashRecord,
+  HashedRoomDetails,
   SHA256RoomHashStore,
 } from "matrix-protection-suite";
 import {
@@ -23,19 +23,16 @@ import { enc, SHA256 } from "crypto-js";
 import { Database } from "better-sqlite3";
 import path from "path";
 
-// We will need some kind of audit database to store actions in against rooms
-
 const schema = [
   `CREATE TABLE room_sha256 (
         room_id TEXT PRIMARY KEY NOT NULL,
         sha256 TEXT NOT NULL
   ) STRICT;`,
-  `CREATE TABLE room_detail (
+  `CREATE TABLE room_identification (
     room_id TEXT PRIMARY KEY NOT NULL,
-    creator TEXT,
-    name TEXT,
-    topic TEXT,
-    joined_members INTEGER
+    creator TEXT NOT NULL,
+    server TEXT NOT NULL,
+    FOREIGN KEY (room_id) REFERENCES room_sha256(room_id)
   ) STRICT;
 `,
 ];
@@ -207,19 +204,19 @@ export class SqliteHashReversalStore
     }
   }
 
-  public async storeRoomDetails(
-    roomDetails: RoomBasicDetails
+  public async storeRoomIdentification(
+    roomDetails: HashedRoomDetails
   ): Promise<Result<void>> {
     try {
-      const statement = this.db.prepare(`
-        REPLACE INTO room_detail SELECT
-        value ->> 'room_id',
-        value ->> 'creator',
-        value ->> 'name',
-        value ->> 'topic',
-        value ->> 'joined_members'
-        FROM json_each(?)`);
-      statement.run(JSON.stringify(roomDetails));
+      const statement = this.db.prepare(
+        `REPLACE INTO room_identification (room_id, creator, server)
+        VALUES (?, ?, ?)`
+      );
+      statement.run([
+        roomDetails.roomID,
+        roomDetails.creator,
+        roomDetails.server,
+      ]);
       return Ok(undefined);
     } catch (exception) {
       if (exception instanceof Error) {
