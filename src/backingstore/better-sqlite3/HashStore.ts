@@ -13,6 +13,7 @@ import {
   RoomHashRecord,
   HashedRoomDetails,
   SHA256RoomHashStore,
+  Logger,
 } from "matrix-protection-suite";
 import {
   BetterSqliteOptions,
@@ -22,20 +23,36 @@ import {
 import { enc, SHA256 } from "crypto-js";
 import { Database } from "better-sqlite3";
 import path from "path";
+import { checkKnownTables, SqliteSchemaOptions } from "./SqliteSchema";
 
-const schema = [
-  `CREATE TABLE room_sha256 (
-        room_id TEXT PRIMARY KEY NOT NULL,
-        sha256 TEXT NOT NULL
-  ) STRICT;`,
-  `CREATE TABLE room_identification (
+const log = new Logger("SqliteHashReversalStore");
+
+const SchemaText = [
+  `
+  CREATE TABLE room_sha256 (
+    room_id TEXT PRIMARY KEY NOT NULL,
+    sha256 TEXT NOT NULL
+  ) STRICT;
+  CREATE TABLE room_identification (
     room_id TEXT PRIMARY KEY NOT NULL,
     creator TEXT NOT NULL,
     server TEXT NOT NULL,
     FOREIGN KEY (room_id) REFERENCES room_sha256(room_id)
   ) STRICT;
-`,
+  `,
 ];
+
+const SchemaOptions = {
+  upgradeSteps: SchemaText.map(
+    (text) =>
+      function (db) {
+        db.exec(text);
+      }
+  ),
+  consistencyCheck(db) {
+    return checkKnownTables(db, ["room_sha256", "room_identification"]);
+  },
+} satisfies SqliteSchemaOptions;
 
 type RoomSha256 = {
   room_id: StringRoomID;
@@ -47,17 +64,7 @@ export class SqliteHashReversalStore
   implements Omit<SHA256RoomHashStore, "on" | "off">
 {
   constructor(options: BetterSqliteOptions, db: Database) {
-    super(
-      schema.map(
-        (text) =>
-          function (db) {
-            db.prepare(text).run();
-          }
-      ),
-      options,
-      db
-    );
-    this.ensureSchema();
+    super(SchemaOptions, db, log);
   }
 
   public static createToplevel(storagePath: string): SqliteHashReversalStore {
@@ -67,7 +74,10 @@ export class SqliteHashReversalStore
       foreignKeys: true,
       fileMustExist: false,
     };
-    return new SqliteHashReversalStore(options, makeBetterSqliteDB(options));
+    return new SqliteHashReversalStore(
+      options,
+      makeBetterSqliteDB(options, log)
+    );
   }
 
   public async findRoomHash(

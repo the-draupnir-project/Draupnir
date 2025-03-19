@@ -10,36 +10,19 @@
 
 import BetterSqlite3, { Database } from "better-sqlite3";
 import { Logger } from "matrix-protection-suite";
-
-const log = new Logger("BetterSqliteStore");
-
-export function sqliteV0Schema(db: Database) {
-  // we have to prepare and run them separately because `prepare` checks if the
-  // table exists.
-  const createTable = db.transaction(() => {
-    db.prepare(
-      `CREATE TABLE schema (
-            version INTEGER UNIQUE NOT NULL
-        ) STRICT;`
-    ).run();
-    db.prepare("INSERT INTO schema VALUES (0);").run();
-  });
-  createTable();
-}
+import { ensureSqliteSchema, SqliteSchemaOptions } from "./SqliteSchema";
 
 export interface BetterSqliteOptions extends BetterSqlite3.Options {
   path: string;
-  /**
-   * Should the schema table be automatically created (the v0 schema effectively).
-   * Defaults to `true`.
-   */
-  autocreateSchemaTable?: boolean;
-
   WALMode?: boolean;
   foreignKeys?: boolean;
 }
 
-export function makeBetterSqliteDB(options: BetterSqliteOptions): Database {
+export function makeBetterSqliteDB(
+  options: BetterSqliteOptions,
+  log: Logger
+): Database {
+  log.info("Opening db: ", options.path);
   const db = new BetterSqlite3(options.path, options);
   if (options.path !== ":memory:") {
     db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
@@ -95,10 +78,6 @@ export type SchemaUpdateFunction = (db: Database) => void;
 export class BetterSqliteStore {
   private hasEnded = false;
 
-  public get latestSchema() {
-    return this.schemas.length;
-  }
-
   /**
    * Construct a new store.
    * @param schemas The set of schema functions to apply to a database. The ordering of this array determines the
@@ -106,54 +85,11 @@ export class BetterSqliteStore {
    * @param opts Options to supply to the BetterSqliteStore client, such as `path`.
    */
   constructor(
-    private readonly schemas: SchemaUpdateFunction[],
-    private readonly opts: BetterSqliteOptions,
-    protected readonly db: Database
+    private readonly schema: SqliteSchemaOptions,
+    protected readonly db: Database,
+    private readonly log: Logger
   ) {
-    opts.autocreateSchemaTable = opts.autocreateSchemaTable ?? true;
-  }
-
-  /**
-   * Ensure the database schema is up to date. If you supplied
-   * `autocreateSchemaTable` to `opts` in the constructor, a fresh database
-   * will have a `schema` table created for it.
-   *
-   * @throws If a schema could not be applied cleanly.
-   */
-  public ensureSchema(): void {
-    log.info("Starting database engine");
-    let currentVersion = this.getSchemaVersion();
-
-    if (currentVersion === -1) {
-      if (this.opts.autocreateSchemaTable) {
-        log.info(`Applying v0 schema (schema table)`);
-        sqliteV0Schema(this.db);
-        currentVersion = 0;
-      } else {
-        // We aren't autocreating the schema table, so assume schema 0.
-        currentVersion = 0;
-      }
-    }
-
-    // Zero-indexed, so schema 1 would be in slot 0.
-    while (this.schemas[currentVersion]) {
-      log.info(`Updating schema to v${currentVersion + 1}`);
-      const runSchema = this.schemas[currentVersion];
-      if (runSchema === undefined) {
-        throw new TypeError(
-          `there is no schema defined for the schema version: ${currentVersion}`
-        );
-      }
-      try {
-        runSchema(this.db);
-        currentVersion++;
-        this.updateSchemaVersion(currentVersion);
-      } catch (ex) {
-        log.warn(`Failed to run schema v${currentVersion + 1}:`, ex);
-        throw Error("Failed to update database schema");
-      }
-    }
-    log.info(`Database schema is at version v${currentVersion}`);
+    ensureSqliteSchema(this.db, this.log, this.schema);
   }
 
   /**
@@ -161,43 +97,14 @@ export class BetterSqliteStore {
    * called before the process exits.
    */
   public destroy(): void {
-    log.info("Destroy called");
+    this.log.info("Destroy called");
     if (this.hasEnded) {
       // No-op if end has already been called.
       return;
     }
     this.hasEnded = true;
     this.db.close();
-    log.info("connection ended");
-  }
-
-  /**
-   * Update the current schema version.
-   * @param version
-   */
-  protected updateSchemaVersion(version: number): void {
-    log.debug(`updateSchemaVersion: ${version}`);
-    this.db.prepare(`UPDATE schema SET version = ?;`).run(version);
-  }
-
-  /**
-   * Get the current schema version.
-   * @returns The current schema version, or `-1` if no schema table is found.
-   */
-  protected getSchemaVersion(): number {
-    try {
-      const result = this.db.prepare(`SELECT version FROM SCHEMA;`).get() as {
-        version: number;
-      };
-      return result.version;
-    } catch (ex) {
-      if (ex instanceof Error && ex.message === "no such table: SCHEMA") {
-        return -1;
-      } else {
-        log.error("Failed to get schema version", ex);
-      }
-    }
-    throw Error("Couldn't fetch schema version");
+    this.log.info("connection ended");
   }
 }
 

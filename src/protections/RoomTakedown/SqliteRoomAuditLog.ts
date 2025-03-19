@@ -12,6 +12,7 @@ import {
   ActionException,
   ActionExceptionKind,
   LiteralPolicyRule,
+  Logger,
   PolicyRuleType,
   RoomBasicDetails,
 } from "matrix-protection-suite";
@@ -22,6 +23,12 @@ import {
 } from "../../backingstore/better-sqlite3/BetterSqliteStore";
 import { Database } from "better-sqlite3";
 import path from "path";
+import {
+  checkKnownTables,
+  SqliteSchemaOptions,
+} from "../../backingstore/better-sqlite3/SqliteSchema";
+
+const log = new Logger("SqliteRoomAuditLog");
 
 // NOTE: This should only be used to check in bulk whether rooms are taken down
 //       upon getting a policy, you probably always want to try again or
@@ -32,23 +39,24 @@ import path from "path";
 //        This will be important when the rule targets users and servers and
 //        not just rooms.
 
-const schema = [
-  `CREATE TABLE policy_info (
-        policy_id TEXT PRIMARY KEY NOT NULL,
-        sender_user_id TEXT NOT NULL,
-        room_id TEXT NOT NULL,
-        state_key TEXT NOT NULL,
-        type TEXT NOT NULL,
-        recommendation TEXT NOT NULL
-    ) STRICT;`,
-  `CREATE TABLE room_takedown (
+const SchemaText = [
+  `
+  CREATE TABLE policy_info (
+    policy_id TEXT PRIMARY KEY NOT NULL,
+    sender_user_id TEXT NOT NULL,
+    room_id TEXT NOT NULL,
+    state_key TEXT NOT NULL,
+    type TEXT NOT NULL,
+    recommendation TEXT NOT NULL
+  ) STRICT;
+  CREATE TABLE room_takedown (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     policy_id TEXT NOT NULL,
     target_room_id TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
-  ) STRICT;`,
-  `CREATE TABLE room_detail_at_takedown (
+  ) STRICT;
+  CREATE TABLE room_detail_at_takedown (
     takedown_id INTEGER NOT NULL,
     room_id TEXT NOT NULL,
     creator TEXT,
@@ -59,6 +67,22 @@ const schema = [
     PRIMARY KEY (takedown_id, room_id)
   ) STRICT;`,
 ];
+
+const SchemaOptions = {
+  upgradeSteps: SchemaText.map(
+    (text) =>
+      function (db) {
+        db.exec(text);
+      }
+  ),
+  consistencyCheck(db) {
+    return checkKnownTables(db, [
+      "policy_info",
+      "room_takedown",
+      "room_detail_at_takedown",
+    ]);
+  },
+} satisfies SqliteSchemaOptions;
 
 export type RoomTakedown = {
   id: number;
@@ -73,17 +97,7 @@ export class SqliteRoomAuditLog
 {
   private readonly takedownRooms: Set<StringRoomID>;
   public constructor(options: BetterSqliteOptions, db: Database) {
-    super(
-      schema.map(
-        (text) =>
-          function (db) {
-            db.prepare(text).run();
-          }
-      ),
-      options,
-      db
-    );
-    this.ensureSchema();
+    super(SchemaOptions, db, log);
     this.takedownRooms = new Set(this.loadTakendownRooms());
   }
 
@@ -94,7 +108,7 @@ export class SqliteRoomAuditLog
       foreignKeys: true,
       fileMustExist: false,
     };
-    return new SqliteRoomAuditLog(options, makeBetterSqliteDB(options));
+    return new SqliteRoomAuditLog(options, makeBetterSqliteDB(options, log));
   }
 
   public async takedownRoom(

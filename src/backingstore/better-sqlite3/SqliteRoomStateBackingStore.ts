@@ -25,23 +25,47 @@ import { jsonReviver } from "../../utils";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import path from "path";
 import { Database } from "better-sqlite3";
+import { checkKnownTables, SqliteSchemaOptions } from "./SqliteSchema";
 
 const log = new Logger("SqliteRoomStateBackingStore");
 
-const schema = [
-  `CREATE TABLE room_info (
-        room_id TEXT PRIMARY KEY NOT NULL,
-        last_complete_writeback INTEGER NOT NULL
-    ) STRICT;`,
-  `CREATE TABLE room_state_event (
-        room_id TEXT NOT NULL,
-        event_type TEXT NOT NULL,
-        state_key TEXT NOT NULL,
-        event BLOB NOT NULL,
-        PRIMARY KEY (room_id, event_type, state_key),
-        FOREIGN KEY (room_id) REFERENCES room_info(room_id)
-    ) STRICT;`,
+const SchemaText = [
+  `
+  CREATE TABLE room_info (
+    room_id TEXT PRIMARY KEY NOT NULL,
+    last_complete_writeback INTEGER NOT NULL
+  ) STRICT, WITHOUT ROWID;
+  CREATE TABLE room_state_event (
+    room_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    state_key TEXT NOT NULL,
+    event BLOB NOT NULL,
+    PRIMARY KEY (room_id, event_type, state_key),
+    FOREIGN KEY (room_id) REFERENCES room_info(room_id)
+  ) STRICT;
+  `,
 ];
+
+const SchemaOptions = {
+  upgradeSteps: SchemaText.map(
+    (text) =>
+      function (db) {
+        db.exec(text);
+      }
+  ),
+  legacyUpgrade(db) {
+    // An older version of this store used a different schema management system
+    // fortunatley the data is just a psersistent cache so we don't need to worry about removing it.
+    db.exec(`
+      DELETE TABLE room_state_event;
+      DELETE TABLE room_info;
+      DELETE TABLE schema;
+    `);
+  },
+  consistencyCheck(db) {
+    return checkKnownTables(db, ["room_info", "room_state_event"]);
+  },
+} satisfies SqliteSchemaOptions;
 
 type RoomStateEventReplaceValue = [StringRoomID, string, string, string];
 
@@ -58,17 +82,7 @@ export class SqliteRoomStateBackingStore
     db: Database,
     private readonly eventDecoder: EventDecoder
   ) {
-    super(
-      schema.map(
-        (text) =>
-          function (db) {
-            db.prepare(text).run();
-          }
-      ),
-      options,
-      db
-    );
-    this.ensureSchema();
+    super(SchemaOptions, db, log);
   }
 
   public static create(
@@ -83,7 +97,7 @@ export class SqliteRoomStateBackingStore
     };
     return new SqliteRoomStateBackingStore(
       options,
-      makeBetterSqliteDB(options),
+      makeBetterSqliteDB(options, log),
       eventDecoder
     );
   }
