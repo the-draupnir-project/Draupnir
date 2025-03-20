@@ -35,16 +35,13 @@ const log = new Logger("SqliteRoomAuditLog");
 //       check with the server rather than check the audit log.
 //       Incase rooms were unbanned.
 
-// FIXME: The entity should really be included in the policy info mare...
-//        This will be important when the rule targets users and servers and
-//        not just rooms.
-
 const SchemaText = [
   `
   CREATE TABLE policy_info (
     policy_id TEXT PRIMARY KEY NOT NULL,
     sender_user_id TEXT NOT NULL,
-    room_id TEXT NOT NULL,
+    entity TEXT NOT NULL,
+    policy_room_id TEXT NOT NULL,
     state_key TEXT NOT NULL,
     type TEXT NOT NULL,
     recommendation TEXT NOT NULL
@@ -122,8 +119,8 @@ export class SqliteRoomAuditLog
     }
     try {
       const policyInfoStatement = this.db.prepare(
-        `REPLACE INTO policy_info (policy_id, sender_user_id, room_id, state_key, type, recommendation)
-        VALUES (?, ?, ?, ?, ?, ?)`
+        `REPLACE INTO policy_info (policy_id, sender_user_id, policy_room_id, entity, state_key, type, recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`
       );
       const takedownStatement = this.db
         .prepare(
@@ -138,6 +135,7 @@ export class SqliteRoomAuditLog
           policy.sourceEvent.event_id,
           policy.sourceEvent.sender,
           policy.sourceEvent.room_id,
+          policy.entity,
           policy.sourceEvent.state_key,
           policy.sourceEvent.type,
           policy.recommendation,
