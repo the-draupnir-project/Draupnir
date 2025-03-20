@@ -120,7 +120,9 @@ describe("Ban propagation test", function () {
         draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       const rules = policyListRevisionAfterBan.allRulesMatchingEntity(
         spamUserID,
-        PolicyRuleType.User
+        {
+          type: PolicyRuleType.User,
+        }
       );
       expect(rules.length).toBe(1);
       expect((rules[0] as LiteralPolicyRule).entity).toBe(spamUserID);
@@ -154,10 +156,9 @@ describe("Ban propagation test", function () {
         draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
 
       const rulesAfterUnban =
-        policyListRevisionAfterUnBan.allRulesMatchingEntity(
-          spamUserID,
-          PolicyRuleType.User
-        );
+        policyListRevisionAfterUnBan.allRulesMatchingEntity(spamUserID, {
+          type: PolicyRuleType.User,
+        });
       expect(rulesAfterUnban.length).toBe(0);
       for (const room of protectedRooms) {
         const membershipRevision =

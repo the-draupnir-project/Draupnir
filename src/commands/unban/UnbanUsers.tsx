@@ -28,6 +28,7 @@ import {
   Ok,
   PolicyRuleType,
   PolicyRuleMatchType,
+  PolicyListRevision,
 } from "matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQueue";
 import { ListMatches } from "../Rules";
@@ -91,6 +92,42 @@ export function matchMembers(
   return [...map.values()];
 }
 
+export function revisionRulesMatchingEntity(
+  entity: string,
+  ruleType: PolicyRuleType,
+  recommendations: Recommendation[],
+  revision: PolicyListRevision
+): PolicyRule[] {
+  return recommendations.flatMap((recommendation) =>
+    revision.allRulesMatchingEntity(entity, {
+      type: ruleType,
+      recommendation,
+      searchHashedRules: true,
+    })
+  );
+}
+
+export function revisionRulesMatchingUser(
+  userID: StringUserID,
+  recommendations: Recommendation[],
+  revision: PolicyListRevision
+): PolicyRule[] {
+  return [
+    ...revisionRulesMatchingEntity(
+      userID,
+      PolicyRuleType.User,
+      recommendations,
+      revision
+    ),
+    ...revisionRulesMatchingEntity(
+      userServerName(userID),
+      PolicyRuleType.Server,
+      recommendations,
+      revision
+    ),
+  ];
+}
+
 export function findBanPoliciesMatchingUsers(
   watchedPolicyRooms: WatchedPolicyRooms,
   users: StringUserID[]
@@ -105,18 +142,11 @@ export function findBanPoliciesMatchingUsers(
     }
   };
   for (const user of users) {
-    const memberPolicies = [
-      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
-        user,
-        PolicyRuleType.User,
-        Recommendation.Ban
-      ),
-      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
-        userServerName(user),
-        PolicyRuleType.Server,
-        Recommendation.Ban
-      ),
-    ];
+    const memberPolicies = revisionRulesMatchingUser(
+      user,
+      [Recommendation.Ban, Recommendation.Takedown],
+      watchedPolicyRooms.currentRevision
+    );
     for (const policy of memberPolicies) {
       addPolicy(policy);
     }
@@ -258,18 +288,11 @@ export function findUnbanInformationForMember(
     { inviteMembers }
   );
   const isMemberStillBannedAfterPolicyRemoval = (member: MemberRooms) => {
-    const policiesMatchingMember = [
-      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
-        member.member,
-        PolicyRuleType.User,
-        Recommendation.Ban
-      ),
-      ...watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
-        userServerName(member.member),
-        PolicyRuleType.Server,
-        Recommendation.Ban
-      ),
-    ];
+    const policiesMatchingMember = revisionRulesMatchingUser(
+      member.member,
+      [Recommendation.Takedown, Recommendation.Ban],
+      watchedPolicyRooms.currentRevision
+    );
     return (
       policiesMatchingMember.filter(
         (policy) =>

@@ -129,11 +129,17 @@ export class RedactionSynchronisationProtection
       ) {
         const policyRevision =
           this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-        const matchingPolicy = policyRevision.findRuleMatchingEntity(
-          change.userID,
-          PolicyRuleType.User,
-          Recommendation.Ban
-        );
+        const matchingPolicy =
+          policyRevision.findRuleMatchingEntity(change.userID, {
+            type: PolicyRuleType.User,
+            recommendation: Recommendation.Ban,
+            searchHashedRules: false,
+          }) ??
+          policyRevision.findRuleMatchingEntity(change.userID, {
+            type: PolicyRuleType.User,
+            recommendation: Recommendation.Takedown,
+            searchHashedRules: false,
+          });
         return (
           matchingPolicy !== undefined &&
           this.automaticRedactionReasons.some((reason) =>

@@ -158,7 +158,10 @@ export const DraupnirRulesMatchingCommand = describeCommand({
         return {
           room: profile.revision.room,
           roomID: profile.revision.room.toRoomIDOrAlias(),
-          matches: profile.revision.allRulesMatchingEntity(entity.toString()),
+          matches: profile.revision.allRulesMatchingEntity(
+            entity.toString(),
+            {}
+          ),
           profile: profile,
         };
       })
