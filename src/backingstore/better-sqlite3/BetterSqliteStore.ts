@@ -24,7 +24,9 @@ export function makeBetterSqliteDB(
 ): Database {
   log.info("Opening db: ", options.path);
   const db = new BetterSqlite3(options.path, options);
-  if (options.path !== ":memory:") {
+  if (options.path === ":memory:") {
+    db.pragma("temp_store = memory");
+  } else {
     db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
   }
   if (options.WALMode) {
