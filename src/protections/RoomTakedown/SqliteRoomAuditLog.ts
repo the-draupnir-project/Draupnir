@@ -173,27 +173,22 @@ export class SqliteRoomAuditLog
     roomID: StringRoomID
   ): Promise<Result<RoomTakedownDetails | undefined>> {
     try {
-      const query = this.db.prepare(`
-        SELECT
-        room_takedown.policy_id,
-        room_takedown.created_at,
-        room_detail_at_takedown.room_id,
-        room_detail_at_takedown.creator,
-        room_detail_at_takedown.name,
-        room_detail_at_takedown.topic,
-        room_detail_at_takedown.joined_members
-        FROM room_takedown
-        JOIN room_detail_at_takedown ON room_takedown.id = room_detail_at_takedown.takedown_id
-        WHERE room_takedown.target_room_id = ?
-        ORDER BY room_takedown.created_at DESC
-        LIMIT 1
-      `);
       type RowType = {
         policy_id: StringEventID;
         created_at: number;
         room_id: StringEventID;
       } & RoomTakedownDetails;
-      const row = query.get(roomID) as RowType | undefined;
+      const row = this.db
+        .prepare(
+          `
+          SELECT room_takedown.policy_id, room_takedown.created_at, room_detail_at_takedown.*
+          FROM room_takedown
+          JOIN room_detail_at_takedown ON room_takedown.id = room_detail_at_takedown.takedown_id
+          WHERE room_takedown.target_room_id = ?
+          ORDER BY room_takedown.created_at DESC
+          LIMIT 1`
+        )
+        .get(roomID) as RowType | undefined;
       if (row === undefined) {
         return Ok(undefined);
       }
