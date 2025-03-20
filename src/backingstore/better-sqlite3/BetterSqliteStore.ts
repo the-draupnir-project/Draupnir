@@ -1,4 +1,4 @@
-// Copyright 2024 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2024 - 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -35,16 +35,14 @@ export function makeBetterSqliteDB(
   if (options.foreignKeys) {
     db.pragma("foreign_keys = ON");
   }
-  let hasEnded = false;
   process.once("beforeExit", () => {
     // Ensure we clean up on exit
     try {
       log.info("Destroy called on db", options.path);
-      if (hasEnded) {
+      if (db.open) {
         // No-op if end has already been called.
         return;
       }
-      hasEnded = true;
       db.close();
       log.info("connection ended on db", options.path);
     } catch (ex) {
@@ -58,8 +56,7 @@ export type SchemaUpdateFunction = (db: Database) => void;
 
 /**
  * BetterSqliteStore datastore abstraction which can be inherited by a specialised bridge class.
- * Please note, that the client library provides synchronous access to sqlite, due to the nature of
- * node.js FFI to C I imagine.
+ * Please note, that the client library provides synchronous access to sqlite.
  *
  * @example
  * class MyBridgeStore extends BetterSqliteStore {
@@ -78,8 +75,6 @@ export type SchemaUpdateFunction = (db: Database) => void;
  * const data = await store.getData();
  */
 export class BetterSqliteStore {
-  private hasEnded = false;
-
   /**
    * Construct a new store.
    * @param schemas The set of schema functions to apply to a database. The ordering of this array determines the
@@ -95,16 +90,14 @@ export class BetterSqliteStore {
   }
 
   /**
-   * Clean away any resources used by the database. This is automatically
-   * called before the process exits.
+   * Clean away any resources used by the database
    */
   public destroy(): void {
     this.log.info("Destroy called");
-    if (this.hasEnded) {
+    if (this.db.open) {
       // No-op if end has already been called.
       return;
     }
-    this.hasEnded = true;
     this.db.close();
     this.log.info("connection ended");
   }
