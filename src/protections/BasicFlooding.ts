@@ -68,7 +68,7 @@ describeProtection<
   name: "BasicFloodingProtection",
   description: `If a user posts more than ${DEFAULT_MAX_PER_MINUTE} messages in 60s they'll be
     banned for spam. This does not publish the ban to any of your ban lists.
-    This is a legacy protection from Draupnir and contains bugs.`,
+    This is a legacy protection from Mjolnir and contains bugs.`,
   capabilityInterfaces: {
     userConsequences: "UserConsequences",
     eventConsequences: "EventConsequences",
