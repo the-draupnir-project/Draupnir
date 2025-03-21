@@ -2,18 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  EventDecoder,
-  SHA256RoomHashStore,
-  StandardSHA256RoomHashStore,
-} from "matrix-protection-suite";
+import { EventDecoder, SHA256HashStore } from "matrix-protection-suite";
 import { RoomAuditLog } from "../protections/RoomTakedown/RoomAuditLog";
 import { SqliteRoomStateBackingStore } from "./better-sqlite3/SqliteRoomStateBackingStore";
 import { SqliteHashReversalStore } from "./better-sqlite3/HashStore";
 import { SqliteRoomAuditLog } from "../protections/RoomTakedown/SqliteRoomAuditLog";
 
 export type TopLevelStores = {
-  hashStore?: Omit<SHA256RoomHashStore, "on" | "off"> | undefined;
+  hashStore?: SHA256HashStore;
   roomAuditLog?: RoomAuditLog | undefined;
   roomStateBackingStore?: SqliteRoomStateBackingStore | undefined;
 };
@@ -29,7 +25,7 @@ export type TopLevelStores = {
  * have been attenuated... but i don't know about it.
  */
 export type DraupnirStores = {
-  hashStore?: SHA256RoomHashStore | undefined;
+  hashStore?: SHA256HashStore | undefined;
   roomAuditLog?: RoomAuditLog | undefined;
   /**
    * Dispose of stores relevant to a specific draupnir instance.
@@ -43,9 +39,7 @@ export function createDraupnirStores(
 ): DraupnirStores {
   return Object.freeze({
     roomAuditLog: topLevelStores.roomAuditLog,
-    hashStore: topLevelStores.hashStore
-      ? new StandardSHA256RoomHashStore(topLevelStores.hashStore)
-      : undefined,
+    hashStore: topLevelStores.hashStore,
     dispose() {},
   } satisfies DraupnirStores);
 }

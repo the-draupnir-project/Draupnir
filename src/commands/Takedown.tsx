@@ -22,7 +22,7 @@ import {
   PolicyRoomManager,
   PolicyRuleType,
   RoomResolver,
-  SHA256RoomHashStore,
+  SHA256HashStore,
   Task,
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
@@ -50,7 +50,7 @@ const log = new Logger("DraupnirTakedownCommand");
  */
 function handleRoomDiscovery(
   roomID: StringRoomID,
-  store: SHA256RoomHashStore | undefined,
+  store: SHA256HashStore | undefined,
   detailsProvider: RoomDetailsProvider | undefined
 ): void {
   if (store === undefined) {
@@ -268,7 +268,7 @@ export type DraupnirTakedownCommandContext = {
   defaultReasons: string[];
   roomResolver: RoomResolver;
   clientUserID: StringUserID;
-  hashStore: SHA256RoomHashStore | undefined;
+  hashStore: SHA256HashStore | undefined;
   detailsProvider: RoomDetailsProvider | undefined;
 };
 

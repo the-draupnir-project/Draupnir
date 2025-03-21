@@ -17,12 +17,22 @@ import {
 } from "matrix-protection-suite";
 import { SHA256, enc } from "crypto-js";
 import expect from "expect";
+import {
+  StringRoomID,
+  StringServerName,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { createHash } from "crypto";
 
 function makeStore(): SqliteHashReversalStore {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
   const db = new Database(options.path);
   db.pragma("FOREIGN_KEYS = ON");
-  return new SqliteHashReversalStore(options, db);
+  return new SqliteHashReversalStore(db);
+}
+
+function base64sha256(entity: string): string {
+  return createHash("sha256").update(entity, "utf8").digest("base64");
 }
 
 describe("meow", function () {
@@ -54,7 +64,7 @@ describe("meow", function () {
     ).expect("Should bea ble to parse the policy rule.");
     expect(ban.matchType).toBe(PolicyRuleMatchType.HashedLiteral);
     const reverserResult = (
-      await store.reverseHashedRoomPolicies([ban as HashedLiteralPolicyRule])
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
     ).expect("Should be able to reverse policies that are unknown");
     expect(reverserResult.length).toBe(0);
     // now try storing the room and testing that the policy is there
@@ -66,12 +76,152 @@ describe("meow", function () {
     );
     expect(foundHash).toBe(bannedRoom.toRoomIDOrAlias());
     const reversedPolicies = (
-      await store.reverseHashedRoomPolicies([ban as HashedLiteralPolicyRule])
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
     ).expect("Should be able to reverse meow");
     const reversedBan = reversedPolicies.at(0);
     if (reversedBan === undefined) {
       throw new TypeError("Reversed ban isn't here mare");
     }
     expect(reversedBan.entity).toBe(bannedRoom.toRoomIDOrAlias());
+  });
+  it("Can discover servers from stored rooms", async function () {
+    const store = makeStore();
+    const bannedServer = StringServerName("banned.example.com");
+    const roomBannedViaServer = StringRoomID("!banned:banned.example.com");
+    const policyRoom = randomRoomID([]);
+    const bannedServerHash = base64sha256(bannedServer);
+    const findResult = (await store.findServerHash(bannedServerHash)).expect(
+      "Should be able to at least query this"
+    );
+    expect(findResult).toBe(undefined);
+    // now for finding reversed hashed room policies:
+    const ban = parsePolicyRule(
+      describeStateEvent({
+        room_id: policyRoom.toRoomIDOrAlias(),
+        content: {
+          recommendation: Recommendation.Takedown,
+          hashes: {
+            sha256: bannedServerHash,
+          },
+        },
+        sender: randomUserID(),
+        state_key: bannedServerHash,
+        type: PolicyRuleType.Server,
+      }) as never
+    ).expect("Should bea ble to parse the policy rule.");
+    expect(ban.matchType).toBe(PolicyRuleMatchType.HashedLiteral);
+    const reverserResult = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse policies that are unknown");
+    expect(reverserResult.length).toBe(0);
+    // now try storing the room and testing that the policy is there
+    (await store.storeUndiscoveredRooms([roomBannedViaServer])).expect(
+      "Should be able to discover rooms jsut fine"
+    );
+    const foundHash = (await store.findServerHash(bannedServerHash)).expect(
+      "Should be able to now find the server hash from the room we discovered"
+    );
+    expect(foundHash).toBe(bannedServer);
+    const reversedPolicies = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse meow");
+    const reversedBan = reversedPolicies.at(0);
+    if (reversedBan === undefined) {
+      throw new TypeError("Reversed ban isn't here mare");
+    }
+    expect(reversedBan.entity).toBe(bannedServer);
+  });
+  it("Can reverse user policies", async function () {
+    const store = makeStore();
+    const bannedUser = StringUserID("@banned:banned.example.com");
+    const policyRoom = randomRoomID([]);
+    const bannedUserHash = base64sha256(bannedUser);
+    const findResult = (await store.findUserHash(bannedUserHash)).expect(
+      "Should be able to at least query this"
+    );
+    expect(findResult).toBe(undefined);
+    // now for finding reversed hashed room policies:
+    const ban = parsePolicyRule(
+      describeStateEvent({
+        room_id: policyRoom.toRoomIDOrAlias(),
+        content: {
+          recommendation: Recommendation.Takedown,
+          hashes: {
+            sha256: bannedUserHash,
+          },
+        },
+        sender: randomUserID(),
+        state_key: bannedUserHash,
+        type: PolicyRuleType.User,
+      }) as never
+    ).expect("Should bea ble to parse the policy rule.");
+    expect(ban.matchType).toBe(PolicyRuleMatchType.HashedLiteral);
+    const reverserResult = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse policies that are unknown");
+    expect(reverserResult.length).toBe(0);
+    // now try storing the room and testing that the policy is there
+    (await store.storeUndiscoveredUsers([bannedUser])).expect(
+      "Should be able to discover banned users just fine"
+    );
+    const foundHash = (await store.findUserHash(bannedUserHash)).expect(
+      "Should be able to now find the server hash from the room we discovered"
+    );
+    expect(foundHash).toBe(bannedUser);
+    const reversedPolicies = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse meow");
+    const reversedBan = reversedPolicies.at(0);
+    if (reversedBan === undefined) {
+      throw new TypeError("Reversed ban isn't here mare");
+    }
+    expect(reversedBan.entity).toBe(bannedUser);
+  });
+  it("Can discover servers from stored users", async function () {
+    const store = makeStore();
+    const bannedServer = StringServerName("banned.example.com");
+    const bannedUser = StringUserID("@banned:banned.example.com");
+    const policyRoom = randomRoomID([]);
+    const bannedServerHash = base64sha256(bannedServer);
+    const findResult = (await store.findServerHash(bannedServerHash)).expect(
+      "Should be able to at least query this"
+    );
+    expect(findResult).toBe(undefined);
+    // now for finding reversed hashed room policies:
+    const ban = parsePolicyRule(
+      describeStateEvent({
+        room_id: policyRoom.toRoomIDOrAlias(),
+        content: {
+          recommendation: Recommendation.Takedown,
+          hashes: {
+            sha256: bannedServerHash,
+          },
+        },
+        sender: randomUserID(),
+        state_key: bannedServerHash,
+        type: PolicyRuleType.Server,
+      }) as never
+    ).expect("Should bea ble to parse the policy rule.");
+    expect(ban.matchType).toBe(PolicyRuleMatchType.HashedLiteral);
+    const reverserResult = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse policies that are unknown");
+    expect(reverserResult.length).toBe(0);
+    // now try storing the room and testing that the policy is there
+    (await store.storeUndiscoveredUsers([bannedUser])).expect(
+      "Should be able to discover banned users just fine"
+    );
+    const foundHash = (await store.findServerHash(bannedServerHash)).expect(
+      "Should be able to now find the server hash from the room we discovered"
+    );
+    expect(foundHash).toBe(bannedServer);
+    const reversedPolicies = (
+      await store.reverseHashedPolicies([ban as HashedLiteralPolicyRule])
+    ).expect("Should be able to reverse meow");
+    const reversedBan = reversedPolicies.at(0);
+    if (reversedBan === undefined) {
+      throw new TypeError("Reversed ban isn't here mare");
+    }
+    expect(reversedBan.entity).toBe(bannedServer);
   });
 });
