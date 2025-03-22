@@ -142,6 +142,11 @@ export const DraupnirTakedownCommand = describeCommand({
         description:
           "Runs the command without the preview of the unban and the confirmation prompt.",
       },
+      "plain-text": {
+        isFlag: true,
+        description:
+          "Creates a plain-text version of the policy rather than masking the entity with SHA256. There are not many reason to do this other than compatibility with other tools.",
+      },
     },
   },
   async executor(
@@ -220,10 +225,11 @@ export const DraupnirTakedownCommand = describeCommand({
         detailsProvider
       );
     }
+    const plainText = keywords.getKeywordValue<boolean>("plain-text", false);
     return await policyRoomEditor.takedownEntity(
       preview.ok.ruleType,
       preview.ok.entity,
-      {}
+      { shouldHash: !plainText }
     );
   },
 });
