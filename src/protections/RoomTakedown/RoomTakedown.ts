@@ -93,8 +93,8 @@ export class StandardRoomTakedown implements RoomTakedownService {
     const roomsToTakedown: LiteralPolicyRule[] = [];
     for (const change of changes) {
       if (
-        change.changeType === PolicyRuleChangeType.RevealedLiteral &&
         change.rule.kind === PolicyRuleType.Room &&
+        change.changeType !== PolicyRuleChangeType.Removed &&
         change.rule.matchType === PolicyRuleMatchType.Literal &&
         change.rule.recommendation === Recommendation.Takedown
       ) {

@@ -78,6 +78,7 @@ export class SynapseAdminRoomTakedownCapability
     } else {
       details = detailsResponse.ok;
     }
+    log.debug("Taking down room", roomID);
     const takedownResult = await this.adminClient.deleteRoom(roomID, {
       block: true,
       purge: true,
