@@ -55,27 +55,24 @@ export class SynapseHttpAntispam {
   private readonly checkEventForSpamEndpoint = new CheckEventForSpamEndpoint(
     this.checkEventForSpamHandles
   );
-  public constructor(
-    private readonly webController: Express,
-    private readonly secret: string
-  ) {
+  public constructor(private readonly secret: string) {
     // nothing to do
   }
 
-  public register(): void {
-    this.webController.post(
+  public register(webController: Express): void {
+    webController.post(
       `${SPAM_CHECK_PREFIX}/user_may_invite`,
       makeAuthenticatedEndpointHandler(this.secret, (request, response) => {
         this.userMayInviteEndpoint.handleUserMayInvite(request, response);
       })
     );
-    this.webController.post(
+    webController.post(
       `${SPAM_CHECK_PREFIX}/user_may_join_room`,
       makeAuthenticatedEndpointHandler(this.secret, (request, response) => {
         this.userMayJoinRoomEndpoint.handleUserMayJoinRoom(request, response);
       })
     );
-    this.webController.post(
+    webController.post(
       `${SPAM_CHECK_PREFIX}/check_event_for_spam`,
       makeAuthenticatedEndpointHandler(this.secret, (request, response) => {
         this.checkEventForSpamEndpoint.handleCheckEventForSpam(

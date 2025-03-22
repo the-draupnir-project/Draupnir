@@ -29,11 +29,11 @@ import { SafeModeDraupnir } from "../safemode/DraupnirSafeMode";
 import { SafeModeCause } from "../safemode/SafeModeCause";
 import { SafeModeToggle } from "../safemode/SafeModeToggle";
 import { StandardManagementRoomDetail } from "../managementroom/ManagementRoomDetail";
-import { DraupnirBotModeToggle } from "../DraupnirBotMode";
 import {
   createDraupnirStores,
   TopLevelStores,
 } from "../backingstore/DraupnirStores";
+import { SynapseHttpAntispam } from "../webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 
 const log = new Logger("DraupnirFactory");
 
@@ -133,6 +133,11 @@ export class DraupnirFactory {
       managementRoomMembership.ok,
       managementRoomState.ok
     );
+    // synapesHTTPAntispam is made here so that the listeners get destroyed
+    // when draupnir is destroyed.
+    const synapseHTTPAntispam = config.web.synapseHTTPAntispam.enabled
+      ? new SynapseHttpAntispam(config.web.synapseHTTPAntispam.authorization)
+      : undefined;
     const clientProfile = await safelyFetchProfile(client, clientUserID);
     return await Draupnir.makeDraupnirBot(
       client,
@@ -150,9 +155,7 @@ export class DraupnirFactory {
       toggle,
       createDraupnirStores(this.stores),
       // synapseHTTPAntispam is only available in bot mode.
-      toggle instanceof DraupnirBotModeToggle
-        ? toggle.synapseHTTPAntispam
-        : undefined
+      synapseHTTPAntispam
     );
   }
 

@@ -47,13 +47,16 @@ import { SafeModeDraupnir } from "./safemode/DraupnirSafeMode";
 import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { TopLevelStores } from "./backingstore/DraupnirStores";
 
 const log = new Logger("DraupnirBotMode");
 
 export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
-  return new WebAPIs(draupnir.reportManager, draupnir.config);
+  return new WebAPIs(
+    draupnir.reportManager,
+    draupnir.config,
+    draupnir.synapseHTTPAntispam
+  );
 }
 
 /**
@@ -74,19 +77,12 @@ interface BotModeTogle extends SafeModeToggle {
     error: ResultError,
     options?: SafeModeToggleOptions
   ): Promise<Result<SafeModeDraupnir>>;
-  // The SynapseHTTPAntispam listeners, if available.
-  // Which they won't be for some bot mode and all application service users.
-  readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined;
 }
 
 export class DraupnirBotModeToggle implements BotModeTogle {
   private draupnir: Draupnir | null = null;
   private safeModeDraupnir: SafeModeDraupnir | null = null;
   private webAPIs: WebAPIs | null = null;
-
-  public get synapseHTTPAntispam() {
-    return this.webAPIs?.synapseHTTPAntispam ?? undefined;
-  }
 
   private constructor(
     private readonly clientUserID: StringUserID,
