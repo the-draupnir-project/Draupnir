@@ -9,10 +9,11 @@
 // </text>
 
 import {
+  DefaultEventDecoder,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
 } from "matrix-protection-suite";
-import { configRead } from "../../src/config";
+import { configRead, getStoragePath } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
 import {
   DraupnirTestContext,
@@ -21,6 +22,7 @@ import {
   makeBotModeToggle,
   teardownManagementRoom,
 } from "./mjolnirSetupUtils";
+import { makeTopLevelStores } from "../../src/backingstore/DraupnirStores";
 
 patchMatrixClient();
 
@@ -41,9 +43,14 @@ export const mochaHooks = {
       this.timeout(30000);
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
+      const storagePath = getStoragePath(config.dataPath);
       this.toggle = await makeBotModeToggle(config, {
         eraseAccountData: true,
-        stores: {},
+        stores: makeTopLevelStores(storagePath, DefaultEventDecoder, {
+          isRoomStateBackingStoreEnabled: Boolean(
+            config.roomStateBackingStore.enabled
+          ),
+        }),
       });
       this.draupnir = draupnir();
       const draupnirMatrixClient = draupnirClient();
