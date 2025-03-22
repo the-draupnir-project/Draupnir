@@ -36,10 +36,13 @@ export function findPoliciesToRemove(
       room: profile.room,
       roomID: profile.room.toRoomIDOrAlias(),
       profile,
-      matches: profile.revision.allRulesMatchingEntity(
-        entity.toString(),
-        entityType,
-        Recommendation.Ban
+      matches: [Recommendation.Ban, Recommendation.Takedown].flatMap(
+        (recommendation) =>
+          profile.revision.allRulesMatchingEntity(entity.toString(), {
+            type: entityType,
+            searchHashedRules: true,
+            recommendation,
+          })
       ),
     });
   }

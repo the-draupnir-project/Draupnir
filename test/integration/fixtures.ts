@@ -41,7 +41,10 @@ export const mochaHooks = {
       this.timeout(30000);
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
-      this.toggle = await makeBotModeToggle(config, { eraseAccountData: true });
+      this.toggle = await makeBotModeToggle(config, {
+        eraseAccountData: true,
+        stores: {},
+      });
       this.draupnir = draupnir();
       const draupnirMatrixClient = draupnirClient();
       if (draupnirMatrixClient === null) {

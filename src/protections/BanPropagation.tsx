@@ -50,7 +50,10 @@ import {
   UnbanMembersPreview,
   renderUnbanMembersPreview,
 } from "../commands/unban/Unban";
-import { findUnbanInformationForMember } from "../commands/unban/UnbanUsers";
+import {
+  findUnbanInformationForMember,
+  revisionRulesMatchingUser,
+} from "../commands/unban/UnbanUsers";
 
 const log = new Logger("BanPropagationProtection");
 
@@ -254,10 +257,10 @@ export class BanPropagationProtection
   private handleBan(change: MembershipChange): void {
     const policyRevision =
       this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-    const rulesMatchingUser = policyRevision.allRulesMatchingEntity(
+    const rulesMatchingUser = revisionRulesMatchingUser(
       change.userID,
-      PolicyRuleType.User,
-      Recommendation.Ban
+      [Recommendation.Ban, Recommendation.Takedown],
+      policyRevision
     );
     if (rulesMatchingUser.length > 0) {
       return; // user is already banned.

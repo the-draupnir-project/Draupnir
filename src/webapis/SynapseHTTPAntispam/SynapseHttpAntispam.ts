@@ -45,10 +45,10 @@ export class SynapseHttpAntispam {
   private readonly userMayInviteEndpoint = new UserMayInviteEndpoint(
     this.userMayInviteHandles
   );
-  public readonly userMayJoinRoomhandles =
+  public readonly userMayJoinRoomHandles =
     new SpamCheckEndpointPluginManager<UserMayJoinRoomListenerArguments>();
   private readonly userMayJoinRoomEndpoint = new UserMayJoinRoomEndpoint(
-    this.userMayJoinRoomhandles
+    this.userMayJoinRoomHandles
   );
   public readonly checkEventForSpamHandles =
     new SpamCheckEndpointPluginManager<CheckEventForSpamListenerArguments>();

@@ -17,6 +17,7 @@ import {
   PolicyListRevision,
   PolicyRule,
   PolicyRuleChange,
+  PolicyRuleMatchType,
   PolicyRuleType,
   PowerLevelPermission,
   ProtectedRoomsSet,
@@ -59,7 +60,10 @@ export class RedactionSynchronisationProtection
   }
   public redactForNewUserPolicy(policy: PolicyRule): void {
     const rooms: StringRoomID[] = [];
-    if (policy.isGlob()) {
+    if (policy.matchType === PolicyRuleMatchType.HashedLiteral) {
+      return; // wait for them to be reversed and placed into the model as clear text.
+    }
+    if (policy.matchType === PolicyRuleMatchType.Glob) {
       this.protectedRoomsSet.allProtectedRooms.forEach((room) =>
         rooms.push(room.toRoomIDOrAlias())
       );
@@ -92,7 +96,7 @@ export class RedactionSynchronisationProtection
         change.changeType === SimpleChangeType.Added &&
         change.rule.kind === PolicyRuleType.User &&
         this.automaticRedactionReasons.some((reason) =>
-          reason.test(change.rule.reason)
+          reason.test(change.rule.reason ?? "<no reason supplied>")
         )
     );
     // Can't see this fucking up at all when watching a new list :skull:.
@@ -125,15 +129,21 @@ export class RedactionSynchronisationProtection
       ) {
         const policyRevision =
           this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-        const matchingPolicy = policyRevision.findRuleMatchingEntity(
-          change.userID,
-          PolicyRuleType.User,
-          Recommendation.Ban
-        );
+        const matchingPolicy =
+          policyRevision.findRuleMatchingEntity(change.userID, {
+            type: PolicyRuleType.User,
+            recommendation: Recommendation.Ban,
+            searchHashedRules: false,
+          }) ??
+          policyRevision.findRuleMatchingEntity(change.userID, {
+            type: PolicyRuleType.User,
+            recommendation: Recommendation.Takedown,
+            searchHashedRules: false,
+          });
         return (
           matchingPolicy !== undefined &&
           this.automaticRedactionReasons.some((reason) =>
-            reason.test(matchingPolicy.reason)
+            reason.test(matchingPolicy.reason ?? "<no reason supplied>")
           )
         );
       } else {

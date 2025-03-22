@@ -45,6 +45,7 @@ import {
   userLocalpart,
   isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { TopLevelStores } from "../backingstore/DraupnirStores";
 
 const log = new Logger("AppServiceDraupnirManager");
 
@@ -63,6 +64,7 @@ export class AppServiceDraupnirManager {
     private readonly bridge: Bridge,
     private readonly accessControl: AccessControl,
     private readonly roomStateManagerFactory: RoomStateManagerFactory,
+    stores: TopLevelStores,
     private readonly clientCapabilityFactory: ClientCapabilityFactory,
     clientProvider: ClientForUserID,
     private readonly instanceCountGauge: Gauge<"status" | "uuid">
@@ -71,7 +73,8 @@ export class AppServiceDraupnirManager {
       this.roomStateManagerFactory.clientsInRoomMap,
       this.clientCapabilityFactory,
       clientProvider,
-      this.roomStateManagerFactory
+      this.roomStateManagerFactory,
+      stores
     );
     this.baseManager = new StandardDraupnirManager(draupnirFactory);
   }
@@ -93,6 +96,7 @@ export class AppServiceDraupnirManager {
     bridge: Bridge,
     accessControl: AccessControl,
     roomStateManagerFactory: RoomStateManagerFactory,
+    stores: TopLevelStores,
     clientCapabilityFactory: ClientCapabilityFactory,
     clientProvider: ClientForUserID,
     instanceCountGauge: Gauge<"status" | "uuid">
@@ -103,6 +107,7 @@ export class AppServiceDraupnirManager {
       bridge,
       accessControl,
       roomStateManagerFactory,
+      stores,
       clientCapabilityFactory,
       clientProvider,
       instanceCountGauge

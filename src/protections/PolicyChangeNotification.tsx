@@ -17,6 +17,7 @@ import {
   PolicyRoomManager,
   PolicyRoomRevisionIssuer,
   PolicyRuleChange,
+  PolicyRuleMatchType,
   ProtectedRoomsSet,
   ProtectionDescription,
   UnknownConfig,
@@ -38,6 +39,7 @@ import {
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
 import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { renderRuleHashes, renderRuleClearText } from "../commands/Rules";
 
 const log = new Logger("PolicyChangeNotification");
 
@@ -134,7 +136,9 @@ function renderListChange(change: PolicyRuleChange): DocumentNode {
         {renderMentionPill(change.sender, change.sender)}{" "}
         <code>{change.changeType}</code> &#32;
         {change.rule.kind} (<code>{change.rule.recommendation}</code>) &#32;
-        <code>{change.rule.entity}</code> ({change.rule.reason})
+        {change.rule.matchType === PolicyRuleMatchType.HashedLiteral
+          ? renderRuleHashes(change.rule)
+          : renderRuleClearText(change.rule)}
       </li>
     </fragment>
   );
