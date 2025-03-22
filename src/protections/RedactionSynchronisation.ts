@@ -17,6 +17,7 @@ import {
   PolicyListRevision,
   PolicyRule,
   PolicyRuleChange,
+  PolicyRuleChangeType,
   PolicyRuleMatchType,
   PolicyRuleType,
   PowerLevelPermission,
@@ -25,7 +26,6 @@ import {
   ProtectionDescription,
   Recommendation,
   RoomMembershipRevision,
-  SimpleChangeType,
   Task,
   describeProtection,
 } from "matrix-protection-suite";
@@ -93,7 +93,7 @@ export class RedactionSynchronisationProtection
   ): Promise<ActionResult<void>> {
     const relevantChanges = changes.filter(
       (change) =>
-        change.changeType === SimpleChangeType.Added &&
+        change.changeType !== PolicyRuleChangeType.Removed &&
         change.rule.kind === PolicyRuleType.User &&
         this.automaticRedactionReasons.some((reason) =>
           reason.test(change.rule.reason ?? "<no reason supplied>")

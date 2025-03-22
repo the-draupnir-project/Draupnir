@@ -128,7 +128,8 @@ export class MjolnirAppService {
       clientsInRoomMap,
       clientProvider,
       eventDecoder,
-      stores.roomStateBackingStore
+      stores.roomStateBackingStore,
+      stores.hashStore
     );
     const clientCapabilityFactory = new ClientCapabilityFactory(
       clientsInRoomMap,

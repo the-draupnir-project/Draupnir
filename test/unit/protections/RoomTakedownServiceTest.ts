@@ -9,10 +9,10 @@ import {
   describeProtectedRoomsSet,
   Ok,
   parsePolicyRule,
+  PolicyRuleChangeType,
   PolicyRuleType,
   randomRoomID,
   Recommendation,
-  SimpleChangeType,
   StandardPolicyListRevision,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "../../../src/protections/RoomTakedown/RoomAuditLog";
@@ -81,7 +81,7 @@ describe("", function () {
         StandardPolicyListRevision.blankRevision(),
         [
           {
-            changeType: SimpleChangeType.Added,
+            changeType: PolicyRuleChangeType.Added,
             rule: policy,
             event: policy.sourceEvent,
             sender: policy.sourceEvent.sender,

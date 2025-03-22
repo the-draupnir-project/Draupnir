@@ -8,7 +8,7 @@ import {
   Logger,
   RoomBasicDetails,
   RoomHashRecord,
-  SHA256RoomHashStore,
+  SHA256HashStore,
   StandardBatcher,
   Task,
 } from "matrix-protection-suite";
@@ -47,7 +47,7 @@ export class SynapseHTTPAntispamRoomDiscovery
   );
   constructor(
     private readonly synapseHTTPAntispam: SynapseHttpAntispam,
-    private readonly hashStore: SHA256RoomHashStore,
+    private readonly hashStore: SHA256HashStore,
     private readonly roomDetailsProvider: RoomDetailsProvider
   ) {
     super();

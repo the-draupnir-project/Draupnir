@@ -8,10 +8,10 @@ import {
   Logger,
   PolicyListRevision,
   PolicyRuleChange,
+  PolicyRuleChangeType,
   PolicyRuleMatchType,
   PolicyRuleType,
   Recommendation,
-  SimpleChangeType,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
@@ -93,7 +93,7 @@ export class StandardRoomTakedown implements RoomTakedownService {
     const roomsToTakedown: LiteralPolicyRule[] = [];
     for (const change of changes) {
       if (
-        change.changeType === SimpleChangeType.Added &&
+        change.changeType === PolicyRuleChangeType.RevealedLiteral &&
         change.rule.kind === PolicyRuleType.Room &&
         change.rule.matchType === PolicyRuleMatchType.Literal &&
         change.rule.recommendation === Recommendation.Takedown
