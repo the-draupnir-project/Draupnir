@@ -23,6 +23,10 @@ import { UserMayJoinRoomRequestBody } from "../../webapis/SynapseHTTPAntispam/Us
 import { EventEmitter } from "stream";
 import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
 
+// FIXME: This should really have its own "Room acknowledged" table in the audit log...
+//        which only sends when a notification has been sent to the admin room.
+//        This would allow for complete coverage...
+
 const log = new Logger("SynapseHTTPAntispamRoomDiscovery");
 
 export type RoomDiscoveryListener = (details: RoomBasicDetails) => void;
@@ -38,17 +42,13 @@ export class SynapseHTTPAntispamRoomDiscovery
   implements RoomDiscovery
 {
   private readonly discoveredRooms = new Set<StringRoomID>();
-  private readonly batcher = new StandardBatcher(
-    () =>
-      new ConstantPeriodItemBatch<StringRoomID, void>(
-        this.forwardDiscoveredBatch,
-        { waitPeriodMS: 2500 }
-      )
-  );
+  private readonly batcher: StandardBatcher<StringRoomID, void>;
+
   constructor(
     private readonly synapseHTTPAntispam: SynapseHttpAntispam,
     private readonly hashStore: SHA256HashStore,
-    private readonly roomDetailsProvider: RoomDetailsProvider
+    private readonly roomDetailsProvider: RoomDetailsProvider,
+    private readonly batchWaitPeriodMS = 500
   ) {
     super();
     synapseHTTPAntispam.checkEventForSpamHandles.registerNonBlockingHandle(
@@ -59,6 +59,13 @@ export class SynapseHTTPAntispamRoomDiscovery
     );
     synapseHTTPAntispam.userMayJoinRoomHandles.registerNonBlockingHandle(
       this.handleUserMayJoin
+    );
+    this.batcher = new StandardBatcher(
+      () =>
+        new ConstantPeriodItemBatch<StringRoomID, void>(
+          this.forwardDiscoveredBatch,
+          { waitPeriodMS: this.batchWaitPeriodMS }
+        )
     );
   }
 
@@ -103,9 +110,9 @@ export class SynapseHTTPAntispamRoomDiscovery
 
   private readonly forwardDiscoveredBatch = async function (
     this: SynapseHTTPAntispamRoomDiscovery,
-    rawEntries: [StringRoomID][]
+    rawEntries: [StringRoomID, undefined][]
   ): Promise<void> {
-    const entries = rawEntries.flat();
+    const entries = rawEntries.flatMap((entry) => entry[0]);
     const storeResult = await this.hashStore.storeUndiscoveredRooms(entries);
     if (isError(storeResult)) {
       log.error(
