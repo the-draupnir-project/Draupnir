@@ -3,14 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { Logger, RoomBasicDetails } from "matrix-protection-suite";
+import {
+  describeCapabilityProvider,
+  Logger,
+  RoomBasicDetails,
+} from "matrix-protection-suite";
 import {
   RoomDetailsProvider,
   RoomTakedownCapability,
 } from "../RoomTakedownCapability";
 import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
-
+import { Draupnir } from "../../Draupnir";
+import "../RoomTakedownCapability"; // needed for the interface to load.
 const log = new Logger("SynapseAdminRoomTakedownCapability");
 
 export class SynapseAdminRoomDetailsProvider implements RoomDetailsProvider {
@@ -90,3 +95,17 @@ export class SynapseAdminRoomTakedownCapability
     return await this.roomDetailsProvider.getRoomDetails(roomID);
   }
 }
+
+describeCapabilityProvider<Draupnir>({
+  name: SynapseAdminRoomTakedownCapability.name,
+  interface: "RoomTakedownCapability",
+  description: "Takesdown rooms using the synapse admin API",
+  factory(description, draupnir) {
+    if (draupnir.synapseAdminClient === undefined) {
+      throw new TypeError(
+        "Synapse admin client is not available on this draupnir instance"
+      );
+    }
+    return new SynapseAdminRoomTakedownCapability(draupnir.synapseAdminClient);
+  },
+});
