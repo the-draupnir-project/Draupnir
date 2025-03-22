@@ -80,10 +80,12 @@ function handleRoomDiscovery(
         );
       }
       if (detailsResult.ok.creator === undefined) {
-        log.debug("Broken details", detailsResult.ok);
-        return ResultError.Result(
-          `No creator was provided so we cannot store the details for this room ${roomID}`
+        log.warn(
+          "No creator was provided in the details for the room, so we cannot store them",
+          roomID,
+          detailsResult.ok
         );
+        return Ok(undefined);
       }
       return await store.storeRoomIdentification({
         roomID,
