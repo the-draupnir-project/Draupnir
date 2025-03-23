@@ -34,12 +34,13 @@ type BanInviteRetractionProtectionDescription = ProtectionDescription<Draupnir>;
 
 export class BanInviteRetractionProtection
   extends AbstractProtection<BanInviteRetractionProtectionDescription>
-  implements Protection<BanInviteRetractionProtectionDescription> {
+  implements Protection<BanInviteRetractionProtectionDescription>
+{
   public constructor(
     description: BanInviteRetractionProtectionDescription,
     capabilities: CapabilitySet,
     protectedRoomsSet: ProtectedRoomsSet,
-    private readonly draupnir: Draupnir,
+    private readonly draupnir: Draupnir
   ) {
     super(description, capabilities, protectedRoomsSet, {
       requiredPermissions: [PowerLevelPermission.Kick],
@@ -50,13 +51,13 @@ export class BanInviteRetractionProtection
     const rooms: StringRoomID[] = [];
     if (policy.isGlob()) {
       this.protectedRoomsSet.allProtectedRooms.forEach((room) =>
-        rooms.push(room.toRoomIDOrAlias()),
+        rooms.push(room.toRoomIDOrAlias())
       );
     } else {
       for (const roomMembership of this.protectedRoomsSet.setRoomMembership
         .allRooms) {
         const membership = roomMembership.membershipForUser(
-          policy.entity as StringUserID,
+          policy.entity as StringUserID
         );
         if (membership !== undefined) {
           rooms.push(roomMembership.room.toRoomIDOrAlias());
@@ -68,19 +69,19 @@ export class BanInviteRetractionProtection
         this.draupnir.client,
         this.draupnir.managementRoomOutput,
         policy.entity,
-        rooms,
-      ),
+        rooms
+      )
     );
   }
 
   public async handlePolicyChange(
     revision: PolicyListRevision,
-    changes: PolicyRuleChange[],
+    changes: PolicyRuleChange[]
   ): Promise<ActionResult<void>> {
     const relevantChanges = changes.filter(
       (change) =>
         change.changeType === SimpleChangeType.Added &&
-        change.rule.kind === PolicyRuleType.User,
+        change.rule.kind === PolicyRuleType.User
     );
 
     // We don't care about the ramifications of adding a new list here.
@@ -93,10 +94,10 @@ export class BanInviteRetractionProtection
 
   public async handleMembershipChange(
     revision: RoomMembershipRevision,
-    changes: MembershipChange[],
+    changes: MembershipChange[]
   ): Promise<ActionResult<void>> {
     const isUserJoiningWithPolicyRequiringRedaction = (
-      change: MembershipChange,
+      change: MembershipChange
     ) => {
       if (
         change.membershipChangeType === MembershipChangeType.Joined ||
@@ -107,7 +108,7 @@ export class BanInviteRetractionProtection
         const matchingPolicy = policyRevision.findRuleMatchingEntity(
           change.userID,
           PolicyRuleType.User,
-          Recommendation.Ban,
+          Recommendation.Ban
         );
         return matchingPolicy !== undefined;
       } else {
@@ -115,29 +116,37 @@ export class BanInviteRetractionProtection
       }
     };
     const relevantChanges = changes.filter(
-      isUserJoiningWithPolicyRequiringRedaction,
+      isUserJoiningWithPolicyRequiringRedaction
     );
     for (const change of relevantChanges) {
       void Task(
         this.retractInvitesFromUserIn(
           revision.room.toRoomIDOrAlias(),
-          change.userID,
-        ),
+          change.userID
+        )
       );
     }
     return Ok(undefined);
   }
 
-  private async retractInvitesFromUserIn(room: StringRoomID, user: StringUserID): Promise<void> {
+  private async retractInvitesFromUserIn(
+    room: StringRoomID,
+    user: StringUserID
+  ): Promise<void> {
     const roomState = await this.draupnir.client.getRoomState(room);
-    const invites = roomState.filter((event) =>
-      event.type === "m.room.member"
-      && event.content.membership === "invite"
-      && event.sender === user,
+    const invites = roomState.filter(
+      (event) =>
+        event.type === "m.room.member" &&
+        event.content.membership === "invite" &&
+        event.sender === user
     );
 
     for (const invite of invites) {
-      await this.draupnir.client.kickUser(invite.state_key, room, "Retracting spam invites.");
+      await this.draupnir.client.kickUser(
+        invite.state_key,
+        room,
+        "Retracting spam invites."
+      );
     }
   }
 }
@@ -153,8 +162,8 @@ describeProtection<Record<never, never>, Draupnir>({
         description,
         capabilities,
         protectedRoomsSet,
-        draupnir,
-      ),
+        draupnir
+      )
     );
   },
 });
