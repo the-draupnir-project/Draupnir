@@ -9,6 +9,7 @@
  */
 
 // keep alphabetical please.
+import "./BanInviteRetraction"
 import "./BanPropagation";
 import "./BasicFlooding";
 import "./FirstMessageIsImage";
