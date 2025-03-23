@@ -10,6 +10,7 @@
 
 // keep alphabetical please.
 import "./RoomTakedown/RoomTakedownProtection";
+import "./BanInviteRetraction";
 import "./BanPropagation";
 import "./BasicFlooding";
 import "./FirstMessageIsImage";
