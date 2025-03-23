@@ -137,7 +137,7 @@ export class BanInviteRetractionProtection
     );
 
     for (const invite of invites) {
-      await this.draupnir.client.kickUser(user, room, "Retracting spam invites.");
+      await this.draupnir.client.kickUser(invite.state_key, room, "Retracting spam invites.");
     }
   }
 }
