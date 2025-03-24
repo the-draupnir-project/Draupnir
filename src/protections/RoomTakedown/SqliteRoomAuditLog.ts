@@ -98,9 +98,10 @@ export class SqliteRoomAuditLog
     this.takedownRooms = new Set(this.loadTakendownRooms());
   }
 
+  public static readonly StoreName = "room-audit-log.db";
   public static createToplevel(storagePath: string): SqliteRoomAuditLog {
     const options = {
-      path: path.join(storagePath, "room-audit-log.db"),
+      path: path.join(storagePath, SqliteRoomAuditLog.StoreName),
       WALMode: true,
       foreignKeys: true,
       fileMustExist: false,

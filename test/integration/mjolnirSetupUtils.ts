@@ -53,6 +53,7 @@ export interface DraupnirTestContext extends SafeMochaContext {
   managementRoomAlias?: string;
   toggle?: DraupnirBotModeToggle;
   config: IConfig;
+  stores?: TopLevelStores;
 }
 
 /**

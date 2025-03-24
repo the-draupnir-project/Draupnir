@@ -23,8 +23,44 @@ import {
   teardownManagementRoom,
 } from "./mjolnirSetupUtils";
 import { makeTopLevelStores } from "../../src/backingstore/DraupnirStores";
+import { SqliteRoomStateBackingStore } from "../../src/backingstore/better-sqlite3/SqliteRoomStateBackingStore";
+import { SqliteHashReversalStore } from "../../src/backingstore/better-sqlite3/HashStore";
+import { SqliteRoomAuditLog } from "../../src/protections/RoomTakedown/SqliteRoomAuditLog";
+import path from "path";
+import { promises as fs } from "fs";
 
 patchMatrixClient();
+
+/**
+ * We cleanup the stores at the start of the tests, so that they can be
+ * inspected if a test fails.
+ */
+async function cleanUpTopLevelStores(storagePath: string) {
+  await fs.mkdir(storagePath, { recursive: true }); // Ensure storagePath exists
+  const storePaths = [
+    SqliteRoomStateBackingStore.StoreName,
+    SqliteHashReversalStore.StoreName,
+    SqliteRoomAuditLog.StoreName,
+  ].map((name) => path.join(storagePath, name));
+  await Promise.all(
+    storePaths.map(async (filePath) => {
+      try {
+        await fs.unlink(filePath);
+      } catch (error: unknown) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "ENOENT"
+        ) {
+          // do nothing
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+    })
+  );
+}
 
 // When Draupnir starts (src/index.ts) it clobbers the config by resolving the management room
 // alias specified in the config (config.managementRoom) and overwriting that with the room ID.
@@ -44,13 +80,15 @@ export const mochaHooks = {
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
       const storagePath = getStoragePath(config.dataPath);
+      await cleanUpTopLevelStores(storagePath);
+      this.stores = makeTopLevelStores(storagePath, DefaultEventDecoder, {
+        isRoomStateBackingStoreEnabled: Boolean(
+          config.roomStateBackingStore.enabled
+        ),
+      });
       this.toggle = await makeBotModeToggle(config, {
         eraseAccountData: true,
-        stores: makeTopLevelStores(storagePath, DefaultEventDecoder, {
-          isRoomStateBackingStoreEnabled: Boolean(
-            config.roomStateBackingStore.enabled
-          ),
-        }),
+        stores: this.stores,
       });
       this.draupnir = draupnir();
       const draupnirMatrixClient = draupnirClient();
@@ -67,7 +105,13 @@ export const mochaHooks = {
       this.timeout(10000);
       await this.toggle?.stopEverything();
       draupnirClient()?.stop();
-
+      this.stores?.roomStateBackingStore?.destroy();
+      this.stores?.roomAuditLog?.destroy();
+      // We forgot to add a destroy method in the interface in MPS
+      // and we'll probably need to wait until the next release to remove this.
+      if (this.stores?.hashStore instanceof SqliteHashReversalStore) {
+        this.stores.hashStore.destroy();
+      }
       // remove alias from management room and leave it.
       if (this.draupnir !== undefined) {
         await Promise.all([

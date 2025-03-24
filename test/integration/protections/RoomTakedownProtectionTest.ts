@@ -28,10 +28,6 @@ async function createWatchedPolicyRoom(
   return policyRoomID;
 }
 
-// FIXME: We need the fixtures store to either be deleted in setup (not teardown) or reside in memory
-// FIXME: Should we split discovery from takedown protection? I think so...
-// FIXME: We need to check whether discovery runs even when the protection is not enabled...
-
 describe("RoomTakedownProtectionTest", function () {
   it("Will takedown a room that is added to the policy list", async function (
     this: DraupnirTestContext

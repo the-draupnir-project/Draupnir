@@ -136,9 +136,10 @@ export class SqliteHashReversalStore
     );
   }
 
+  public static readonly StoreName = "hash-store.db";
   public static createToplevel(storagePath: string): SqliteHashReversalStore {
     const options = {
-      path: path.join(storagePath, "hash-store.db"),
+      path: path.join(storagePath, SqliteHashReversalStore.StoreName),
       WALMode: true,
       foreignKeys: true,
       fileMustExist: false,

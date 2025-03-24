@@ -85,12 +85,13 @@ export class SqliteRoomStateBackingStore
     super(SchemaOptions, db, log);
   }
 
+  public static readonly StoreName = "room-state-backing-store.db";
   public static create(
     storagePath: string,
     eventDecoder: EventDecoder
   ): SqliteRoomStateBackingStore {
     const options = {
-      path: path.join(storagePath, "room-state-backing-store.db"),
+      path: path.join(storagePath, SqliteRoomStateBackingStore.StoreName),
       WALMode: true,
       foreignKeys: true,
       fileMustExist: false,

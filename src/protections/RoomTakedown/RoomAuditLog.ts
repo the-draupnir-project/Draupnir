@@ -23,4 +23,5 @@ export interface RoomAuditLog {
   getTakedownDetails(
     roomID: StringRoomID
   ): Promise<Result<RoomTakedownDetails | undefined>>;
+  destroy(): void;
 }
