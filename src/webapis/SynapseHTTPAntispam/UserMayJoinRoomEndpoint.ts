@@ -21,8 +21,10 @@ export type UserMayJoinRoomListenerArguments = Parameters<
   (details: UserMayJoinRoomRequestBody) => void
 >;
 
-type UserMayJoinRoomRequestBody = EDStatic<typeof UserMayJoinRoomRequestBody>;
-const UserMayJoinRoomRequestBody = Type.Object({
+export type UserMayJoinRoomRequestBody = EDStatic<
+  typeof UserMayJoinRoomRequestBody
+>;
+export const UserMayJoinRoomRequestBody = Type.Object({
   user: StringUserIDSchema,
   room: StringRoomIDSchema,
   is_invited: Type.Boolean(),

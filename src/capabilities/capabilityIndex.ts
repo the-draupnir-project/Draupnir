@@ -11,3 +11,6 @@
 import "./StandardEventConsequencesRenderer";
 import "./ServerACLConsequencesRenderer";
 import "./StandardUserConsequencesRenderer";
+import "./RoomTakedownCapability";
+import "./RoomTakedownCapabilityRenderer";
+import "./SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";

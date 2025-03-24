@@ -19,7 +19,7 @@ describe("Test for http antispam callbacks", function () {
     if (draupnir === undefined) {
       throw new TypeError(`setup code is wrong`);
     }
-    const synapseHTTPAntispam = this.toggle?.synapseHTTPAntispam;
+    const synapseHTTPAntispam = draupnir.synapseHTTPAntispam;
     if (synapseHTTPAntispam === undefined) {
       throw new TypeError("Setup code is wrong");
     }

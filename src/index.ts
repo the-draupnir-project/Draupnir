@@ -24,7 +24,7 @@ import { initializeSentry, patchMatrixClient } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
-import { SqliteRoomStateBackingStore } from "./backingstore/better-sqlite3/SqliteRoomStateBackingStore";
+import { makeTopLevelStores } from "./backingstore/DraupnirStores";
 
 void (async function () {
   const config = configRead();
@@ -83,14 +83,15 @@ void (async function () {
     }
     patchMatrixClient();
     const eventDecoder = DefaultEventDecoder;
-    const store = config.roomStateBackingStore.enabled
-      ? SqliteRoomStateBackingStore.create(storagePath, eventDecoder)
-      : undefined;
+    const stores = makeTopLevelStores(storagePath, eventDecoder, {
+      isRoomStateBackingStoreEnabled:
+        config.roomStateBackingStore.enabled ?? false,
+    });
     bot = await DraupnirBotModeToggle.create(
       client,
       new SafeMatrixEmitterWrapper(client, eventDecoder),
       config,
-      store
+      stores
     );
 
     // We don't want to send the status on start, as we need to initialize e2ee first (using client.start);

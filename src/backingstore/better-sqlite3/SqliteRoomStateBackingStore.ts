@@ -15,27 +15,57 @@ import {
   StateEvent,
   isError,
 } from "matrix-protection-suite";
-import { BetterSqliteStore, flatTransaction } from "./BetterSqliteStore";
+import {
+  BetterSqliteOptions,
+  BetterSqliteStore,
+  flatTransaction,
+  makeBetterSqliteDB,
+} from "./BetterSqliteStore";
 import { jsonReviver } from "../../utils";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import path from "path";
+import { Database } from "better-sqlite3";
+import { checkKnownTables, SqliteSchemaOptions } from "./SqliteSchema";
 
 const log = new Logger("SqliteRoomStateBackingStore");
 
-const schema = [
-  `CREATE TABLE room_info (
-        room_id TEXT PRIMARY KEY NOT NULL,
-        last_complete_writeback INTEGER NOT NULL
-    ) STRICT;`,
-  `CREATE TABLE room_state_event (
-        room_id TEXT NOT NULL,
-        event_type TEXT NOT NULL,
-        state_key TEXT NOT NULL,
-        event BLOB NOT NULL,
-        PRIMARY KEY (room_id, event_type, state_key),
-        FOREIGN KEY (room_id) REFERENCES room_info(room_id)
-    ) STRICT;`,
+const SchemaText = [
+  `
+  CREATE TABLE room_info (
+    room_id TEXT PRIMARY KEY NOT NULL,
+    last_complete_writeback INTEGER NOT NULL
+  ) STRICT, WITHOUT ROWID;
+  CREATE TABLE room_state_event (
+    room_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    state_key TEXT NOT NULL,
+    event BLOB NOT NULL,
+    PRIMARY KEY (room_id, event_type, state_key),
+    FOREIGN KEY (room_id) REFERENCES room_info(room_id)
+  ) STRICT;
+  `,
 ];
+
+const SchemaOptions = {
+  upgradeSteps: SchemaText.map(
+    (text) =>
+      function (db) {
+        db.exec(text);
+      }
+  ),
+  legacyUpgrade(db) {
+    // An older version of this store used a different schema management system
+    // fortunatley the data is just a psersistent cache so we don't need to worry about removing it.
+    db.exec(`
+      DELETE TABLE room_state_event;
+      DELETE TABLE room_info;
+      DELETE TABLE schema;
+    `);
+  },
+  consistencyCheck(db) {
+    return checkKnownTables(db, ["room_info", "room_state_event"]);
+  },
+} satisfies SqliteSchemaOptions;
 
 type RoomStateEventReplaceValue = [StringRoomID, string, string, string];
 
@@ -48,33 +78,27 @@ export class SqliteRoomStateBackingStore
   private readonly roomInfoMap = new Map<StringRoomID, RoomInfo>();
   public readonly revisionListener = this.handleRevision.bind(this);
   public constructor(
-    path: string,
+    options: BetterSqliteOptions,
+    db: Database,
     private readonly eventDecoder: EventDecoder
   ) {
-    super(
-      schema.map(
-        (text) =>
-          function (db) {
-            db.prepare(text).run();
-          }
-      ),
-      {
-        path,
-        fileMustExist: false,
-      }
-    );
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("foreign_keys = ON");
-    this.db.pragma("temp_store = file"); // Avoid unnecessary memory usage.
-    this.ensureSchema();
+    super(SchemaOptions, db, log);
   }
 
+  public static readonly StoreName = "room-state-backing-store.db";
   public static create(
     storagePath: string,
     eventDecoder: EventDecoder
   ): SqliteRoomStateBackingStore {
+    const options = {
+      path: path.join(storagePath, SqliteRoomStateBackingStore.StoreName),
+      WALMode: true,
+      foreignKeys: true,
+      fileMustExist: false,
+    };
     return new SqliteRoomStateBackingStore(
-      path.join(storagePath, "room-state-backing-store.db"),
+      options,
+      makeBetterSqliteDB(options, log),
       eventDecoder
     );
   }
@@ -193,15 +217,15 @@ export class SqliteRoomStateBackingStore
   }
 
   public forgetRoom(roomID: StringRoomID): Promise<ActionResult<void>> {
-    const deleteMetaStatement = this.db.prepare(
-      `DELETE FROM room_info WHERE room_id = ?`
-    );
     const deleteStateStatement = this.db.prepare(
       `DELETE FROM room_state_event WHERE room_id = ?`
     );
+    const deleteMetaStatement = this.db.prepare(
+      `DELETE FROM room_info WHERE room_id = ?`
+    );
     const deleteRoom = this.db.transaction(() => {
-      deleteMetaStatement.run(roomID);
       deleteStateStatement.run(roomID);
+      deleteMetaStatement.run(roomID); // needs to be last to avoid violating foriegn key cnostraint
     });
     try {
       deleteRoom();
@@ -217,12 +241,13 @@ export class SqliteRoomStateBackingStore
   }
 
   public async forgetAllRooms(): Promise<ActionResult<void>> {
-    for (const roomID of this.roomInfoMap.keys()) {
-      const result = await this.forgetRoom(roomID);
-      if (isError(result)) {
-        return result;
-      }
-    }
+    this.db.transaction(() => {
+      this.db.exec(`
+        DELETE FROM room_state_event;
+        DELETE FROM room_info;
+      `);
+      this.roomInfoMap.clear();
+    })();
     return Ok(undefined);
   }
 }

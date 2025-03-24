@@ -34,17 +34,15 @@ const AUTHORIZATION = new RegExp("Bearer (.*)");
 export class WebAPIs {
   private webController: express.Express = express();
   private httpServer?: Server | undefined;
-  public readonly synapseHTTPAntispam = new SynapseHttpAntispam(
-    this.webController,
-    this.config.web.synapseHTTPAntispam.authorization
-  );
 
   constructor(
     private reportManager: StandardReportManager,
-    private readonly config: IConfig
+    private readonly config: IConfig,
+    private readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ) {
     // Setup JSON parsing.
     this.webController.use(express.json());
+    this.synapseHTTPAntispam?.register(this.webController);
   }
 
   /**
@@ -63,10 +61,7 @@ export class WebAPIs {
         }
       );
     });
-    // enable synapse http antispam
-    if (this.config.web.synapseHTTPAntispam.enabled) {
-      this.synapseHTTPAntispam.register();
-    }
+
     // configure /report API.
     if (this.config.web.abuseReporting.enabled) {
       log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);

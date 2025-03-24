@@ -20,10 +20,10 @@ export type CheckEventForSpamListenerArguments = Parameters<
   (details: CheckEventForSpamRequestBody) => void
 >;
 
-type CheckEventForSpamRequestBody = EDStatic<
+export type CheckEventForSpamRequestBody = EDStatic<
   typeof CheckEventForSpamRequestBody
 >;
-const CheckEventForSpamRequestBody = Type.Object({
+export const CheckEventForSpamRequestBody = Type.Object({
   event: RoomEvent(Type.Unknown()),
 });
 
