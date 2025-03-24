@@ -13,29 +13,20 @@ import {
   CapabilitySet,
   MembershipChange,
   MembershipChangeType,
+  MembershipPolicyRevisionDelta,
   Ok,
-  PolicyListRevision,
-  PolicyRule,
-  PolicyRuleChange,
-  PolicyRuleChangeType,
-  PolicyRuleMatchType,
-  PolicyRuleType,
   PowerLevelPermission,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  Recommendation,
   RoomMembershipRevision,
+  SetMembershipPolicyRevision,
   Task,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { redactUserMessagesIn } from "../utils";
-import {
-  MatrixGlob,
-  StringRoomID,
-  StringUserID,
-} from "@the-draupnir-project/matrix-basic-types";
+import { MatrixGlob } from "@the-draupnir-project/matrix-basic-types";
 
 type RedactionSynchronisationProtectionDescription =
   ProtectionDescription<Draupnir>;
@@ -58,110 +49,59 @@ export class RedactionSynchronisationProtection
       this.automaticRedactionReasons.push(new MatrixGlob(reason.toLowerCase()));
     }
   }
-  public redactForNewUserPolicy(policy: PolicyRule): void {
-    const rooms: StringRoomID[] = [];
-    if (policy.matchType === PolicyRuleMatchType.HashedLiteral) {
-      return; // wait for them to be reversed and placed into the model as clear text.
-    }
-    if (policy.matchType === PolicyRuleMatchType.Glob) {
-      this.protectedRoomsSet.allProtectedRooms.forEach((room) =>
-        rooms.push(room.toRoomIDOrAlias())
-      );
-    } else {
-      for (const roomMembership of this.protectedRoomsSet.setRoomMembership
-        .allRooms) {
-        const membership = roomMembership.membershipForUser(
-          policy.entity as StringUserID
-        );
-        if (membership !== undefined) {
-          rooms.push(roomMembership.room.toRoomIDOrAlias());
-        }
-      }
-    }
-    void Task(
-      redactUserMessagesIn(
-        this.draupnir.client,
-        this.draupnir.managementRoomOutput,
-        policy.entity,
-        rooms
+
+  // FIXME: In the future it would be really useful to have a policyMatches
+  // revision per room. This can be worked out backwards from the PolicyMatches
+  // revision using the setRoomMembership (both on SetMembershipPolicyMatches &
+  // on SetRoomMembership change against SetMembershipPolicyMatches)...
+  // it would probably be quite efficient
+  // and would be really useful to for covering complete joins.
+  public handleSetMembershipPolicyMatchesChange(
+    revision: SetMembershipPolicyRevision,
+    delta: MembershipPolicyRevisionDelta
+  ): void {
+    const matchesRequiringRedaction = delta.addedMemberMatches.filter((match) =>
+      this.automaticRedactionReasons.some((reason) =>
+        reason.test(match.policy.reason ?? "<no reason supplied>")
       )
     );
-  }
-  public async handlePolicyChange(
-    revision: PolicyListRevision,
-    changes: PolicyRuleChange[]
-  ): Promise<ActionResult<void>> {
-    const relevantChanges = changes.filter(
-      (change) =>
-        change.changeType !== PolicyRuleChangeType.Removed &&
-        change.rule.kind === PolicyRuleType.User &&
-        this.automaticRedactionReasons.some((reason) =>
-          reason.test(change.rule.reason ?? "<no reason supplied>")
-        )
-    );
-    // Can't see this fucking up at all when watching a new list :skull:.
-    // So instead, we employ a genius big brain move.
-    // Basically, this stops us from overwhelming draupnir with redaction
-    // requests if the user watches a new list. Very unideal.
-    // however, please see the comment at the top of the file which explains
-    // how this protection **should** work, if it wasn't a stop gap.
-    if (relevantChanges.length > 5) {
-      return Ok(undefined);
-    } else if (relevantChanges.length === 0) {
-      return Ok(undefined);
-    } else {
-      relevantChanges.forEach((change) => {
-        this.redactForNewUserPolicy(change.rule);
-      });
-      return Ok(undefined);
-    }
-  }
-  public async handleMembershipChange(
-    revision: RoomMembershipRevision,
-    changes: MembershipChange[]
-  ): Promise<ActionResult<void>> {
-    const isUserJoiningWithPolicyRequiringRedaction = (
-      change: MembershipChange
-    ) => {
-      if (
-        change.membershipChangeType === MembershipChangeType.Joined ||
-        change.membershipChangeType === MembershipChangeType.Rejoined
-      ) {
-        const policyRevision =
-          this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-        const matchingPolicy =
-          policyRevision.findRuleMatchingEntity(change.userID, {
-            type: PolicyRuleType.User,
-            recommendation: Recommendation.Ban,
-            searchHashedRules: false,
-          }) ??
-          policyRevision.findRuleMatchingEntity(change.userID, {
-            type: PolicyRuleType.User,
-            recommendation: Recommendation.Takedown,
-            searchHashedRules: false,
-          });
-        return (
-          matchingPolicy !== undefined &&
-          this.automaticRedactionReasons.some((reason) =>
-            reason.test(matchingPolicy.reason ?? "<no reason supplied>")
-          )
-        );
-      } else {
-        return false;
-      }
-    };
-    const relevantChanges = changes.filter(
-      isUserJoiningWithPolicyRequiringRedaction
-    );
-    for (const change of relevantChanges) {
+    for (const match of matchesRequiringRedaction) {
+      const roomsRequiringRedaction =
+        this.protectedRoomsSet.setRoomMembership.allRooms
+          .filter((revision) => revision.membershipForUser(match.userID))
+          .map((revision) => revision.room.toRoomIDOrAlias());
       void Task(
         redactUserMessagesIn(
           this.draupnir.client,
           this.draupnir.managementRoomOutput,
-          change.userID,
-          [revision.room.toRoomIDOrAlias()]
+          match.userID,
+          roomsRequiringRedaction
         )
       );
+    }
+  }
+
+  // Scan again on ban to make sure we mopped everything up.
+  public async handleMembershipChange(
+    revision: RoomMembershipRevision,
+    changes: MembershipChange[]
+  ): Promise<ActionResult<void>> {
+    for (const change of changes) {
+      if (
+        change.membershipChangeType === MembershipChangeType.Banned &&
+        this.automaticRedactionReasons.some((reason) =>
+          reason.test(change.content.reason ?? "<no reason supplied>")
+        )
+      ) {
+        void Task(
+          redactUserMessagesIn(
+            this.draupnir.client,
+            this.draupnir.managementRoomOutput,
+            change.userID,
+            [change.roomID]
+          )
+        );
+      }
     }
     return Ok(undefined);
   }
