@@ -131,10 +131,8 @@ export class SynapseHTTPAntispamRoomDiscovery
     this: SynapseHTTPAntispamRoomDiscovery,
     { event }: CheckEventForSpamRequestBody
   ): void {
-    if (event.type === "m.room.member") {
-      if (!this.discoveredRooms.has(event.room_id)) {
-        this.batcher.add(event.room_id);
-      }
+    if (!this.discoveredRooms.has(event.room_id)) {
+      this.batcher.add(event.room_id);
     }
   }.bind(this);
 
