@@ -249,7 +249,9 @@ const defaultConfig: IConfig = {
     },
     sentry: undefined,
   },
-  admin: undefined,
+  admin: {
+    enableMakeRoomAdminCommand: false,
+  },
   web: {
     enabled: false,
     port: 8080,

@@ -10,11 +10,18 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { IConfig } from "../config";
+import { RoomTakedownProtection } from "./RoomTakedown/RoomTakedownProtection";
+import { BlockInvitationsOnServerProtection } from "./BlockInvitationsOnServerProtection";
 
 type ConfigHook = (
   config: IConfig,
   protectionsConfig: ProtectionsConfig
 ) => Promise<ActionResult<void>>;
+
+export const ServerAdminProtections = [
+  RoomTakedownProtection,
+  BlockInvitationsOnServerProtection,
+];
 
 const hooks: ConfigHook[] = [
   async function disableServerACL(config, protectionsConfig) {

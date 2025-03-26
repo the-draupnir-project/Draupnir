@@ -6,9 +6,11 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Draupnir
 
-A [Matrix](https://matrix.org) moderation bot and protection platform. Visit
-[#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org) in your client
-and come say hi.
+A highly capable [Matrix](https://matrix.org) moderation bot and protection
+platform, trusted by room moderators and homeserver admins alike.
+
+Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org) in your
+client and come say hi.
 
 Please see the
 [draupnir documentation](https://the-draupnir-project.github.io/draupnir-documentation/)
@@ -16,30 +18,37 @@ for installation instructions and usage guides.
 
 ## Features
 
-Draupnir's UX is centred around prompting you with questions to carry out
-specific moderation tasks by shadowing the actions taken by your Matrix Client.
+- Draupnir's UX is centred around prompting you with questions to carry out
+  specific moderation tasks by shadowing the actions taken by your Matrix
+  Client.
 
-Draupnir has two main functions, the first is to synchronise bans for users and
-servers across all of the matrix rooms that you moderate. The second is to
-protect your community by applying policies from community curated policy lists,
-for example the
-[community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev),
-to your rooms around the clock. This means that communities can warn and protect
-each other of known threats.
+- Draupnir synchonises bans for users, and servers across all of the matrix
+  rooms that you moderate
 
-Draupnir and the list provided by the community moderation effort are the bread
-and butter essentials of moderating public spaces on Matrix.
+- Draupnir can protect your community by applying policies from community
+  curated policy lists. For example lists such as the the
+  [community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev),
+  can be watched to protect your rooms around the clock. This means that
+  adjacent Matrix communities can warn and protect each other of known threats.
+  Draupnir and the list provided by the community moderation effort are the
+  bread and butter essentials of moderating public spaces on Matrix.
 
-Draupnir also includes a series of protections that can be enabled that can help
-you in given scenarios when your community is being targeted.
+- Draupnir includes a series of
+  [protections](https://the-draupnir-project.github.io/draupnir-documentation/protections)
+  that can be enabled that can help you in given scenarios when your community
+  is being targeted.
 
-Some support is also provided for server administrative functions, such as
-reviewing abuse reports, deactivating user accounts and shutting down rooms.
-However, Draupnir is primarily a room moderation bot and can be used without
-server administrative capabilities.
+- Draupnir includes
+  [homeserver administrative](https:/the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+  features, such as reviewing abuse reports, deactivating user accounts and
+  shutting down rooms. This also includes protecting your homeserver with
+  Draupnir's watched policy rooms.
 
-**Draupnir is a forwards and backwards compatible drop in replacement for
-[Mjolnir](https://github.com/matrix-org/mjolnir)**.
+- Draupnir is primarily a room moderation bot and can be used with or without
+  server administrative capabilities.
+
+- **Draupnir is a forwards and backwards compatible drop in replacement for
+  [Mjolnir](https://github.com/matrix-org/mjolnir)**.
 
 ### Prompt UX
 
@@ -107,7 +116,9 @@ Mjolnir**.
   the rewrite of the core of Draupnir into the
   [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
   providing all the Matrix client code required to operate a protection
-  platform. The
+  platform. The matrix-protection-suite also covers severall shortfalls in the
+  available SDK's, providing event parsing and types that keep code secure and
+  sound. The
   [interface-manager](https://github.com/the-draupnir-project/interface-manager)
   providing an advanced command-oriented interface (note, this does not mean
   command-line interface). The
@@ -146,9 +157,9 @@ for first-time setup documentation.
 See the [configuration sample with documentation](config/default.yaml) for
 detailed information about Draupnir's configuration.
 
-See the
-[synapse module documentation](https://the-draupnir-project.github.io/draupnir-documentation/bot/synapse_module)
-for information on how to setup Draupnir's accompanying Synapse Module.
+See
+[homeserver administration](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+for how to use Draupnir's features to protect your homeserver and users.
 
 ## Quickstart guide
 
@@ -164,45 +175,7 @@ everything set up:
    [Moderator's Guide](https://the-draupnir-project.github.io/draupnir-documentation/moderator/setting-up-and-configuring).
 3. Review `!draupnir help` to see what else the bot can do.
 
-## Enabling readable abuse reports
-
-Since version 1.2, Draupnir offers the ability to replace the Matrix endpoint
-used to report abuse and display it into a room, instead of requiring you to
-request this data from an admin API.
-
-This requires two configuration steps:
-
-1. In your Draupnir configuration file, typically
-   `/etc/draupnir/config/production.yaml`, copy and paste the `web` section from
-   `default.yaml`, if you don't have it yet (it appears with version 1.20) and
-   set `enabled: true` for both `web` and `abuseReporting`.
-2. Setup a reverse proxy that will redirect requests from
-   `^/_matrix/client/(r0|v3)/rooms/([^/]*)/report/(.*)$` to
-   `http://host:port/api/1/report/$2/$3`, where `host` is the host where you run
-   Draupnir, and `port` is the port you configured in `production.yaml`. For an
-   example nginx configuration, see `test/nginx.conf`. It's the confirmation we
-   use during runtime testing.
-
-### Security note
-
-This mechanism can extract some information from **unencrypted** rooms. We have
-taken precautions to ensure that this cannot be abused: the only case in which
-this feature will publish information from room _foo_ is:
-
-1. If it is used by a member of room _foo_; AND
-2. If said member did witness the event; AND
-3. If the event was unencrypted; AND
-4. If the event was not redacted/removed/...
-
-Essentially, this is a more restricted variant of the Admin APIs available on
-homeservers.
-
-However, if you are uncomfortable with this, please do not activate this
-feature. Also, you should probably setup your `production.yaml` to ensure that
-the web server can only receive requests from your reverse proxy (e.g.
-`localhost`).
-
-### Legacy documentation (`v1.87.0` and below)
+## Legacy documentation (`v1.87.0` and below)
 
 For information about the legacy version of Draupnir, see `v1.87.0`, the
 documentation for which can be found
@@ -217,16 +190,15 @@ that in mind throughout.
 
 ## Supported by
 
-### NLnet foundation
+### NLnet
 
-<p>
-   <img src="https://nlnet.nl/logo/banner.svg" width="25%" hspace="10">
-   <img src="https://nlnet.nl/image/logos/NGI0Core_tag.svg" width="25%" hspace="10">
-</p>
+This project is funded through [NGI Zero Core](https://nlnet.nl/core), a fund
+established by [NLnet](https://nlnet.nl) with financial support from the
+European Commission's [Next Generation Internet](https://ngi.eu) program. Learn
+more at the [NLnet project page](https://nlnet.nl/project/Draupnir).
 
-Draupnir is supported by the NLnet foundation and
-[NGI Zero](https://nlnet.nl/NGI0/) under the
-[NGI Zero Core](https://nlnet.nl/core/) programme.
+[<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
+[<img src="https://nlnet.nl/image/logos/NGI0_tag.svg" alt="NGI Zero Logo" width="20%" />](https://nlnet.nl/core)
 
 You can find details of the work that is being supported from NLnet
 [here](https://nlnet.nl/project/Draupnir/) and the goals
