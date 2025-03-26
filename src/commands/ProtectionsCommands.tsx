@@ -39,6 +39,7 @@ import {
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
 import { StandardPersistentConfigRenderer } from "../safemode/PersistentConfigRenderer";
+import { ServerAdminProtections } from "../protections/ConfigHooks";
 
 export const DraupnirProtectionsEnableCommand = describeCommand({
   summary: "Enable a named protection.",
@@ -539,6 +540,12 @@ export const DraupnirListProtectionsCommand = describeCommand({
       draupnir.protectedRoomsSet.protections.allProtections;
     const summaries: ProtectionsSummary[] = [];
     for (const protectionDescription of getAllProtections()) {
+      if (
+        draupnir.synapseHTTPAntispam === undefined &&
+        ServerAdminProtections.includes(protectionDescription as never)
+      ) {
+        continue; // these protections will error if enabled
+      }
       const enabledProtection = enabledProtections.find(
         (p) => p.description.name === protectionDescription.name
       );

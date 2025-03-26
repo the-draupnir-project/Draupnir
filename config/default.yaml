@@ -115,11 +115,13 @@ protectAllJoinedRooms: false
 # of the homeserver may be more impacted.
 backgroundDelayMS: 500
 
-# Server administration commands, these commands will only work if Draupnir is
+# Server administrative features. These will only work if Draupnir is
 # a global server administrator, and the bot's server is a Synapse instance.
+# Please review https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration
 admin:
-  # Whether or not Draupnir can temporarily take control of any eligible account from the local homeserver who's in the room
-  # (with enough permissions) to "make" a user an admin.
+  # Whether to enable the make admin command.
+  # This command allows Draupnir can temporarily take control of any eligible account
+  # from the local homeserver in the target room (with enough permissions) to "make" another user an admin.
   #
   # This only works if a local user with enough admin permissions is present in the room.
   enableMakeRoomAdminCommand: false
