@@ -163,6 +163,7 @@ describeProtection<
   defaultCapabilities: {
     roomTakedownCapability: SynapseAdminRoomTakedownCapability.name,
   },
+  configSchema: RoomTakedownProtectionSettings,
   factory(description, protectedRoomsSet, draupnir, capabilitySet, settings) {
     if (
       draupnir.stores.hashStore === undefined ||
