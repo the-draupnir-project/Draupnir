@@ -38,10 +38,11 @@ function renderTakedown(
   details: RoomBasicDetails
 ): DocumentNode {
   return (
+    // DO NOT render a room pill because it could show the avatar of the room,
+    // which is not good.
     <details>
       <summary>
-        Successfully takendown the room{" "}
-        {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))}
+        Successfully takendown the room <code>{roomID}</code>
       </summary>
       <ul>
         <li>name: {renderCodeOrDefault(details.name, "no name available")}</li>
