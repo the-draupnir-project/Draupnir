@@ -34,6 +34,7 @@ export class SynapseAdminRoomDetailsProvider implements RoomDetailsProvider {
         creator: detailsResponse.ok?.creator,
         avatar: detailsResponse.ok?.avatar ?? undefined,
         topic: detailsResponse.ok?.topic ?? undefined,
+        joined_members: detailsResponse.ok?.joined_members ?? undefined,
         room_id: roomID,
       });
     }
