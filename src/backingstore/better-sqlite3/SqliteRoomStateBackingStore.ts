@@ -57,9 +57,9 @@ const SchemaOptions = {
     // An older version of this store used a different schema management system
     // fortunatley the data is just a psersistent cache so we don't need to worry about removing it.
     db.exec(`
-      DELETE TABLE room_state_event;
-      DELETE TABLE room_info;
-      DELETE TABLE schema;
+      DROP TABLE room_state_event;
+      DROP TABLE room_info;
+      DROP TABLE schema;
     `);
   },
   consistencyCheck(db) {
