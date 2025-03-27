@@ -48,13 +48,12 @@ const RoomTakedownProtectionSettings = Type.Object({
       "The number of members required in the room for it to appear in the notification. This is to prevent showing direct messages or small rooms that could be too much of an invasion of privacy. We don't have access to enough information to determine this a better way.",
   }),
   // There needs to be a transform for room references
-  discoveryNotificationRoom: Type.Union(
-    [StringRoomIDSchema, Type.Undefined()],
-    {
+  discoveryNotificationRoom: Type.Optional(
+    Type.Union([StringRoomIDSchema, Type.Undefined()], {
       default: undefined,
       description:
         "The room where notifications should be sent. Currently broken and needs to be edited from a state event while we figure something out",
-    }
+    })
   ),
   discoveryNotificationEnabled: Type.Boolean({
     default: true,
