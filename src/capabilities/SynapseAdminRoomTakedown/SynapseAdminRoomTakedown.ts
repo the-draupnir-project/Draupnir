@@ -34,6 +34,7 @@ export class SynapseAdminRoomDetailsProvider implements RoomDetailsProvider {
         creator: detailsResponse.ok?.creator,
         avatar: detailsResponse.ok?.avatar ?? undefined,
         topic: detailsResponse.ok?.topic ?? undefined,
+        joined_members: detailsResponse.ok?.joined_members ?? undefined,
         room_id: roomID,
       });
     }
@@ -53,7 +54,6 @@ export class SynapseAdminRoomTakedownCapability
     // nothing to do mare.
   }
 
-  isSimulated?: true;
   public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {
     const blockStatusResponse = await this.adminClient.getBlockStatus(roomID);
     if (isError(blockStatusResponse)) {
@@ -108,5 +108,65 @@ describeCapabilityProvider<Draupnir>({
       );
     }
     return new SynapseAdminRoomTakedownCapability(draupnir.synapseAdminClient);
+  },
+});
+
+export class SimulatedRoomTakedownCapability implements RoomTakedownCapability {
+  public readonly requiredPermissions = [];
+  public readonly requiredStatePermissions = [];
+  public readonly requiredEventPermissions = [];
+  private readonly roomDetailsProvider = new SynapseAdminRoomDetailsProvider(
+    this.adminClient
+  );
+  isSimulated?: true;
+  public constructor(private readonly adminClient: SynapseAdminClient) {
+    // nothing to do mare.
+  }
+
+  public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {
+    const blockStatusResponse = await this.adminClient.getBlockStatus(roomID);
+    if (isError(blockStatusResponse)) {
+      return blockStatusResponse;
+    } else {
+      return Ok(blockStatusResponse.ok.block);
+    }
+  }
+
+  public async takedownRoom(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    const detailsResponse =
+      await this.roomDetailsProvider.getRoomDetails(roomID);
+    let details: RoomBasicDetails;
+    if (isError(detailsResponse)) {
+      log.warn(
+        "Unable to fetch details for a room being requested to shutdown",
+        detailsResponse.error
+      );
+      details = { room_id: roomID };
+    } else {
+      details = detailsResponse.ok;
+    }
+    return Ok(details);
+  }
+
+  public async getRoomDetails(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    return await this.roomDetailsProvider.getRoomDetails(roomID);
+  }
+}
+
+describeCapabilityProvider<Draupnir>({
+  name: "SimulatedRoomTakedownCapability",
+  description: "Simulates the synapse admin room takedown capability",
+  interface: "RoomTakedownCapability",
+  factory(description, draupnir) {
+    if (draupnir.synapseAdminClient === undefined) {
+      throw new TypeError(
+        "Synapse admin client is not available on this draupnir instance"
+      );
+    }
+    return new SimulatedRoomTakedownCapability(draupnir.synapseAdminClient);
   },
 });

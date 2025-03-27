@@ -41,27 +41,29 @@ import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
 
 const log = new Logger("RoomTakedownProtection");
 
-const RoomTakedownProtectionSettings = Type.Object({
-  discoveryNotificationMembershipThreshold: Type.Integer({
-    default: 20,
-    description:
-      "The number of members required in the room for it to appear in the notification. This is to prevent showing direct messages or small rooms that could be too much of an invasion of privacy. We don't have access to enough information to determine this a better way.",
-  }),
-  // There needs to be a transform for room references
-  discoveryNotificationRoom: Type.Union(
-    [StringRoomIDSchema, Type.Undefined()],
-    {
-      default: undefined,
+const RoomTakedownProtectionSettings = Type.Object(
+  {
+    discoveryNotificationMembershipThreshold: Type.Integer({
+      default: 20,
       description:
-        "The room where notifications should be sent. Currently broken and needs to be edited from a state event while we figure something out",
-    }
-  ),
-  discoveryNotificationEnabled: Type.Boolean({
-    default: true,
-    description:
-      "Wether to send notifications for newly discovered rooms from the homerserver.",
-  }),
-});
+        "The number of members required in the room for it to appear in the notification. This is to prevent showing direct messages or small rooms that could be too much of an invasion of privacy. We don't have access to enough information to determine this a better way.",
+    }),
+    // There needs to be a transform for room references
+    discoveryNotificationRoom: Type.Optional(
+      Type.Union([StringRoomIDSchema, Type.Undefined()], {
+        default: undefined,
+        description:
+          "The room where notifications should be sent. Currently broken and needs to be edited from a state event while we figure something out",
+      })
+    ),
+    discoveryNotificationEnabled: Type.Boolean({
+      default: true,
+      description:
+        "Wether to send notifications for newly discovered rooms from the homerserver.",
+    }),
+  },
+  { title: "RoomTakedownProtectionSettings" }
+);
 
 type RoomTakedownProtectionSettings = EDStatic<
   typeof RoomTakedownProtectionSettings
@@ -163,6 +165,7 @@ describeProtection<
   defaultCapabilities: {
     roomTakedownCapability: SynapseAdminRoomTakedownCapability.name,
   },
+  configSchema: RoomTakedownProtectionSettings,
   factory(description, protectedRoomsSet, draupnir, capabilitySet, settings) {
     if (
       draupnir.stores.hashStore === undefined ||
