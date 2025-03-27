@@ -99,7 +99,7 @@ class StandardRoomTakedownCapabilityRenderer implements RoomTakedownCapability {
       );
       return capabilityResult;
     }
-    this.messageCollector.addMessage(
+    this.messageCollector.addOneliner(
       this.description,
       this.capability,
       renderTakedown(roomID, capabilityResult.ok)
