@@ -12,6 +12,81 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- New server administrative features have been added to Draupnir. For an
+  overview see
+  [homeserver administration](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+  in our documentation.
+
+- A new
+  [_Room Takedown Protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/room-takedown-protection)
+  has been added to assist homeserver administrators in managing the rooms their
+  server is joined to. This includes a room discovery utility where Draupnir
+  will notify the management room with details of rooms it has discovered on the
+  homeserver (configurable with a threshold for joined members). The intent of
+  this protection is to keep rooms with intolerable or illegal content off of
+  the homeserver, including invitations to these rooms. Room takedown is backed
+  up by policy list support. Added by @Gnuxie and @enbea.
+
+- A new
+  [_Block invitations on server protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/block-invitations-on-server-protection)
+  to assist homeserver administrators in preemptively blocking invitations from
+  users or rooms listed in Draupnir's watched policy rooms. This replaces the
+  functionality in the legacy Mjolnir antispam module and is compatible with
+  Synapse workers.
+
+- A new `takedown` command has been added as an alternative to the ban command.
+  `takedown` marks users, rooms, or servers with a policy that means any content
+  associated with the entity should be removed and takendown. This is a much
+  stronger consequence than `ban` and is reserved for illegal or intolerable
+  content. See
+  [MSC4204](https://github.com/matrix-org/matrix-spec-proposals/pull/4204) for
+  details. This command works in conjunction with the new
+  [_Room Takedown Protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/room-takedown-protection)
+
+- Support has been added for
+  [MSC4205: Hashed moderation policy entities](https://github.com/matrix-org/matrix-spec-proposals/pull/4205).
+  Currently we only support revealing hashed entities for rooms. Except from in
+  the
+  [_Block invitations on server protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/block-invitations-on-server-protection).
+  The `takedown` command will hash entities by default. These policies require
+  your Draupnir (or homeserver) to have encountered a user, room, or server
+  before it can reveal the moderation policy. This stops policy rooms from
+  becoming an address book for abuse.
+
+- Support for [synapse-http-antispam](https://github.com/maunium/synapse-http-)
+  antispam has been added to Draupnir and protections. Thanks to @tulir.
+
+- Room state backing store can now be used in the appservice deployment mode.
+  Contributed by @MTRNord in
+  [#753](https://github.com/the-draupnir-project/Draupnir/pull/753).
+
+- An experimental protection to stop excess membership changes. This protection
+  will send a warning before kicking users that are changing their membership
+  event frequently. All of which can be configured.
+
+- A schema has been added to the appservice config file to prevent simple
+  mistakes.
+
+### Fixed
+
+- An issue with the `RoomStateBackingStore` for users on docker with read-only
+  containers where SQLite temporary files couldn't be created. Reported by
+  @cdesnoai and @TheArcaneBrony in
+  [#746](https://github.com/the-draupnir-project/Draupnir/issues/746). Fixed by
+  @enbea.
+
+- An issue where errors from appservice startup would not propagate to the top
+  level.
+
+- Old config properties have been removed from default.yaml thanks to
+  @ll-SKY-ll.
+
+- Typo in BasicFloodingProtection thanks to @Mikaela.
+
 ## [v2.2.0] - 2025-03-03
 
 ### Changed
