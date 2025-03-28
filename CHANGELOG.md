@@ -12,7 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.3.0-beta.0]
+
+In this update we want feedback on new
+[homeserver administrative](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+features we have added to Draupnir. Please try them out and give us your
+thoughts in [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org).
 
 ### Added
 
