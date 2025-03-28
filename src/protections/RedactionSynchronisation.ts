@@ -1,16 +1,15 @@
-// SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
 
-// README: This protection really exists as a stop gap to bring over redaction
-// functionality over from Draupnir, while we figure out how to add redaction
-// policies that operate on a timeline cache, which removes the painfull process
-// that is currently used to repeatedly fetch `/messages`.
-
 import {
   AbstractProtection,
+  ActionException,
+  ActionExceptionKind,
   ActionResult,
-  CapabilitySet,
+  Capability,
+  CapabilityMethodSchema,
+  Membership,
   MembershipChange,
   MembershipChangeType,
   Ok,
@@ -26,161 +25,353 @@ import {
   ProtectionDescription,
   Recommendation,
   RoomMembershipRevision,
+  SetMembershipPolicyRevisionIssuer,
+  SetRoomMembership,
   Task,
+  UnknownConfig,
+  WatchedPolicyRooms,
+  describeCapabilityInterface,
+  describeCapabilityProvider,
+  describeCapabilityRenderer,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { redactUserMessagesIn } from "../utils";
 import {
   MatrixGlob,
   StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { Result } from "@gnuxie/typescript-result";
+import { Type } from "@sinclair/typebox";
+import { revisionRulesMatchingUser } from "../commands/unban/UnbanUsers";
+import { redactUserMessagesIn } from "../utils";
 
-type RedactionSynchronisationProtectionDescription =
-  ProtectionDescription<Draupnir>;
+export type RedactionSynchronisationProtectionCapabilitiesSet = {
+  consequences: RedactionSynchronisationConsequences;
+};
+
+type RedactionSynchronisationProtectionDescription = ProtectionDescription<
+  Draupnir,
+  UnknownConfig,
+  RedactionSynchronisationProtectionCapabilitiesSet
+>;
+
+// FIXME: We really need to design a capability interface for this protection...
+// TBH doing so, would probably just be the UserConsequences capability...
+// There shouldn't be much difference between this protection and MemberBanSynchronisation
+// except this one applies when redaction reasons are given on policies and ban events.
+
+// FIXME: Need to decide whether to use two consequences...
+// the reason why we might need two is if calling redaction when there are invited
+// users will cause issues,, we could just add a second method though.
+
+// FIXME: Just add the invited users thing, we need that code here or there
+// so may aswell do it and test it.
+
+// FIXME: We should consider updating both SetMembership and SetMembershipPolicies
+// to understand parted members...
+
+export interface RedactionSynchronisationConsequences extends Capability {
+  redactMessagesIn(
+    userIDOrGlob: StringUserID,
+    reason: string | undefined,
+    roomIDs: StringRoomID[]
+  ): Promise<Result<void>>;
+  rejectInvite(
+    roomID: StringRoomID,
+    sender: StringUserID,
+    reciever: StringUserID,
+    reason: string | undefined
+  ): Promise<Result<void>>;
+}
+
+describeCapabilityInterface({
+  name: "RedactionSynchronisationConsequences",
+  description: "Consequences for the RedactionSynchronisationProtection",
+  schema: Type.Object({
+    redactMessagesIn: CapabilityMethodSchema,
+  }),
+});
+
+describeCapabilityProvider({
+  name: "StandardRedactionSynchronisationConsequences",
+  interface: "RedactionSynchronisationConsequences",
+  description: "redacts events and rejects invitations send by the target",
+  factory(description, draupnir: Draupnir) {
+    return Object.freeze({
+      requiredPermissions: [
+        PowerLevelPermission.Redact,
+        PowerLevelPermission.Kick,
+      ],
+      requiredStatePermissions: [],
+      requiredEventPermissions: [],
+      async redactMessagesIn(userIDOrGlob, reason, roomIDs) {
+        const redactionResult = await redactUserMessagesIn(
+          draupnir.client,
+          draupnir.managementRoomOutput,
+          userIDOrGlob,
+          roomIDs
+        ).then(
+          (_) => Ok(undefined),
+          (error) =>
+            ActionException.Result(
+              `Error redacting messages for ${userIDOrGlob}`,
+              {
+                exception: error,
+                exceptionKind: ActionExceptionKind.Unknown,
+              }
+            )
+        );
+        return redactionResult;
+      },
+      async rejectInvite(roomID, _sender, target, reason) {
+        return await draupnir.clientPlatform
+          .toRoomKicker()
+          .kickUser(roomID, target, reason);
+      },
+    } satisfies RedactionSynchronisationConsequences);
+  },
+});
+
+// FIXME: We really need capability rendering to be configurable.
+describeCapabilityProvider({
+  name: "SimulatedRedactionSynchronisationConsequences",
+  interface: "RedactionSynchronisationConsequences",
+  description: "Simulated redaction consequences",
+  factory(_description, _context) {
+    return Object.freeze({
+      requiredPermissions: [],
+      requiredStatePermissions: [],
+      requiredEventPermissions: [],
+      isSimulated: true,
+      async redactMessagesIn() {
+        return Ok(undefined);
+      },
+      async rejectInvite() {
+        return Ok(undefined);
+      },
+    } satisfies RedactionSynchronisationConsequences);
+  },
+});
+
+describeCapabilityRenderer({
+  name: "StandardRedactionSynchronisationConsequencesRenderer",
+  interface: "RedactionSynchronisationConsequences",
+  description: "Doesn't render anything tbh, because it would be too annoying",
+  isDefaultForInterface: true,
+  factory(
+    _protectionDescription,
+    _context,
+    provider: RedactionSynchronisationConsequences
+  ) {
+    return Object.freeze({
+      ...(provider.isSimulated ? { isSimulated: true } : {}),
+      requiredPermissions: provider.requiredPermissions,
+      requiredStatePermissions: provider.requiredStatePermissions,
+      requiredEventPermissions: provider.requiredEventPermissions,
+      async redactMessagesIn(userIDOrGlob, reason, roomIDs) {
+        return await provider.redactMessagesIn(userIDOrGlob, reason, roomIDs);
+      },
+      async rejectInvite(roomID, sender, reciever, reason) {
+        return await provider.rejectInvite(roomID, sender, reciever, reason);
+      },
+    } satisfies RedactionSynchronisationConsequences);
+  },
+});
+
+interface RedactionSynchronisation {
+  // Used to check matching policies at startup.
+  // Not used for applying redactions on match, since the new policy
+  // hook is used for that.
+  handlePermissionRequirementsMet(roomID: StringRoomID): void;
+  // Used to check for when someone is trying to trigger draupnir to cleanup
+  // or new policy was issued
+  handlePolicyChange(policyChange: PolicyRuleChange): void;
+  // Used to handle redactions/reject invitations as a user is banned
+  handleMembershipChange(change: MembershipChange): void;
+}
+
+export class StandardRedactionSynchronisation
+  implements RedactionSynchronisation
+{
+  public constructor(
+    private readonly automaticRedactionReasons: MatrixGlob[],
+    private readonly consequences: RedactionSynchronisationConsequences,
+    private readonly watchedPolicyRooms: WatchedPolicyRooms,
+    private readonly setRoomMembership: SetRoomMembership,
+    private readonly setPoliciesMatchingMembership: SetMembershipPolicyRevisionIssuer
+  ) {
+    // nothing to do.
+  }
+  handlePermissionRequirementsMet(roomID: StringRoomID): void {
+    const membershipRevision = this.setRoomMembership.getRevision(roomID);
+    if (membershipRevision !== undefined) {
+      this.checkRoomInvitations(membershipRevision);
+    }
+    for (const match of this.setPoliciesMatchingMembership.currentRevision.allMembersWithRules()) {
+      if (membershipRevision?.membershipForUser(match.userID)) {
+        const policyRequiringRedaction = match.policies.find((policy) =>
+          this.isPolicyRequiringRedaction(policy)
+        );
+        if (policyRequiringRedaction !== undefined) {
+          void Task(
+            this.consequences.redactMessagesIn(
+              match.userID,
+              policyRequiringRedaction.reason,
+              [roomID]
+            )
+          );
+        }
+      }
+    }
+  }
+  handlePolicyChange(change: PolicyRuleChange): void {
+    const policy = change.rule;
+    if (change.changeType === PolicyRuleChangeType.Removed) {
+      return;
+    }
+    if (policy.kind !== PolicyRuleType.User) {
+      return;
+    }
+    if (policy.matchType === PolicyRuleMatchType.HashedLiteral) {
+      return;
+    }
+    if (!this.isPolicyRequiringRedaction(policy)) {
+      return;
+    }
+    const roomsRequiringRedaction =
+      policy.matchType === PolicyRuleMatchType.Literal
+        ? this.setRoomMembership.allRooms.filter((revision) =>
+            revision.membershipForUser(StringUserID(policy.entity))
+          )
+        : this.setRoomMembership.allRooms;
+    void Task(
+      this.consequences.redactMessagesIn(
+        StringUserID(policy.entity),
+        policy.reason,
+        roomsRequiringRedaction.map((revision) =>
+          revision.room.toRoomIDOrAlias()
+        )
+      )
+    );
+    for (const revision of roomsRequiringRedaction) {
+      this.checkRoomInvitations(revision);
+    }
+  }
+  handleMembershipChange(change: MembershipChange): void {
+    if (
+      change.membershipChangeType === MembershipChangeType.Banned &&
+      this.automaticRedactionReasons.some((reason) =>
+        reason.test(change.content.reason ?? "<no reason supplied>")
+      )
+    ) {
+      void Task(
+        this.consequences.redactMessagesIn(change.userID, undefined, [
+          change.roomID,
+        ])
+      );
+      const membershipRevision = this.setRoomMembership.getRevision(
+        change.roomID
+      );
+      if (membershipRevision) {
+        this.checkRoomInvitations(membershipRevision);
+      }
+    }
+  }
+
+  private isPolicyRequiringRedaction(policy: PolicyRule): boolean {
+    return this.automaticRedactionReasons.some((reason) =>
+      reason.test(policy.reason ?? "<no reason supplied>")
+    );
+  }
+
+  private checkRoomInvitations(
+    membershipRevision: RoomMembershipRevision
+  ): void {
+    const invites = membershipRevision.membersOfMembership(Membership.Invite);
+    for (const invite of invites) {
+      const relevantRules = revisionRulesMatchingUser(
+        invite.sender,
+        [Recommendation.Takedown, Recommendation.Ban],
+        this.watchedPolicyRooms.currentRevision
+      ).filter((policy) => this.isPolicyRequiringRedaction(policy));
+      if (relevantRules.length > 0) {
+        void Task(
+          this.consequences.rejectInvite(
+            invite.roomID,
+            invite.sender,
+            invite.userID,
+            relevantRules.find((policy) => policy.reason !== undefined)?.reason
+          )
+        );
+      }
+    }
+  }
+}
 
 export class RedactionSynchronisationProtection
   extends AbstractProtection<RedactionSynchronisationProtectionDescription>
   implements Protection<RedactionSynchronisationProtectionDescription>
 {
-  private automaticRedactionReasons: MatrixGlob[] = [];
+  private readonly redactionSynchronisation: RedactionSynchronisation;
   public constructor(
     description: RedactionSynchronisationProtectionDescription,
-    capabilities: CapabilitySet,
+    capabilities: RedactionSynchronisationProtectionCapabilitiesSet,
     protectedRoomsSet: ProtectedRoomsSet,
-    private readonly draupnir: Draupnir
+    automaticallyRedactForReasons: string[]
   ) {
-    super(description, capabilities, protectedRoomsSet, {
-      requiredPermissions: [PowerLevelPermission.Redact],
-    });
-    for (const reason of draupnir.config.automaticallyRedactForReasons) {
-      this.automaticRedactionReasons.push(new MatrixGlob(reason.toLowerCase()));
-    }
-  }
-  public redactForNewUserPolicy(policy: PolicyRule): void {
-    const rooms: StringRoomID[] = [];
-    if (policy.matchType === PolicyRuleMatchType.HashedLiteral) {
-      return; // wait for them to be reversed and placed into the model as clear text.
-    }
-    if (policy.matchType === PolicyRuleMatchType.Glob) {
-      this.protectedRoomsSet.allProtectedRooms.forEach((room) =>
-        rooms.push(room.toRoomIDOrAlias())
-      );
-    } else {
-      for (const roomMembership of this.protectedRoomsSet.setRoomMembership
-        .allRooms) {
-        const membership = roomMembership.membershipForUser(
-          policy.entity as StringUserID
-        );
-        if (membership !== undefined) {
-          rooms.push(roomMembership.room.toRoomIDOrAlias());
-        }
-      }
-    }
-    void Task(
-      redactUserMessagesIn(
-        this.draupnir.client,
-        this.draupnir.managementRoomOutput,
-        policy.entity,
-        rooms
-      )
+    super(description, capabilities, protectedRoomsSet, {});
+    this.redactionSynchronisation = new StandardRedactionSynchronisation(
+      automaticallyRedactForReasons.map((reason) => new MatrixGlob(reason)),
+      capabilities.consequences,
+      protectedRoomsSet.watchedPolicyRooms,
+      protectedRoomsSet.setRoomMembership,
+      protectedRoomsSet.setPoliciesMatchingMembership
     );
   }
+
   public async handlePolicyChange(
-    revision: PolicyListRevision,
+    _revision: PolicyListRevision,
     changes: PolicyRuleChange[]
   ): Promise<ActionResult<void>> {
-    const relevantChanges = changes.filter(
-      (change) =>
-        change.changeType !== PolicyRuleChangeType.Removed &&
-        change.rule.kind === PolicyRuleType.User &&
-        this.automaticRedactionReasons.some((reason) =>
-          reason.test(change.rule.reason ?? "<no reason supplied>")
-        )
-    );
-    // Can't see this fucking up at all when watching a new list :skull:.
-    // So instead, we employ a genius big brain move.
-    // Basically, this stops us from overwhelming draupnir with redaction
-    // requests if the user watches a new list. Very unideal.
-    // however, please see the comment at the top of the file which explains
-    // how this protection **should** work, if it wasn't a stop gap.
-    if (relevantChanges.length > 5) {
-      return Ok(undefined);
-    } else if (relevantChanges.length === 0) {
-      return Ok(undefined);
-    } else {
-      relevantChanges.forEach((change) => {
-        this.redactForNewUserPolicy(change.rule);
-      });
-      return Ok(undefined);
-    }
+    changes.forEach((change) => {
+      this.redactionSynchronisation.handlePolicyChange(change);
+    });
+    return Ok(undefined);
   }
+
+  // Scan again on ban to make sure we mopped everything up.
   public async handleMembershipChange(
-    revision: RoomMembershipRevision,
+    _revision: RoomMembershipRevision,
     changes: MembershipChange[]
   ): Promise<ActionResult<void>> {
-    const isUserJoiningWithPolicyRequiringRedaction = (
-      change: MembershipChange
-    ) => {
-      if (
-        change.membershipChangeType === MembershipChangeType.Joined ||
-        change.membershipChangeType === MembershipChangeType.Rejoined
-      ) {
-        const policyRevision =
-          this.protectedRoomsSet.watchedPolicyRooms.currentRevision;
-        const matchingPolicy =
-          policyRevision.findRuleMatchingEntity(change.userID, {
-            type: PolicyRuleType.User,
-            recommendation: Recommendation.Ban,
-            searchHashedRules: false,
-          }) ??
-          policyRevision.findRuleMatchingEntity(change.userID, {
-            type: PolicyRuleType.User,
-            recommendation: Recommendation.Takedown,
-            searchHashedRules: false,
-          });
-        return (
-          matchingPolicy !== undefined &&
-          this.automaticRedactionReasons.some((reason) =>
-            reason.test(matchingPolicy.reason ?? "<no reason supplied>")
-          )
-        );
-      } else {
-        return false;
-      }
-    };
-    const relevantChanges = changes.filter(
-      isUserJoiningWithPolicyRequiringRedaction
-    );
-    for (const change of relevantChanges) {
-      void Task(
-        redactUserMessagesIn(
-          this.draupnir.client,
-          this.draupnir.managementRoomOutput,
-          change.userID,
-          [revision.room.toRoomIDOrAlias()]
-        )
-      );
-    }
+    changes.forEach((change) => {
+      this.redactionSynchronisation.handleMembershipChange(change);
+    });
     return Ok(undefined);
   }
 }
 
-describeProtection<Record<never, never>, Draupnir>({
-  name: RedactionSynchronisationProtection.name,
-  description:
-    "Redacts messages when a new ban policy has been issued that matches config.automaticallyRedactForReasons. Work in progress.",
-  capabilityInterfaces: {},
-  defaultCapabilities: {},
-  factory(description, protectedRoomsSet, draupnir, capabilities) {
-    return Ok(
-      new RedactionSynchronisationProtection(
-        description,
-        capabilities,
-        protectedRoomsSet,
-        draupnir
-      )
-    );
-  },
-});
+describeProtection<RedactionSynchronisationProtectionCapabilitiesSet, Draupnir>(
+  {
+    name: RedactionSynchronisationProtection.name,
+    description:
+      "Redacts messages when a new ban policy has been issued that matches config.automaticallyRedactForReasons. Work in progress.",
+    capabilityInterfaces: {
+      consequences: "RedactionSynchronisationConsequences",
+    },
+    defaultCapabilities: {
+      consequences: "StandardRedactionSynchronisationConsequences",
+    },
+    factory(description, protectedRoomsSet, draupnir, capabilities) {
+      return Ok(
+        new RedactionSynchronisationProtection(
+          description,
+          capabilities,
+          protectedRoomsSet,
+          draupnir.config.automaticallyRedactForReasons
+        )
+      );
+    },
+  }
+);
