@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The _Redaction Synchronisation Protection_ has been improved in a few ways:
+  - Invitations in protected rooms will be rejected as part of the redaction
+    process when they are sent from users being redacted (e.g. as a brigading
+    tactic).
+  - User redaction will now be triggered on bans and the reason will be scanned
+    for `automaticallyRedactForReasons` from Draupnir's config.
+
 ## [v2.3.0-beta.0]
 
 In this update we want feedback on new
