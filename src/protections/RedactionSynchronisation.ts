@@ -31,6 +31,7 @@ import {
   UnknownConfig,
   describeCapabilityInterface,
   describeCapabilityProvider,
+  describeCapabilityRenderer,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
@@ -127,6 +128,52 @@ describeCapabilityProvider({
         return await draupnir.clientPlatform
           .toRoomKicker()
           .kickUser(roomID, target, reason);
+      },
+    } satisfies RedactionSynchronisationConsequences);
+  },
+});
+
+// FIXME: We really need capability rendering to be configurable.
+describeCapabilityProvider({
+  name: "SimulatedRedactionSynchronisationConsequences",
+  interface: "RedactionSynchronisationConsequences",
+  description: "Simulated redaction consequences",
+  factory(_description, _context) {
+    return Object.freeze({
+      requiredPermissions: [],
+      requiredStatePermissions: [],
+      requiredEventPermissions: [],
+      isSimulated: true,
+      async redactMessagesIn() {
+        return Ok(undefined);
+      },
+      async rejectInvite() {
+        return Ok(undefined);
+      },
+    } satisfies RedactionSynchronisationConsequences);
+  },
+});
+
+describeCapabilityRenderer({
+  name: "StandardRedactionSynchronisationConsequencesRenderer",
+  interface: "RedactionSynchronisationConsequences",
+  description: "Doesn't render anything tbh, because it would be too annoying",
+  isDefaultForInterface: true,
+  factory(
+    _protectionDescription,
+    _context,
+    provider: RedactionSynchronisationConsequences
+  ) {
+    return Object.freeze({
+      ...(provider.isSimulated ? { isSimulated: true } : {}),
+      requiredPermissions: provider.requiredPermissions,
+      requiredStatePermissions: provider.requiredStatePermissions,
+      requiredEventPermissions: provider.requiredEventPermissions,
+      async redactMessagesIn(userIDOrGlob, reason, roomIDs) {
+        return await provider.redactMessagesIn(userIDOrGlob, reason, roomIDs);
+      },
+      async rejectInvite(roomID, sender, target, reason) {
+        return await provider.rejectInvite(roomID, sender, target, reason);
       },
     } satisfies RedactionSynchronisationConsequences);
   },
