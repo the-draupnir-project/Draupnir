@@ -17,9 +17,9 @@ and this project adheres to
 ### Added
 
 - New server administrative features have been added to Draupnir. For an
-  overview see the
+  overview see
   [homeserver administration](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
-  overview in our documentation.
+  in our documentation.
 
 - A new
   [_Room Takedown Protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/room-takedown-protection)
@@ -33,12 +33,12 @@ and this project adheres to
 
 - A new
   [_Block invitations on server protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/block-invitations-on-server-protection)
-  to assist homeserver administrators in premtively blocking invitations from
-  users or rooms litsed in Draupnir's watched policy rooms. This replaces the
+  to assist homeserver administrators in preemptively blocking invitations from
+  users or rooms listed in Draupnir's watched policy rooms. This replaces the
   functionality in the legacy Mjolnir antispam module and is compatible with
   Synapse workers.
 
-- A new `takedown` command has been added as an alternative to the ban coommand.
+- A new `takedown` command has been added as an alternative to the ban command.
   `takedown` marks users, rooms, or servers with a policy that means any content
   associated with the entity should be removed and takendown. This is a much
   stronger consequence than `ban` and is reserved for illegal or intolerable
@@ -73,7 +73,7 @@ and this project adheres to
 
 ### Fixed
 
-- An issue with the `RoomStateBackingStore` for users on docker with readonly
+- An issue with the `RoomStateBackingStore` for users on docker with read-only
   containers where SQLite temporary files couldn't be created. Reported by
   @cdesnoai and @TheArcaneBrony in
   [#746](https://github.com/the-draupnir-project/Draupnir/issues/746). Fixed by
