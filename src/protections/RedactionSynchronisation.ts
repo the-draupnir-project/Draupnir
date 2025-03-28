@@ -157,14 +157,10 @@ export class RedactionSynchronisationProtection
     );
   }
 
-  public handlePermissionRequirementsMet(room: MatrixRoomID): void {
-    const membershipRevision =
-      this.protectedRoomsSet.setRoomMembership.getRevision(
-        room.toRoomIDOrAlias()
-      );
-    const invites = [
-      ...(membershipRevision?.membersOfMembership(Membership.Invite) ?? []),
-    ];
+  private checkRoomInvitations(
+    membershipRevision: RoomMembershipRevision
+  ): void {
+    const invites = membershipRevision.membersOfMembership(Membership.Invite);
     for (const invite of invites) {
       const relevantRules = revisionRulesMatchingUser(
         invite.sender,
@@ -181,6 +177,16 @@ export class RedactionSynchronisationProtection
           )
         );
       }
+    }
+  }
+
+  public handlePermissionRequirementsMet(room: MatrixRoomID): void {
+    const membershipRevision =
+      this.protectedRoomsSet.setRoomMembership.getRevision(
+        room.toRoomIDOrAlias()
+      );
+    if (membershipRevision !== undefined) {
+      this.checkRoomInvitations(membershipRevision);
     }
     for (const match of this.protectedRoomsSet.setPoliciesMatchingMembership.currentRevision.allMembersWithRules()) {
       if (membershipRevision?.membershipForUser(match.userID)) {
@@ -239,6 +245,11 @@ export class RedactionSynchronisationProtection
             change.roomID,
           ])
         );
+        const membershipRevision =
+          this.protectedRoomsSet.setRoomMembership.getRevision(change.roomID);
+        if (membershipRevision) {
+          this.checkRoomInvitations(membershipRevision);
+        }
       }
     }
     return Ok(undefined);
