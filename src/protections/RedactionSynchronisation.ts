@@ -189,11 +189,11 @@ export class RedactionSynchronisationProtection
     description: RedactionSynchronisationProtectionDescription,
     capabilities: RedactionSynchronisationProtectionCapabilitiesSet,
     protectedRoomsSet: ProtectedRoomsSet,
-    draupnir: Draupnir
+    automaticallyRedactForReasons: string[]
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.consequences = capabilities.consequences;
-    for (const reason of draupnir.config.automaticallyRedactForReasons) {
+    for (const reason of automaticallyRedactForReasons) {
       this.automaticRedactionReasons.push(new MatrixGlob(reason.toLowerCase()));
     }
   }
@@ -320,7 +320,7 @@ describeProtection<RedactionSynchronisationProtectionCapabilitiesSet, Draupnir>(
           description,
           capabilities,
           protectedRoomsSet,
-          draupnir
+          draupnir.config.automaticallyRedactForReasons
         )
       );
     },
