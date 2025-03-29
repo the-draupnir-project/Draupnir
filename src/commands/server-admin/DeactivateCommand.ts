@@ -15,8 +15,8 @@ import {
   tuple,
 } from "@the-draupnir-project/interface-manager";
 import { ActionError } from "matrix-protection-suite";
-import { Draupnir } from "../Draupnir";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { Draupnir } from "../../Draupnir";
+import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 
 export const SynapseAdminDeactivateCommand = describeCommand({
   summary: "Deactivate a user on the homeserver.",

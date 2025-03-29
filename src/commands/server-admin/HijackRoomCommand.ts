@@ -21,8 +21,8 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { Draupnir } from "../Draupnir";
-import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { Draupnir } from "../../Draupnir";
+import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 
 export const SynapseAdminHijackRoomCommand = describeCommand({
   summary:

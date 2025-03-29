@@ -15,9 +15,9 @@ import {
 } from "./AliasCommands";
 import { DraupnirBanCommand } from "./Ban";
 import { DraupnirListCreateCommand } from "./CreateBanListCommand";
-import { SynapseAdminDeactivateCommand } from "./DeactivateCommand";
+import { SynapseAdminDeactivateCommand } from "./server-admin/DeactivateCommand";
 import { DraupnirHelpCommand } from "./Help";
-import { SynapseAdminHijackRoomCommand } from "./HijackRoomCommand";
+import { SynapseAdminHijackRoomCommand } from "./server-admin/HijackRoomCommand";
 import { DraupnirImportCommand } from "./ImportCommand";
 import { DraupnirKickCommand } from "./KickCommand";
 import {
@@ -43,7 +43,7 @@ import {
 } from "./Rules";
 import { DraupnirDisplaynameCommand } from "./SetDisplayNameCommand";
 import { DraupnirSetPowerLevelCommand } from "./SetPowerLevelCommand";
-import { SynapseAdminShutdownRoomCommand } from "./ShutdownRoomCommand";
+import { SynapseAdminShutdownRoomCommand } from "./server-admin/ShutdownRoomCommand";
 import { DraupnirStatusCommand } from "./StatusCommand";
 import { DraupnirUnbanCommand } from "./unban/Unban";
 import {
@@ -55,14 +55,20 @@ import { DraupnirSafeModeCommand } from "./SafeModeCommand";
 import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
 import { JoinWaveCommandTable } from "../protections/JoinWaveShortCircuit";
-import { DraupnirTakedownCommand } from "./Takedown";
+import { DraupnirTakedownCommand } from "./server-admin/Takedown";
+import {
+  SynapseAdminSuspendUserCommand,
+  SynapseAdminUnsuspendUserCommand,
+} from "./server-admin/SuspendCommand";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
 export const SynapseAdminCommands = new StandardCommandTable("synapse admin")
   .internCommand(SynapseAdminDeactivateCommand, ["deactivate"])
   .internCommand(SynapseAdminHijackRoomCommand, ["hijack", "room"])
-  .internCommand(SynapseAdminShutdownRoomCommand, ["shutdown", "room"]);
+  .internCommand(SynapseAdminShutdownRoomCommand, ["shutdown", "room"])
+  .internCommand(SynapseAdminSuspendUserCommand, ["suspend"])
+  .internCommand(SynapseAdminUnsuspendUserCommand, ["unsuspend"]);
 
 const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirAliasMoveCommand, ["alias", "move"])

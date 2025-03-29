@@ -14,7 +14,7 @@ import {
   tuple,
   union,
 } from "@the-draupnir-project/interface-manager";
-import { findPolicyRoomEditorFromRoomReference } from "./Ban";
+import { findPolicyRoomEditorFromRoomReference } from "../Ban";
 import {
   isError,
   Logger,
@@ -38,10 +38,10 @@ import {
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
-} from "./DraupnirCommandPrerequisites";
-import { renderRoomPill } from "./interface-manager/MatrixHelpRenderer";
-import { RoomDetailsProvider } from "../capabilities/RoomTakedownCapability";
-import { SynapseAdminRoomDetailsProvider } from "../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
+} from "../DraupnirCommandPrerequisites";
+import { renderRoomPill } from "../interface-manager/MatrixHelpRenderer";
+import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
+import { SynapseAdminRoomDetailsProvider } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
 
 const log = new Logger("DraupnirTakedownCommand");
 
