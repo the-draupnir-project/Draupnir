@@ -96,7 +96,7 @@ enum Kind {
   MODERATION_REQUEST,
   //! An abuse report, as per https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-report-eventid
   SERVER_ABUSE_REPORT,
-  //! Mjölnir encountered a problem while attempting to handle a moderation request or abuse report
+  //! Draupnir encountered a problem while attempting to handle a moderation request or abuse report
   ERROR,
   //! A moderation request or server abuse report escalated by the server/room moderators.
   ESCALATED_REPORT,
@@ -572,7 +572,7 @@ interface IUIAction {
   /**
    * A unique label.
    *
-   * Used by Mjölnir to differentiate the actions, e.g. `kick-user`.
+   * Used by Draupnir to differentiate the actions, e.g. `kick-user`.
    */
   readonly label: string;
 
@@ -590,14 +590,14 @@ interface IUIAction {
   readonly needsConfirmation: boolean;
 
   /**
-   * Detect whether the action may be executed, e.g. whether Mjölnir has
+   * Detect whether the action may be executed, e.g. whether Draupnir has
    * sufficient powerlevel to execute this action.
    *
    * **Security caveat** This assumes that the security policy on whether
    * the operation can be executed is:
    *
    * > *Anyone* in the moderation room and who isn't muted can execute
-   * > an operation iff Mjölnir has the rights to execute it.
+   * > an operation iff Draupnir has the rights to execute it.
    *
    * @param report Details on the abuse report.
    */
@@ -902,7 +902,7 @@ class Help implements IUIAction {
       ))
     ) {
       list.push(
-        `<li>Some actions were disabled because Mjölnir is not moderator in room ${htmlEscape(report.room_alias_or_id)}</li>`
+        `<li>Some actions were disabled because Draupnir is not moderator in room ${htmlEscape(report.room_alias_or_id)}</li>`
       );
     }
     const body = `<ul>${list.join("\n")}</ul>`;
@@ -911,7 +911,7 @@ class Help implements IUIAction {
 }
 
 /**
- * Escalate to the moderation room of this instance of Mjölnir.
+ * Escalate to the moderation room of this instance of Draupnir.
  */
 class EscalateToServerModerationRoom implements IUIAction {
   public label = "escalate-to-server-moderation";
@@ -1055,7 +1055,7 @@ class DisplayManager {
       }
     } catch (ex) {
       eventContent = {
-        msg: `<Cannot extract event. Please verify that Mjölnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`,
+        msg: `<Cannot extract event. Please verify that Draupnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`,
       };
     }
 
@@ -1084,7 +1084,7 @@ class DisplayManager {
     try {
       eventTimestamp = new Date(event["origin_server_ts"]).toUTCString();
     } catch (ex) {
-      eventTimestamp = `<Cannot extract event. Please verify that Mjölnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`;
+      eventTimestamp = `<Cannot extract event. Please verify that Draupnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`;
     }
 
     let title;

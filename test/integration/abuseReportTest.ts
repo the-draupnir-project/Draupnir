@@ -56,7 +56,7 @@ describe("Test: Reporting abuse", () => {
   // are sent.
   for (const endpoint of ["v3", "r0"]) {
     it(
-      `Mjölnir intercepts abuse reports with endpoint ${endpoint}`,
+      `Draupnir intercepts abuse reports with endpoint ${endpoint}`,
       async function (this: DraupnirTestContext) {
         this.timeout(90000);
         if (this.draupnir === undefined) {
@@ -344,7 +344,7 @@ describe("Test: Reporting abuse", () => {
         }
         assert.deepEqual(found, reportsToFind);
 
-        // Since Mjölnir is not a member of the room, the only buttons we should find
+        // Since Draupnir is not a member of the room, the only buttons we should find
         // are `help` and `ignore`.
         for (const event of reactions) {
           const regexp = /\/([[^]]*)\]/;
@@ -417,7 +417,7 @@ describe("Test: Reporting abuse", () => {
     await badUser.joinRoom(roomId);
     await goodUser.joinRoom(roomId);
 
-    // Setup Mjölnir as moderator for our room.
+    // Setup Draupnir as moderator for our room.
     await moderatorUser.inviteUser(await draupnir.client.getUserId(), roomId);
     await moderatorUser.setUserPowerLevel(
       await draupnir.client.getUserId(),

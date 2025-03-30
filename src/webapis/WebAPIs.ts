@@ -221,7 +221,7 @@ export class WebAPIs {
         //    as this would let us read encrypted messages;
         // - this client is torn down as soon as possible to avoid
         //    any case in which it could somehow be abused if a
-        //    malicious third-party gains access to Mjölnir.
+        //    malicious third-party gains access to Draupnir.
         //
         // Rationales for using this mechanism:
         //
@@ -233,7 +233,7 @@ export class WebAPIs {
         //    - identity-checking; and
         //    - features that are already available in the Synapse Admin API
         //      (possibly in the Admin APIs of other homeservers, I haven't checked)
-        //    so we are not extending the abilities of Mjölnir
+        //    so we are not extending the abilities of Draupnir
         // 3. We are avoiding the use of the Synapse Admin API to ensure that
         //    this feature can work with all homeservers, not just Synapse.
         const reporterClient = new MatrixClient(
@@ -257,7 +257,7 @@ export class WebAPIs {
         // IMPORTANT: The following call will return the event without decyphering it, so we're
         // not obtaining anything that we couldn't also obtain through a homeserver's Admin API.
         //
-        // By doing this with the reporterClient, we ensure that this feature of Mjölnir can work
+        // By doing this with the reporterClient, we ensure that this feature of Draupnir can work
         // with all Matrix homeservers, rather than just Synapse.
         event = await reporterClient.getEvent(roomID, eventID);
       }
