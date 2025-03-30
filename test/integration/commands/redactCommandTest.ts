@@ -31,7 +31,7 @@ describe("Test: The redaction command", function () {
   });
 
   it(
-    "Mjölnir redacts all of the events sent by a spammer when instructed to by giving their id and a room id.",
+    "Draupnir redacts all of the events sent by a spammer when instructed to by giving their id and a room id.",
     async function (this: RedactionTestContext) {
       this.timeout(60000);
       // Create a few users and a room.
@@ -139,7 +139,7 @@ describe("Test: The redaction command", function () {
   );
 
   it(
-    "Mjölnir redacts all of the events sent by a spammer when instructed to by giving their id in multiple rooms.",
+    "Draupnir redacts all of the events sent by a spammer when instructed to by giving their id in multiple rooms.",
     async function (this: RedactionTestContext) {
       this.timeout(60000);
       // Create a few users and a room.

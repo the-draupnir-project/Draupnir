@@ -14,7 +14,7 @@ import { getFirstReaction } from "./commandUtils";
 import { DraupnirTestContext, draupnirSafeEmitter } from "../mjolnirSetupUtils";
 
 describe("Test: The make admin command", function () {
-  it("Mjölnir make the bot self room administrator", async function (
+  it("Draupnir make the bot self room administrator", async function (
     this: DraupnirTestContext
   ) {
     this.timeout(90000);
