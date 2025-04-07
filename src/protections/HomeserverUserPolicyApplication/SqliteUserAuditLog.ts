@@ -33,7 +33,6 @@ const SchemaText = [
     recommendation TEXT NOT NULL
   ) STRICT;
   CREATE TABLE user_suspension (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     policy_id TEXT NULL,
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
@@ -42,7 +41,6 @@ const SchemaText = [
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;
   CREATE TABLE user_unsuspension (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL
