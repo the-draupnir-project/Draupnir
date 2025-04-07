@@ -33,7 +33,7 @@ const SchemaText = [
     recommendation TEXT NOT NULL
   ) STRICT;
   CREATE TABLE user_suspension (
-    policy_id TEXT NULL,
+    policy_id TEXT,
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     suspension_type TEXT NOT NULL,
