@@ -4,7 +4,7 @@
 
 import { Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule } from "matrix-protection-suite";
+import { LiteralPolicyRule, PolicyListRevision } from "matrix-protection-suite";
 
 export enum SuspensionType {
   Suspended = "suspended",
@@ -25,5 +25,8 @@ export interface UserAuditLog {
     userID: StringUserID,
     sender: StringUserID
   ): Promise<Result<void>>;
+  findUnsuspendedUsers(
+    revision: PolicyListRevision
+  ): Promise<Result<[StringUserID, LiteralPolicyRule][]>>;
   destroy(): void;
 }
