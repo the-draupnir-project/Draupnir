@@ -117,7 +117,7 @@ export class HomeserverUserPolicyApplication {
   public handleProtectionEnable(): void {
     void Task(
       (async () => {
-        const usersToSuspend = await this.userAuditLog.findUnsuspendedUsers(
+        const usersToSuspend = await this.userAuditLog.findUnrestrictedUsers(
           this.watchedPolicyRooms.currentRevision
         );
         if (isError(usersToSuspend)) {

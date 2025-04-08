@@ -10,7 +10,7 @@ import {
   LiteralPolicyRule,
   Logger,
 } from "matrix-protection-suite";
-import { SuspensionType, UserAuditLog } from "./UserAuditLog";
+import { AccountRestriction, UserAuditLog } from "./UserAuditLog";
 import {
   checkKnownTables,
   SqliteSchemaOptions,
@@ -32,15 +32,15 @@ const SchemaText = [
     type TEXT NOT NULL,
     recommendation TEXT NOT NULL
   ) STRICT;
-  CREATE TABLE user_suspension (
+  CREATE TABLE user_restriction (
     policy_id TEXT,
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
-    suspension_type TEXT NOT NULL,
+    restriction_type TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;
-  CREATE TABLE user_unsuspension (
+  CREATE TABLE user_unrestriction (
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL
@@ -57,8 +57,8 @@ const SchemaOptions = {
   consistencyCheck(db) {
     return checkKnownTables(db, [
       "policy_info",
-      "user_suspension",
-      "user_unsuspension",
+      "user_restriction",
+      "user_unrestriction",
     ]);
   },
 } satisfies SqliteSchemaOptions;
@@ -85,7 +85,9 @@ export class SqliteUserAuditLog
   constructor(db: Database) {
     super(SchemaOptions, db, log);
   }
-  public async isUserSuspended(userID: StringUserID): Promise<Result<boolean>> {
+  public async isUserRestricted(
+    userID: StringUserID
+  ): Promise<Result<boolean>> {
     return wrapInTryCatch(
       () =>
         Ok(
@@ -95,14 +97,14 @@ export class SqliteUserAuditLog
               `
               SELECT
                 CASE
-                  WHEN NOT EXISTS (SELECT 1 FROM user_suspension WHERE target_user_id = :user_id) THEN FALSE
-                  WHEN MAX(user_unsuspension.created_at) >= MAX(user_suspension.created_at) THEN FALSE
+                  WHEN NOT EXISTS (SELECT 1 FROM user_restriction WHERE target_user_id = :user_id) THEN FALSE
+                  WHEN MAX(user_unrestriction.created_at) >= MAX(user_restriction.created_at) THEN FALSE
                   ELSE TRUE
                 END AS is_suspended
-              FROM user_suspension
-              LEFT JOIN user_unsuspension
-                ON user_suspension.target_user_id = user_unsuspension.target_user_id
-              WHERE user_suspension.target_user_id = :user_id;`
+              FROM user_restriction
+              LEFT JOIN user_unrestriction
+                ON user_restriction.target_user_id = user_unrestriction.target_user_id
+              WHERE user_restriction.target_user_id = :user_id;`
             )
             .pluck()
             .get({ user_id: userID }) as number) === 1
@@ -126,9 +128,9 @@ export class SqliteUserAuditLog
         policy.recommendation,
       ]);
   }
-  public async suspendUser(
+  public async recordUserRestriction(
     userID: StringUserID,
-    suspensionType: SuspensionType,
+    restrictionType: AccountRestriction,
     { sender, rule }: { sender: StringUserID; rule: LiteralPolicyRule | null }
   ): Promise<ActionResult<void>> {
     return wrapInTryCatch(() => {
@@ -140,20 +142,20 @@ export class SqliteUserAuditLog
         this.db
           .prepare(
             `
-          INSERT INTO user_suspension (
+          INSERT INTO user_restriction (
             policy_id,
             target_user_id,
             sender_user_id,
-            suspension_type
+            restriction_type
           ) VALUES (?, ?, ?, ?)
         `
           )
-          .run([policyID, userID, sender, suspensionType]);
+          .run([policyID, userID, sender, restrictionType]);
       })();
       return Ok(undefined);
     }, `Failed to suspend user ${userID}`);
   }
-  public async unsuspendUser(
+  public async unrestrictUser(
     userID: StringUserID,
     sender: StringUserID
   ): Promise<ActionResult<void>> {
@@ -161,7 +163,7 @@ export class SqliteUserAuditLog
       this.db
         .prepare(
           `
-          INSERT INTO user_unsuspension (target_user_id, sender_user_id) VALUES (?, ?)
+          INSERT INTO user_unrestriction (target_user_id, sender_user_id) VALUES (?, ?)
           `
         )
         .run([userID, sender]);

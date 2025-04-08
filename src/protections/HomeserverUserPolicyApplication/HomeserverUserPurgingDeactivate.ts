@@ -16,8 +16,18 @@ import {
 import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { deactivateUser } from "./deactivateUser";
 import { UserAuditLog } from "./UserAuditLog";
+import { UserDetailsResponse } from "matrix-protection-suite-for-matrix-bot-sdk/dist/SynapseAdmin/UserDetailsEndpoint";
 
 const log = new Logger("HomeserverUserPurgingDeactivate");
+
+export function isUserAccountRestricted(details: UserDetailsResponse): boolean {
+  return (
+    details.deactivated ||
+    details.shadow_banned ||
+    details.locked ||
+    details.deactivated
+  );
+}
 
 // FIXME: Why isn't glob policy rule allowed here?
 type DeactivationDetails = {
@@ -59,13 +69,7 @@ export class HomeserverUserPurgingDeactivate {
     }
     // We make sure we have shadow banned their account while we redact.
     // This is to make sure they don't send anymore while we decomission the account.
-    if (
-      !(
-        userDetails.ok?.deactivated ||
-        userDetails.ok?.shadow_banned ||
-        userDetails.ok?.locked
-      )
-    ) {
+    if (!userDetails.ok || !isUserAccountRestricted(userDetails.ok)) {
       const shadowBanResult =
         await this.synapseAdminClient.shadowBanUser(userID);
       if (isError(shadowBanResult)) {

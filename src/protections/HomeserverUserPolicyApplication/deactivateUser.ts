@@ -2,7 +2,7 @@ import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule, Logger } from "matrix-protection-suite";
 import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { SuspensionType, UserAuditLog } from "./UserAuditLog";
+import { AccountRestriction, UserAuditLog } from "./UserAuditLog";
 
 const log = new Logger("deactivateUser");
 
@@ -30,9 +30,9 @@ export async function deactivateUser(
   if (isError(deactivationResult)) {
     return deactivationResult;
   }
-  const auditResult = await userAuditLog.suspendUser(
+  const auditResult = await userAuditLog.recordUserRestriction(
     userID,
-    SuspensionType.Deactivated,
+    AccountRestriction.Deactivated,
     options
   );
   if (isError(auditResult)) {

@@ -6,26 +6,32 @@ import { Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule, PolicyListRevision } from "matrix-protection-suite";
 
-export enum SuspensionType {
+/**
+ * An account restriction at the minimum stops the user from sending
+ * messages.
+ */
+export enum AccountRestriction {
   Suspended = "suspended",
   Deactivated = "deactivated",
 }
 
 export interface UserAuditLog {
-  isUserSuspended(userID: StringUserID): Promise<Result<boolean>>;
-  suspendUser(
+  isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;
+  recordUserRestriction(
     userID: StringUserID,
-    suspensionType: SuspensionType,
+    restriction: AccountRestriction,
     options: {
       rule: LiteralPolicyRule | null;
       sender: StringUserID;
     }
   ): Promise<Result<void>>;
-  unsuspendUser(
+  // FIXME: Methods that record this should use `getUserDetails` to find
+  // out which restriction is in place and reverse it.
+  unrestrictUser(
     userID: StringUserID,
     sender: StringUserID
   ): Promise<Result<void>>;
-  findUnsuspendedUsers(
+  findUnrestrictedUsers(
     revision: PolicyListRevision
   ): Promise<Result<[StringUserID, LiteralPolicyRule][]>>;
   destroy(): void;
