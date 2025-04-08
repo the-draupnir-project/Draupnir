@@ -26,11 +26,6 @@ import { UserAuditLog } from "./UserAuditLog";
 
 const log = new Logger("HomeserverUserPolicyApplication");
 
-// So in order to track what local users have been deactivated or suspended
-// we need a way to query them and either log that as an action or
-// as something that we know has already happened so that we don't keep spamming
-// the respective endpoints.
-
 export class HomeserverUserPolicyApplication {
   public constructor(
     private readonly consequences: UserSuspensionConsequences,
@@ -55,6 +50,8 @@ export class HomeserverUserPolicyApplication {
     if (policy.recommendation === Recommendation.Takedown) {
       return true;
     } else if (
+      // FIXME: This would be a policy eligible for purging,
+      // not suspension, any banned local user should be suspended.
       policy.recommendation === Recommendation.Ban &&
       this.automaticallyRedactForReasons.some((glob) =>
         glob.test(policy.reason)
@@ -111,23 +108,49 @@ export class HomeserverUserPolicyApplication {
     );
   }
 
-  // FIXME: Depending on the audit log like this probably isn't going to work
-  // without passing through the function, ok yeah we can just pass through
-  // a higher ordre function
   public handleProtectionEnable(): void {
     void Task(
       (async () => {
-        const usersToSuspend = await this.userAuditLog.findUnrestrictedUsers(
-          this.watchedPolicyRooms.currentRevision
-        );
-        if (isError(usersToSuspend)) {
-          log.error(
-            "Failed to fetch unsuspended users from the user audit log",
-            usersToSuspend.error
-          );
-          return;
-        }
-        for (const [userID, policy] of usersToSuspend.ok) {
+        log.debug("Findind local users to suspend at protection enable...");
+        const revision = this.watchedPolicyRooms.currentRevision;
+        // FIXME: We need to also paginate through all supsended, shadowbanned, and locked
+        // users to see if they have a matching policy and recommend that they either
+        // be deactivated or have their restrictions lifted.
+        // probably something for another component of the protection to do.
+        // the users list api lets us also poll by user creation so it's pretty cool.
+        // https://element-hq.github.io/synapse/latest/admin_api/user_admin_api.html#list-accounts-v2
+
+        const literalRules = [
+          ...revision.allRulesOfType(PolicyRuleType.User, Recommendation.Ban),
+          ...revision.allRulesOfType(
+            PolicyRuleType.User,
+            Recommendation.Takedown
+          ),
+        ].filter(
+          (policy) =>
+            policy.matchType === PolicyRuleMatchType.Literal &&
+            isStringUserID(policy.entity) &&
+            userServerName(policy.entity) === this.serverName
+        ) as LiteralPolicyRule[];
+        for (const policy of literalRules) {
+          const userID = policy.entity as StringUserID;
+          const isUserRestrictedResult =
+            await this.userAuditLog.isUserRestricted(userID);
+          if (isError(isUserRestrictedResult)) {
+            log.error(
+              `Failed to check if a user ${userID} is restricted`,
+              isUserRestrictedResult.error
+            );
+            continue;
+          }
+          if (isUserRestrictedResult.ok) {
+            continue;
+          }
+          // FIXME: The suspension consequence should audit a suspension
+          // when we notice that they are already suspended at the homserver level
+          // but the suspsension wasn't audited.
+          // FIXME: The consequence renderer may also need to be aware of this
+          // and only send a message when the suspension has actually gone through.
           const suspensionResult = await this.consequences.suspendUser(userID, {
             rule: policy,
             sender: policy.sourceEvent.sender,
@@ -139,6 +162,13 @@ export class HomeserverUserPolicyApplication {
             );
           }
         }
+        // NOTE: If we find out that we're polling lots of accounts whether
+        // they are restricted and this is taking a significant amount of time
+        // we should recommend that the policies that are relevant be removed.
+        // if the account has been deactivated.
+        // And the policy has been instated for awhile (give enough time for
+        // other communities to redact their spam who may be using the policy)
+        log.debug("Finished suspending from policies at protection enable");
       })()
     );
   }
