@@ -8,6 +8,9 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
+import "../protections/HomeserverUserPolicyApplication/UserRestrictionCapability";
+import "../protections/HomeserverUserPolicyApplication/UserRestrictionCapabilityRenderer";
+import "../protections/HomeserverUserPolicyApplication/UserSuspensionCapability";
 import "./StandardEventConsequencesRenderer";
 import "./ServerACLConsequencesRenderer";
 import "./StandardUserConsequencesRenderer";

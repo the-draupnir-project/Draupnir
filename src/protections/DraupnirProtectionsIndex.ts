@@ -12,6 +12,7 @@
 import "./BanPropagation";
 import "./BasicFlooding";
 import "./FirstMessageIsImage";
+import "./HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
 import "./JoinWaveShortCircuit";
 import "./RedactionSynchronisation";
 import "./MembershipChangeProtection";

@@ -5,23 +5,23 @@
 import { Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule } from "matrix-protection-suite";
-
-export enum SuspensionType {
-  Suspended = "suspended",
-  Deactivated = "deactivated",
-}
+import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface UserAuditLog {
-  isUserSuspended(userID: StringUserID): Promise<Result<boolean>>;
-  suspendUser(
+  isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;
+  recordUserRestriction(
     userID: StringUserID,
-    suspensionType: SuspensionType,
+    restriction: AccountRestriction,
     options: {
       rule: LiteralPolicyRule | null;
       sender: StringUserID;
     }
   ): Promise<Result<void>>;
-  unsuspendUser(
+  recordExistingUserRestriction(
+    uesrID: StringUserID,
+    restriction: AccountRestriction
+  ): Promise<Result<void>>;
+  unrestrictUser(
     userID: StringUserID,
     sender: StringUserID
   ): Promise<Result<void>>;
