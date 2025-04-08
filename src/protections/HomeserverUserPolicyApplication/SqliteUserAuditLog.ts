@@ -2,13 +2,22 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  isStringUserID,
+  StringServerName,
+  StringUserID,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
   LiteralPolicyRule,
   Logger,
+  PolicyListRevision,
+  PolicyRuleMatchType,
+  PolicyRuleType,
+  Recommendation,
 } from "matrix-protection-suite";
 import { AccountRestriction, UserAuditLog } from "./UserAuditLog";
 import {
@@ -85,6 +94,7 @@ export class SqliteUserAuditLog
   constructor(db: Database) {
     super(SchemaOptions, db, log);
   }
+
   public async isUserRestricted(
     userID: StringUserID
   ): Promise<Result<boolean>> {
@@ -169,5 +179,26 @@ export class SqliteUserAuditLog
         .run([userID, sender]);
       return Ok(undefined);
     }, `Failed to unsuspend user ${userID}`);
+  }
+
+  public async findUnrestrictedUsers(
+    serverName: StringServerName,
+    revision: PolicyListRevision
+  ): Promise<Result<[StringUserID, LiteralPolicyRule][]>> {
+    // something should really setup a revision issuer that only has
+    // policies matching local users, and that way this would be less work on the CPU
+    // probably not really an issue though.
+    // grr that's probably the way to do it without any weird revisions i think sigh
+    // yeah this should be offloaded somehwere cos it's a pita :/
+    const relevantPolicies = [
+      ...revision.allRulesOfType(PolicyRuleType.User, Recommendation.Ban),
+      ...revision.allRulesOfType(PolicyRuleType.User, Recommendation.Takedown),
+    ].filter(
+      (policy) =>
+        policy.matchType === PolicyRuleMatchType.Literal &&
+        isStringUserID(policy.entity) &&
+        userServerName(policy.entity) === serverName
+    );
+    throw new TypeError("Not gonna happen");
   }
 }

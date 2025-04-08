@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { Result } from "@gnuxie/typescript-result";
-import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  StringServerName,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule, PolicyListRevision } from "matrix-protection-suite";
 
 /**
@@ -32,6 +35,7 @@ export interface UserAuditLog {
     sender: StringUserID
   ): Promise<Result<void>>;
   findUnrestrictedUsers(
+    serverName: StringServerName,
     revision: PolicyListRevision
   ): Promise<Result<[StringUserID, LiteralPolicyRule][]>>;
   destroy(): void;
