@@ -21,14 +21,14 @@ import {
   Task,
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
-import { UserSuspensionConsequences } from "./UserSuspensionCapability";
+import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserAuditLog } from "./UserAuditLog";
 
 const log = new Logger("HomeserverUserPolicyApplication");
 
 export class HomeserverUserPolicyApplication {
   public constructor(
-    private readonly consequences: UserSuspensionConsequences,
+    private readonly consequences: UserRestrictionCapability,
     private readonly userAuditLog: UserAuditLog,
     private readonly watchedPolicyRooms: WatchedPolicyRooms,
     private readonly serverName: StringServerName,
@@ -79,7 +79,11 @@ export class HomeserverUserPolicyApplication {
           if (!this.isPolicyElegiableForSuspension(policy)) {
             continue;
           }
-          const isUserSuspended = await this.consequences.isUserSuspended(
+          // FIXME: If the consequence is going to check if the user is restricted
+          // and update the audit log if they are not, then HMMMM
+          // the audit log probably needs to do the updating on isUserRestricted
+          // rather than on .restrictUser...
+          const isUserSuspended = await this.consequences.isUserRestricted(
             policy.entity as StringUserID
           );
           if (isError(isUserSuspended)) {
@@ -90,7 +94,7 @@ export class HomeserverUserPolicyApplication {
           } else if (isUserSuspended.ok) {
             continue; // user is already suspended
           }
-          const suspensionResult = await this.consequences.suspendUser(
+          const suspensionResult = await this.consequences.restrictUser(
             policy.entity as StringUserID,
             {
               rule: policy,
@@ -151,10 +155,13 @@ export class HomeserverUserPolicyApplication {
           // but the suspsension wasn't audited.
           // FIXME: The consequence renderer may also need to be aware of this
           // and only send a message when the suspension has actually gone through.
-          const suspensionResult = await this.consequences.suspendUser(userID, {
-            rule: policy,
-            sender: policy.sourceEvent.sender,
-          });
+          const suspensionResult = await this.consequences.restrictUser(
+            userID,
+            {
+              rule: policy,
+              sender: policy.sourceEvent.sender,
+            }
+          );
           if (isError(suspensionResult)) {
             log.error(
               `Failed to suspend user ${userID}`,

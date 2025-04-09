@@ -5,15 +5,7 @@
 import { Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule } from "matrix-protection-suite";
-
-/**
- * An account restriction at the minimum stops the user from sending
- * messages.
- */
-export enum AccountRestriction {
-  Suspended = "suspended",
-  Deactivated = "deactivated",
-}
+import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface UserAuditLog {
   isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;
@@ -25,8 +17,6 @@ export interface UserAuditLog {
       sender: StringUserID;
     }
   ): Promise<Result<void>>;
-  // FIXME: Methods that record this should use `getUserDetails` to find
-  // out which restriction is in place and reverse it.
   unrestrictUser(
     userID: StringUserID,
     sender: StringUserID
