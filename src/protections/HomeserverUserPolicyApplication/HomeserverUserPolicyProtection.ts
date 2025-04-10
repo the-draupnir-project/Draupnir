@@ -80,7 +80,7 @@ describeProtection<
   name: HomeserverUserPolicyProtection.name,
   description: `A protection to shutdown rooms matching policies from watched lists`,
   capabilityInterfaces: {
-    userRestrictionCapability: "UserRescrictionCapability",
+    userRestrictionCapability: "UserRestrictionCapability",
   },
   defaultCapabilities: {
     userRestrictionCapability: SynapseAdminUserSuspensionCapability.name,
