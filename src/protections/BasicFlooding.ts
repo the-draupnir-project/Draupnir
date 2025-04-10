@@ -173,6 +173,12 @@ export class BasicFloodingProtection
       log.debug(`Ignoring message from self: ${event.event_id}`);
       return Ok(undefined);
     }
+    // If the event is a redaction, ignore it.
+    // See also: https://github.com/the-draupnir-project/Draupnir/issues/804
+    if (event["type"] === "m.room.redaction") {
+      log.debug(`Ignoring redaction: ${event.event_id}`);
+      return Ok(undefined);
+    }
     const forUser = lastEventsForUser(
       this.lastEvents,
       event.room_id,
