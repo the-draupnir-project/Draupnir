@@ -15,10 +15,14 @@ import {
   checkKnownTables,
   SqliteSchemaOptions,
 } from "../../backingstore/better-sqlite3/SqliteSchema";
-import { BetterSqliteStore } from "../../backingstore/better-sqlite3/BetterSqliteStore";
+import {
+  BetterSqliteStore,
+  makeBetterSqliteDB,
+} from "../../backingstore/better-sqlite3/BetterSqliteStore";
 import { Database } from "better-sqlite3";
 import { Ok, Result } from "@gnuxie/typescript-result";
 import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+import path from "path";
 
 const log = new Logger("SqliteUserAuditLog");
 
@@ -86,6 +90,17 @@ export class SqliteUserAuditLog
 {
   constructor(db: Database) {
     super(SchemaOptions, db, log);
+  }
+
+  public static readonly StoreName = "user-audit-log.db";
+  public static createToplevel(storagePath: string): SqliteUserAuditLog {
+    const options = {
+      path: path.join(storagePath, SqliteUserAuditLog.StoreName),
+      WALMode: true,
+      foreignKeys: true,
+      fileMustExist: false,
+    };
+    return new SqliteUserAuditLog(makeBetterSqliteDB(options, log));
   }
 
   public async isUserRestricted(

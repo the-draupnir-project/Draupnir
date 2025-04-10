@@ -8,6 +8,7 @@ import { SqliteRoomStateBackingStore } from "./better-sqlite3/SqliteRoomStateBac
 import { SqliteHashReversalStore } from "./better-sqlite3/HashStore";
 import { SqliteRoomAuditLog } from "../protections/RoomTakedown/SqliteRoomAuditLog";
 import { UserAuditLog } from "../protections/HomeserverUserPolicyApplication/UserAuditLog";
+import { SqliteUserAuditLog } from "../protections/HomeserverUserPolicyApplication/SqliteUserAuditLog";
 
 export type TopLevelStores = {
   hashStore?: SHA256HashStore;
@@ -60,5 +61,6 @@ export function makeTopLevelStores(
       : undefined,
     hashStore: SqliteHashReversalStore.createToplevel(storagePath),
     roomAuditLog: SqliteRoomAuditLog.createToplevel(storagePath),
+    restrictionAuditLog: SqliteUserAuditLog.createToplevel(storagePath),
   } satisfies TopLevelStores);
 }
