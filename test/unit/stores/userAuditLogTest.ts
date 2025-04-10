@@ -14,8 +14,8 @@ import {
   randomUserID,
   Recommendation,
 } from "matrix-protection-suite";
-import { SuspensionType } from "../../../src/protections/HomeserverUserPolicyApplication/UserAuditLog";
 import expect from "expect";
+import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 describe("UserAuditLog test", function () {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
@@ -27,7 +27,7 @@ describe("UserAuditLog test", function () {
     const policyRoom = randomRoomID([]);
     const moderator = randomUserID();
     expect(
-      (await store.isUserSuspended(bannedUser)).expect(
+      (await store.isUserRestricted(bannedUser)).expect(
         "Should be able to query if user is suspended"
       )
     ).toBe(false);
@@ -41,22 +41,26 @@ describe("UserAuditLog test", function () {
       }) as never
     ).expect("Should be able to parse the policy rule.");
     (
-      await store.suspendUser(bannedUser, SuspensionType.Suspended, {
-        sender: moderator,
-        rule: ban as LiteralPolicyRule,
-      })
+      await store.recordUserRestriction(
+        bannedUser,
+        AccountRestriction.Suspended,
+        {
+          sender: moderator,
+          rule: ban as LiteralPolicyRule,
+        }
+      )
     ).expect("Should be able to takedown a room");
     expect(
-      (await store.isUserSuspended(bannedUser)).expect(
+      (await store.isUserRestricted(bannedUser)).expect(
         "Should be able to query if user is suspended"
       )
     ).toBe(true);
     // now unsuspend them
-    (await store.unsuspendUser(bannedUser, moderator)).expect(
+    (await store.unrestrictUser(bannedUser, moderator)).expect(
       "Should be able to unsuspend a user"
     );
     expect(
-      (await store.isUserSuspended(bannedUser)).expect(
+      (await store.isUserRestricted(bannedUser)).expect(
         "Should be able to query if user is suspended"
       )
     ).toBe(false);
@@ -65,13 +69,17 @@ describe("UserAuditLog test", function () {
     const bannedUser = randomUserID();
     const moderator = randomUserID();
     (
-      await store.suspendUser(bannedUser, SuspensionType.Suspended, {
-        sender: moderator,
-        rule: null,
-      })
+      await store.recordUserRestriction(
+        bannedUser,
+        AccountRestriction.Suspended,
+        {
+          sender: moderator,
+          rule: null,
+        }
+      )
     ).expect("To be able to do this");
     expect(
-      (await store.isUserSuspended(bannedUser)).expect(
+      (await store.isUserRestricted(bannedUser)).expect(
         "Should be able to query if user is suspended"
       )
     ).toBe(true);
