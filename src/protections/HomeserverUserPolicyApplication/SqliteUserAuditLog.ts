@@ -42,7 +42,7 @@ const SchemaText = [
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     restriction_type TEXT NOT NULL,
-    is_existing_restriction BOOLEAN NOT NULL,
+    is_existing_restriction INTEGER NOT NULL CHECK (is_existing_restriction IN (0, 1)),
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;
@@ -182,7 +182,7 @@ export class SqliteUserAuditLog
             userID,
             sender,
             restrictionType,
-            Boolean(isExistingRestriction),
+            Number(Boolean(isExistingRestriction)),
           ]);
       })();
       return Ok(undefined);
