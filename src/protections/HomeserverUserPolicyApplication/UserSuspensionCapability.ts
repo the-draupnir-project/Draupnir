@@ -34,13 +34,33 @@ export class SynapseAdminUserSuspensionCapability
     const userDetails = await this.synapseAdminClient.getUserDetails(userID);
     if (isError(userDetails)) {
       return userDetails;
-    } else if (!userDetails.ok) {
+    }
+    if (!userDetails.ok) {
       return ResultError.Result(
         `Synapse cannot find details for the user ${userID}`
       );
-    } else {
-      return Ok(isUserAccountRestricted(userDetails.ok));
     }
+    const isUserRestricted = isUserAccountRestricted(userDetails.ok);
+    if (!isUserRestricted) {
+      return Ok(false);
+    }
+    // We intentionally update the audit log here to keep our local information
+    // accurate.
+    const auditResult = await this.userAuditLog.isUserRestricted(userID);
+    if (isError(auditResult)) {
+      log.error("Failed to check if user is restricted", userID);
+      return Ok(isUserRestricted);
+    } else if (auditResult.ok) {
+      log.debug("Recording missing user restriction", userID);
+      const logResult = await this.userAuditLog.recordExistingUserRestriction(
+        userID,
+        AccountRestriction.Suspended
+      );
+      if (isError(logResult)) {
+        log.error("Failed to audit a missing user restriction", userID);
+      }
+    }
+    return Ok(isUserRestricted);
   }
   public async restrictUser(
     userID: StringUserID,

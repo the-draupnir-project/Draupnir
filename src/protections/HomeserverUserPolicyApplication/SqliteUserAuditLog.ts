@@ -38,6 +38,7 @@ const SchemaText = [
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     restriction_type TEXT NOT NULL,
+    is_existing_restriction BOOLEAN NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;
@@ -133,7 +134,15 @@ export class SqliteUserAuditLog
   public async recordUserRestriction(
     userID: StringUserID,
     restrictionType: AccountRestriction,
-    { sender, rule }: { sender: StringUserID; rule: LiteralPolicyRule | null }
+    {
+      sender,
+      rule,
+      isExistingRestriction,
+    }: {
+      sender: StringUserID;
+      rule: LiteralPolicyRule | null;
+      isExistingRestriction?: boolean | undefined;
+    }
   ): Promise<ActionResult<void>> {
     return wrapInTryCatch(() => {
       this.db.transaction(() => {
@@ -148,14 +157,31 @@ export class SqliteUserAuditLog
             policy_id,
             target_user_id,
             sender_user_id,
-            restriction_type
-          ) VALUES (?, ?, ?, ?)
+            restriction_type,
+            is_existing_restriction
+          ) VALUES (?, ?, ?, ?, ?)
         `
           )
-          .run([policyID, userID, sender, restrictionType]);
+          .run([
+            policyID,
+            userID,
+            sender,
+            restrictionType,
+            Boolean(isExistingRestriction),
+          ]);
       })();
       return Ok(undefined);
     }, `Failed to suspend user ${userID}`);
+  }
+  public async recordExistingUserRestriction(
+    userID: StringUserID,
+    restriction: AccountRestriction
+  ): Promise<Result<void>> {
+    return await this.recordUserRestriction(userID, restriction, {
+      sender: userID,
+      rule: null,
+      isExistingRestriction: true,
+    });
   }
   public async unrestrictUser(
     userID: StringUserID,

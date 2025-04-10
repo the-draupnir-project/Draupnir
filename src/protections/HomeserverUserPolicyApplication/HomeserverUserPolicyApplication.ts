@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { isError } from "@gnuxie/typescript-result";
+import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import {
   isStringUserID,
   MatrixGlob,
@@ -37,7 +37,7 @@ export class HomeserverUserPolicyApplication {
     // nothing to do.
   }
 
-  private isPolicyElegiableForSuspension(policy: LiteralPolicyRule): boolean {
+  private isPolicyElegiableForRestriction(policy: LiteralPolicyRule): boolean {
     if (policy.kind !== PolicyRuleType.User) {
       return false;
     }
@@ -63,6 +63,34 @@ export class HomeserverUserPolicyApplication {
     }
   }
 
+  /**
+   * Sometimes it makes sense to skip the audit log check if e.g. we want to really
+   * make sure the user is restricted like on a policy change.
+   * But when starting up in bulk, we want to check the audit log first to not do duplicate
+   * actions.
+   */
+  private async isUserRestricted(
+    userID: StringUserID,
+    { checkAuditLog }: { checkAuditLog: boolean }
+  ): Promise<Result<boolean>> {
+    const auditResult = await (async () => {
+      if (!checkAuditLog) {
+        return Ok(false);
+      }
+      return await this.userAuditLog.isUserRestricted(userID);
+    })();
+    if (isError(auditResult)) {
+      return auditResult.elaborate(
+        "Failed to check audit log for user restriction"
+      );
+    }
+    if (auditResult.ok) {
+      return auditResult;
+    } else {
+      return await this.consequences.isUserRestricted(userID);
+    }
+  }
+
   public handlePolicyChange(changes: PolicyRuleChange[]): void {
     void Task(
       (async () => {
@@ -76,35 +104,31 @@ export class HomeserverUserPolicyApplication {
           if (policy.matchType !== PolicyRuleMatchType.Literal) {
             continue;
           }
-          if (!this.isPolicyElegiableForSuspension(policy)) {
+          if (!this.isPolicyElegiableForRestriction(policy)) {
             continue;
           }
-          // FIXME: If the consequence is going to check if the user is restricted
-          // and update the audit log if they are not, then HMMMM
-          // the audit log probably needs to do the updating on isUserRestricted
-          // rather than on .restrictUser...
-          const isUserSuspended = await this.consequences.isUserRestricted(
+          const isUserRestricted = await this.consequences.isUserRestricted(
             policy.entity as StringUserID
           );
-          if (isError(isUserSuspended)) {
+          if (isError(isUserRestricted)) {
             log.error(
               `Failed to check if a user ${policy.entity} is suspended`,
-              isUserSuspended.error
+              isUserRestricted.error
             );
-          } else if (isUserSuspended.ok) {
+          } else if (isUserRestricted.ok) {
             continue; // user is already suspended
           }
-          const suspensionResult = await this.consequences.restrictUser(
+          const restrictionResult = await this.consequences.restrictUser(
             policy.entity as StringUserID,
             {
               rule: policy,
               sender: policy.sourceEvent.sender,
             }
           );
-          if (isError(suspensionResult)) {
+          if (isError(restrictionResult)) {
             log.error(
               `Failed to suspend user ${policy.entity}`,
-              suspensionResult.error
+              restrictionResult.error
             );
           }
         }
@@ -113,6 +137,8 @@ export class HomeserverUserPolicyApplication {
   }
 
   public handleProtectionEnable(): void {
+    // FIXME: We probably need to synchronise unrestricted users with the audit log
+    // in the background too.
     void Task(
       (async () => {
         log.debug("Findind local users to suspend at protection enable...");
@@ -138,8 +164,9 @@ export class HomeserverUserPolicyApplication {
         ) as LiteralPolicyRule[];
         for (const policy of literalRules) {
           const userID = policy.entity as StringUserID;
-          const isUserRestrictedResult =
-            await this.userAuditLog.isUserRestricted(userID);
+          const isUserRestrictedResult = await this.isUserRestricted(userID, {
+            checkAuditLog: true,
+          });
           if (isError(isUserRestrictedResult)) {
             log.error(
               `Failed to check if a user ${userID} is restricted`,
@@ -150,11 +177,6 @@ export class HomeserverUserPolicyApplication {
           if (isUserRestrictedResult.ok) {
             continue;
           }
-          // FIXME: The suspension consequence should audit a suspension
-          // when we notice that they are already suspended at the homserver level
-          // but the suspsension wasn't audited.
-          // FIXME: The consequence renderer may also need to be aware of this
-          // and only send a message when the suspension has actually gone through.
           const suspensionResult = await this.consequences.restrictUser(
             userID,
             {
