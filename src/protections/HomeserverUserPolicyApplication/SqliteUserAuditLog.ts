@@ -10,7 +10,7 @@ import {
   LiteralPolicyRule,
   Logger,
 } from "matrix-protection-suite";
-import { AccountRestriction, UserAuditLog } from "./UserAuditLog";
+import { UserAuditLog } from "./UserAuditLog";
 import {
   checkKnownTables,
   SqliteSchemaOptions,
@@ -18,6 +18,7 @@ import {
 import { BetterSqliteStore } from "../../backingstore/better-sqlite3/BetterSqliteStore";
 import { Database } from "better-sqlite3";
 import { Ok, Result } from "@gnuxie/typescript-result";
+import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 const log = new Logger("SqliteUserAuditLog");
 
