@@ -11,6 +11,7 @@ import {
   describeCapabilityInterface,
   LiteralPolicyRule,
 } from "matrix-protection-suite";
+import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface UserRestrictionCapability extends Capability {
   isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;
@@ -20,7 +21,7 @@ export interface UserRestrictionCapability extends Capability {
       rule: LiteralPolicyRule | null;
       sender: StringUserID;
     }
-  ): Promise<Result<void>>;
+  ): Promise<Result<AccountRestriction>>;
   unrestrictUser(
     userID: StringUserID,
     sender: StringUserID

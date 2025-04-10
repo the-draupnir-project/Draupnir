@@ -65,7 +65,7 @@ export class SynapseAdminUserSuspensionCapability
   public async restrictUser(
     userID: StringUserID,
     options: { rule: LiteralPolicyRule | null; sender: StringUserID }
-  ): Promise<Result<void>> {
+  ): Promise<Result<AccountRestriction>> {
     const suspendResult = await this.synapseAdminClient.suspendUser(userID);
     if (isError(suspendResult)) {
       return suspendResult;
@@ -79,7 +79,7 @@ export class SynapseAdminUserSuspensionCapability
       log.error("Failed to audit a suspension", userID);
       return logResult.elaborate("Failed to audit the suspension");
     }
-    return Ok(undefined);
+    return Ok(AccountRestriction.Suspended);
   }
 
   public async unrestrictUser(
