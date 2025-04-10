@@ -9,9 +9,14 @@ import {
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserAuditLog } from "./UserAuditLog";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule, Logger } from "matrix-protection-suite";
+import {
+  describeCapabilityProvider,
+  LiteralPolicyRule,
+  Logger,
+} from "matrix-protection-suite";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { isUserAccountRestricted } from "./HomeserverUserPurgingDeactivate";
+import { Draupnir } from "../../Draupnir";
 
 const log = new Logger("SynapseAdminUserSuspensionCapability");
 
@@ -105,3 +110,23 @@ export class SynapseAdminUserSuspensionCapability
   }
   isSimulated?: true;
 }
+
+describeCapabilityProvider<Draupnir>({
+  name: SynapseAdminUserSuspensionCapability.name,
+  description: `A capability to suspend users on the homeserver`,
+  interface: "UserRestrictionCapability",
+  factory(description, draupnir) {
+    if (
+      draupnir.synapseAdminClient === undefined ||
+      draupnir.stores.restrictionAuditLog === undefined
+    ) {
+      throw new TypeError(
+        "This capability requires the SynapseAdminClient and the user restriction audit log to be available to draupnir, and they are not in your configuration."
+      );
+    }
+    return new SynapseAdminUserSuspensionCapability(
+      draupnir.synapseAdminClient,
+      draupnir.stores.restrictionAuditLog
+    );
+  },
+});
