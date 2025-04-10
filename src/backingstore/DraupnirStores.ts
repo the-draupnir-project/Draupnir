@@ -44,6 +44,7 @@ export function createDraupnirStores(
   return Object.freeze({
     roomAuditLog: topLevelStores.roomAuditLog,
     hashStore: topLevelStores.hashStore,
+    restrictionAuditLog: topLevelStores.restrictionAuditLog,
     dispose() {},
   } satisfies DraupnirStores);
 }
