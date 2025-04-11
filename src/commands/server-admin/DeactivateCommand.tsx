@@ -11,6 +11,7 @@
 import { Ok, Result, ResultError, isError } from "@gnuxie/typescript-result";
 import {
   BasicInvocationInformation,
+  DeadDocumentJSX,
   MatrixUserIDPresentationType,
   describeCommand,
   tuple,
@@ -131,6 +132,70 @@ export const SynapseAdminDeactivateCommand = describeCommand({
   },
 });
 
+function renderUserDetails(preview: DeactivateUserPreview) {
+  return (
+    <details>
+      <summary>
+        Details for <code>{preview.targetUser}</code>
+      </summary>
+      <ul>
+        <li>
+          Creation date:{" "}
+          <code>
+            {new Date(preview.creation_timestamp).toLocaleDateString()}
+          </code>
+        </li>
+        <li>
+          Displayname:{" "}
+          {preview.displayname ? (
+            <code>{preview.displayname}</code>
+          ) : (
+            "None set"
+          )}
+        </li>
+        <li>
+          Purging messages:{" "}
+          {preview.isPurgingMessages ? <code>Yes</code> : <code>No</code>}
+        </li>
+      </ul>
+    </details>
+  );
+}
+
 DraupnirInterfaceAdaptor.describeRenderer(SynapseAdminDeactivateCommand, {
   isAlwaysSupposedToUseDefaultRenderer: true,
+  confirmationPromptJSXRenderer(commandResult) {
+    if (isError(commandResult)) {
+      return Ok(undefined);
+    }
+    const preview = commandResult.ok;
+    return Ok(
+      <root>
+        You are about to deactivate the user <code>{preview.targetUser}</code>.
+        This will permanently deactivate the user and remove their access to the
+        homeserver.
+        {preview.isPurgingMessages ? (
+          <span>
+            Purging their messages will also cause their account to be used by
+            the homeserver to send hundreds of redaction events to remove
+            everything they have sent.
+          </span>
+        ) : (
+          <fragment></fragment>
+        )}
+        {renderUserDetails(preview)}
+      </root>
+    );
+  },
+  JSXRenderer(commandResult) {
+    if (isError(commandResult)) {
+      return Ok(undefined);
+    }
+    return Ok(
+      <root>
+        Successfully deactivated <code>{commandResult.ok.targetUser}</code>
+        {renderUserDetails(commandResult.ok)}
+      </root>
+    );
+  },
 });
