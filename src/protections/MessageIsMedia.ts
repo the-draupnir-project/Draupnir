@@ -110,7 +110,7 @@ export class MessageIsMediaProtection
           `Redacting event from ${event["sender"]} for posting an image/video. ${Permalinks.forEvent(roomID, event["event_id"], [userServerName(this.draupnir.clientUserID)])}`
         );
         // Redact the event
-        if (this.draupnir.config.noop) {
+        if (!this.draupnir.config.noop) {
           await this.eventConsequences.consequenceForEvent(
             roomID,
             event["event_id"],
