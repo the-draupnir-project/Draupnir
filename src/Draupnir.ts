@@ -83,6 +83,7 @@ import {
 } from "./commands/interface-manager/MatrixPromptForConfirmation";
 import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { DraupnirStores } from "./backingstore/DraupnirStores";
+import { HomeserverUserPurgingDeactivate } from "./protections/HomeserverUserPolicyApplication/HomeserverUserPurgingDeactivate";
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -115,6 +116,14 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public readonly reportManager: StandardReportManager;
 
   public readonly reactionHandler: MatrixReactionHandler;
+
+  public readonly purgingDeactivate =
+    this.synapseAdminClient && this.stores.restrictionAuditLog
+      ? new HomeserverUserPurgingDeactivate(
+          this.synapseAdminClient,
+          this.stores.restrictionAuditLog
+        )
+      : undefined;
 
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
 
