@@ -110,7 +110,7 @@ export const SynapseAdminDeactivateCommand = describeCommand({
       return Ok({
         targetUser: targetUser.toString(),
         creation_timestamp: details.ok.creation_ts,
-        displayname: details.ok.displayname,
+        displayname: details.ok.displayname ?? undefined,
         isPurgingMessages: Boolean(isPurgingMessages),
         isNoConfirm: Boolean(isNoConfirm),
       } satisfies DeactivateUserPreview);
