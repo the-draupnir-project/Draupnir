@@ -7,7 +7,7 @@ import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule } from "matrix-protection-suite";
 import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
 
-export interface UserAuditLog {
+export interface UserRestrictionAuditLog {
   isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;
   recordUserRestriction(
     userID: StringUserID,

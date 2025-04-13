@@ -7,7 +7,7 @@ import {
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import {
   describeCapabilityProvider,
@@ -30,7 +30,7 @@ export class SynapseAdminUserSuspensionCapability
 
   public constructor(
     private readonly synapseAdminClient: SynapseAdminClient,
-    private readonly userAuditLog: UserAuditLog
+    private readonly userAuditLog: UserRestrictionAuditLog
   ) {
     // nothing to do here.
   }
@@ -119,7 +119,7 @@ describeCapabilityProvider<Draupnir>({
   factory(description, draupnir) {
     if (
       draupnir.synapseAdminClient === undefined ||
-      draupnir.stores.restrictionAuditLog === undefined
+      draupnir.stores.userRestrictionAuditLog === undefined
     ) {
       throw new TypeError(
         "This capability requires the SynapseAdminClient and the user restriction audit log to be available to draupnir, and they are not in your configuration."
@@ -127,7 +127,7 @@ describeCapabilityProvider<Draupnir>({
     }
     return new SynapseAdminUserSuspensionCapability(
       draupnir.synapseAdminClient,
-      draupnir.stores.restrictionAuditLog
+      draupnir.stores.userRestrictionAuditLog
     );
   },
 });

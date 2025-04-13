@@ -4,7 +4,6 @@
 
 import Database from "better-sqlite3";
 import { BetterSqliteOptions } from "../../../src/backingstore/better-sqlite3/BetterSqliteStore";
-import { SqliteUserAuditLog } from "../../../src/protections/HomeserverUserPolicyApplication/SqliteUserAuditLog";
 import {
   describePolicyRule,
   LiteralPolicyRule,
@@ -16,12 +15,13 @@ import {
 } from "matrix-protection-suite";
 import expect from "expect";
 import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { SqliteUserRestrictionAuditLog } from "../../../src/protections/HomeserverUserPolicyApplication/SqliteUserRestrictionAuditLog";
 
 describe("UserAuditLog test", function () {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
   const db = new Database(options.path);
   db.pragma("FOREIGN_KEYS = ON");
-  const store = new SqliteUserAuditLog(db);
+  const store = new SqliteUserRestrictionAuditLog(db);
   it("Can logged suspended users", async function () {
     const bannedUser = randomUserID();
     const policyRoom = randomRoomID([]);

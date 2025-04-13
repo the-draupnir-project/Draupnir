@@ -19,7 +19,7 @@ import {
 } from "matrix-protection-suite";
 import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { deactivateUser } from "./deactivateUser";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { UserDetailsResponse } from "matrix-protection-suite-for-matrix-bot-sdk/dist/SynapseAdmin/UserDetailsEndpoint";
 
 const log = new Logger("HomeserverUserPurgingDeactivate");
@@ -44,7 +44,7 @@ export class HomeserverUserPurgingDeactivate {
   private readonly batcher: StandardBatcher<StringUserID, DeactivationDetails>;
   public constructor(
     private readonly synapseAdminClient: SynapseAdminClient,
-    private readonly userAuditLog: UserAuditLog
+    private readonly userAuditLog: UserRestrictionAuditLog
   ) {
     this.batcher = new StandardBatcher(
       () =>

@@ -81,7 +81,7 @@ export const SynapseAdminDeactivateCommand = describeCommand({
         "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
       );
     }
-    if (draupnir.stores.restrictionAuditLog === undefined) {
+    if (draupnir.stores.userRestrictionAuditLog === undefined) {
       return ResultError.Result(
         "The user restriction audit log is not configured"
       );
@@ -127,7 +127,7 @@ export const SynapseAdminDeactivateCommand = describeCommand({
         : deactivateUser(
             targetUser.toString(),
             synapseAdminClient,
-            draupnir.stores.restrictionAuditLog,
+            draupnir.stores.userRestrictionAuditLog,
             {
               sender: info.commandSender,
               rule: null,

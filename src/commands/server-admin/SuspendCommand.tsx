@@ -50,7 +50,7 @@ export const SynapseAdminSuspendUserCommand = describeCommand({
       isAdmin === undefined ||
       isError(isAdmin) ||
       !isAdmin.ok ||
-      draupnir.stores.restrictionAuditLog === undefined
+      draupnir.stores.userRestrictionAuditLog === undefined
     ) {
       return ResultError.Result(
         "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
@@ -66,7 +66,7 @@ export const SynapseAdminSuspendUserCommand = describeCommand({
     // we do this because it handles all the audit logging for us.
     const suspensionCapability = new SynapseAdminUserSuspensionCapability(
       draupnir.synapseAdminClient,
-      draupnir.stores.restrictionAuditLog
+      draupnir.stores.userRestrictionAuditLog
     );
     const suspensionResult = await suspensionCapability.restrictUser(
       targetUser.toString(),

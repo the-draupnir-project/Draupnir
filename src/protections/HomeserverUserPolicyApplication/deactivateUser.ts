@@ -9,14 +9,14 @@ import {
   AccountRestriction,
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 
 const log = new Logger("deactivateUser");
 
 export async function deactivateUser(
   userID: StringUserID,
   synapseAdminClient: SynapseAdminClient,
-  userAuditLog: UserAuditLog,
+  userAuditLog: UserRestrictionAuditLog,
   options: {
     rule: LiteralPolicyRule | null;
     sender: StringUserID;

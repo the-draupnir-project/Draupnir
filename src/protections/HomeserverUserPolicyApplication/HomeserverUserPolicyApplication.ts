@@ -23,7 +23,7 @@ import {
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { sendPromptDeactivation } from "../../commands/server-admin/DeactivateCommand";
 import { ConfirmationPromptSender } from "../../commands/interface-manager/MatrixPromptForConfirmation";
 
@@ -34,7 +34,7 @@ export class HomeserverUserPolicyApplication {
     private readonly managementRoomID: StringRoomID,
     private readonly consequences: UserRestrictionCapability,
     private readonly confirmationPromptSender: ConfirmationPromptSender,
-    private readonly userAuditLog: UserAuditLog,
+    private readonly userAuditLog: UserRestrictionAuditLog,
     private readonly watchedPolicyRooms: WatchedPolicyRooms,
     private readonly serverName: StringServerName,
     private readonly automaticallyRedactForReasons: MatrixGlob[]

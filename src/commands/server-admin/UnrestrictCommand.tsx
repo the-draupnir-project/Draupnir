@@ -30,7 +30,7 @@ export const SynpaseAdminUnrestrictUserCommand = describeCommand({
   ): Promise<Result<void>> {
     if (
       draupnir.synapseAdminClient === undefined ||
-      draupnir.stores.restrictionAuditLog === undefined
+      draupnir.stores.userRestrictionAuditLog === undefined
     ) {
       return ResultError.Result(
         "This command cannot be used without synapse admin"
@@ -38,7 +38,7 @@ export const SynpaseAdminUnrestrictUserCommand = describeCommand({
     }
     const capability = new SynapseAdminUserSuspensionCapability(
       draupnir.synapseAdminClient,
-      draupnir.stores.restrictionAuditLog
+      draupnir.stores.userRestrictionAuditLog
     );
     return await capability.unrestrictUser(
       targetUser.toString(),

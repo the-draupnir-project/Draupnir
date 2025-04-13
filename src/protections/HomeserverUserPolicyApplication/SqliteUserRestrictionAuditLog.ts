@@ -10,7 +10,7 @@ import {
   LiteralPolicyRule,
   Logger,
 } from "matrix-protection-suite";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import {
   checkKnownTables,
   SqliteSchemaOptions,
@@ -84,23 +84,25 @@ function wrapInTryCatch<T>(cb: () => Result<T>, message: string): Result<T> {
   }
 }
 
-export class SqliteUserAuditLog
+export class SqliteUserRestrictionAuditLog
   extends BetterSqliteStore
-  implements UserAuditLog
+  implements UserRestrictionAuditLog
 {
   constructor(db: Database) {
     super(SchemaOptions, db, log);
   }
 
-  public static readonly StoreName = "user-audit-log.db";
-  public static createToplevel(storagePath: string): SqliteUserAuditLog {
+  public static readonly StoreName = "user-restriction-audit-log.db";
+  public static createToplevel(
+    storagePath: string
+  ): SqliteUserRestrictionAuditLog {
     const options = {
-      path: path.join(storagePath, SqliteUserAuditLog.StoreName),
+      path: path.join(storagePath, SqliteUserRestrictionAuditLog.StoreName),
       WALMode: true,
       foreignKeys: true,
       fileMustExist: false,
     };
-    return new SqliteUserAuditLog(makeBetterSqliteDB(options, log));
+    return new SqliteUserRestrictionAuditLog(makeBetterSqliteDB(options, log));
   }
 
   public async isUserRestricted(

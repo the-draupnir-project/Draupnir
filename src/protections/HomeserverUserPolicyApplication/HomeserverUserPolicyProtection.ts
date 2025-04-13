@@ -15,7 +15,7 @@ import {
 } from "matrix-protection-suite";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { Draupnir } from "../../Draupnir";
-import { UserAuditLog } from "./UserAuditLog";
+import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { HomeserverUserPolicyApplication } from "./HomeserverUserPolicyApplication";
 import {
   StringRoomID,
@@ -57,7 +57,7 @@ export class HomeserverUserPolicyProtection
     description: HomeserverUserProtectionDescription,
     capabilities: HomeserverUserPolicyProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
-    auditLog: UserAuditLog,
+    auditLog: UserRestrictionAuditLog,
     automaticallyRedactForReasons: MatrixGlob[],
     managementRoomID: StringRoomID,
     confirmationPromptSender: ConfirmationPromptSender
@@ -98,7 +98,7 @@ describeProtection<
   },
   configSchema: HomeserverUserPolicyProtectionSettings,
   factory(description, protectedRoomsSet, draupnir, capabilitySet, _settings) {
-    if (draupnir.stores.restrictionAuditLog === undefined) {
+    if (draupnir.stores.userRestrictionAuditLog === undefined) {
       return ResultError.Result(
         "This protection requires the user audit log to be available to draupnir, and they are not in your configuration."
       );
@@ -108,7 +108,7 @@ describeProtection<
         description,
         capabilitySet,
         protectedRoomsSet,
-        draupnir.stores.restrictionAuditLog,
+        draupnir.stores.userRestrictionAuditLog,
         draupnir.config.automaticallyRedactForReasons.map(
           (reason) => new MatrixGlob(reason)
         ),

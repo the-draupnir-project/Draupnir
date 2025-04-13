@@ -118,10 +118,10 @@ export class Draupnir implements Client, MatrixAdaptorContext {
   public readonly reactionHandler: MatrixReactionHandler;
 
   public readonly purgingDeactivate =
-    this.synapseAdminClient && this.stores.restrictionAuditLog
+    this.synapseAdminClient && this.stores.userRestrictionAuditLog
       ? new HomeserverUserPurgingDeactivate(
           this.synapseAdminClient,
-          this.stores.restrictionAuditLog
+          this.stores.userRestrictionAuditLog
         )
       : undefined;
 
