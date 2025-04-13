@@ -79,7 +79,7 @@ export function renderRuleClearText(
   );
 }
 
-function renderRuleSummary(rule: PolicyRule) {
+export function renderRuleSummary(rule: PolicyRule) {
   return (
     <li>
       {rule.kind} (<code>{rule.recommendation}</code>):{" "}

@@ -17,10 +17,17 @@ import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { Draupnir } from "../../Draupnir";
 import { UserAuditLog } from "./UserAuditLog";
 import { HomeserverUserPolicyApplication } from "./HomeserverUserPolicyApplication";
-import { userServerName } from "@the-draupnir-project/matrix-basic-types";
+import {
+  StringRoomID,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 import { MatrixGlob } from "matrix-bot-sdk";
 import { Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { SynapseAdminUserSuspensionCapability } from "./UserSuspensionCapability";
+import {
+  ConfirmationPromptSender,
+  makeconfirmationPromptSender,
+} from "../../commands/interface-manager/MatrixPromptForConfirmation";
 
 const HomeserverUserPolicyProtectionSettings = Type.Object(
   {},
@@ -51,11 +58,15 @@ export class HomeserverUserPolicyProtection
     capabilities: HomeserverUserPolicyProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     auditLog: UserAuditLog,
-    automaticallyRedactForReasons: MatrixGlob[]
+    automaticallyRedactForReasons: MatrixGlob[],
+    managementRoomID: StringRoomID,
+    confirmationPromptSender: ConfirmationPromptSender
   ) {
     super(description, capabilities, protectedRoomsSet, {});
     this.policyApplication = new HomeserverUserPolicyApplication(
+      managementRoomID,
       capabilities.userRestrictionCapability,
+      confirmationPromptSender,
       auditLog,
       protectedRoomsSet.watchedPolicyRooms,
       userServerName(protectedRoomsSet.userID),
@@ -100,7 +111,9 @@ describeProtection<
         draupnir.stores.restrictionAuditLog,
         draupnir.config.automaticallyRedactForReasons.map(
           (reason) => new MatrixGlob(reason)
-        )
+        ),
+        draupnir.managementRoomID,
+        makeconfirmationPromptSender(draupnir)
       )
     );
   },

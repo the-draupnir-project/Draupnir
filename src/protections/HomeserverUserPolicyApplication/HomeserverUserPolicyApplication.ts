@@ -6,6 +6,7 @@ import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import {
   isStringUserID,
   MatrixGlob,
+  StringRoomID,
   StringServerName,
   StringUserID,
   userServerName,
@@ -23,12 +24,16 @@ import {
 } from "matrix-protection-suite";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserAuditLog } from "./UserAuditLog";
+import { sendPromptDeactivation } from "../../commands/server-admin/DeactivateCommand";
+import { ConfirmationPromptSender } from "../../commands/interface-manager/MatrixPromptForConfirmation";
 
 const log = new Logger("HomeserverUserPolicyApplication");
 
 export class HomeserverUserPolicyApplication {
   public constructor(
+    private readonly managementRoomID: StringRoomID,
     private readonly consequences: UserRestrictionCapability,
+    private readonly confirmationPromptSender: ConfirmationPromptSender,
     private readonly userAuditLog: UserAuditLog,
     private readonly watchedPolicyRooms: WatchedPolicyRooms,
     private readonly serverName: StringServerName,
@@ -49,14 +54,7 @@ export class HomeserverUserPolicyApplication {
     }
     if (policy.recommendation === Recommendation.Takedown) {
       return true;
-    } else if (
-      // FIXME: This would be a policy eligible for purging,
-      // not suspension, any banned local user should be suspended.
-      policy.recommendation === Recommendation.Ban &&
-      this.automaticallyRedactForReasons.some((glob) =>
-        glob.test(policy.reason)
-      )
-    ) {
+    } else if (policy.recommendation === Recommendation.Ban) {
       return true;
     } else {
       return false;
@@ -117,6 +115,24 @@ export class HomeserverUserPolicyApplication {
             );
           } else if (isUserRestricted.ok) {
             continue; // user is already suspended
+          }
+          // FIXME: Takedown policie should really automatically deactivate
+          // after a grace period or something.
+          if (
+            this.automaticallyRedactForReasons.some(
+              (glob) =>
+                glob.test(policy.reason) ||
+                policy.recommendation === Recommendation.Takedown
+            )
+          ) {
+            // prompt to also deactivate the user if they match globs
+            sendPromptDeactivation(
+              policy.entity as StringUserID,
+              policy,
+              this.managementRoomID,
+              this.confirmationPromptSender,
+              log
+            );
           }
           const restrictionResult = await this.consequences.restrictUser(
             policy.entity as StringUserID,
