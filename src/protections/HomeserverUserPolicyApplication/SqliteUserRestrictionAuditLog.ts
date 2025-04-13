@@ -108,29 +108,31 @@ export class SqliteUserRestrictionAuditLog
   public async isUserRestricted(
     userID: StringUserID
   ): Promise<Result<boolean>> {
-    return wrapInTryCatch(
-      () =>
-        Ok(
-          // This query is a bit long winded but it works i guess.
-          (this.db
-            .prepare(
-              `
-              SELECT
-                CASE
-                  WHEN NOT EXISTS (SELECT 1 FROM user_restriction WHERE target_user_id = :user_id) THEN FALSE
-                  WHEN MAX(user_unrestriction.created_at) >= MAX(user_restriction.created_at) THEN FALSE
-                  ELSE TRUE
-                END AS is_suspended
-              FROM user_restriction
-              LEFT JOIN user_unrestriction
-                ON user_restriction.target_user_id = user_unrestriction.target_user_id
-              WHERE user_restriction.target_user_id = :user_id;`
-            )
-            .pluck()
-            .get({ user_id: userID }) as number) === 1
-        ),
-      `Failed to check if user ${userID} is suspended`
-    );
+    return wrapInTryCatch(() => {
+      const timeOfRestriction = this.db
+        .prepare(
+          "SELECT MAX(created_at) FROM user_restriction WHERE target_user_id = :user_id;"
+        )
+        .pluck()
+        .get({ user_id: userID }) as number | null;
+      if (timeOfRestriction === null) {
+        return Ok(false);
+      }
+      const timeOfUnrestriction = this.db
+        .prepare(
+          "SELECT MAX(created_at) FROM user_unrestriction WHERE target_user_id = :user_id;"
+        )
+        .pluck()
+        .get({ user_id: userID }) as number | null;
+      if (
+        timeOfUnrestriction != null &&
+        timeOfUnrestriction >= timeOfRestriction
+      ) {
+        return Ok(false);
+      } else {
+        return Ok(true);
+      }
+    }, `Failed to check if user ${userID} is suspended`);
   }
   private insertPolicyInfo(policy: LiteralPolicyRule): void {
     this.db
