@@ -56,10 +56,8 @@ import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
 import { JoinWaveCommandTable } from "../protections/JoinWaveShortCircuit";
 import { DraupnirTakedownCommand } from "./server-admin/Takedown";
-import {
-  SynapseAdminSuspendUserCommand,
-  SynapseAdminUnsuspendUserCommand,
-} from "./server-admin/SuspendCommand";
+import { SynapseAdminSuspendUserCommand } from "./server-admin/SuspendCommand";
+import { SynpaseAdminUnrestrictUserCommand } from "./server-admin/UnrestrictCommand";
 
 // TODO: These commands should all be moved to subdirectories tbh and this
 // should be split like an index file for each subdirectory.
@@ -68,7 +66,7 @@ export const SynapseAdminCommands = new StandardCommandTable("synapse admin")
   .internCommand(SynapseAdminHijackRoomCommand, ["hijack", "room"])
   .internCommand(SynapseAdminShutdownRoomCommand, ["shutdown", "room"])
   .internCommand(SynapseAdminSuspendUserCommand, ["suspend"])
-  .internCommand(SynapseAdminUnsuspendUserCommand, ["unsuspend"]);
+  .internCommand(SynpaseAdminUnrestrictUserCommand, ["unrestrict"]);
 
 const DraupnirCommands = new StandardCommandTable("draupnir")
   .internCommand(DraupnirAliasMoveCommand, ["alias", "move"])
