@@ -94,8 +94,22 @@ export class HomeserverUserPolicyApplication {
       (async () => {
         for (const change of changes) {
           if (change.changeType === PolicyRuleChangeType.Removed) {
+            if (
+              change.rule.matchType === PolicyRuleMatchType.Literal &&
+              isStringUserID(change.rule.entity)
+            ) {
+              const unrestrictResult = await this.consequences.unrestrictUser(
+                change.rule.entity,
+                change.event.sender
+              );
+              if (isError(unrestrictResult)) {
+                log.error(
+                  `Failed to unrestrict the user ${change.rule.entity}`,
+                  unrestrictResult.error
+                );
+              }
+            }
             continue;
-            // FIXME: Don't we want to unsuspend here?
             // FIXME: What about modifying from a automaticallyRedactReason to a non redact reason?
           }
           const policy = change.rule;
