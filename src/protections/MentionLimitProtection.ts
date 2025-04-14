@@ -95,6 +95,9 @@ export class MentionLimitProtection
     _room: MatrixRoomID,
     event: RoomEvent
   ): Promise<ActionResult<void>> {
+    if (event.sender === this.protectedRoomsSet.userID) {
+      return Ok(undefined);
+    }
     if (isContainingMentionsOverLimit(event, this.maxMentions)) {
       return await this.eventConsequences.consequenceForEvent(
         event.room_id,
