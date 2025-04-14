@@ -89,7 +89,7 @@ export const SynapseAdminDeactivateCommand = describeCommand({
     if (synapseAdminClient === undefined) {
       throw new TypeError("Shouldn't be happening at this point");
     }
-    const isNoConfirm = keywords.getKeywordValue<boolean>("no-confirm", false);
+    const isConfirmed = keywords.getKeywordValue<boolean>("no-confirm", false);
     const isPurgingMessages = keywords.getKeywordValue<boolean>(
       "purge-messages",
       false
@@ -112,10 +112,10 @@ export const SynapseAdminDeactivateCommand = describeCommand({
         creation_timestamp: details.ok.creation_ts,
         displayname: details.ok.displayname ?? undefined,
         isPurgingMessages: Boolean(isPurgingMessages),
-        isNoConfirm: Boolean(isNoConfirm),
+        isNoConfirm: Boolean(isConfirmed),
       } satisfies DeactivateUserPreview);
     })();
-    if (isNoConfirm) {
+    if (!isConfirmed) {
       return previewResult;
     }
     const deactivateResult = await (() =>
