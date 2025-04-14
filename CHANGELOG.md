@@ -12,7 +12,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.3.0-beta.1]
+
+### Added
+
+- A new protection has been added to automatically suspend resident users
+  matching policies from Draupnir's watched lists
+  (`HomeserverUserPolicyProtection`). If the policies match
+  `automaticallyRedactForReasons` then the management will also be prompted for
+  a purging deactivation to remove the user's messages.
+
+- `!draupnir deactivate <user id>` now prompts for confirmation and has a
+  `--purge-messages` option, which will restrict the user's account while all of
+  their messages are redacted.
+
+- `!draupnir unrestrict <user id>` command that will unsuspend / unshadowban the
+  user's account.
+
+- `!draupnir suspend <user id>` command that uses the synapse admin API to
+  suspend users.
 
 ### Changed
 
@@ -22,6 +40,20 @@ and this project adheres to
     tactic).
   - User redaction will now be triggered on bans and the reason will be scanned
     for `automaticallyRedactForReasons` from Draupnir's config.
+
+### Fixed
+
+- The Draupnir bot itself is now excluded from the MentionLimitProtection thanks
+  to @nexy7574 in https://github.com/the-draupnir-project/Draupnir/pull/815.
+
+- MessageIsMediaProtection now correctly checks for noop thanks to @FSG-Cat in
+  https://github.com/the-draupnir-project/Draupnir/pull/807.
+
+- Redactions are now ignored in BasicFloodingProtection thanks to @nexy7574 in
+  https://github.com/the-draupnir-project/Draupnir/pull/805
+
+- @FSG-Cat has changed some more mentions of Mjolnir to Draupnir in
+  https://github.com/the-draupnir-project/Draupnir/pull/796.
 
 ## [v2.3.0-beta.0]
 
