@@ -7,11 +7,14 @@ import { RoomAuditLog } from "../protections/RoomTakedown/RoomAuditLog";
 import { SqliteRoomStateBackingStore } from "./better-sqlite3/SqliteRoomStateBackingStore";
 import { SqliteHashReversalStore } from "./better-sqlite3/HashStore";
 import { SqliteRoomAuditLog } from "../protections/RoomTakedown/SqliteRoomAuditLog";
+import { UserRestrictionAuditLog } from "../protections/HomeserverUserPolicyApplication/UserRestrictionAuditLog";
+import { SqliteUserRestrictionAuditLog } from "../protections/HomeserverUserPolicyApplication/SqliteUserRestrictionAuditLog";
 
 export type TopLevelStores = {
   hashStore?: SHA256HashStore;
   roomAuditLog?: RoomAuditLog | undefined;
   roomStateBackingStore?: SqliteRoomStateBackingStore | undefined;
+  userRestrictionAuditLog?: UserRestrictionAuditLog | undefined;
 };
 
 /**
@@ -27,6 +30,7 @@ export type TopLevelStores = {
 export type DraupnirStores = {
   hashStore?: SHA256HashStore | undefined;
   roomAuditLog?: RoomAuditLog | undefined;
+  userRestrictionAuditLog?: UserRestrictionAuditLog | undefined;
   /**
    * Dispose of stores relevant to a specific draupnir instance.
    * For example, the hash store is usually specific to a single draupnir.
@@ -40,6 +44,7 @@ export function createDraupnirStores(
   return Object.freeze({
     roomAuditLog: topLevelStores.roomAuditLog,
     hashStore: topLevelStores.hashStore,
+    userRestrictionAuditLog: topLevelStores.userRestrictionAuditLog,
     dispose() {},
   } satisfies DraupnirStores);
 }
@@ -57,5 +62,7 @@ export function makeTopLevelStores(
       : undefined,
     hashStore: SqliteHashReversalStore.createToplevel(storagePath),
     roomAuditLog: SqliteRoomAuditLog.createToplevel(storagePath),
+    userRestrictionAuditLog:
+      SqliteUserRestrictionAuditLog.createToplevel(storagePath),
   } satisfies TopLevelStores);
 }

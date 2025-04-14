@@ -8,10 +8,14 @@
  * instead. For now that system doesn't even exist.
  */
 
+// import capability renderers and glue too.
+import "../capabilities/capabilityIndex";
+
 // keep alphabetical please.
 import "./BanPropagation";
 import "./BasicFlooding";
 import "./FirstMessageIsImage";
+import "./HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
 import "./JoinWaveShortCircuit";
 import "./RedactionSynchronisation";
 import "./MembershipChangeProtection";
@@ -23,6 +27,3 @@ import "./PolicyChangeNotification";
 import "./ProtectedRooms/RoomsSetBehaviourProtection";
 import "./TrustedReporters";
 import "./WordList";
-
-// import capability renderers and glue too.
-import "../capabilities/capabilityIndex";

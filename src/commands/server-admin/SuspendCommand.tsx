@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import {
+  BasicInvocationInformation,
   DeadDocumentJSX,
   describeCommand,
   MatrixUserIDPresentationType,
@@ -13,6 +14,7 @@ import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 import { renderMentionPill } from "../interface-manager/MatrixHelpRenderer";
+import { SynapseAdminUserSuspensionCapability } from "../../protections/HomeserverUserPolicyApplication/UserSuspensionCapability";
 
 type SuspensionPreview = {
   userID: StringUserID;
@@ -37,7 +39,7 @@ export const SynapseAdminSuspendUserCommand = describeCommand({
   },
   async executor(
     draupnir: Draupnir,
-    _info,
+    info: BasicInvocationInformation,
     keywords,
     _rest,
     targetUser
@@ -47,7 +49,8 @@ export const SynapseAdminSuspendUserCommand = describeCommand({
       draupnir.synapseAdminClient === undefined ||
       isAdmin === undefined ||
       isError(isAdmin) ||
-      !isAdmin.ok
+      !isAdmin.ok ||
+      draupnir.stores.userRestrictionAuditLog === undefined
     ) {
       return ResultError.Result(
         "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
@@ -60,8 +63,14 @@ export const SynapseAdminSuspendUserCommand = describeCommand({
     if (!isNoConfirm) {
       return Ok(preview);
     }
-    const suspensionResult = await draupnir.synapseAdminClient.suspendUser(
-      targetUser.toString()
+    // we do this because it handles all the audit logging for us.
+    const suspensionCapability = new SynapseAdminUserSuspensionCapability(
+      draupnir.synapseAdminClient,
+      draupnir.stores.userRestrictionAuditLog
+    );
+    const suspensionResult = await suspensionCapability.restrictUser(
+      targetUser.toString(),
+      { rule: null, sender: info.commandSender }
     );
     if (isError(suspensionResult)) {
       return suspensionResult;
@@ -96,59 +105,6 @@ DraupnirInterfaceAdaptor.describeRenderer(SynapseAdminSuspendUserCommand, {
     return Ok(
       <root>
         The user <code>{commandResult.ok.userID}</code> has been suspended.
-      </root>
-    );
-  },
-});
-
-export const SynapseAdminUnsuspendUserCommand = describeCommand({
-  summary: "Unsuspend a user on the homeserver that was previously suspended",
-  parameters: tuple({
-    name: "user",
-    description: "The user to unsuspend",
-    acceptor: MatrixUserIDPresentationType,
-  }),
-  async executor(
-    draupnir: Draupnir,
-    _info,
-    _keywords,
-    _rest,
-    targetUser
-  ): Promise<Result<SuspensionPreview>> {
-    const isAdmin = await draupnir.synapseAdminClient?.isSynapseAdmin();
-    if (
-      draupnir.synapseAdminClient === undefined ||
-      isAdmin === undefined ||
-      isError(isAdmin) ||
-      !isAdmin.ok
-    ) {
-      return ResultError.Result(
-        "I am not a Synapse administrator, or the endpoint to deactivate a user is blocked"
-      );
-    }
-    const preview = {
-      userID: targetUser.toString(),
-    };
-    const suspensionResult = await draupnir.synapseAdminClient.unsuspendUser(
-      targetUser.toString()
-    );
-    if (isError(suspensionResult)) {
-      return suspensionResult;
-    } else {
-      return Ok(preview);
-    }
-  },
-});
-
-DraupnirInterfaceAdaptor.describeRenderer(SynapseAdminUnsuspendUserCommand, {
-  isAlwaysSupposedToUseDefaultRenderer: true,
-  JSXRenderer(commandResult) {
-    if (isError(commandResult)) {
-      return Ok(undefined);
-    }
-    return Ok(
-      <root>
-        The user <code>{commandResult.ok.userID}</code> has been unsuspended.
       </root>
     );
   },

@@ -30,6 +30,7 @@ import {
   CommandPromptContext,
   continueCommandAcceptingPrompt,
 } from "./MatrixPromptForAccept";
+import { Draupnir } from "../../Draupnir";
 
 const log = new Logger("MatrixPromptForConfirmation");
 
@@ -66,6 +67,35 @@ export function makeConfirmationPromptListener(
       "--no-confirm",
       commandDispatcher,
       reactionHandler
+    );
+  };
+}
+
+export type ConfirmationPromptSender = (
+  {
+    commandDesignator,
+    readItems,
+  }: { commandDesignator: string[]; readItems: string[] },
+  document: DocumentNode,
+  {
+    roomID,
+    event,
+  }: { roomID?: StringRoomID | undefined; event?: RoomEvent | undefined }
+) => Promise<Result<void>>;
+
+export function makeconfirmationPromptSender(
+  draupnir: Draupnir
+): ConfirmationPromptSender {
+  return async function (
+    { commandDesignator, readItems },
+    document,
+    { roomID, event }
+  ) {
+    return sendConfirmationPrompt(
+      draupnir,
+      { commandDesignator, readItems },
+      document,
+      { roomID, event }
     );
   };
 }
