@@ -46,11 +46,13 @@ const SchemaText = [
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
     FOREIGN KEY (policy_id) REFERENCES policy_info(policy_id)
   ) STRICT;
+  CREATE INDEX idx_user_restriction ON user_restriction (target_user_id, created_at);
   CREATE TABLE user_unrestriction (
     target_user_id TEXT NOT NULL,
     sender_user_id TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL
-    ) STRICT;`,
+    ) STRICT;
+  CREATE INDEX idx_user_unrestriction ON user_unrestriction (target_user_id, created_at);`,
 ];
 
 const SchemaOptions = {
