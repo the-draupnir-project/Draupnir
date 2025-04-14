@@ -98,6 +98,17 @@ export class HomeserverUserPolicyApplication {
               change.rule.matchType === PolicyRuleMatchType.Literal &&
               isStringUserID(change.rule.entity)
             ) {
+              const matchingPolicies = this.watchedPolicyRooms.currentRevision
+                .allRulesMatchingEntity(change.rule.entity, {})
+                .filter(
+                  (policy) =>
+                    policy.recommendation === Recommendation.Ban ||
+                    policy.recommendation === Recommendation.Takedown
+                );
+              // If there are other policies targetting the user then we don't want to unrestrict them.
+              if (matchingPolicies.length > 0) {
+                continue;
+              }
               const unrestrictResult = await this.consequences.unrestrictUser(
                 change.rule.entity,
                 change.event.sender
