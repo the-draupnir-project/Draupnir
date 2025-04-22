@@ -55,7 +55,6 @@
     "@the-draupnir-project/interface-manager": "4.0.2",
     "@the-draupnir-project/matrix-basic-types": "1.3.0",
     "better-sqlite3": "^9.4.3",
-    "body-parser": "^1.20.2",
     "config": "^3.3.9",
     "express": "^4.19",
     "html-to-text": "^8.0.0",

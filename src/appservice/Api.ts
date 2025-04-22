@@ -10,8 +10,7 @@
 
 import request from "request";
 import express from "express";
-import * as bodyParser from "body-parser";
-import * as http from "http";
+import { Server } from "http";
 import { Logger } from "matrix-appservice-bridge";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 import { isError } from "matrix-protection-suite";
@@ -23,12 +22,12 @@ const log = new Logger("Api");
  */
 export class Api {
   private httpdConfig: express.Express = express();
-  private httpServer?: http.Server;
+  private httpServer?: Server;
 
   constructor(
     private homeserver: string,
     private mjolnirManager: AppServiceDraupnirManager
-  ) {}
+  ) { }
 
   /**
    * Resolves an open id access token to find a matching user that the token is valid for.
@@ -98,7 +97,7 @@ export class Api {
     if (this.httpServer) {
       throw new TypeError("server already started");
     }
-    this.httpdConfig.use(bodyParser.json());
+    this.httpdConfig.use(express.json());
 
     this.httpdConfig.get("/get", this.pathGet.bind(this));
     this.httpdConfig.get("/list", this.pathList.bind(this));
