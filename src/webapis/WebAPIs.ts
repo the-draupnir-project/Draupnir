@@ -12,15 +12,19 @@ import { Server } from "http";
 import express from "express";
 import { MatrixClient } from "matrix-bot-sdk";
 import { StandardReportManager } from "../report/ReportManager";
-import { IConfig } from "../config";
+import { WebserverConfig } from "../config";
 import {
   StringRoomID,
   StringEventID,
   isStringRoomID,
   isStringEventID,
+  isStringUserID,
+  StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Logger, Task } from "matrix-protection-suite";
+import { isError, Logger, Task } from "matrix-protection-suite";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
+import { AppServiceDraupnirManager } from "../appservice/AppServiceDraupnirManager";
+import { resolveOpenIDToken } from "../utils";
 
 const log = new Logger("WebAPIs");
 
@@ -29,6 +33,8 @@ const log = new Logger("WebAPIs");
  */
 const API_PREFIX = "/api/1";
 
+const APPSERVICE_API_PREFIX = "/api/1/appservice";
+
 const AUTHORIZATION = new RegExp("Bearer (.*)");
 
 export class WebAPIs {
@@ -36,9 +42,11 @@ export class WebAPIs {
   private httpServer?: Server | undefined;
 
   constructor(
-    private reportManager: StandardReportManager,
-    private readonly config: IConfig,
-    private readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
+    private readonly rawHomeserverUrl: string,
+    private readonly config: WebserverConfig,
+    private reportManager?: StandardReportManager,
+    private readonly synapseHTTPAntispam?: SynapseHttpAntispam | undefined,
+    private draupnirManager?: AppServiceDraupnirManager
   ) {
     // Setup JSON parsing.
     this.webController.use(express.json());
@@ -49,36 +57,38 @@ export class WebAPIs {
    * Start accepting requests to the Web API.
    */
   public async start(): Promise<void> {
-    if (!this.config.web.enabled) {
+    if (!this.config.enabled) {
       return;
     }
     await new Promise((resolve) => {
       this.httpServer = this.webController.listen(
-        this.config.web.port,
-        this.config.web.address,
+        this.config.port,
+        this.config.address,
         () => {
           resolve(undefined);
         }
       );
     });
 
-    // configure /report API.
-    if (this.config.web.abuseReporting.enabled) {
-      log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
-      this.webController.options(
-        `${API_PREFIX}/report/:room_id/:event_id`,
-        (request, response) => {
-          // reply with CORS options
-          response.header("Access-Control-Allow-Origin", "*");
-          response.header(
-            "Access-Control-Allow-Headers",
-            "X-Requested-With, Content-Type, Authorization, Date"
-          );
-          response.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-          response.status(200);
-          return response.send();
-        }
+    // Setup cors
+    this.webController.use((req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Headers", "Authorization");
+      res.header(
+        "Access-Control-Allow-Methods",
+        "OPTIONS, GET, POST, PUT, DELETE"
       );
+
+      if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+        return;
+      }
+      next();
+    });
+
+    // configure /report API.
+    if (this.config.abuseReporting.enabled && this.reportManager) {
+      log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
       this.webController.post(
         `${API_PREFIX}/report/:room_id/:event_id`,
         (request, response) => {
@@ -125,6 +135,39 @@ export class WebAPIs {
       );
       log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
     }
+
+    // Appservice APIs
+    if (this.draupnirManager) {
+      // Setup API to get the information of a bot.
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/get/:bot_id...`);
+      this.webController.get(
+        `${APPSERVICE_API_PREFIX}/get/:bot_id`,
+        (request, response) => {
+          void Task(this.getAppserviceBotInfo(request, response));
+        }
+      );
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/get/:bot_id... DONE`);
+
+      // Setup API to list the bots of a user.
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/list...`);
+      this.webController.get(
+        `${APPSERVICE_API_PREFIX}/list`,
+        (request, response) => {
+          void Task(this.listBots(request, response));
+        }
+      );
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/list... DONE`);
+
+      // Setup API to provision a bot.
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/provision...`);
+      this.webController.post(
+        `${APPSERVICE_API_PREFIX}/provision`,
+        (request, response) => {
+          void Task(this.handleProvision(request, response));
+        }
+      );
+      log.info(`configuring ${APPSERVICE_API_PREFIX}/provision... DONE`);
+    }
   }
 
   public async stop(): Promise<void> {
@@ -152,6 +195,265 @@ export class WebAPIs {
     }
   }
 
+  // TODO: Return matrix style errros everywhere!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  private async ensureLoggedIn(
+    request: express.Request,
+    response: express.Response
+  ): Promise<StringUserID | undefined> {
+    // Get OpenID token from the request header
+    const authorization = request.get("Authorization");
+
+    let openIDToken: string | undefined = undefined;
+
+    if (authorization) {
+      const brearerMatch = AUTHORIZATION.exec(authorization);
+      if (brearerMatch === null) {
+        response.status(401).send({
+          errcode: "M_MISSING_TOKEN",
+          error: "Missing access token",
+        });
+        return;
+      } else {
+        [, openIDToken] = brearerMatch;
+      }
+    }
+
+    if (!openIDToken) {
+      // If no token is provided, return 401 Unauthorized
+      response.status(401).send({
+        errcode: "M_MISSING_TOKEN",
+        error: "Missing access token",
+      });
+      return;
+    }
+
+    // Resolve it on the homeserver to validate it
+    const userId = await resolveOpenIDToken(this.rawHomeserverUrl, openIDToken);
+    if (userId === null) {
+      response.status(401).send({
+        errcode: "M_MISSING_TOKEN",
+        error: "Missing access token",
+      });
+      return;
+    }
+
+    if (!isStringUserID(userId)) {
+      response.status(400).send({
+        errcode: "M_INVALID_PARAM",
+        error: "Invalid user ID",
+      });
+      return;
+    }
+
+    return userId;
+  }
+
+  /**
+   * Handle a call to the /getBot API. This is used to get the management room ID of a bot.
+   *
+   * @param request The request object. It should contain the bot ID in the URL parameters.
+   * @param response The response object. Used to send the response back to the client.
+   * @returns A promise that resolves when the response has been sent.
+   */
+  private async getAppserviceBotInfo(
+    request: express.Request,
+    response: express.Response
+  ): Promise<void> {
+    const userId = await this.ensureLoggedIn(request, response);
+    if (userId === undefined) {
+      return;
+    }
+
+    if (!this.draupnirManager) {
+      log.error(
+        "Received a request for bot information but the appservice manager is not configured. Ignoring."
+      );
+      response.status(503).send({
+        errcode: "M_NOT_CONFIGURED",
+        error: "Appservice manager not configured",
+      });
+      return;
+    }
+
+    // Get the bot ID from the request parameters
+    const botID = request.params.bot_id;
+    if (!botID) {
+      response.status(400).send({
+        errcode: "M_MISSING_PARAM",
+        error: "Missing bot ID",
+      });
+      return;
+    }
+    // Validate the bot ID
+    if (!isStringUserID(botID)) {
+      response.status(400).send({
+        errcode: "M_INVALID_PARAM",
+        error: "Invalid bot ID",
+      });
+      return;
+    }
+
+    const draupnir = await this.draupnirManager.getRunningDraupnir(
+      botID,
+      userId
+    );
+    if (draupnir === undefined) {
+      response.status(404).send({
+        errcode: "M_NOT_FOUND",
+        error: "Bot not found",
+      });
+      return;
+    }
+
+    response.status(200).json({
+      managementRoom: draupnir.managementRoomID,
+      // TODO: This should be fetched properly in the future. This is important as I want to ensure that any user in the management room can use this API
+      ownerID: userId,
+    });
+  }
+
+  private async listBots(
+    request: express.Request,
+    response: express.Response
+  ): Promise<void> {
+    const userId = await this.ensureLoggedIn(request, response);
+    if (userId === undefined) {
+      return;
+    }
+
+    if (!this.draupnirManager) {
+      log.error(
+        "Received a request for bot information but the appservice manager is not configured. Ignoring."
+      );
+      response.status(503).send({
+        errcode: "M_NOT_CONFIGURED",
+        error: "Appservice manager not configured",
+      });
+      return;
+    }
+
+    // Check if there is a query parameter "onlyOwner" and if it is set to true
+    const onlyOwner = request.query["onlyOwner"] === "true";
+
+    // Get the list of bots for the user. We first do the onlyOwner case as its simpler and faster
+    const draupnirBots = await this.draupnirManager.getOwnedDraupnir(userId);
+
+    if (!onlyOwner) {
+      // TODO: Fetch the list of all bots the user is member of the management room.
+    }
+
+    response.status(200).json({
+      bots: draupnirBots,
+    });
+  }
+
+  private async handleProvision(
+    request: express.Request,
+    response: express.Response
+  ): Promise<void> {
+    const userId = await this.ensureLoggedIn(request, response);
+    if (userId === undefined) {
+      return;
+    }
+
+    if (!this.draupnirManager) {
+      log.error(
+        "Received a request for bot information but the appservice manager is not configured. Ignoring."
+      );
+      response.status(503).send({
+        errcode: "M_NOT_CONFIGURED",
+        error: "Appservice manager not configured",
+      });
+      return;
+    }
+
+    // Check if the body contains an optional array of room ids to protect
+    const roomsToProtect = request.body["protectedRooms"];
+    if (roomsToProtect && !Array.isArray(roomsToProtect)) {
+      response.status(400).send({
+        errcode: "M_INVALID_PARAM",
+        error: "Invalid parameter: protectedRooms must be an array of room IDs",
+      });
+      return;
+    }
+
+    // Provision the bot
+    const record = await this.draupnirManager.provisionNewDraupnir(userId);
+    if (isError(record)) {
+      log.error("Error provisioning a new bot", record);
+      response.status(503).send({
+        errcode: "M_INTERNAL_SERVER_ERROR",
+        error: "Failed to provision a new bot",
+      });
+      return;
+    }
+
+    const managementRoomID = record.ok.management_room;
+    const botID = this.draupnirManager.draupnirMXID(record.ok);
+    const ownerID = record.ok.owner;
+
+    // If the user provided a list of rooms to protect, we need to add them to the bot
+    if (roomsToProtect) {
+      const invalidIDs = [];
+      const failedIDs = [];
+      for (const roomId of roomsToProtect) {
+        if (!isStringRoomID(roomId)) {
+          invalidIDs.push(roomId);
+          continue;
+        }
+        const draupnir = await this.draupnirManager.getRunningDraupnir(
+          botID,
+          userId
+        );
+        if (draupnir === undefined) {
+          log.error(
+            "Received a request to protect a room but the draupnir is not running. Unable to continue."
+          );
+          response.status(503).send({
+            errcode: "M_UNKOWN",
+            error:
+              "Failed to protect rooms because draupnir is not running. Unable to continue.",
+          });
+          return;
+        }
+
+        const joiner = draupnir.clientPlatform.toRoomJoiner();
+        const room = await joiner.joinRoom(roomId);
+        if (isError(room)) {
+          failedIDs.push(roomId);
+          continue;
+        }
+
+        const result =
+          await draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
+            room.ok
+          );
+        if (isError(result)) {
+          failedIDs.push(roomId);
+          continue;
+        }
+      }
+
+      if (invalidIDs.length > 0 || failedIDs.length > 0) {
+        response.status(400).send({
+          errcode: "M_INVALID_PARAM",
+          error:
+            "Some of the provided room IDs are invalid or failed to be protected",
+          invalidIDs,
+          failedIDs,
+        });
+        return;
+      }
+    }
+
+    response.status(200).json({
+      managementRoom: managementRoomID,
+      botID,
+      ownerID,
+    });
+  }
+
   /**
    * Handle a call to the /report API.
    *
@@ -173,6 +475,14 @@ export class WebAPIs {
     request: express.Request;
     response: express.Response;
   }) {
+    if (!this.reportManager) {
+      log.error(
+        "Received a report but the report manager is not configured. Ignoring."
+      );
+      response.status(503).send("Report manager not configured");
+      return;
+    }
+
     // To display any kind of useful information, we need
     //
     // 1. The reporter id;
@@ -237,7 +547,7 @@ export class WebAPIs {
         // 3. We are avoiding the use of the Synapse Admin API to ensure that
         //    this feature can work with all homeservers, not just Synapse.
         const reporterClient = new MatrixClient(
-          this.config.rawHomeserverUrl,
+          this.rawHomeserverUrl,
           accessToken
         );
         reporterClient.start = () => {

@@ -13,6 +13,7 @@ import * as fs from "fs";
 import { load } from "js-yaml";
 import { Value } from "@sinclair/typebox/value";
 import { EDStatic } from "matrix-protection-suite";
+import { WebserverConfig } from "../../config";
 
 export function read(configPath: string): AppserviceConfig {
   const content = fs.readFileSync(configPath, "utf8");
@@ -80,18 +81,7 @@ export const AppserviceConfig = Type.Object({
     },
     { description: "Details for the database backend" }
   ),
-  webAPI: Type.Object(
-    {
-      port: Type.Number({
-        description:
-          "Port number for the web API used to access the appservice via the widget",
-      }),
-    },
-    {
-      description:
-        "Config for the web api used to access the appservice via the widget",
-    }
-  ),
+  web: WebserverConfig,
   adminRoom: Type.String({
     description:
       "The admin room for the appservice bot. Not called managementRoom like draupnir on purpose, so they're not mixed in code somehow.",

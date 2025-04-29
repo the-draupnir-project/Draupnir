@@ -20,7 +20,6 @@ import {
 } from "matrix-appservice-bridge";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
-import { Api } from "./Api";
 import { AppserviceConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
@@ -49,6 +48,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
+import { WebAPIs } from "../webapis/WebAPIs";
 
 const log = new Logger("AppService");
 /**
@@ -56,7 +56,7 @@ const log = new Logger("AppService");
  * the entrypoint of the application.
  */
 export class MjolnirAppService {
-  private readonly api: Api;
+  private readonly api: WebAPIs;
   public readonly commands: AppserviceCommandHandler;
 
   /**
@@ -77,7 +77,13 @@ export class MjolnirAppService {
     public readonly accessControlRoomID: StringRoomID,
     public readonly botUserID: StringUserID
   ) {
-    this.api = new Api(config.homeserver.url, draupnirManager);
+    this.api = new WebAPIs(
+      config.homeserver.url,
+      config.web,
+      undefined,
+      undefined,
+      draupnirManager
+    );
     const client = this.bridge.getBot().getClient();
     this.commands = new AppserviceCommandHandler(
       botUserID,
@@ -356,7 +362,7 @@ export class MjolnirAppService {
       "Starting DraupnirAppService, Matrix-side to listen on port",
       port
     );
-    this.api.start(this.config.webAPI.port);
+    await this.api.start();
     await this.bridge.listen(port);
     this.prometheusMetrics.addAppServicePath(this.bridge);
     this.bridge.addAppServicePath({
@@ -376,7 +382,7 @@ export class MjolnirAppService {
   public async close(): Promise<void> {
     await this.bridge.close();
     await this.dataStore.close();
-    await this.api.close();
+    await this.api.stop();
   }
 
   /**

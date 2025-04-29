@@ -17,7 +17,12 @@ process.env.SUPPRESS_NO_CONFIG_WARNING = "y";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+import {
+  EDStatic,
+  Logger,
+  setGlobalLoggerProvider,
+} from "matrix-protection-suite";
+import { Type } from "@sinclair/typebox";
 
 LogService.setLogger(new RichConsoleLogger());
 setGlobalLoggerProvider(new RichConsoleLogger());
@@ -53,6 +58,48 @@ export function getNonDefaultConfigProperties(
   }
   return nonDefault;
 }
+
+/**
+ * The shared config for the webserver.
+ */
+export type WebserverConfig = EDStatic<typeof WebserverConfig>;
+export const WebserverConfig = Type.Object({
+  enabled: Type.Boolean({
+    description: "Whether the webserver is enabled.",
+    default: false,
+  }),
+  port: Type.Number({
+    description: "The port the webserver will listen on.",
+    default: 8080,
+  }),
+  address: Type.String({
+    description: "The address the webserver will listen on.",
+    default: "localhost",
+  }),
+  abuseReporting: Type.Object({
+    enabled: Type.Boolean({
+      description: "Whether the abuse reporting is enabled.",
+      default: false,
+    }),
+  }),
+  synapseHTTPAntispam: Type.Object({
+    enabled: Type.Boolean({
+      description: "Whether the synapse HTTP antispam is enabled.",
+      default: false,
+    }),
+    authorization: Type.String({
+      description:
+        "The authorization header to use for the synapse HTTP antispam.",
+      default: "DEFAULT",
+    }),
+  }),
+  ui: Type.Object({
+    enabled: Type.Boolean({
+      description: "Whether the UI API is enabled.",
+      default: true,
+    }),
+  }),
+});
 
 /**
  * The configuration, as read from production.yaml
@@ -151,18 +198,7 @@ export interface IConfig {
         }
       | undefined;
   };
-  web: {
-    enabled: boolean;
-    port: number;
-    address: string;
-    abuseReporting: {
-      enabled: boolean;
-    };
-    synapseHTTPAntispam: {
-      enabled: boolean;
-      authorization: string;
-    };
-  };
+  web: WebserverConfig;
   // Store room state using sqlite to improve startup time when Synapse responds
   // slowly to requests for `/state`.
   roomStateBackingStore: {
@@ -262,6 +298,9 @@ const defaultConfig: IConfig = {
     synapseHTTPAntispam: {
       enabled: false,
       authorization: "DEFAULT",
+    },
+    ui: {
+      enabled: true,
     },
   },
   roomStateBackingStore: {

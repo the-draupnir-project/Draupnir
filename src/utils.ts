@@ -23,6 +23,7 @@ import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { Logger, RoomEvent } from "matrix-protection-suite";
+import request from "request";
 
 const log = new Logger("utils");
 
@@ -606,3 +607,56 @@ export function initializeSentry(config: IConfig) {
 // Set to `true` once we have initialized `Sentry` to ensure
 // that we do not attempt to initialize it more than once.
 let sentryInitialized = false;
+
+/**
+ * Resolves an open id access token to find a matching user that the token is valid for.
+ * @param accessToken An openID token.
+ * @returns The mxid of the user that this token belongs to or null if the token could not be authenticated.
+ */
+export function resolveOpenIDToken(
+  homeserver: string,
+  accessToken: string
+): Promise<string | null> {
+  return new Promise((resolve, reject) => {
+    request(
+      {
+        url: `${homeserver}/_matrix/federation/v1/openid/userinfo`,
+        qs: { access_token: accessToken },
+      },
+      (err, homeserver_response, body) => {
+        if (err) {
+          log.error(`Error resolving openID token from ${homeserver}`, err);
+          if (err instanceof Error) {
+            reject(err);
+          } else {
+            reject(
+              new Error(
+                `There was an error when resolving openID token from ${homeserver}`
+              )
+            );
+          }
+        }
+        let response: { sub: string };
+        try {
+          response = JSON.parse(body);
+        } catch (e) {
+          log.error(
+            `Received ill formed response from ${homeserver} when resolving an openID token`,
+            e
+          );
+          if (err instanceof Error) {
+            reject(err);
+          }
+          reject(
+            new Error(
+              `Received ill formed response from ${homeserver} when resolving an openID token ${e}`
+            )
+          );
+          return;
+        }
+
+        resolve(response.sub);
+      }
+    );
+  });
+}

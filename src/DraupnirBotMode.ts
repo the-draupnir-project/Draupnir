@@ -53,8 +53,9 @@ const log = new Logger("DraupnirBotMode");
 
 export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
   return new WebAPIs(
+    draupnir.config.rawHomeserverUrl,
+    draupnir.config.web,
     draupnir.reportManager,
-    draupnir.config,
     draupnir.synapseHTTPAntispam
   );
 }
