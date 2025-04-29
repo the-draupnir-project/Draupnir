@@ -62,8 +62,8 @@ export function getNonDefaultConfigProperties(
 /**
  * The shared config for the webserver.
  */
-export type WebserverConfig = EDStatic<typeof WebserverConfig>;
-export const WebserverConfig = Type.Object({
+export type WebserverConfig = EDStatic<typeof WebserverConfigSchema>;
+export const WebserverConfigSchema = Type.Object({
   enabled: Type.Boolean({
     description: "Whether the webserver is enabled.",
     default: false,
@@ -76,23 +76,27 @@ export const WebserverConfig = Type.Object({
     description: "The address the webserver will listen on.",
     default: "localhost",
   }),
-  abuseReporting: Type.Object({
-    enabled: Type.Boolean({
-      description: "Whether the abuse reporting is enabled.",
-      default: false,
-    }),
-  }),
-  synapseHTTPAntispam: Type.Object({
-    enabled: Type.Boolean({
-      description: "Whether the synapse HTTP antispam is enabled.",
-      default: false,
-    }),
-    authorization: Type.String({
-      description:
-        "The authorization header to use for the synapse HTTP antispam.",
-      default: "DEFAULT",
-    }),
-  }),
+  abuseReporting: Type.Optional(
+    Type.Object({
+      enabled: Type.Boolean({
+        description: "Whether the abuse reporting is enabled.",
+        default: false,
+      }),
+    })
+  ),
+  synapseHTTPAntispam: Type.Optional(
+    Type.Object({
+      enabled: Type.Boolean({
+        description: "Whether the synapse HTTP antispam is enabled.",
+        default: false,
+      }),
+      authorization: Type.String({
+        description:
+          "The authorization header to use for the synapse HTTP antispam.",
+        default: "DEFAULT",
+      }),
+    })
+  ),
   ui: Type.Object({
     enabled: Type.Boolean({
       description: "Whether the UI API is enabled.",

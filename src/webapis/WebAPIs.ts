@@ -87,7 +87,7 @@ export class WebAPIs {
     });
 
     // configure /report API.
-    if (this.config.abuseReporting.enabled && this.reportManager) {
+    if (this.config.abuseReporting?.enabled && this.reportManager) {
       log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id...`);
       this.webController.post(
         `${API_PREFIX}/report/:room_id/:event_id`,
@@ -343,6 +343,7 @@ export class WebAPIs {
       // TODO: Fetch the list of all bots the user is member of the management room.
     }
 
+    // TODO: Also return the owner and other members for each bot
     response.status(200).json({
       bots: draupnirBots,
     });

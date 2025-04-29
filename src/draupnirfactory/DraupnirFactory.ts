@@ -135,7 +135,7 @@ export class DraupnirFactory {
     );
     // synapesHTTPAntispam is made here so that the listeners get destroyed
     // when draupnir is destroyed.
-    const synapseHTTPAntispam = config.web.synapseHTTPAntispam.enabled
+    const synapseHTTPAntispam = config.web.synapseHTTPAntispam?.enabled
       ? new SynapseHttpAntispam(config.web.synapseHTTPAntispam.authorization)
       : undefined;
     const clientProfile = await safelyFetchProfile(client, clientUserID);

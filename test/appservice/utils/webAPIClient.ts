@@ -28,12 +28,17 @@ async function getOpenIDToken(client: MatrixClient): Promise<string> {
   return tokenInfo.access_token;
 }
 
-export interface CreateMjolnirResponse {
-  mjolnirUserId: string;
-  managementRoomId: string;
+export interface ProvisionDraupnirResponse {
+  managementRoom: string;
+  botID: string;
+  ownerID: string;
 }
 
-export class MjolnirWebAPIClient {
+export interface GetBotsForUserResponse {
+  bots: string[];
+}
+
+export class DraupnirWebAPIClient {
   private constructor(
     private readonly openIDToken: string,
     private readonly baseURL: string
@@ -42,22 +47,24 @@ export class MjolnirWebAPIClient {
   public static async makeClient(
     client: MatrixClient,
     baseUrl: string
-  ): Promise<MjolnirWebAPIClient> {
+  ): Promise<DraupnirWebAPIClient> {
     const token = await getOpenIDToken(client);
-    return new MjolnirWebAPIClient(token, baseUrl);
+    return new DraupnirWebAPIClient(token, baseUrl);
   }
 
-  public async createMjolnir(
-    roomToProtectId: string
-  ): Promise<CreateMjolnirResponse> {
-    const body: { mxid: string; roomId: string } = await new Promise(
+  public async provisionDraupnir(
+    roomsToProtect: string[] = []
+  ): Promise<ProvisionDraupnirResponse> {
+    const body: ProvisionDraupnirResponse = await new Promise(
       (resolve, reject) => {
         request.post(
-          `${this.baseURL}/create`,
+          `${this.baseURL}/api/1/appservice/provision`,
           {
+            headers: {
+              Authorization: `Bearer ${this.openIDToken}`,
+            },
             json: {
-              openId: this.openIDToken,
-              roomId: roomToProtectId,
+              protectedRooms: roomsToProtect,
             },
           },
           (error, response) => {
@@ -74,9 +81,35 @@ export class MjolnirWebAPIClient {
         );
       }
     );
-    return {
-      mjolnirUserId: body.mxid,
-      managementRoomId: body.roomId,
-    };
+    return body;
+  }
+
+  public async getBotsForUser(
+    onlyOwner: boolean = true
+  ): Promise<GetBotsForUserResponse> {
+    const body: GetBotsForUserResponse = await new Promise(
+      (resolve, reject) => {
+        request.get(
+          `${this.baseURL}/api/1/appservice/list?onlyOwner=${onlyOwner}`,
+          {
+            headers: {
+              Authorization: `Bearer ${this.openIDToken}`,
+            },
+          },
+          (error, response) => {
+            if (error === null || error === undefined) {
+              resolve(JSON.parse(response.body));
+            } else if (error instanceof Error) {
+              reject(error);
+            } else {
+              reject(
+                new TypeError(`Someone is throwing things that aren't errors`)
+              );
+            }
+          }
+        );
+      }
+    );
+    return body;
   }
 }
