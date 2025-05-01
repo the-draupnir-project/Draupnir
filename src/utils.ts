@@ -290,14 +290,14 @@ interface RequestOptions {
 
 type RequestError =
   | {
-      body?: {
-        [key: string]: unknown;
-      };
+    body?: {
       [key: string]: unknown;
-    }
+    };
+    [key: string]: unknown;
+  }
   | undefined;
 type RequestResponse =
-  | { statusCode: number; [key: string]: unknown }
+  | { statusCode: number;[key: string]: unknown }
   | undefined;
 
 /**
@@ -637,13 +637,21 @@ async function checkSrvRecords(serverName: string): Promise<string> {
  * @returns The federation URL for the given server name.
  */
 async function discoverFederationUrl(serverName: string): Promise<string> {
+  if (!serverName) {
+    throw new Error("Server name is required");
+  }
+
   // 1. Check if the server name is an IP(4|6) address. If it has an Port then use it as it otherwise add the port 8448
 
   // Check for a port and split it off if it exists
   const port = serverName.includes(":") ? serverName.split(":")[1] : "8448";
+  const hostnamePart = serverName.split(":")[0];
+  if (!hostnamePart) {
+    throw new Error("Invalid server name");
+  }
 
   // Check if the server name is an IP address
-  if (isIP(serverName.split(":")[0] as string)) {
+  if (isIP(hostnamePart)) {
     return `https://${serverName.split(":")[0]}:${port}`;
   }
 
@@ -670,7 +678,11 @@ async function discoverFederationUrl(serverName: string): Promise<string> {
     ? delegatedHostname.split(":")[1]
     : "8448";
   const delegatedIP = delegatedHostname.split(":")[0];
-  if (isIP(delegatedIP as string)) {
+  if (!delegatedIP) {
+    throw new Error("Invalid delegated server name");
+  }
+
+  if (isIP(delegatedIP)) {
     return `https://${delegatedIP}:${delegatedPort}`;
   }
 
@@ -694,9 +706,14 @@ export async function resolveOpenIDToken(
   accessToken: string
 ): Promise<string | null> {
   const resolvedHomeserver = await discoverFederationUrl(homeserver);
+  if (!resolvedHomeserver) {
+    log.error(`Unable to resolve the homeserver ${homeserver} to a valid URL.`);
+    return null;
+  }
+
   const url = new URL(
     "/_matrix/federation/v1/openid/userinfo",
-    `https://${resolvedHomeserver}`
+    resolvedHomeserver
   );
   url.searchParams.set("access_token", accessToken);
 

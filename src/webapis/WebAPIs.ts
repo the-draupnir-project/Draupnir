@@ -248,9 +248,19 @@ export class WebAPIs {
       return;
     }
     const homeserver = userServerName(draupnirUserID);
+    if (!homeserver) {
+      response.status(400).send({
+        errcode: "M_INVALID_PARAM",
+        error: "Invalid user ID",
+      });
+      return;
+    }
 
     // Resolve it on the homeserver to validate it
     try {
+      log.info(
+        `Checking OpenID token for user ${draupnirUserID} on ${homeserver}`
+      )
       const userId = await resolveOpenIDToken(homeserver, openIDToken);
       if (userId === null) {
         response.status(401).send({
