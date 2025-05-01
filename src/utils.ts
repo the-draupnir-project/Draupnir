@@ -290,14 +290,14 @@ interface RequestOptions {
 
 type RequestError =
   | {
-    body?: {
+      body?: {
+        [key: string]: unknown;
+      };
       [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  }
+    }
   | undefined;
 type RequestResponse =
-  | { statusCode: number;[key: string]: unknown }
+  | { statusCode: number; [key: string]: unknown }
   | undefined;
 
 /**

@@ -26,6 +26,7 @@ import { isError, Logger, Task } from "matrix-protection-suite";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
 import { AppServiceDraupnirManager } from "../appservice/AppServiceDraupnirManager";
 import { resolveOpenIDToken } from "../utils";
+import { groupWatchedPolicyRoomsByProtectionStatus } from "../commands/StatusCommand";
 
 const log = new Logger("WebAPIs");
 
@@ -260,7 +261,7 @@ export class WebAPIs {
     try {
       log.info(
         `Checking OpenID token for user ${draupnirUserID} on ${homeserver}`
-      )
+      );
       const userId = await resolveOpenIDToken(homeserver, openIDToken);
       if (userId === null) {
         response.status(401).send({
@@ -397,20 +398,71 @@ export class WebAPIs {
       // TODO: Fetch the list of all bots the user is member of the management room.
     }
 
-    const draupnirBotData = await Promise.all(
-      draupnirBots.map(async (botID) => {
-        const draupnir = await this.draupnirManager?.getRunningDraupnir(
-          botID,
-          userId
-        );
-        return {
-          id: botID,
-          displayName: draupnir?.clientDisplayName || draupnir?.clientUserID,
-          managementRoom: draupnir?.managementRoomID,
-          ownerID: userId,
-        };
-      })
-    );
+    const draupnirBotData = (
+      await Promise.all(
+        draupnirBots.map(async (botID) => {
+          const draupnir = await this.draupnirManager?.getRunningDraupnir(
+            botID,
+            userId
+          );
+          if (!draupnir) {
+            log.warn(
+              `Draupnir ${botID} is not running. This should never happen.`
+            );
+            return undefined;
+          }
+          const listInfo = groupWatchedPolicyRoomsByProtectionStatus(
+            draupnir.protectedRoomsSet.watchedPolicyRooms,
+            draupnir.clientRooms.currentRevision.allJoinedRooms,
+            draupnir.protectedRoomsSet.allProtectedRooms
+          );
+          const allSusbscribedRooms = [
+            ...listInfo.subscribedLists,
+            ...listInfo.subscribedAndProtectedLists,
+          ].map((room) => room.room.toRoomIDOrAlias());
+
+          return {
+            id: botID,
+            displayName: draupnir.clientDisplayName || draupnir.clientUserID,
+            managementRoom: draupnir.managementRoomID,
+            ownerID: userId,
+            protectedRooms: draupnir.protectedRoomsSet.allProtectedRooms.map(
+              (room) => {
+                const revision =
+                  draupnir.protectedRoomsSet.setRoomState.getRevision(
+                    room.toRoomIDOrAlias()
+                  );
+                if (revision) {
+                  const roomNameEvent =
+                    revision.getStateEventsOfType("m.room.name");
+                  if (
+                    roomNameEvent.length === 0 ||
+                    roomNameEvent[0] === undefined
+                  ) {
+                    return {
+                      room: room.toRoomIDOrAlias(),
+                    };
+                  }
+
+                  // @ts-expect-error - Its checked above to exist
+                  const displayName = roomNameEvent[0].content[
+                    "name"
+                  ] as string;
+
+                  return {
+                    room: room.toRoomIDOrAlias(),
+                    displayName: displayName,
+                  };
+                } else {
+                  return { room: room.toRoomIDOrAlias() };
+                }
+              }
+            ),
+            subscribedLists: allSusbscribedRooms,
+          };
+        })
+      )
+    ).filter((bot) => bot !== undefined);
 
     // TODO: Also return the same data as the getBot API for each bot
     response.status(200).json({
