@@ -138,6 +138,19 @@ export class WebAPIs {
       log.info(`configuring ${API_PREFIX}/report/:room_id/:event_id... DONE`);
     }
 
+    // Setup a healthcheck endpoint
+    log.info(`configuring ${APPSERVICE_API_PREFIX}/health...`);
+    this.webController.get(
+      `${API_PREFIX}/health`,
+      (request, response) => {
+        // TODO: report if the bot is not running?
+
+        response.status(200).send("OK");
+      }
+    );
+    log.info(`configuring ${API_PREFIX}/health... DONE`);
+
+    // TODO: Make get and list work for the bot mode
     // Appservice APIs
     if (this.draupnirManager) {
       // Setup API to get the information of a bot.
