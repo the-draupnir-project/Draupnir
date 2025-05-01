@@ -726,18 +726,33 @@ export async function resolveOpenIDToken(
   );
   url.searchParams.set("access_token", accessToken);
 
-  const resp = await fetch(url);
+  let resp = await fetch(url);
 
   if (!resp.ok) {
-    log.error(
-      `Error resolving openID token from ${homeserver}: ${resp.status} ${resp.statusText}`
+    log.warn(
+      `Error resolving openID token from ${homeserver}: ${resp.status} ${resp.statusText}. Trying http instead of https.`
     );
-    if (resp instanceof Error) {
-      throw resp;
-    } else {
-      throw new Error(
-        `There was an error when resolving openID token from ${homeserver}`
+    // Retry with http
+    const urlHttp = new URL(
+      "/_matrix/federation/v1/openid/userinfo",
+      resolvedHomeserver.replace("https://", "http://")
+    );
+    urlHttp.searchParams.set("access_token", accessToken);
+    const respHttp = await fetch(urlHttp);
+    if (!respHttp.ok) {
+      log.error(
+        `Error resolving openID token from ${homeserver}: ${respHttp.status} ${respHttp.statusText}`
       );
+
+      if (resp instanceof Error) {
+        throw resp;
+      } else {
+        throw new Error(
+          `There was an error when resolving openID token from ${homeserver}`
+        );
+      }
+    } else {
+      resp = respHttp;
     }
   }
 
