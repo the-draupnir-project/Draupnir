@@ -45,7 +45,8 @@ describe("Test that the app service can provision a draupnir when requested from
     });
     const apiClient = await DraupnirWebAPIClient.makeClient(
       moderator,
-      "http://localhost:9001"
+      "http://localhost:9001",
+      await moderator.getUserId()
     );
     const roomToProtectId = await moderator.createRoom({
       preset: "public_chat",
@@ -99,14 +100,14 @@ describe("Test that the app service can provision a draupnir when requested from
     });
     const apiClient = await DraupnirWebAPIClient.makeClient(
       moderator,
-      "http://localhost:9001"
+      "http://localhost:9001",
+      await moderator.getUserId()
     );
 
     const draupnirDetails: ProvisionDraupnirResponse =
       await apiClient.provisionDraupnir();
     const draupnirs: GetBotsForUserResponse = await apiClient.getBotsForUser();
-    expect(draupnirs.bots).toContain(draupnirDetails.botID);
     expect(draupnirs.bots).toHaveLength(1);
-    expect(draupnirs.bots[0]).toBe(draupnirDetails.botID);
+    expect(draupnirs.bots[0]?.id).toBe(draupnirDetails.botID);
   });
 });

@@ -20,6 +20,7 @@ import {
   isStringEventID,
   isStringUserID,
   StringUserID,
+  userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import { isError, Logger, Task } from "matrix-protection-suite";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
@@ -228,25 +229,66 @@ export class WebAPIs {
       return;
     }
 
+    // Get X-Draupnir-UserID header which contains the mxid of the user that created the openid token.
+    // This is required since it might not be on the same homserver as the bot. Also it is used for validation.
+    const draupnirUserID = request.get("X-Draupnir-UserID");
+    if (draupnirUserID) {
+      if (!isStringUserID(draupnirUserID)) {
+        response.status(400).send({
+          errcode: "M_INVALID_PARAM",
+          error: "Invalid user ID",
+        });
+        return;
+      }
+    } else {
+      response.status(400).send({
+        errcode: "M_MISSING_PARAM",
+        error: "Missing X-Draupnir-UserID header",
+      });
+      return;
+    }
+    const homeserver = userServerName(draupnirUserID);
+
     // Resolve it on the homeserver to validate it
-    const userId = await resolveOpenIDToken(this.rawHomeserverUrl, openIDToken);
-    if (userId === null) {
+    try {
+      const userId = await resolveOpenIDToken(homeserver, openIDToken);
+      if (userId === null) {
+        response.status(401).send({
+          errcode: "M_MISSING_TOKEN",
+          error: "Missing access token",
+        });
+        return;
+      }
+
+      if (!isStringUserID(userId)) {
+        console.error(
+          `Invalid user ID returned from OpenID token: ${userId}. This should never happen.`
+        );
+        response.status(400).send({
+          errcode: "M_INVALID_PARAM",
+          error: "Invalid user ID",
+        });
+        return;
+      }
+
+      // Check if the user ID matches the one in the header
+      if (userId !== draupnirUserID) {
+        response.status(401).send({
+          errcode: "M_INVALID_USER_ID",
+          error: "User ID does not match the one in the header",
+        });
+        return;
+      }
+
+      return userId;
+    } catch (error) {
+      log.error("Error resolving OpenID token", error);
       response.status(401).send({
         errcode: "M_MISSING_TOKEN",
-        error: "Missing access token",
+        error: "Missing or invalid openid token",
       });
       return;
     }
-
-    if (!isStringUserID(userId)) {
-      response.status(400).send({
-        errcode: "M_INVALID_PARAM",
-        error: "Invalid user ID",
-      });
-      return;
-    }
-
-    return userId;
   }
 
   /**
@@ -306,10 +348,12 @@ export class WebAPIs {
       return;
     }
 
+    // TODO: Return the display name and avatar URL of the bot
     response.status(200).json({
       managementRoom: draupnir.managementRoomID,
       // TODO: This should be fetched properly in the future. This is important as I want to ensure that any user in the management room can use this API
       ownerID: userId,
+      displayName: draupnir.clientDisplayName || draupnir.clientUserID,
     });
   }
 
@@ -343,9 +387,24 @@ export class WebAPIs {
       // TODO: Fetch the list of all bots the user is member of the management room.
     }
 
-    // TODO: Also return the owner and other members for each bot
+    const draupnirBotData = await Promise.all(
+      draupnirBots.map(async (botID) => {
+        const draupnir = await this.draupnirManager?.getRunningDraupnir(
+          botID,
+          userId
+        );
+        return {
+          id: botID,
+          displayName: draupnir?.clientDisplayName || draupnir?.clientUserID,
+          managementRoom: draupnir?.managementRoomID,
+          ownerID: userId,
+        };
+      })
+    );
+
+    // TODO: Also return the same data as the getBot API for each bot
     response.status(200).json({
-      bots: draupnirBots,
+      bots: draupnirBotData,
     });
   }
 

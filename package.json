@@ -37,7 +37,6 @@
     "@types/nedb": "^1.8.16",
     "@types/node": "^20.14.11",
     "@types/pg": "^8.6.5",
-    "@types/request": "^2.48.12",
     "crypto-js": "^4.2.0",
     "eslint": "^9.7.0",
     "expect": "^29.7.0",
