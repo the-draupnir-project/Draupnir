@@ -726,12 +726,10 @@ export async function resolveOpenIDToken(
   );
   url.searchParams.set("access_token", accessToken);
 
-  let resp = await fetch(url);
-
-  if (!resp.ok) {
-    log.warn(
-      `Error resolving openID token from ${homeserver}: ${resp.status} ${resp.statusText}. Trying http instead of https.`
-    );
+  let resp;
+  try {
+    resp = await fetch(url);
+  } catch (e) {
     // Retry with http
     const urlHttp = new URL(
       "/_matrix/federation/v1/openid/userinfo",
@@ -753,6 +751,20 @@ export async function resolveOpenIDToken(
       }
     } else {
       resp = respHttp;
+    }
+  }
+
+  if (!resp.ok) {
+    log.error(
+      `Error resolving openID token from ${homeserver}: ${resp.status} ${resp.statusText}. Trying http instead of https.`
+    );
+
+    if (resp instanceof Error) {
+      throw resp;
+    } else {
+      throw new Error(
+        `There was an error when resolving openID token from ${homeserver}`
+      );
     }
   }
 
