@@ -643,16 +643,21 @@ async function discoverFederationUrl(serverName: string): Promise<string> {
 
   // 1. Check if the server name is an IP(4|6) address. If it has an Port then use it as it otherwise add the port 8448
 
-  // Check for a port and split it off if it exists
-  const port = serverName.includes(":") ? serverName.split(":")[1] : "8448";
-  const hostnamePart = serverName.split(":")[0];
+  // Check for a port and split it off if it exists (last part of the string as it might be an IPv6 address)
+  const port = serverName.includes(":")
+    ? serverName.split(":").slice(-1)[0]
+    : "8448";
+  // Get the hostname part of the server name (everything before the last ":" since it might be an IPv6 address)
+  const hostnamePart = serverName.includes(":")
+    ? serverName.split(":").slice(0, -1).join(":")
+    : serverName;
   if (!hostnamePart) {
     throw new Error("Invalid server name");
   }
 
   // Check if the server name is an IP address
   if (isIP(hostnamePart)) {
-    return `https://${serverName.split(":")[0]}:${port}`;
+    return `https://${hostnamePart}:${port}`;
   }
 
   // 2. If it is not an IP but contains an explicit port, then use it as it is
@@ -674,10 +679,14 @@ async function discoverFederationUrl(serverName: string): Promise<string> {
 
   const wellKnown: WellKnownServerResponse = await resp.json();
   const delegatedHostname = wellKnown["m.server"];
+  // Check for a port and split it off if it exists (last part of the string as it might be an IPv6 address)
   const delegatedPort = delegatedHostname.includes(":")
-    ? delegatedHostname.split(":")[1]
+    ? delegatedHostname.split(":").slice(-1)[0]
     : "8448";
-  const delegatedIP = delegatedHostname.split(":")[0];
+  // Get the hostname part of the server name (everything before the last ":" since it might be an IPv6 address)
+  const delegatedIP = delegatedHostname.includes(":")
+    ? delegatedHostname.split(":").slice(0, -1).join(":")
+    : delegatedHostname;
   if (!delegatedIP) {
     throw new Error("Invalid delegated server name");
   }
