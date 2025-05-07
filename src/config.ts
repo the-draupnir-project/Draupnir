@@ -183,6 +183,7 @@ export interface IConfig {
 
         isAccessTokenPathOptionUsed: boolean;
         isPasswordPathOptionUsed: boolean;
+        isHttpAntispamAuthorizationPathOptionUsed: boolean;
       }
     | undefined;
 }
@@ -320,6 +321,10 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
       process.argv,
       "--pantalaimon-password-path"
     ),
+    isHttpAntispamAuthorizationPathOptionUsed: isCommandLineOptionPresent(
+      process.argv,
+      "--http-antispam-authorization-path"
+    ),
   };
 }
 
@@ -368,12 +373,21 @@ export function configRead(): IConfig {
     process.argv,
     "--pantalaimon-password-path"
   );
+  const explicitHttpAntispamAuthorizationPath = getCommandLineOption(
+    process.argv,
+    "--http-antispam-authorization-path"
+  );
   if (explicitAccessTokenPath !== undefined) {
     config.accessToken = readSecretFromPath(explicitAccessTokenPath);
   }
   if (explicitPantalaimonPasswordPath) {
     config.pantalaimon.password = readSecretFromPath(
       explicitPantalaimonPasswordPath
+    );
+  }
+  if (explicitHttpAntispamAuthorizationPath) {
+    config.web.synapseHTTPAntispam.authorization = readSecretFromPath(
+      explicitHttpAntispamAuthorizationPath
     );
   }
   return config;
