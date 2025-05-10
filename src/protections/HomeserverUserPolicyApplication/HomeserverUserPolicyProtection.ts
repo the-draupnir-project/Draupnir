@@ -89,7 +89,7 @@ describeProtection<
   typeof HomeserverUserPolicyProtectionSettings
 >({
   name: HomeserverUserPolicyProtection.name,
-  description: `A protection to shutdown rooms matching policies from watched lists`,
+  description: `A protection to suspend resident users matching policies from watched lists`,
   capabilityInterfaces: {
     userRestrictionCapability: "UserRestrictionCapability",
   },
