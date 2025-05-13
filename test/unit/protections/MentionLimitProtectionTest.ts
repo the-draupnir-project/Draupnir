@@ -20,7 +20,8 @@ describe("MentionLimitProtection test", function () {
     expect(
       isContainingMentionsOverLimit(
         messageEvent({ body: "Hello", formatted_body: "Hello" }),
-        1
+        1,
+        true
       )
     ).toBe(false);
   });
@@ -28,7 +29,8 @@ describe("MentionLimitProtection test", function () {
     expect(
       isContainingMentionsOverLimit(
         messageEvent({ body: "Hello @admin:example.com" }),
-        0
+        0,
+        true
       )
     ).toBe(true);
   });
@@ -36,7 +38,8 @@ describe("MentionLimitProtection test", function () {
     expect(
       isContainingMentionsOverLimit(
         messageEvent({ "m.mentions": { user_ids: ["@admin:example.com"] } }),
-        0
+        0,
+        true
       )
     ).toBe(true);
   });
@@ -44,7 +47,8 @@ describe("MentionLimitProtection test", function () {
     expect(
       isContainingMentionsOverLimit(
         messageEvent({ "m.mentions": { user_ids: ["@admin:example.com"] } }),
-        1
+        1,
+        true
       )
     ).toBe(false);
   });
