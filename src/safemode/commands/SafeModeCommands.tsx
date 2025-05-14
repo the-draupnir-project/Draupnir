@@ -4,6 +4,7 @@
 
 import {
   StandardCommandTable,
+  StringfromBooleanTranslator,
   StringFromMatrixEventReferenceTranslator,
   StringFromMatrixRoomAliasTranslator,
   StringFromMatrixRoomIDTranslator,
@@ -17,6 +18,7 @@ import { SafeModeRecoverCommand } from "./RecoverCommand";
 
 export const SafeModeCommands = new StandardCommandTable("safe mode")
   .internPresentationTypeTranslator(StringFromNumberTranslator)
+  .internPresentationTypeTranslator(StringfromBooleanTranslator)
   .internPresentationTypeTranslator(StringFromMatrixRoomIDTranslator)
   .internPresentationTypeTranslator(StringFromMatrixRoomAliasTranslator)
   .internPresentationTypeTranslator(StringFromMatrixUserIDTranslator)
