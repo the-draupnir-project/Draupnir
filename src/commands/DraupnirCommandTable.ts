@@ -14,12 +14,14 @@ import {
   StringFromMatrixRoomIDTranslator,
   StringFromMatrixUserIDTranslator,
   StringFromNumberTranslator,
+  StringfromBooleanTranslator,
 } from "@the-draupnir-project/interface-manager";
 
 export const DraupnirTopLevelCommands = new StandardCommandTable(
   "draupnir top level"
 )
   .internPresentationTypeTranslator(StringFromNumberTranslator)
+  .internPresentationTypeTranslator(StringfromBooleanTranslator)
   .internPresentationTypeTranslator(StringFromMatrixRoomIDTranslator)
   .internPresentationTypeTranslator(StringFromMatrixRoomAliasTranslator)
   .internPresentationTypeTranslator(StringFromMatrixUserIDTranslator)
