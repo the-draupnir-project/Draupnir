@@ -109,7 +109,7 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirProtectionsShowCommand, {
             {protectionInfo.description.name} {"<"}property name{">"} {"<"}value
             {">"}
           </code>{" "}
-          command. Protections may provide more convienant commands to manage
+          command. Protections may provide more conveniant commands to manage
           their settings.
         </p>
 
