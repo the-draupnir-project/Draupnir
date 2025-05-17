@@ -8,7 +8,6 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import * as request from "request";
 import { MatrixClient } from "matrix-bot-sdk";
 
 interface OpenIDTokenInfo {
@@ -28,55 +27,79 @@ async function getOpenIDToken(client: MatrixClient): Promise<string> {
   return tokenInfo.access_token;
 }
 
-export interface CreateMjolnirResponse {
-  mjolnirUserId: string;
-  managementRoomId: string;
+export interface ProvisionDraupnirResponse {
+  managementRoom: string;
+  botID: string;
+  ownerID: string;
 }
 
-export class MjolnirWebAPIClient {
+export interface GetBotsForUserResponse {
+  bots: {
+    id: string;
+    ownerID: string;
+    managementRoom: string;
+    displayName: string;
+  }[];
+}
+
+export class DraupnirWebAPIClient {
   private constructor(
     private readonly openIDToken: string,
-    private readonly baseURL: string
+    private readonly baseURL: string,
+    private readonly userID: string
   ) {}
 
   public static async makeClient(
     client: MatrixClient,
-    baseUrl: string
-  ): Promise<MjolnirWebAPIClient> {
+    baseUrl: string,
+    userID: string
+  ): Promise<DraupnirWebAPIClient> {
     const token = await getOpenIDToken(client);
-    return new MjolnirWebAPIClient(token, baseUrl);
+    return new DraupnirWebAPIClient(token, baseUrl, userID);
   }
 
-  public async createMjolnir(
-    roomToProtectId: string
-  ): Promise<CreateMjolnirResponse> {
-    const body: { mxid: string; roomId: string } = await new Promise(
-      (resolve, reject) => {
-        request.post(
-          `${this.baseURL}/create`,
-          {
-            json: {
-              openId: this.openIDToken,
-              roomId: roomToProtectId,
-            },
-          },
-          (error, response) => {
-            if (error === null || error === undefined) {
-              resolve(response.body);
-            } else if (error instanceof Error) {
-              reject(error);
-            } else {
-              reject(
-                new TypeError(`Someone is throwing things that aren't errors`)
-              );
-            }
-          }
-        );
+  public async provisionDraupnir(
+    roomsToProtect: string[] = []
+  ): Promise<ProvisionDraupnirResponse> {
+    const resp = await fetch(`${this.baseURL}/api/1/appservice/provision`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.openIDToken}`,
+        "X-Draupnir-UserID": this.userID,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protectedRooms: roomsToProtect,
+      }),
+    });
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to provision draupnir: ${resp.status} ${resp.statusText}`
+      );
+    }
+    const body: ProvisionDraupnirResponse = await resp.json();
+    return body;
+  }
+
+  public async getBotsForUser(
+    onlyOwner: boolean = true
+  ): Promise<GetBotsForUserResponse> {
+    const resp = await fetch(
+      `${this.baseURL}/api/1/appservice/list?onlyOwner=${onlyOwner}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.openIDToken}`,
+          "X-Draupnir-UserID": this.userID,
+        },
       }
     );
-    return {
-      mjolnirUserId: body.mxid,
-      managementRoomId: body.roomId,
-    };
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to get bots for user: ${resp.status} ${resp.statusText}`
+      );
+    }
+    const body: GetBotsForUserResponse = await resp.json();
+    return body;
   }
 }

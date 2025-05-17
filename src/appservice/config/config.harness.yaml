@@ -8,8 +8,22 @@ db:
 
 adminRoom: "#draupnir-admin:localhost:9999"
 
-webAPI:
+# Options for exposing web APIs.
+web:
+  # Whether to enable web APIs.
+  enabled: true
+
+  # The port to expose the webserver on. Defaults to 8080.
   port: 9001
+
+  # The address to listen for requests on. Defaults to all addresses.
+  # Be careful with this setting, as opening to the wide web will increase
+  # your security perimeter.
+  # We listen on all in harness because we might be getting requests through the docker gateway.
+  address: "0.0.0.0"
+
+  ui:
+    enabled: true
 
 # The directory the bot should store various bits of information in
 dataPath: "./test/harness/mjolnir-data/"
