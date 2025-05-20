@@ -12,7 +12,7 @@ import {
   ActionResult,
   Capability,
   DescriptionMeta,
-  PolicyListRevision,
+  PolicyListRevisionIssuer,
   RoomSetResult,
   ServerACLConsequencesContext,
   ServerConsequences,
@@ -47,11 +47,11 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     this.capability.requiredStatePermissions;
   public async consequenceForServersInRoom(
     roomID: StringRoomID,
-    revision: PolicyListRevision
+    issuer: PolicyListRevisionIssuer
   ): Promise<ActionResult<boolean>> {
     const capabilityResult = await this.capability.consequenceForServersInRoom(
       roomID,
-      revision
+      issuer
     );
     const title = (
       <fragment>
@@ -82,10 +82,10 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
     return capabilityResult;
   }
   public async consequenceForServersInRoomSet(
-    revision: PolicyListRevision
+    issuer: PolicyListRevisionIssuer
   ): Promise<ActionResult<RoomSetResult>> {
     const capabilityResult =
-      await this.capability.consequenceForServersInRoomSet(revision);
+      await this.capability.consequenceForServersInRoomSet(issuer);
     const title = <fragment>Updating server ACL in protected rooms.</fragment>;
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
