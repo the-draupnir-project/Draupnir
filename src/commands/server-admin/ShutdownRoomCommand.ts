@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Ok, Result, isError } from "@gnuxie/typescript-result";
+import { Result, isError } from "@gnuxie/typescript-result";
 import {
   MatrixRoomReferencePresentationSchema,
   StringPresentationType,
@@ -30,13 +30,23 @@ export const SynapseAdminShutdownRoomCommand = describeCommand({
     name: "reason",
     acceptor: StringPresentationType,
   },
+  keywords: {
+    keywordDescriptions: {
+      notify: {
+        isFlag: true,
+        description:
+          "Whether to send the content violation notification message. This is an invitation that will be sent to the room's joined members which explains the reason for the shutdown.",
+      },
+    },
+  },
   async executor(
     draupnir: Draupnir,
     _info,
-    _keywords,
+    keywords,
     reasonParts,
     targetRoom
   ): Promise<Result<void>> {
+    const notify = keywords.getKeywordValue<boolean>("notify", false);
     const isAdmin = await draupnir.synapseAdminClient?.isSynapseAdmin();
     if (isAdmin === undefined || isError(isAdmin) || !isAdmin.ok) {
       return ActionError.Result(
@@ -53,15 +63,19 @@ export const SynapseAdminShutdownRoomCommand = describeCommand({
       return resolvedRoom;
     }
     const reason = reasonParts.join(" ");
-    await draupnir.synapseAdminClient.deleteRoom(
+    // we use delte V1 because clients do not pick up the user's own leave event
+    // in V2 and i don't know why.
+    // That is very important in the case of stuck invitations.
+    return await draupnir.synapseAdminClient.deleteRoom(
       resolvedRoom.ok.toRoomIDOrAlias(),
       {
-        message: reason,
-        new_room_user_id: draupnir.clientUserID,
+        ...(notify
+          ? { message: reason, new_room_user_id: draupnir.clientUserID }
+          : {}),
         block: true,
+        purge: true,
       }
     );
-    return Ok(undefined);
   },
 });
 

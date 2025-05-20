@@ -59,22 +59,7 @@ describe("Test: shutdown command", function () {
       );
     });
 
-    const reply2 = new Promise((resolve) => {
-      draupnirMatrixClient.on("room.event", (roomId, event) => {
-        if (
-          roomId !== draupnir.managementRoomID &&
-          roomId !== badRoom &&
-          event?.type === "m.room.message" &&
-          event.sender === draupnir.clientUserID &&
-          event.content?.body === "closure test"
-        ) {
-          resolve(event);
-        }
-      });
-    });
-
     await reply1;
-    await reply2;
 
     await assert.rejects(client.joinRoom(badRoom), (e: MatrixError) => {
       assert.equal(e.statusCode, 403);
