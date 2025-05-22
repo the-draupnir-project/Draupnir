@@ -336,7 +336,13 @@ describeProtection<BanPropagationProtectionCapabilities, Draupnir>({
   defaultCapabilities: {
     userConsequences: "StandardUserConsequences",
   },
-  factory: (description, protectedRoomsSet, draupnir, capabilities, _settings) =>
+  factory: (
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) =>
     Ok(
       new BanPropagationProtection(
         description,
