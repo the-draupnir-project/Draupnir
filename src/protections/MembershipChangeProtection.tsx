@@ -194,10 +194,10 @@ describeProtection<
     finalConsequences: "StandardUserConsequences",
   },
   configSchema: MembershipChangeProtectionSettings,
-  factory: (decription, protectedRoomsSet, draupnir, capabilitySet, settings) =>
+  factory: (description, protectedRoomsSet, draupnir, capabilitySet, settings) =>
     Ok(
       new MembershipChangeProtection(
-        decription,
+        description,
         capabilitySet,
         protectedRoomsSet,
         draupnir.clientPlatform.toRoomMessageSender(),

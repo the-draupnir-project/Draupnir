@@ -58,7 +58,7 @@ export interface ManagementRoomOutput {
 }
 
 /**
- * Allows the different componenets of draupnir to send messages back to the management room without introducing a dependency on the entirity of a `Draupnir` instance.
+ * Allows the different components of draupnir to send messages back to the management room without introducing a dependency on the entirety of a `Draupnir` instance.
  */
 export default class StandardManagementRoomOutput
   implements ManagementRoomOutput

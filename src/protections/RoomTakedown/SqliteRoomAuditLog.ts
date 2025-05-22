@@ -33,7 +33,7 @@ const log = new Logger("SqliteRoomAuditLog");
 // NOTE: This should only be used to check in bulk whether rooms are taken down
 //       upon getting a policy, you probably always want to try again or
 //       check with the server rather than check the audit log.
-//       Incase rooms were unbanned.
+//       In case rooms were unbanned.
 
 const SchemaText = [
   `

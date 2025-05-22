@@ -88,7 +88,7 @@ describe("RoomStateBackingStore", function () {
     const db = new Database(options.path);
     db.pragma("FOREIGN_KEYS = ON");
     // This is not the real former schema, because they are the same
-    // it's just differnt on purpose
+    // it's just different on purpose
     db.exec(`
       CREATE TABLE room_info (
         room_id TEXT PRIMARY KEY NOT NULL

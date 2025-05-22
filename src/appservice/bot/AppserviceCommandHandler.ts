@@ -32,7 +32,7 @@ import { MatrixEventContext } from "../../commands/interface-manager/MPSMatrixIn
 import { MatrixReactionHandler } from "../../commands/interface-manager/MatrixReactionHandler";
 import {
   ARGUMENT_PROMPT_LISTENER,
-  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  DEFAULT_ARGUMENT_PROMPT_LISTENER,
   makeListenerForArgumentPrompt,
   makeListenerForPromptDefault,
 } from "../../commands/interface-manager/MatrixPromptForAccept";
@@ -82,7 +82,7 @@ export class AppserviceCommandHandler {
       )
     );
     this.reactionHandler.on(
-      DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+      DEFAULT_ARGUMENT_PROMPT_LISTENER,
       makeListenerForPromptDefault(
         this.adminRoomID,
         this.commandDispatcher,

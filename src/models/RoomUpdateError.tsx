@@ -37,8 +37,8 @@ function renderErrorItem(error: RoomUpdateError): DocumentNode {
  * @param errors Any errors associated with the action.
  * @param options.title To give context about what the action was, shown when there are errors.
  * @param options.noErrorsText To show when there are no errors.
- * @param options.skipNoErrors is ineffective and does nothing, it is an option for the accompnying `printActionResult`.
- * @returns A `DocumentNode` fragment that can be sent to Matrix or incorperated into another message.
+ * @param options.skipNoErrors is ineffective and does nothing, it is an option for the accompanying `printActionResult`.
+ * @returns A `DocumentNode` fragment that can be sent to Matrix or incorporated into another message.
  */
 export async function renderActionResult(
   errors: RoomUpdateError[],

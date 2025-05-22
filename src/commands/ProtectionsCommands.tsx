@@ -250,7 +250,7 @@ export const DraupnirProtectionsConfigAddCommand = describeCommand({
     }
     const newSettings = details.description
       .toMirror()
-      // We technically need to print the argument "readbly" but i don't think
+      // We technically need to print the argument "ready" but i don't think
       // we have a way to do that.
       // at least without getting the argument from the argument stream in
       // interface-manager so that we still have its presentation type.
@@ -418,7 +418,7 @@ async function findSettingDetailsForCommand(
 
 // So I'm thinking instead that we're going to move to the PersistentConfigData
 // thingy for protection settings. Wouldn't it make sense to make a plan for that,
-// consider how recovery would work, and how to unit test evertyhing, then
+// consider how recovery would work, and how to unit test everything, then
 // do that.
 
 async function changeSettingsForCommands<
@@ -503,7 +503,7 @@ DraupnirInterfaceAdaptor.describeRenderer(
 );
 
 export const DraupnirProtectionsCapabilityResetCommand = describeCommand({
-  summary: "Use the default set of capabilies for the named protection",
+  summary: "Use the default set of capabilities for the named protection",
   parameters: tuple({
     name: "protection name",
     acceptor: StringPresentationType,

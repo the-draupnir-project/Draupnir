@@ -72,7 +72,7 @@ export class HomeserverUserPurgingDeactivate {
       );
     }
     // We make sure we have shadow banned their account while we redact.
-    // This is to make sure they don't send anymore while we decomission the account.
+    // This is to make sure they don't send anymore while we decommission the account.
     if (!userDetails.ok || !isUserAccountRestricted(userDetails.ok)) {
       const shadowBanResult =
         await this.synapseAdminClient.shadowBanUser(userID);

@@ -308,7 +308,7 @@ type RequestResponse =
  * - they offer no stack.
  *
  * This method configures `MatrixClient` to ensure that methods that may throw
- * instead throws more reasonable insetances of `Error`.
+ * instead throws more reasonable instances of `Error`.
  */
 function patchMatrixClientForConciseExceptions() {
   if (isMatrixClientPatchedForConciseExceptions) {
@@ -465,7 +465,7 @@ function patchMatrixClientForRetry() {
                   err?.body?.errcode === "M_LIMIT_EXCEEDED"
                 ) {
                   // We need to retry.
-                  // We're not able to refactor away from thsis now, pretty unfortunatley.
+                  // We're not able to refactor away from this now, pretty unfortunately.
                   // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                   reject(err);
                 } else {

@@ -212,7 +212,7 @@ export class AppServiceDraupnirManager {
         },
       });
       if (!isStringRoomID(managementRoomID)) {
-        throw new TypeError(`${managementRoomID} malformed managmentRoomID`);
+        throw new TypeError(`${managementRoomID} malformed managementRoomID`);
       }
       const draupnir = await this.makeInstance(
         mjolnirLocalPart,
@@ -256,7 +256,7 @@ export class AppServiceDraupnirManager {
   }
 
   /**
-   * Utility that creates a matrix client for a virtual user on our homeserver with the specified loclapart.
+   * Utility that creates a matrix client for a virtual user on our homeserver with the specified localpart.
    * @param localPart The localpart of the virtual user we need a client for.
    * @returns A bridge intent with the complete mxid of the virtual user and a MatrixClient.
    */

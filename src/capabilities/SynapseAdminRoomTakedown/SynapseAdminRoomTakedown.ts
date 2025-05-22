@@ -79,7 +79,7 @@ export class SynapseAdminRoomTakedownCapability
       details = detailsResponse.ok;
     }
     log.debug("Taking down room", roomID);
-    // we use delte V1 because clients do not pick up the user's own leave event
+    // we use delete V1 because clients do not pick up the user's own leave event
     // in V2 and i don't know why.
     // That is very important in the case of stuck invitations.
     const takedownResult = await this.adminClient.deleteRoom(roomID, {
@@ -103,7 +103,7 @@ export class SynapseAdminRoomTakedownCapability
 describeCapabilityProvider<Draupnir>({
   name: SynapseAdminRoomTakedownCapability.name,
   interface: "RoomTakedownCapability",
-  description: "Takesdown rooms using the synapse admin API",
+  description: "Takes down rooms using the synapse admin API",
   factory(description, draupnir) {
     if (draupnir.synapseAdminClient === undefined) {
       throw new TypeError(

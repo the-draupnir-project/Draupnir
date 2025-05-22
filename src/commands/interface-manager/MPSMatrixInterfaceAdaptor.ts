@@ -161,7 +161,7 @@ export const MPSCommandDispatcherCallbacks = {
   },
   commandUncaughtErrorCB(info, body, error) {
     log.error(
-      `Caught an unexpcted error when attempting to process the command "${body}" send by the user ${info.commandSender}:`,
+      `Caught an unexpected error when attempting to process the command "${body}" send by the user ${info.commandSender}:`,
       error
     );
   },

@@ -96,10 +96,10 @@ describeProtection<NewJoinerProtectionCapabilities, Draupnir>({
   defaultCapabilities: {
     userConsequences: "StandardUserConsequences",
   },
-  factory: (decription, protectedRoomsSet, draupnir, capabilitySet) =>
+  factory: (description, protectedRoomsSet, draupnir, capabilitySet) =>
     Ok(
       new NewJoinerProtection(
-        decription,
+        description,
         capabilitySet,
         protectedRoomsSet,
         draupnir.config

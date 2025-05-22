@@ -39,7 +39,7 @@ export class ProtectedRoomActivityTracker {
   }
 
   /**
-   * Inform the trakcer that a room is no longer being protected by Draupnir.
+   * Inform the tracker that a room is no longer being protected by Draupnir.
    * @param roomId The roomId that is no longer being protected by Draupnir.
    */
   public removeProtectedRoom(roomId: string): void {

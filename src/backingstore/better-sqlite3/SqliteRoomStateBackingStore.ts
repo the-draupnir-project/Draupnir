@@ -55,7 +55,7 @@ const SchemaOptions = {
   ),
   legacyUpgrade(db) {
     // An older version of this store used a different schema management system
-    // fortunatley the data is just a psersistent cache so we don't need to worry about removing it.
+    // fortunately the data is just a persistent cache so we don't need to worry about removing it.
     db.exec(`
       DROP TABLE room_state_event;
       DROP TABLE room_info;
@@ -225,7 +225,7 @@ export class SqliteRoomStateBackingStore
     );
     const deleteRoom = this.db.transaction(() => {
       deleteStateStatement.run(roomID);
-      deleteMetaStatement.run(roomID); // needs to be last to avoid violating foriegn key cnostraint
+      deleteMetaStatement.run(roomID); // needs to be last to avoid violating foreign key constraint
     });
     try {
       deleteRoom();

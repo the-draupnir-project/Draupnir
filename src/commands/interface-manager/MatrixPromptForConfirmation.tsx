@@ -143,7 +143,7 @@ export async function sendConfirmationPrompt(
     return sendResult as Result<void>;
   }
   if (sendResult.ok[0] === undefined) {
-    throw new TypeError(`We exepct to have sent at least one event`);
+    throw new TypeError(`We expect to have sent at least one event`);
   }
   return await reactionHandler
     .addReactionsToEvent(client, roomIDToUse, sendResult.ok[0], reactionMap)

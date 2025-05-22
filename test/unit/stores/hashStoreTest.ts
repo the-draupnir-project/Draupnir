@@ -69,7 +69,7 @@ describe("meow", function () {
     expect(reverserResult.length).toBe(0);
     // now try storing the room and testing that the policy is there
     (await store.storeUndiscoveredRooms([bannedRoom.toRoomIDOrAlias()])).expect(
-      "Should be able to discover rooms jsut fine"
+      "Should be able to discover rooms just fine"
     );
     const foundHash = (await store.findRoomHash(bannedRoomHash)).expect(
       "Should be able to findRoomHash"
@@ -116,7 +116,7 @@ describe("meow", function () {
     expect(reverserResult.length).toBe(0);
     // now try storing the room and testing that the policy is there
     (await store.storeUndiscoveredRooms([roomBannedViaServer])).expect(
-      "Should be able to discover rooms jsut fine"
+      "Should be able to discover rooms just fine"
     );
     const foundHash = (await store.findServerHash(bannedServerHash)).expect(
       "Should be able to now find the server hash from the room we discovered"

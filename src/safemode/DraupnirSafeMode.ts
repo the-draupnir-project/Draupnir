@@ -25,7 +25,7 @@ import {
 } from "./SafeModeCommandDispatcher";
 import {
   ARGUMENT_PROMPT_LISTENER,
-  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  DEFAULT_ARGUMENT_PROMPT_LISTENER,
   makeListenerForArgumentPrompt,
   makeListenerForPromptDefault,
 } from "../commands/interface-manager/MatrixPromptForAccept";
@@ -84,7 +84,7 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
       )
     );
     this.reactionHandler.on(
-      DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+      DEFAULT_ARGUMENT_PROMPT_LISTENER,
       makeListenerForPromptDefault(
         this.commandRoomID,
         this.commandDispatcher,
