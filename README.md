@@ -22,7 +22,7 @@ for installation instructions and usage guides.
   specific moderation tasks by shadowing the actions taken by your Matrix
   Client.
 
-- Draupnir synchonises bans for users, and servers across all of the matrix
+- Draupnir synchronises bans for users, and servers across all of the matrix
   rooms that you moderate
 
 - Draupnir can protect your community by applying policies from community
@@ -116,7 +116,7 @@ Mjolnir**.
   the rewrite of the core of Draupnir into the
   [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
   providing all the Matrix client code required to operate a protection
-  platform. The matrix-protection-suite also covers severall shortfalls in the
+  platform. The matrix-protection-suite also covers several shortfalls in the
   available SDK's, providing event parsing and types that keep code secure and
   sound. The
   [interface-manager](https://github.com/the-draupnir-project/interface-manager)

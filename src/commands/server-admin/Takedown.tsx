@@ -104,7 +104,7 @@ export type TakedownPolicyPreview = {
 
 export const DraupnirTakedownCommand = describeCommand({
   summary:
-    "Mark an entity for takedown. This command is used to mark illegal or intollerable content as takedown. This is the strongest of consequences and is usualy irreversable.\
+    "Mark an entity for takedown. This command is used to mark illegal or intolerable content as takedown. This is the strongest of consequences and is usually irreversible.\
     This can be used to block rooms on your homeserver and discard spam invitations.",
   parameters: tuple(
     {
@@ -247,7 +247,7 @@ function renderTakedownPreview(preview: TakedownPolicyPreview): DocumentNode {
         </li>
         <li>policy room: {renderRoomPill(preview.policyRoom)}</li>
       </ul>
-      Please consider that doing so may have irreversable effects.
+      Please consider that doing so may have irreversible effects.
       <b>
         You MUST only use takedown policies to mark spam, illegal, or otherwise
         intolerable content. DO NOT takedown users who have committed a code of

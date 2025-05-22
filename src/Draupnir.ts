@@ -43,7 +43,7 @@ import { IConfig } from "./config";
 import { LogLevel } from "matrix-bot-sdk";
 import {
   ARGUMENT_PROMPT_LISTENER,
-  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  DEFAULT_ARGUMENT_PROMPT_LISTENER,
   makeListenerForArgumentPrompt as makeListenerForArgumentPrompt,
   makeListenerForPromptDefault,
 } from "./commands/interface-manager/MatrixPromptForAccept";
@@ -95,7 +95,7 @@ const log = new Logger("Draupnir");
 export class Draupnir implements Client, MatrixAdaptorContext {
   /**
    * This is for users who are not listed on a watchlist,
-   * but have been flagged by the automatic spam detection as suispicous
+   * but have been flagged by the automatic spam detection as suspicious
    */
   public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
@@ -188,7 +188,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       )
     );
     this.reactionHandler.on(
-      DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+      DEFAULT_ARGUMENT_PROMPT_LISTENER,
       makeListenerForPromptDefault(
         this.commandRoomID,
         this.commandDispatcher,

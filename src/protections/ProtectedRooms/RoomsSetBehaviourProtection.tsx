@@ -19,13 +19,13 @@ import { ProtectedJoinedRooms } from "./ProtectJoinedRooms";
 import { UnprotectPartedRooms } from "./UnprotectPartedRooms";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
-export type RoomsSetBehaviourCapabailities = Record<string, never>;
+export type RoomsSetBehaviourCapabilities = Record<string, never>;
 export type RoomsSetBehaviourSettings = UnknownConfig;
 
 export type RoomsSetBehaviourDescription = ProtectionDescription<
   Draupnir,
   RoomsSetBehaviourSettings,
-  RoomsSetBehaviourCapabailities
+  RoomsSetBehaviourCapabilities
 >;
 
 export class RoomsSetBehaviour
@@ -47,7 +47,7 @@ export class RoomsSetBehaviour
   );
   public constructor(
     description: RoomsSetBehaviourDescription,
-    capabilities: RoomsSetBehaviourCapabailities,
+    capabilities: RoomsSetBehaviourCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
@@ -80,7 +80,7 @@ export class RoomsSetBehaviour
   }
 }
 
-describeProtection<RoomsSetBehaviourCapabailities, Draupnir>({
+describeProtection<RoomsSetBehaviourCapabilities, Draupnir>({
   name: RoomsSetBehaviour.name,
   description:
     "Unprotects parted rooms and update the list of protected rooms.",

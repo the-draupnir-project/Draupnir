@@ -43,13 +43,13 @@ import { renderRuleHashes, renderRuleClearText } from "../commands/Rules";
 
 const log = new Logger("PolicyChangeNotification");
 
-export type PolicyChangeNotificationCapabilitites = Record<never, never>;
+export type PolicyChangeNotificationCapabilities = Record<never, never>;
 
 export type PolicyChangeNotificationProtectionDescription =
   ProtectionDescription<
     Draupnir,
     UnknownConfig,
-    PolicyChangeNotificationCapabilitites
+    PolicyChangeNotificationCapabilities
   >;
 
 type ChangesByRoomID = Map<StringRoomID, PolicyRuleChange[]>;
@@ -60,7 +60,7 @@ export class PolicyChangeNotification
 {
   constructor(
     description: PolicyChangeNotificationProtectionDescription,
-    capabilities: PolicyChangeNotificationCapabilitites,
+    capabilities: PolicyChangeNotificationCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
@@ -159,7 +159,7 @@ function renderGroupedChanges(groupedChanges: GroupedChange[]): DocumentNode {
   return <fragment>{groupedChanges.map(renderListChanges)}</fragment>;
 }
 
-describeProtection<PolicyChangeNotificationCapabilitites, Draupnir>({
+describeProtection<PolicyChangeNotificationCapabilities, Draupnir>({
   name: PolicyChangeNotification.name,
   description: "Provides notification of policy changes from watched lists.",
   capabilityInterfaces: {},

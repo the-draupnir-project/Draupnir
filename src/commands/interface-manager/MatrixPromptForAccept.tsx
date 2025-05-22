@@ -69,7 +69,7 @@ export function continueCommandAcceptingPrompt(
   );
 }
 
-export const DEFAUILT_ARGUMENT_PROMPT_LISTENER =
+export const DEFAULT_ARGUMENT_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.default_argument_prompt";
 export function makeListenerForPromptDefault(
   commandRoomID: StringRoomID,
@@ -155,7 +155,7 @@ export async function promptDefault<TPresentation extends Presentation>(
     {
       replyToEvent: eventContext.event,
       additionalContent: reactionHandler.createAnnotation(
-        DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+        DEFAULT_ARGUMENT_PROMPT_LISTENER,
         reactionMap,
         {
           command_designator: command.designator,

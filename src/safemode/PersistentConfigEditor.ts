@@ -32,7 +32,7 @@ export interface PersistentConfigEditor {
   getConfigAdaptors(): PersistentConfigData[];
   requestConfigStatus(): Promise<Result<PersistentConfigStatus[]>>;
   /**
-   * requestConfigStatus, but be sure to update the PeristentConfigStatus list
+   * requestConfigStatus, but be sure to update the PersistentConfigStatus list
    * with the ConfigPropertyUseError in the safe mode cause, if there is one.
    *
    * This is because `ConfigPropertyUseError`'s will not show up in parsing,

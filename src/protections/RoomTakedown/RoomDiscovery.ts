@@ -116,7 +116,7 @@ export class SynapseHTTPAntispamRoomDiscovery
     const storeResult = await this.hashStore.storeUndiscoveredRooms(entries);
     if (isError(storeResult)) {
       log.error(
-        "Unxpected error while trying to store undiscovered rooms",
+        "Unexpected error while trying to store undiscovered rooms",
         storeResult.error
       );
       return;

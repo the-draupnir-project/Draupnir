@@ -6,11 +6,11 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import tsplugin from "@typescript-eslint/eslint-plugin";
 
-// this configuration file stilli includes random shite from these directories
-// and I do not understand why. It is one of the most frustraiting things
+// this configuration file still includes random shite from these directories
+// and I do not understand why. It is one of the most frustrating things
 // my guess is that there is some hidden ambient config that is included
 // full of eslint defaults that we can't intercept??
-// I don't know, but it's one of the most frustraiting things ever.
+// I don't know, but it's one of the most frustrating things ever.
 const ignores = [
   "**/docs/**",
   "**/.husky/**",
@@ -44,7 +44,7 @@ const rulesFromMPS = {
 };
 
 export default tseslint.config({
-  // This is a typescript-eslint configurartion for typescript files.
+  // This is a typescript-eslint configuration for typescript files.
   // This will not work against js files.
   files: ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx"],
   extends: [eslint.configs.recommended, ...tseslint.configs.strictTypeChecked],

@@ -42,7 +42,7 @@ export class HomeserverUserPolicyApplication {
     // nothing to do.
   }
 
-  private isPolicyElegiableForRestriction(policy: LiteralPolicyRule): boolean {
+  private isPolicyEligibleForRestriction(policy: LiteralPolicyRule): boolean {
     if (policy.kind !== PolicyRuleType.User) {
       return false;
     }
@@ -127,7 +127,7 @@ export class HomeserverUserPolicyApplication {
           if (policy.matchType !== PolicyRuleMatchType.Literal) {
             continue;
           }
-          if (!this.isPolicyElegiableForRestriction(policy)) {
+          if (!this.isPolicyEligibleForRestriction(policy)) {
             continue;
           }
           const isUserRestricted = await this.consequences.isUserRestricted(
@@ -141,7 +141,7 @@ export class HomeserverUserPolicyApplication {
           } else if (isUserRestricted.ok) {
             continue; // user is already suspended
           }
-          // FIXME: Takedown policie should really automatically deactivate
+          // FIXME: Takedown policy should really automatically deactivate
           // after a grace period or something.
           if (
             this.automaticallyRedactForReasons.some(
@@ -182,9 +182,9 @@ export class HomeserverUserPolicyApplication {
     // in the background too.
     void Task(
       (async () => {
-        log.debug("Findind local users to suspend at protection enable...");
+        log.debug("Finding local users to suspend at protection enable...");
         const revision = this.watchedPolicyRooms.currentRevision;
-        // FIXME: We need to also paginate through all supsended, shadowbanned, and locked
+        // FIXME: We need to also paginate through all suspended, shadowbanned, and locked
         // users to see if they have a matching policy and recommend that they either
         // be deactivated or have their restrictions lifted.
         // probably something for another component of the protection to do.

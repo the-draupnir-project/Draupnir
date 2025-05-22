@@ -278,7 +278,7 @@ export function findUnbanInformationForMember(
       ) {
         literalsToScan.push(match.entity);
       }
-      // HashedLiterals that match will be removed indriectly when their sourceEvent's
+      // HashedLiterals that match will be removed indirectly when their sourceEvent's
       // get removed.
     }
   }
@@ -302,7 +302,7 @@ export function findUnbanInformationForMember(
       ).length > 0
     );
   };
-  // Now we need to filter out only members that are completly free of policies.
+  // Now we need to filter out only members that are completely free of policies.
   const membersToUnban = membersMatchingPoliciesAndEntity.filter(
     (member) => !isMemberStillBannedAfterPolicyRemoval(member)
   );
