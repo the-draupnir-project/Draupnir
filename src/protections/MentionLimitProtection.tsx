@@ -215,7 +215,13 @@ describeProtection<
     userConsequences: "StandardUserConsequences",
   },
   configSchema: MentionLimitProtectionSettings,
-  factory: (description, protectedRoomsSet, draupnir, capabilitySet, settings) =>
+  factory: (
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    settings
+  ) =>
     Ok(
       new MentionLimitProtection(
         description,

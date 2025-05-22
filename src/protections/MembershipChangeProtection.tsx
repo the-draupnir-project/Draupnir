@@ -194,7 +194,13 @@ describeProtection<
     finalConsequences: "StandardUserConsequences",
   },
   configSchema: MembershipChangeProtectionSettings,
-  factory: (description, protectedRoomsSet, draupnir, capabilitySet, settings) =>
+  factory: (
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    settings
+  ) =>
     Ok(
       new MembershipChangeProtection(
         description,
