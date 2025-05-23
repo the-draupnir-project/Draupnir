@@ -12,6 +12,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.0] - 2025-05-21
+
+This update stabilizes several features for
+[homeserver administrators](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+that were developed in the
+[v2.3.0-beta](https://github.com/the-draupnir-project/Draupnir/blob/main/CHANGELOG.md#v230-beta0)
+programme.
+
+Please see
+[homeserver administration](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+in the documentation for an overview of server admin features.
+
+### Highlights
+
+- Support for
+  [synapse-http-antispam](https://the-draupnir-project.github.io/draupnir-documentation/bot/synapse-http-antispam)
+  to replace the legacy Mjolnir antispam module.
+- [Autosuspension](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration#homeserver-user-policy-protection)
+  for resident users matching watched policy rules.
+- Takedowns as an alternative to conventional bans. `takedown` marks users,
+  rooms, or servers with a policy that means any content associated with the
+  entity should be removed and takendown. This is a much stronger consequence
+  than `ban` and is reserved for illegal or intolerable content. See
+  [MSC4204](https://github.com/matrix-org/matrix-spec-proposals/pull/4204) for
+  details. This command works in conjunction with the new
+  [_Room Takedown Protection_](https://the-draupnir-project.github.io/draupnir-documentation/protections/room-takedown-protection)
+- There is now a generic page for the
+  [homeserver administrative](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+  features we have added to Draupnir. Please try them out and give us your
+  thoughts in [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org).
+- The
+  [mention limit protection](https://the-draupnir-project.github.io/draupnir-documentation/protections/mention-limit-protection)
+  has been stabilised.
+
+### Added
+
+- `--http-antispam-authorization-path` option by @TheArcaneBrony to allow
+  loading the synapse-http-antispam authorization token from a file on systems
+  using systemd credentials.
+
+- Booleans and quoted strings are now supported by the command reader. Thanks to
+  @mtippmann and @ll-SKY-ll.
+
+- A `policy remove` command has been added to remove policies by literal without
+  unbanning users or any other consequences.
+
+### Changed
+
+- The `MentionLimitProtection` has been stabilised and configuration settings
+  have been added. The old experimental version of the protection was using a
+  file based configuration that is no longer used. The protection will now warn
+  users and the ban.
+
+- The `shutdown room` command has been improved so that the content violation
+  notification can be toggled with a new `--notify` option. The command also now
+  uses V1 of the delete rooms API rather than V2 simply because for unknown
+  reasons clients are not getting the leave events propagated to them properly
+  with V2.
+
+- The room discovery notifications from the `RoomTakedownProtection` have been
+  moved to their own room.
+
+### Fixed
+
+- The `ServerBanSynchronisation` is smarter about applying ACL's when there are
+  lots of policy changes.
+- Typo in the `protections show` command fixed by @HarHarLinks.
+- Typo in `HomeserverUserPolicyProtection` fixed by @ll-SKY-ll.
+- Negative integers can now be entered into the markdown reader.
+- Fixed an issue where draupnir would write MSC4205 hashed entities without the
+  proper namespacing. Reported by @deepbluev7.
+- Stopped content violation notifications appearing on room takedown.
+
 ## [v2.3.0-beta.2]
 
 ### Fixed
