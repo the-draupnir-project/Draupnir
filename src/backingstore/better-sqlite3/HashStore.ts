@@ -383,6 +383,42 @@ export class SqliteHashReversalStore
     }
   }
 
+  public async findRoomsByServer(
+    server: StringServerName
+  ): Promise<Result<StringRoomID[]>> {
+    return wrapInTryCatch(
+      () =>
+        Ok(
+          this.db
+            .prepare(
+              `
+              SELECT room_id FROM room_identification WHERE server = ?`
+            )
+            .pluck()
+            .all(server) as StringRoomID[]
+        ),
+      "Error while trying to find rooms created by server"
+    );
+  }
+
+  public async findRoomsByCreator(
+    creator: StringUserID
+  ): Promise<Result<StringRoomID[]>> {
+    return wrapInTryCatch(
+      () =>
+        Ok(
+          this.db
+            .prepare(
+              `
+              SELECT room_id FROM room_identification WHERE creator = ?`
+            )
+            .pluck()
+            .all(creator) as StringRoomID[]
+        ),
+      "Error while trying to find created rooms"
+    );
+  }
+
   public destroy(): void {
     this.baseStore.destroy();
   }
