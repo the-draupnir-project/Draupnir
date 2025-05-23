@@ -51,7 +51,7 @@ export async function redactEvent(
 
 export const DraupnirRedactCommand = describeCommand({
   summary:
-    "Redacts either a users's recent messagaes within protected rooms or a specific message shared with the bot.",
+    "Redacts either a users's recent messages within protected rooms or a specific message shared with the bot.",
   parameters: tuple({
     name: "entity",
     acceptor: {

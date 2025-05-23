@@ -60,7 +60,7 @@ describe("RedactionSynchronisation", function () {
         mockMethodCalls += 1;
         return Ok(undefined);
       },
-      async rejectInvite(roomID, sender, _reciever, _reason) {
+      async rejectInvite(roomID, sender, _receiver, _reason) {
         expect(roomID).toBe(room.toRoomIDOrAlias());
         expect(sender).toBe(targetUser);
         mockMethodCalls += 1;

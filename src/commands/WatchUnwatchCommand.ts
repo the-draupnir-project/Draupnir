@@ -32,7 +32,7 @@ export type DraupnirWatchUnwatchCommandContext = {
 
 export const DraupnirWatchPolicyRoomCommand = describeCommand({
   summary:
-    "Watches a list and applies the list's assocated policies to draupnir's protected rooms.",
+    "Watches a list and applies the list's associated policies to draupnir's protected rooms.",
   parameters: tuple({
     name: "policy room",
     acceptor: MatrixRoomReferencePresentationSchema,
@@ -62,7 +62,7 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
 
 export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
   summary:
-    "Unwatches a list and stops applying the list's assocated policies to draupnir's protected rooms.",
+    "Unwatches a list and stops applying the list's associated policies to draupnir's protected rooms.",
   parameters: tuple({
     name: "policy room",
     acceptor: MatrixRoomReferencePresentationSchema,

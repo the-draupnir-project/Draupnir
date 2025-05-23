@@ -144,7 +144,7 @@ export class JoinWaveShortCircuitProtection
     const roomID = revision.room.toRoomIDOrAlias();
     for (const change of changes) {
       await this.handleMembership(roomID, change).catch((e: unknown) => {
-        log.error(`Unexpected error handling memebership change`, e);
+        log.error(`Unexpected error handling membership change`, e);
       });
     }
     return Ok(undefined);

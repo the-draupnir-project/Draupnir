@@ -24,7 +24,7 @@ export const RoomTakedownCapability = Type.Intersect([
   Capability,
 ]);
 // we'll probably want to include room details too so we can provide some
-// rudinemtary information to takedown.
+// rudimentary information to takedown.
 // I'd make the fields optional however because it may be impossible
 // to get those details on conduwuit.
 export type RoomTakedownCapability = {

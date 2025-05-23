@@ -1,0 +1,17 @@
+{
+
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en_GB",
+  "words": ["add", "to", ".cspell-allowed-words", "instead"],
+  "flagWords": ["flaggedword", "hte"],
+  "dictionaries": ["cspell-allowed-words"],
+
+  "dictionaryDefinitions": [
+    {
+      "name": "cspell-allowed-words",
+      "path": "./.cspell-allowed-words",
+      "addWords": true
+    }
+  ]
+}

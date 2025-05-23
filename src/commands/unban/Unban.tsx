@@ -75,7 +75,7 @@ export type UnbanMembersPreview = UnbanEntityPreview & {
   readonly membersToUnban: MemberRooms[];
 };
 
-// The idea is to to only diplay these if at least one result failed.
+// The idea is to to only display these if at least one result failed.
 export type UnbanMembersResult = UnbanMembersPreview & {
   readonly policyRemovalResult: RoomSetResult;
   readonly usersUnbanned: ResultForUsersInSet;

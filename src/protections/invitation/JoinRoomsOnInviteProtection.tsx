@@ -141,7 +141,7 @@ export class JoinRoomsOnInviteProtection
     const renderFailedTojoin = (error: ActionError) => {
       const title = (
         <fragment>
-          Unfortunatley I was unable to accept the invitation from{" "}
+          Unfortunately I was unable to accept the invitation from{" "}
           {renderMentionPill(event.sender, event.sender)} to the room{" "}
           {renderRoomPill(room)}.
         </fragment>

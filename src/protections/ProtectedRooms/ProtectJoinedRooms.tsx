@@ -105,7 +105,7 @@ export class ProtectedJoinedRooms {
           {}
         ),
         {
-          description: "Report newly protected rooms to the managmeent room.",
+          description: "Report newly protected rooms to the management room.",
         }
       );
     }

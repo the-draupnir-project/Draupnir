@@ -16,7 +16,7 @@ export function renderDiscoveredRoom(details: RoomBasicDetails): DocumentNode {
         </summary>
         <ul>
           <li>
-            name: <code>{details.name ?? "Unamed room"}</code>
+            name: <code>{details.name ?? "Unnamed room"}</code>
           </li>
           <li>
             member count: <code>{details.joined_members ?? "unknown"}</code>

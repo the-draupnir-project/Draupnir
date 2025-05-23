@@ -37,7 +37,7 @@ function makeAppserviceCommandNormaliser(
     isAllowedOnlySymbolPrefixes: false,
     additionalPrefixes: ["admin"],
     getDisplayName: function (): string {
-      // TODO: I don't nkow how we're going to do this yet but we'll
+      // TODO: I don't know how we're going to do this yet but we'll
       // figure it out one day.
       return "admin";
     },

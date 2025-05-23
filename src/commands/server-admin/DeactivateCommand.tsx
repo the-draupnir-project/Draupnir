@@ -104,7 +104,7 @@ export const SynapseAdminDeactivateCommand = describeCommand({
         );
       } else if (!details.ok) {
         return ResultError.Result(
-          `Couldn't find a residident user with the ID ${targetUser.toString()}`
+          `Couldn't find a resident user with the ID ${targetUser.toString()}`
         );
       }
       return Ok({
