@@ -36,8 +36,10 @@ export class SynapseHTTPUserMayInvite {
       const serverHash = createHash("sha256")
         .update(userServerName(sender), "utf8")
         .digest("base64");
-      // We only want to block user invites that with recommendation Ban
-      // when they match the automaticRedactReasons.
+      // We only want to block the invitation with user policies with recommendation Ban
+      // when they match the automaticRedactReasons. This is so they can still appeal
+      // being banned in COC use cases.
+      // Server policies are fine to be used to derive the block.
       const matchingUserPolicy = [
         ...this.watchedPolicyRooms.currentRevision.allRulesMatchingEntity(
           sender,
