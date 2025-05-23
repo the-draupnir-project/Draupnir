@@ -24,7 +24,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { createHash } from "crypto";
 
-function makeStore(): SqliteHashReversalStore {
+export function makeStore(): SqliteHashReversalStore {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
   const db = new Database(options.path);
   db.pragma("FOREIGN_KEYS = ON");
@@ -130,6 +130,27 @@ describe("meow", function () {
       throw new TypeError("Reversed ban isn't here mare");
     }
     expect(reversedBan.entity).toBe(bannedServer);
+    // Check that we can find the room by creator and server
+    const bannedUser = StringUserID("@banned:banned.example.com");
+    (await store.storeUndiscoveredRooms([roomBannedViaServer])).expect(
+      "Should be able to discover rooms just fine"
+    );
+    (
+      await store.storeRoomIdentification({
+        roomID: roomBannedViaServer,
+        creator: bannedUser,
+        server: bannedServer,
+      })
+    ).expect("Should be able to store room identification");
+    const searchByCreator = (await store.findRoomsByCreator(bannedUser)).expect(
+      "Should be able to find rooms by creator"
+    );
+
+    expect(searchByCreator.length).toBe(1);
+    const searchByServer = (await store.findRoomsByServer(bannedServer)).expect(
+      "Should be able to find rooms by server"
+    );
+    expect(searchByServer.length).toBe(1);
   });
   it("Can reverse user policies", async function () {
     const store = makeStore();

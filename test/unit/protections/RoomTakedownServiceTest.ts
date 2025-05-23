@@ -19,10 +19,13 @@ import { RoomAuditLog } from "../../../src/protections/RoomTakedown/RoomAuditLog
 import { RoomTakedownCapability } from "../../../src/capabilities/RoomTakedownCapability";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import expect from "expect";
+import { SqliteHashReversalStore } from "../../../src/backingstore/better-sqlite3/HashStore";
+import { makeStore } from "../stores/hashStoreTest";
 
 function makeServiceMocks(): {
   auditLogItems: Parameters<RoomAuditLog["takedownRoom"]>[];
   auditLog: RoomAuditLog;
+  hashStore: SqliteHashReversalStore;
   takedownCapabilityItems: StringRoomID[];
   takedownCapability: RoomTakedownCapability;
 } {
@@ -48,6 +51,7 @@ function makeServiceMocks(): {
         return Ok(false);
       },
     }),
+    hashStore: makeStore(),
   };
 }
 
@@ -69,10 +73,13 @@ describe("", function () {
       takedownCapability,
       auditLogItems,
       takedownCapabilityItems,
+      hashStore,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
       auditLog,
-      takedownCapability
+      hashStore,
+      takedownCapability,
+      []
     );
     // we give a blank revision because i haven't updated the describeProtectedRoomsSet code
     // to use hashed policies... although thinking about it we don't use them here either lol
@@ -118,10 +125,13 @@ describe("", function () {
       takedownCapability,
       auditLogItems,
       takedownCapabilityItems,
+      hashStore,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
       auditLog,
-      takedownCapability
+      hashStore,
+      takedownCapability,
+      []
     );
     (
       await takedownService.checkAllRooms(

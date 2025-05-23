@@ -15,6 +15,7 @@ import {
   ProtectionDescription,
   RoomBasicDetails,
   RoomMessageSender,
+  SHA256HashStore,
   StringRoomIDSchema,
   Task,
 } from "matrix-protection-suite";
@@ -39,6 +40,7 @@ import { Type } from "@sinclair/typebox";
 import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
 import { NotificationRoomCreator } from "../NotificationRoom/NotificationRoom";
+import { MatrixGlob } from "matrix-bot-sdk";
 
 const log = new Logger("RoomTakedownProtection");
 
@@ -89,6 +91,8 @@ export class RoomTakedownProtection
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     auditLog: RoomAuditLog,
+    hashStore: SHA256HashStore,
+    automaticallyRedactForReasons: MatrixGlob[],
     private readonly roomMessageSender: RoomMessageSender,
     private readonly discoveryNotificationEnabled: boolean,
     private readonly discoveryNotificationMembershipThreshold: number,
@@ -98,7 +102,9 @@ export class RoomTakedownProtection
     super(description, capabilities, protectedRoomsSet, {});
     this.roomTakedown = new StandardRoomTakedown(
       auditLog,
-      capabilities.roomTakedownCapability
+      hashStore,
+      capabilities.roomTakedownCapability,
+      automaticallyRedactForReasons
     );
     void Task(
       this.roomTakedown.checkAllRooms(
@@ -226,6 +232,10 @@ describeProtection<
         capabilitySet,
         protectedRoomsSet,
         draupnir.stores.roomAuditLog,
+        draupnir.stores.hashStore,
+        draupnir.config.automaticallyRedactForReasons.map(
+          (reason) => new MatrixGlob(reason)
+        ),
         draupnir.clientPlatform.toRoomMessageSender(),
         settings.discoveryNotificationEnabled,
         settings.discoveryNotificationMembershipThreshold,
