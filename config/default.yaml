@@ -281,6 +281,9 @@ web:
     # This is a secret that you must place into your synapse module config
     # https://github.com/maunium/synapse-http-antispam?tab=readme-ov-file#configuration
     authorization: REPLACE_ME
+  # A web API designed to be useful for other UIs for Draupnir.
+  ui:
+    enabled: true
 
 # Whether or not to actively poll synapse for abuse reports, to be used
 # instead of intercepting client calls to synapse's abuse endpoint, when that
