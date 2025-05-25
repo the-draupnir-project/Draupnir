@@ -21,6 +21,8 @@ import {
   Ok,
   PolicyRoomManager,
   PolicyRuleType,
+  Protection,
+  ProtectionDescription,
   RoomResolver,
   SHA256HashStore,
   Task,
@@ -42,8 +44,17 @@ import {
 import { renderRoomPill } from "../interface-manager/MatrixHelpRenderer";
 import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
 import { SynapseAdminRoomDetailsProvider } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
+import { RoomTakedownProtection } from "../../protections/RoomTakedown/RoomTakedownProtection";
+import { BlockInvitationsOnServerProtection } from "../../protections/BlockInvitationsOnServerProtection";
+import { HomeserverUserPolicyProtection } from "../../protections/HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
 
 const log = new Logger("DraupnirTakedownCommand");
+
+const DownstreamTakedownProtectionNames = [
+  RoomTakedownProtection.name,
+  BlockInvitationsOnServerProtection.name,
+  HomeserverUserPolicyProtection.name,
+];
 
 /**
  * Make sure that the hash store is up to date with the entity
@@ -100,6 +111,10 @@ export type TakedownPolicyPreview = {
   ruleType: PolicyRuleType;
   entity: string;
   policyRoom: MatrixRoomID;
+  takedownProtections: {
+    name: string;
+    isEnabled: boolean;
+  }[];
 };
 
 export const DraupnirTakedownCommand = describeCommand({
@@ -156,6 +171,7 @@ export const DraupnirTakedownCommand = describeCommand({
       roomResolver,
       hashStore,
       detailsProvider,
+      enabledProtections,
     }: DraupnirTakedownCommandContext,
     _info: BasicInvocationInformation,
     keywords,
@@ -163,6 +179,17 @@ export const DraupnirTakedownCommand = describeCommand({
     entity,
     policyRoomDesignator
   ): Promise<Result<TakedownPolicyPreview | StringEventID>> {
+    const enabledTakedownProtections = enabledProtections.filter((protection) =>
+      DownstreamTakedownProtectionNames.includes(protection.description.name)
+    );
+    const takedownProtections = DownstreamTakedownProtectionNames.map(
+      (name) => ({
+        name,
+        isEnabled: enabledTakedownProtections.some(
+          (protection) => protection.description.name === name
+        ),
+      })
+    );
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
         ? Ok(
@@ -193,12 +220,14 @@ export const DraupnirTakedownCommand = describeCommand({
           ruleType: PolicyRuleType.User,
           entity: entity.toString(),
           policyRoom: policyRoomEditor.room,
+          takedownProtections: takedownProtections,
         });
       } else if (typeof entity === "string") {
         return Ok({
           ruleType: PolicyRuleType.Server,
           entity,
           policyRoom: policyRoomEditor.room,
+          takedownProtections: takedownProtections,
         });
       } else {
         const resolvedRoomReference = await roomResolver.resolveRoom(entity);
@@ -209,6 +238,7 @@ export const DraupnirTakedownCommand = describeCommand({
           ruleType: PolicyRuleType.Room,
           entity: resolvedRoomReference.ok.toRoomIDOrAlias(),
           policyRoom: policyRoomEditor.room,
+          takedownProtections: takedownProtections,
         });
       }
     })();
@@ -247,12 +277,23 @@ function renderTakedownPreview(preview: TakedownPolicyPreview): DocumentNode {
         </li>
         <li>policy room: {renderRoomPill(preview.policyRoom)}</li>
       </ul>
-      Please consider that doing so may have irreversable effects.
-      <b>
-        You MUST only use takedown policies to mark spam, illegal, or otherwise
-        intolerable content. DO NOT takedown users who have committed a code of
-        conduct violation.
-      </b>
+      <h5>Please consider that doing so may have irreversable effects.</h5>
+      <p>
+        <b>
+          You MUST only use takedown policies to mark spam, illegal, or
+          otherwise intolerable content. DO NOT takedown users who have
+          committed a code of conduct violation.
+        </b>
+      </p>
+      <h5>The following protections consume takedown policies:</h5>
+      <ul>
+        {preview.takedownProtections.map((protection) => (
+          <li>
+            {protection.isEnabled ? "🟢 (enabled)" : "🔴 (disabled)"}
+            <code>{protection.name}</code>
+          </li>
+        ))}
+      </ul>
     </fragment>
   );
 }
@@ -278,6 +319,7 @@ export type DraupnirTakedownCommandContext = {
   clientUserID: StringUserID;
   hashStore: SHA256HashStore | undefined;
   detailsProvider: RoomDetailsProvider | undefined;
+  enabledProtections: Protection<ProtectionDescription>[];
 };
 
 DraupnirContextToCommandContextTranslator.registerTranslation(
@@ -293,6 +335,7 @@ DraupnirContextToCommandContextTranslator.registerTranslation(
       detailsProvider: draupnir.synapseAdminClient
         ? new SynapseAdminRoomDetailsProvider(draupnir.synapseAdminClient)
         : undefined,
+      enabledProtections: draupnir.protectedRoomsSet.protections.allProtections,
     };
   }
 );
