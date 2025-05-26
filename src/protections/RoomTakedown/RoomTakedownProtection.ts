@@ -38,6 +38,7 @@ import { wrapInRoot } from "../../commands/interface-manager/MatrixHelpRenderer"
 import { Type } from "@sinclair/typebox";
 import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
+import { NotificationRoomCreator } from "../NotificationRoom/NotificationRoom";
 
 const log = new Logger("RoomTakedownProtection");
 
@@ -52,8 +53,7 @@ const RoomTakedownProtectionSettings = Type.Object(
     discoveryNotificationRoom: Type.Optional(
       Type.Union([StringRoomIDSchema, Type.Undefined()], {
         default: undefined,
-        description:
-          "The room where notifications should be sent. Currently broken and needs to be edited from a state event while we figure something out",
+        description: "The room where notifications should be sent.",
       })
     ),
     discoveryNotificationEnabled: Type.Boolean({
@@ -92,7 +92,7 @@ export class RoomTakedownProtection
     private readonly roomMessageSender: RoomMessageSender,
     private readonly discoveryNotificationEnabled: boolean,
     private readonly discoveryNotificationMembershipThreshold: number,
-    private readonly discoveryNotificationRoom: StringRoomID,
+    public readonly discoveryNotificationRoom: StringRoomID,
     private readonly roomDiscovery: RoomDiscovery | undefined
   ) {
     super(description, capabilities, protectedRoomsSet, {});
@@ -173,6 +173,19 @@ describeProtection<
     capabilitySet,
     settings
   ) {
+    if (
+      settings.discoveryNotificationEnabled &&
+      settings.discoveryNotificationRoom === undefined
+    ) {
+      return await NotificationRoomCreator.createNotificationRoomFromDraupnir(
+        draupnir,
+        description as unknown as ProtectionDescription,
+        settings,
+        "discoveryNotificationRoom",
+        "Room Discovery Notification",
+        log
+      );
+    }
     if (
       draupnir.stores.hashStore === undefined ||
       draupnir.stores.roomAuditLog === undefined
