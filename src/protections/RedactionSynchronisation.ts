@@ -363,7 +363,7 @@ describeProtection<RedactionSynchronisationProtectionCapabilitiesSet, Draupnir>(
     defaultCapabilities: {
       consequences: "StandardRedactionSynchronisationConsequences",
     },
-    factory(description, protectedRoomsSet, draupnir, capabilities) {
+    async factory(description, protectedRoomsSet, draupnir, capabilities) {
       return Ok(
         new RedactionSynchronisationProtection(
           description,

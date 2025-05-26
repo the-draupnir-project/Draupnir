@@ -52,7 +52,7 @@ describeProtection<MessageIsMediaCapabilities, Draupnir>({
   defaultCapabilities: {
     eventConsequences: "StandardEventConsequences",
   },
-  factory: function (
+  factory: async function (
     description,
     protectedRoomsSet,
     draupnir,

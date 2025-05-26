@@ -93,7 +93,7 @@ describeProtection<
   capabilityInterfaces: {},
   defaultCapabilities: {},
   configSchema: JoinWaveShortCircuitProtectionSettings,
-  factory: function (
+  factory: async function (
     description,
     protectedRoomsSet,
     draupnir,

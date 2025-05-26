@@ -166,7 +166,13 @@ describeProtection<
     roomTakedownCapability: SynapseAdminRoomTakedownCapability.name,
   },
   configSchema: RoomTakedownProtectionSettings,
-  factory(description, protectedRoomsSet, draupnir, capabilitySet, settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    settings
+  ) {
     if (
       draupnir.stores.hashStore === undefined ||
       draupnir.stores.roomAuditLog === undefined

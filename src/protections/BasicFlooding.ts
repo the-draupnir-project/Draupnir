@@ -78,7 +78,7 @@ describeProtection<
     eventConsequences: "StandardEventConsequences",
   },
   configSchema: BasicFloodingProtectionSettings,
-  factory: (
+  factory: async (
     description,
     protectedRoomsSet,
     draupnir,
