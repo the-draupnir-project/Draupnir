@@ -191,12 +191,12 @@ export class WebAPIs {
         const authorization = request.get("Authorization");
 
         if (authorization) {
-          const brearerMatch = AUTHORIZATION.exec(authorization);
-          if (brearerMatch === null) {
+          const bearerMatch = AUTHORIZATION.exec(authorization);
+          if (bearerMatch === null) {
             response.status(401).send("Missing access token");
             return;
           } else {
-            [, accessToken] = brearerMatch;
+            [, accessToken] = bearerMatch;
           }
         } else if (typeof request.query["access_token"] === "string") {
           // Authentication mechanism 2: Access token as query parameter.
@@ -254,7 +254,7 @@ export class WebAPIs {
                 */
 
         // Now, let's gather more info on the event.
-        // IMPORTANT: The following call will return the event without decyphering it, so we're
+        // IMPORTANT: The following call will return the event without deciphering it, so we're
         // not obtaining anything that we couldn't also obtain through a homeserver's Admin API.
         //
         // By doing this with the reporterClient, we ensure that this feature of Draupnir can work

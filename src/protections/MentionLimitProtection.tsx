@@ -203,7 +203,7 @@ describeProtection<
   typeof MentionLimitProtectionSettings
 >({
   name: "MentionLimitProtection",
-  description: `A potection that will remove any messages with
+  description: `A protection that will remove any messages with
     a number of mentions over a preconfigured limit.
     Please read the documentation https://the-draupnir-project.github.io/draupnir-documentation/protections/mention-limit-protection.`,
   capabilityInterfaces: {
@@ -215,10 +215,16 @@ describeProtection<
     userConsequences: "StandardUserConsequences",
   },
   configSchema: MentionLimitProtectionSettings,
-  factory: (decription, protectedRoomsSet, draupnir, capabilitySet, settings) =>
+  factory: (
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    settings
+  ) =>
     Ok(
       new MentionLimitProtection(
-        decription,
+        description,
         capabilitySet,
         draupnir.clientPlatform.toRoomMessageSender(),
         protectedRoomsSet,

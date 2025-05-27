@@ -18,7 +18,7 @@ export interface UserRestrictionAuditLog {
     }
   ): Promise<Result<void>>;
   recordExistingUserRestriction(
-    uesrID: StringUserID,
+    userID: StringUserID,
     restriction: AccountRestriction
   ): Promise<Result<void>>;
   unrestrictUser(

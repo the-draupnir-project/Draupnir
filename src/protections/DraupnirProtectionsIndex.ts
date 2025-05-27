@@ -4,7 +4,7 @@
 
 /**
  * This file exists as a way to register all protections.
- * In future, we should maybe try to dogfood the dynamic plugin load sytem
+ * In future, we should maybe try to dogfood the dynamic plugin load system
  * instead. For now that system doesn't even exist.
  */
 

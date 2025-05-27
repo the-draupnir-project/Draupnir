@@ -264,7 +264,7 @@ class StandardUserConsequencesRenderer implements UserConsequences {
 
 describeCapabilityRenderer<UserConsequences, Draupnir>({
   name: "StandardUserConsequences",
-  description: "Renders your mum uselesss",
+  description: "Renders your mum useless",
   interface: "UserConsequences",
   factory(description, draupnir, capability) {
     return new StandardUserConsequencesRenderer(

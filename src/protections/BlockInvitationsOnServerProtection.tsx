@@ -152,7 +152,7 @@ export class BlockInvitationsOnServerProtection
 describeProtection<BlockInvitationsOnServerProtectionCapabilities, Draupnir>({
   name: BlockInvitationsOnServerProtection.name,
   description:
-    "Blocks invitations from users marked as takedown or have bans matching the the configured automaticallyRedactForReasons",
+    "Blocks invitations from users marked as takedown or have bans matching the configured automaticallyRedactForReasons",
   capabilityInterfaces: {},
   defaultCapabilities: {},
   factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {

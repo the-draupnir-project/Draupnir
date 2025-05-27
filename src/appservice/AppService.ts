@@ -60,7 +60,7 @@ export class MjolnirAppService {
   public readonly commands: AppserviceCommandHandler;
 
   /**
-   * The constructor is private because we want to ensure intialization steps are followed,
+   * The constructor is private because we want to ensure initialization steps are followed,
    * use `makeMjolnirAppService`.
    */
   private constructor(
@@ -91,7 +91,7 @@ export class MjolnirAppService {
   /**
    * Make and initialize the app service from the config, ready to be started.
    * @param config The appservice's config, not draupnirs's, see `src/appservice/config`.
-   * @param dataStore A datastore to persist infomration about the draupnir to.
+   * @param dataStore A datastore to persist information about the draupnir to.
    * @param registrationFilePath A file path to the registration file to read the namespace and tokens from.
    * @returns A new `MjolnirAppService`.
    */
@@ -249,7 +249,7 @@ export class MjolnirAppService {
   }
 
   public onUserQuery(_queriedUser: MatrixUser) {
-    return {}; // auto-provision users with no additonal data
+    return {}; // auto-provision users with no additional data
   }
 
   // Provision a new draupnir for the invitee when the appservice bot (designated by this.bridge.botUserId) is invited to a room.
@@ -289,7 +289,7 @@ export class MjolnirAppService {
         .getClient()
         .sendText(
           mxEvent.room_id,
-          "Please accept the inviations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
+          "Please accept the invitations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
         );
     } catch (e: unknown) {
       log.error(
@@ -307,7 +307,7 @@ export class MjolnirAppService {
         );
     }
     try {
-      // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their draupnir.
+      // reject the invite to keep the room clean and make sure the invitee doesn't get confused and think this is their draupnir.
       await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
     } catch (e: unknown) {
       log.warn("Unable to reject an invite to a room", e);

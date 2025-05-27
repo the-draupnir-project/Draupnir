@@ -65,9 +65,9 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
  * This includes the webAPIS that accompany Draupnir in bot mode.
  *
  * The appservice also implements `SafeModeToggle` but has different requirements.
- * This interface is exlusively used by the entrypoints to draupnir's bot mode.
+ * This interface is exclusively used by the entrypoints to draupnir's bot mode.
  */
-interface BotModeTogle extends SafeModeToggle {
+interface BotModeToggle extends SafeModeToggle {
   encryptionInitialized(): Promise<void>;
   stopEverything(): void;
   startFromScratch(
@@ -79,7 +79,7 @@ interface BotModeTogle extends SafeModeToggle {
   ): Promise<Result<SafeModeDraupnir>>;
 }
 
-export class DraupnirBotModeToggle implements BotModeTogle {
+export class DraupnirBotModeToggle implements BotModeToggle {
   private draupnir: Draupnir | null = null;
   private safeModeDraupnir: SafeModeDraupnir | null = null;
   private webAPIs: WebAPIs | null = null;
@@ -131,7 +131,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientsInRoomMap,
       DefaultEventDecoder
     );
-    // needed to have accurate join infomration.
+    // needed to have accurate join information.
     (
       await clientsInRoomMap.makeClientRooms(clientUserID, async () =>
         joinedRoomsSafe(client)

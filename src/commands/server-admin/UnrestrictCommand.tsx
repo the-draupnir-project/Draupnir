@@ -13,7 +13,7 @@ import { Result, ResultError } from "@gnuxie/typescript-result";
 import { SynapseAdminUserSuspensionCapability } from "../../protections/HomeserverUserPolicyApplication/UserSuspensionCapability";
 import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 
-export const SynpaseAdminUnrestrictUserCommand = describeCommand({
+export const SynapseAdminUnrestrictUserCommand = describeCommand({
   summary:
     "Unrestrict a user on the homeserver if their account has been suspended or shadowbanned",
   parameters: tuple({
@@ -47,6 +47,6 @@ export const SynpaseAdminUnrestrictUserCommand = describeCommand({
   },
 });
 
-DraupnirInterfaceAdaptor.describeRenderer(SynpaseAdminUnrestrictUserCommand, {
+DraupnirInterfaceAdaptor.describeRenderer(SynapseAdminUnrestrictUserCommand, {
   isAlwaysSupposedToUseDefaultRenderer: true,
 });

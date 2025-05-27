@@ -33,7 +33,7 @@ export type SafeModeRecoverEffectInfo = {
 };
 
 export const SafeModeRecoverCommand = describeCommand({
-  summary: "Select an availale recovery option to enact.",
+  summary: "Select an available recovery option to enact.",
   parameters: tuple({
     name: "recovery option",
     acceptor: StringPresentationType,

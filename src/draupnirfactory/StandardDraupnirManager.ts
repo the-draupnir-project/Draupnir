@@ -165,12 +165,12 @@ export class StandardDraupnirManager {
     return safeModeDraupnir;
   }
 
-  private isNormalDraupnir(drapunirClientID: StringUserID): boolean {
-    return this.draupnir.has(drapunirClientID);
+  private isNormalDraupnir(draupnirClientID: StringUserID): boolean {
+    return this.draupnir.has(draupnirClientID);
   }
 
-  private isSafeModeDraupnir(drapunirClientID: StringUserID): boolean {
-    return this.safeModeDraupnir.has(drapunirClientID);
+  private isSafeModeDraupnir(draupnirClientID: StringUserID): boolean {
+    return this.safeModeDraupnir.has(draupnirClientID);
   }
 
   /**

@@ -92,7 +92,7 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
   },
 });
 
-// FIXME: need a shoutout to dependencies in here and NOTICE info.
+// FIXME: need a shout out to dependencies in here and NOTICE info.
 export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
   const watchedListInfo = groupWatchedPolicyRoomsByProtectionStatus(
     draupnir.protectedRoomsSet.watchedPolicyRooms,

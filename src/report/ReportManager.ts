@@ -512,7 +512,7 @@ export class StandardReportManager {
           }
         );
       } else {
-        throw new TypeError(`Something is throwing absoloute garbage ${ex}`);
+        throw new TypeError(`Something is throwing absolute garbage ${ex}`);
       }
     }
   }

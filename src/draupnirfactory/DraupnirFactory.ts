@@ -133,7 +133,7 @@ export class DraupnirFactory {
       managementRoomMembership.ok,
       managementRoomState.ok
     );
-    // synapesHTTPAntispam is made here so that the listeners get destroyed
+    // synapseHTTPAntispam is made here so that the listeners get destroyed
     // when draupnir is destroyed.
     const synapseHTTPAntispam = config.web.synapseHTTPAntispam.enabled
       ? new SynapseHttpAntispam(config.web.synapseHTTPAntispam.authorization)

@@ -20,7 +20,7 @@ import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapabilit
 const log = new Logger("RoomTakedown");
 
 // FIXME: How can we segment this so that rooms are takendown on prompt in
-// the abscence of policy approval?
+// the absence of policy approval?
 // Probably by using a simulated capability that asks to confirm and then
 // does the takedown for real?
 // Probably by using an updated version of the shutdown command...

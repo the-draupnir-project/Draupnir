@@ -18,7 +18,7 @@ type BucketEntry = {
 };
 
 /**
- * A lazy version of the bucket to be used when the throuhgput is really
+ * A lazy version of the bucket to be used when the throughput is really
  * low most of the time, so doesn't warrant constant filling/leaking.
  *
  * This won't be good to use in a high throughput situation because

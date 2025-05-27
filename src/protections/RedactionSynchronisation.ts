@@ -66,7 +66,7 @@ type RedactionSynchronisationProtectionDescription = ProtectionDescription<
 // users will cause issues,, we could just add a second method though.
 
 // FIXME: Just add the invited users thing, we need that code here or there
-// so may aswell do it and test it.
+// so may as well do it and test it.
 
 // FIXME: We should consider updating both SetMembership and SetMembershipPolicies
 // to understand parted members...
@@ -80,7 +80,7 @@ export interface RedactionSynchronisationConsequences extends Capability {
   rejectInvite(
     roomID: StringRoomID,
     sender: StringUserID,
-    reciever: StringUserID,
+    receiver: StringUserID,
     reason: string | undefined
   ): Promise<Result<void>>;
 }
@@ -172,8 +172,8 @@ describeCapabilityRenderer({
       async redactMessagesIn(userIDOrGlob, reason, roomIDs) {
         return await provider.redactMessagesIn(userIDOrGlob, reason, roomIDs);
       },
-      async rejectInvite(roomID, sender, reciever, reason) {
-        return await provider.rejectInvite(roomID, sender, reciever, reason);
+      async rejectInvite(roomID, sender, receiver, reason) {
+        return await provider.rejectInvite(roomID, sender, receiver, reason);
       },
     } satisfies RedactionSynchronisationConsequences);
   },
