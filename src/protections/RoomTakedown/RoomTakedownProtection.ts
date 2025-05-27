@@ -26,7 +26,7 @@ import {
   SynapseAdminRoomDetailsProvider,
   SynapseAdminRoomTakedownCapability,
 } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
-import { isError, ResultError } from "@gnuxie/typescript-result";
+import { isError, Result, ResultError } from "@gnuxie/typescript-result";
 import {
   RoomDiscovery,
   RoomDiscoveryListener,
@@ -172,19 +172,22 @@ describeProtection<
     draupnir,
     capabilitySet,
     settings
-  ) {
+  ): Promise<Result<RoomTakedownProtection>> {
     if (
       settings.discoveryNotificationEnabled &&
       settings.discoveryNotificationRoom === undefined
     ) {
-      return await NotificationRoomCreator.createNotificationRoomFromDraupnir(
+      // FIXME: The type parameters are really fucked for the protection system
+      // and that needs fixing. The problem is that the protection system was written
+      // before we knew how to do this properly.
+      return (await NotificationRoomCreator.createNotificationRoomFromDraupnir(
         draupnir,
         description as unknown as ProtectionDescription,
         settings,
         "discoveryNotificationRoom",
         "Room Discovery Notification",
         log
-      );
+      )) as Result<RoomTakedownProtection>;
     }
     if (
       draupnir.stores.hashStore === undefined ||

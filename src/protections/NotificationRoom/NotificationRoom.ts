@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { Ok, Result, ResultError } from "@gnuxie/typescript-result";
+import { Ok, Result } from "@gnuxie/typescript-result";
 import {
   MatrixRoomID,
   StringRoomID,
@@ -12,6 +12,7 @@ import {
   isError,
   Logger,
   ProtectedRoomsManager,
+  Protection,
   ProtectionDescription,
   RoomCreator,
   RoomMembershipManager,
@@ -19,14 +20,18 @@ import {
 } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 
-export type SettingChangeAndProtectionEnableCB = (
+export type SettingChangeAndProtectionEnableCB<
+  TProtectionDescription extends ProtectionDescription = ProtectionDescription,
+> = (
   roomID: StringRoomID
-) => Promise<Result<void>>;
+) => Promise<Result<Protection<TProtectionDescription>>>;
 
-export class NotificationRoomCreator {
+export class NotificationRoomCreator<
+  TProtectionDescription extends ProtectionDescription = ProtectionDescription,
+> {
   public constructor(
     private readonly protectedRoomsManager: ProtectedRoomsManager,
-    private readonly settingChangeCB: SettingChangeAndProtectionEnableCB,
+    private readonly settingChangeCB: SettingChangeAndProtectionEnableCB<TProtectionDescription>,
     private readonly roomCreateCapability: RoomCreator,
     private readonly roomStateEventCapability: RoomStateEventSender,
     private readonly roomName: string,
@@ -56,14 +61,17 @@ export class NotificationRoomCreator {
     );
   }
 
-  public static async createNotificationRoomFromDraupnir(
+  public static async createNotificationRoomFromDraupnir<
+    TProtectionDescription extends
+      ProtectionDescription = ProtectionDescription,
+  >(
     draupnir: Draupnir,
-    description: ProtectionDescription,
+    description: TProtectionDescription,
     settings: Record<string, unknown>,
     notificationRoomSettingName: string,
     notificationRoomName: string,
     log: Logger
-  ): Promise<Result<never>> {
+  ): Promise<Result<Protection<TProtectionDescription>>> {
     const moderators =
       await NotificationRoomCreator.extractMembersFromManagementRoom(
         draupnir.managementRoom,
@@ -73,41 +81,44 @@ export class NotificationRoomCreator {
     if (isError(moderators)) {
       return moderators.elaborate("Unable to find the draupnir moderators");
     }
-    const notificationRoomCreator = new NotificationRoomCreator(
-      draupnir.protectedRoomsSet.protectedRoomsManager,
-      async function (roomID: StringRoomID) {
-        const newSettings = description.protectionSettings
-          .toMirror()
-          .setValue(settings, notificationRoomSettingName, roomID);
-        if (isError(newSettings)) {
-          return newSettings;
-        }
-        const result =
-          await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
-            description as unknown as ProtectionDescription,
-            draupnir.protectedRoomsSet,
-            draupnir,
-            newSettings.ok
-          );
-        if (isError(result)) {
-          return result.elaborate(
-            "Unable to add the notification room to the protection settings"
-          );
-        }
-        return Ok(undefined);
-      },
-      draupnir.clientPlatform.toRoomCreator(),
-      draupnir.clientPlatform.toRoomStateEventSender(),
-      notificationRoomName,
-      draupnir.clientUserID,
-      draupnir.managementRoomID,
-      moderators.ok,
-      log
-    );
+    const notificationRoomCreator =
+      new NotificationRoomCreator<TProtectionDescription>(
+        draupnir.protectedRoomsSet.protectedRoomsManager,
+        async function (roomID: StringRoomID) {
+          const newSettings = description.protectionSettings
+            .toMirror()
+            .setValue(settings, notificationRoomSettingName, roomID);
+          if (isError(newSettings)) {
+            return newSettings;
+          }
+          const result =
+            await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
+              description,
+              draupnir.protectedRoomsSet,
+              draupnir,
+              newSettings.ok
+            );
+          if (isError(result)) {
+            return result.elaborate(
+              "Unable to add the notification room to the protection settings"
+            );
+          }
+          return result;
+        },
+        draupnir.clientPlatform.toRoomCreator(),
+        draupnir.clientPlatform.toRoomStateEventSender(),
+        notificationRoomName,
+        draupnir.clientUserID,
+        draupnir.managementRoomID,
+        moderators.ok,
+        log
+      );
     return await notificationRoomCreator.createMissingNotificationRoom();
   }
 
-  public async createMissingNotificationRoom(): Promise<Result<never>> {
+  public async createMissingNotificationRoom(): Promise<
+    Result<Protection<TProtectionDescription>>
+  > {
     const roomTitle = `${this.draupnirUserID}'s ${this.roomName}`;
     const newRoom = await this.roomCreateCapability.createRoom({
       preset: "private_chat",
@@ -163,8 +174,6 @@ export class NotificationRoomCreator {
       );
       return protectionEnableResult;
     }
-    return ResultError.Result(
-      `A notification room titled "${roomTitle}" has been created for this protection's messages, and the protection has been restarted separately`
-    );
+    return protectionEnableResult;
   }
 }
