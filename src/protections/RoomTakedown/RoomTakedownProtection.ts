@@ -57,7 +57,7 @@ const RoomTakedownProtectionSettings = Type.Object(
       })
     ),
     discoveryNotificationEnabled: Type.Boolean({
-      default: false,
+      default: true,
       description:
         "Wether to send notifications for newly discovered rooms from the homerserver.",
     }),
