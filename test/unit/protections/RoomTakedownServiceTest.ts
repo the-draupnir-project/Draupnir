@@ -73,13 +73,10 @@ describe("", function () {
       takedownCapability,
       auditLogItems,
       takedownCapabilityItems,
-      hashStore,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
       auditLog,
-      hashStore,
-      takedownCapability,
-      []
+      takedownCapability
     );
     // we give a blank revision because i haven't updated the describeProtectedRoomsSet code
     // to use hashed policies... although thinking about it we don't use them here either lol
@@ -125,13 +122,10 @@ describe("", function () {
       takedownCapability,
       auditLogItems,
       takedownCapabilityItems,
-      hashStore,
     } = makeServiceMocks();
     const takedownService = new StandardRoomTakedown(
       auditLog,
-      hashStore,
-      takedownCapability,
-      []
+      takedownCapability
     );
     (
       await takedownService.checkAllRooms(

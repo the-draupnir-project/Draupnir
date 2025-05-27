@@ -102,9 +102,7 @@ export class RoomTakedownProtection
     super(description, capabilities, protectedRoomsSet, {});
     this.roomTakedown = new StandardRoomTakedown(
       auditLog,
-      hashStore,
-      capabilities.roomTakedownCapability,
-      automaticallyRedactForReasons
+      capabilities.roomTakedownCapability
     );
     void Task(
       this.roomTakedown.checkAllRooms(

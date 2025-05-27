@@ -2,23 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  MatrixGlob,
-  StringRoomID,
-  StringServerName,
-  StringUserID,
-} from "@the-draupnir-project/matrix-basic-types";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   LiteralPolicyRule,
   Logger,
   PolicyListRevision,
-  PolicyRule,
   PolicyRuleChange,
   PolicyRuleChangeType,
   PolicyRuleMatchType,
   PolicyRuleType,
   Recommendation,
-  SHA256HashStore,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
@@ -50,9 +43,7 @@ export type RoomTakedownService = {
 export class StandardRoomTakedown implements RoomTakedownService {
   public constructor(
     private readonly auditLog: RoomAuditLog,
-    private readonly store: SHA256HashStore,
-    private readonly takedownCapability: RoomTakedownCapability,
-    private readonly automaticallyRedactForReasons: MatrixGlob[]
+    private readonly takedownCapability: RoomTakedownCapability
   ) {
     // nothing to do
   }
@@ -116,52 +107,6 @@ export class StandardRoomTakedown implements RoomTakedownService {
       ) {
         roomsToTakedown.set(change.rule.entity as StringRoomID, change.rule);
       }
-      if (change.rule.kind === PolicyRuleType.User) {
-        const isBanAndRedactable = (policy: PolicyRule) =>
-          policy.recommendation === Recommendation.Ban &&
-          this.automaticallyRedactForReasons.some(
-            (glob) => policy.reason !== undefined && glob.test(policy.reason)
-          );
-        if (
-          isBanAndRedactable(change.rule) ||
-          change.rule.recommendation === Recommendation.Takedown
-        ) {
-          const fetchResult = await this.store.findRoomsByCreator(
-            change.rule.entity as StringUserID
-          );
-          if (isError(fetchResult)) {
-            log.error(
-              "Error while trying to find rooms by creator:",
-              change.rule.entity,
-              fetchResult.error
-            );
-            continue;
-          }
-          for (const roomID of fetchResult.ok) {
-            roomsToTakedown.set(roomID, change.rule);
-          }
-        }
-      }
-      if (
-        change.rule.kind === PolicyRuleType.Server &&
-        (change.rule.recommendation === Recommendation.Ban ||
-          change.rule.recommendation === Recommendation.Takedown)
-      ) {
-        const fetchResult = await this.store.findRoomsByServer(
-          change.rule.entity as StringServerName
-        );
-        if (isError(fetchResult)) {
-          log.error(
-            "Error while trying to find rooms by server:",
-            change.rule.entity,
-            fetchResult.error
-          );
-          continue;
-        }
-        for (const roomID of fetchResult.ok) {
-          roomsToTakedown.set(roomID, change.rule);
-        }
-      }
     }
     for (const [roomID, policy] of roomsToTakedown.entries()) {
       const takedownResult = await this.takedownRoom(roomID, policy);
@@ -187,58 +132,6 @@ export class StandardRoomTakedown implements RoomTakedownService {
     const roomsToCheck = new Map<StringRoomID, LiteralPolicyRule>();
     for (const policy of roomPolicies) {
       roomsToCheck.set(policy.entity as StringRoomID, policy);
-    }
-    // We want any takedown or ban rule regardless of rason.
-    const serverPolicies = [
-      ...revision.allRulesOfType(PolicyRuleType.Server, Recommendation.Ban),
-      ...revision.allRulesOfType(
-        PolicyRuleType.Server,
-        Recommendation.Takedown
-      ),
-    ].filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
-    for (const policy of serverPolicies) {
-      const storeResult = await this.store.findRoomsByServer(
-        policy.entity as StringServerName
-      );
-      if (isError(storeResult)) {
-        log.error(
-          "Error while trying to find rooms by server:",
-          policy.entity,
-          storeResult.error
-        );
-        continue;
-      }
-      for (const roomID of storeResult.ok) {
-        roomsToCheck.set(roomID, policy);
-      }
-    }
-    // We want user policies with ban recommendations matching automaticallyRedactForReasons
-    // And any takedown policies
-    const userPolicies = [
-      ...revision
-        .allRulesOfType(PolicyRuleType.User, Recommendation.Ban)
-        .filter((policy) =>
-          this.automaticallyRedactForReasons.some(
-            (glob) => policy.reason && glob.test(policy.reason)
-          )
-        ),
-      ...revision.allRulesOfType(PolicyRuleType.User, Recommendation.Takedown),
-    ].filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
-    for (const policy of userPolicies) {
-      const fetchResult = await this.store.findRoomsByCreator(
-        policy.entity as StringUserID
-      );
-      if (isError(fetchResult)) {
-        log.error(
-          "Error while trying to find rooms by creator:",
-          policy.entity,
-          fetchResult.error
-        );
-        continue;
-      }
-      for (const roomID of fetchResult.ok) {
-        roomsToCheck.set(roomID, policy);
-      }
     }
     for (const [roomID, policy] of roomsToCheck.entries()) {
       if (this.auditLog.isRoomTakendown(roomID)) {
