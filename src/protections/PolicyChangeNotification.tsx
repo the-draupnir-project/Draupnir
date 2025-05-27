@@ -11,7 +11,6 @@
 import {
   AbstractProtection,
   ActionResult,
-  EDStatic,
   Logger,
   Ok,
   PolicyListRevision,
@@ -21,7 +20,7 @@ import {
   PolicyRuleMatchType,
   ProtectedRoomsSet,
   ProtectionDescription,
-  StringRoomIDSchema,
+  UnknownConfig,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -41,32 +40,15 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { renderRuleHashes, renderRuleClearText } from "../commands/Rules";
-import { NotificationRoomCreator } from "./NotificationRoom/NotificationRoom";
-import { Type } from "@sinclair/typebox";
 
 const log = new Logger("PolicyChangeNotification");
-
-// FIXME: Add these rooms to the status command!!.
-
-const PolicyChangeNotificationSettings = Type.Object({
-  notificationRoomID: Type.Optional(
-    Type.Union([StringRoomIDSchema, Type.Undefined()], {
-      default: undefined,
-      description: "The room where notifications should be sent.",
-    })
-  ),
-});
-
-export type PolicyChangeNotificationSettings = EDStatic<
-  typeof PolicyChangeNotificationSettings
->;
 
 export type PolicyChangeNotificationCapabilitites = Record<never, never>;
 
 export type PolicyChangeNotificationProtectionDescription =
   ProtectionDescription<
     Draupnir,
-    typeof PolicyChangeNotificationSettings,
+    UnknownConfig,
     PolicyChangeNotificationCapabilitites
   >;
 
@@ -80,8 +62,7 @@ export class PolicyChangeNotification
     description: PolicyChangeNotificationProtectionDescription,
     capabilities: PolicyChangeNotificationCapabilitites,
     protectedRoomsSet: ProtectedRoomsSet,
-    private readonly draupnir: Draupnir,
-    public readonly notificationRoomID: StringRoomID
+    private readonly draupnir: Draupnir
   ) {
     super(description, capabilities, protectedRoomsSet, {});
   }
@@ -111,7 +92,7 @@ export class PolicyChangeNotification
     }
     const sendResult = await sendMatrixEventsFromDeadDocument(
       this.draupnir.clientPlatform.toRoomMessageSender(),
-      this.notificationRoomID,
+      this.draupnir.managementRoomID,
       <root>{renderGroupedChanges(groupedChanges.ok)}</root>,
       {}
     );
@@ -178,40 +159,24 @@ function renderGroupedChanges(groupedChanges: GroupedChange[]): DocumentNode {
   return <fragment>{groupedChanges.map(renderListChanges)}</fragment>;
 }
 
-describeProtection<
-  PolicyChangeNotificationCapabilitites,
-  Draupnir,
-  typeof PolicyChangeNotificationSettings
->({
+describeProtection<PolicyChangeNotificationCapabilitites, Draupnir>({
   name: PolicyChangeNotification.name,
   description: "Provides notification of policy changes from watched lists.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
-  configSchema: PolicyChangeNotificationSettings,
   async factory(
     description,
     protectedRoomsSet,
     draupnir,
     capabilities,
-    settings
+    _settings
   ) {
-    if (settings.notificationRoomID === undefined) {
-      return await NotificationRoomCreator.createNotificationRoomFromDraupnir(
-        draupnir,
-        description as unknown as ProtectionDescription,
-        settings,
-        "notificationRoomID",
-        "Policy Change Notifications",
-        log
-      );
-    }
     return Ok(
       new PolicyChangeNotification(
         description,
         capabilities,
         protectedRoomsSet,
-        draupnir,
-        settings.notificationRoomID
+        draupnir
       )
     );
   },

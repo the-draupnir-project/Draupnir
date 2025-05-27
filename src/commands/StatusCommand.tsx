@@ -29,7 +29,6 @@ import {
   MatrixRoomReference,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { PolicyChangeNotification } from "../protections/PolicyChangeNotification";
 import { RoomTakedownProtection } from "../protections/RoomTakedown/RoomTakedownProtection";
 import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
@@ -98,7 +97,6 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
 });
 
 type DraupnirNotificationRoomsInfo = {
-  readonly policyChangeNotificationRoomID: StringRoomID | undefined;
   readonly roomDiscoveryNotificationRoomID: StringRoomID | undefined;
 };
 
@@ -106,11 +104,6 @@ function extractProtectionNotificationRooms(
   draupnir: Draupnir
 ): DraupnirNotificationRoomsInfo {
   return {
-    policyChangeNotificationRoomID: (
-      draupnir.protectedRoomsSet.protections.findEnabledProtection(
-        PolicyChangeNotification.name
-      ) as PolicyChangeNotification | undefined
-    )?.notificationRoomID,
     roomDiscoveryNotificationRoomID: (
       draupnir.protectedRoomsSet.protections.findEnabledProtection(
         RoomTakedownProtection.name
@@ -158,10 +151,7 @@ export function renderPolicyList(list: WatchedPolicyRoom): DocumentNode {
 }
 
 function renderNotificationRooms(info: StatusInfo): DocumentNode {
-  if (
-    info.roomDiscoveryNotificationRoomID === undefined &&
-    info.policyChangeNotificationRoomID === undefined
-  ) {
+  if (info.roomDiscoveryNotificationRoomID === undefined) {
     return <fragment></fragment>;
   }
   const renderNotificationRoom = (
@@ -182,10 +172,6 @@ function renderNotificationRooms(info: StatusInfo): DocumentNode {
       <b>Notification rooms:</b>
       <br />
       <ul>
-        {renderNotificationRoom(
-          "Policy change",
-          info.policyChangeNotificationRoomID
-        )}
         {renderNotificationRoom(
           "Room discovery",
           info.roomDiscoveryNotificationRoomID
