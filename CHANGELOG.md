@@ -12,7 +12,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.3.0] - 2025-05-21
+## [v2.3.1] - 2025-05-29
+
+### Fixed
+
+- `RoomTakedownProtection` would fail to creat a notification room if it the
+  homeserver at any point failed to invite remote users. We invite users to the
+  room separately.
+
+- `RoomTakedownProtection` would invite non joined members of the mangagement
+  room to the newly created notification room. Including left and banned users.
+
+## [v2.3.0] - 2025-05-29
 
 This update stabilizes several features for
 [homeserver administrators](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
