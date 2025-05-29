@@ -15,6 +15,7 @@ import {
   Protection,
   ProtectionDescription,
   RoomCreator,
+  RoomInviter,
   RoomMembershipManager,
   RoomStateEventSender,
 } from "matrix-protection-suite";
@@ -33,6 +34,7 @@ export class NotificationRoomCreator<
     private readonly protectedRoomsManager: ProtectedRoomsManager,
     private readonly settingChangeCB: SettingChangeAndProtectionEnableCB<TProtectionDescription>,
     private readonly roomCreateCapability: RoomCreator,
+    private readonly roomInviter: RoomInviter,
     private readonly roomStateEventCapability: RoomStateEventSender,
     private readonly roomName: string,
     private readonly draupnirUserID: StringUserID,
@@ -56,6 +58,7 @@ export class NotificationRoomCreator<
     const revision = membershipRevisionIssuer.ok.currentRevision;
     return Ok(
       [...revision.members()]
+        .filter((member) => member.membership === "join")
         .map((member) => member.userID)
         .filter((userID) => userID !== draupnirUserID)
     );
@@ -106,6 +109,7 @@ export class NotificationRoomCreator<
           return result;
         },
         draupnir.clientPlatform.toRoomCreator(),
+        draupnir.clientPlatform.toRoomInviter(),
         draupnir.clientPlatform.toRoomStateEventSender(),
         notificationRoomName,
         draupnir.clientUserID,
@@ -123,7 +127,6 @@ export class NotificationRoomCreator<
     const newRoom = await this.roomCreateCapability.createRoom({
       preset: "private_chat",
       name: roomTitle,
-      invite: this.draupnirModerators,
     });
     if (isError(newRoom)) {
       this.log.error(
@@ -173,6 +176,21 @@ export class NotificationRoomCreator<
         protectionEnableResult.error
       );
       return protectionEnableResult;
+    }
+    // We invite seperate to the /createRoom call because otherwise the entire /createRoom
+    // call will fail if just one user couldn't be invited. Which is really bad.
+    // This happens when servers are no longer reachable.
+    for (const invitee of this.draupnirModerators) {
+      const inviteResult = await this.roomInviter.inviteUser(
+        newRoom.ok,
+        invitee
+      );
+      if (isError(inviteResult)) {
+        this.log.error(
+          `Failed to invite moderator ${invitee} to notification room for ${this.roomName}`,
+          inviteResult.error
+        );
+      }
     }
     return protectionEnableResult;
   }
