@@ -82,7 +82,7 @@ export class SynapseAdminRoomTakedownCapability
     // we use delte V1 because clients do not pick up the user's own leave event
     // in V2 and i don't know why.
     // That is very important in the case of stuck invitations.
-    const takedownResult = await this.adminClient.deleteRoom(roomID, {
+    const takedownResult = await this.adminClient.shutdownRoomV2(roomID, {
       block: true,
       purge: true,
     });
