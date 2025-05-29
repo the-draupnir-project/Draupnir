@@ -26,8 +26,11 @@ import {
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 import {
   MatrixRoomID,
+  MatrixRoomReference,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { RoomTakedownProtection } from "../protections/RoomTakedown/RoomTakedownProtection";
+import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 
 export const DraupnirStatusCommand = describeCommand({
   summary: "Show the status of the bot.",
@@ -49,7 +52,8 @@ export type StatusInfo = {
   version: string;
   repository: string;
   documentationURL: string;
-} & WatchedPolicyRoomsInfo;
+} & DraupnirNotificationRoomsInfo &
+  WatchedPolicyRoomsInfo;
 
 export function groupWatchedPolicyRoomsByProtectionStatus(
   watchedPolicyRooms: WatchedPolicyRooms,
@@ -92,6 +96,22 @@ DraupnirInterfaceAdaptor.describeRenderer(DraupnirStatusCommand, {
   },
 });
 
+type DraupnirNotificationRoomsInfo = {
+  readonly roomDiscoveryNotificationRoomID: StringRoomID | undefined;
+};
+
+function extractProtectionNotificationRooms(
+  draupnir: Draupnir
+): DraupnirNotificationRoomsInfo {
+  return {
+    roomDiscoveryNotificationRoomID: (
+      draupnir.protectedRoomsSet.protections.findEnabledProtection(
+        RoomTakedownProtection.name
+      ) as RoomTakedownProtection | undefined
+    )?.discoveryNotificationRoom,
+  };
+}
+
 // FIXME: need a shoutout to dependencies in here and NOTICE info.
 export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
   const watchedListInfo = groupWatchedPolicyRoomsByProtectionStatus(
@@ -109,6 +129,7 @@ export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
     repository: PACKAGE_JSON["repository"] ?? "Unknown",
+    ...extractProtectionNotificationRooms(draupnir),
   };
 }
 
@@ -126,6 +147,37 @@ export function renderPolicyList(list: WatchedPolicyRoom): DocumentNode {
       update:{" "}
       <code>{new Date(list.revision.revisionID.time).toLocaleString()}</code>)
     </li>
+  );
+}
+
+function renderNotificationRooms(info: StatusInfo): DocumentNode {
+  if (info.roomDiscoveryNotificationRoomID === undefined) {
+    return <fragment></fragment>;
+  }
+  const renderNotificationRoom = (
+    name: string,
+    roomID: StringRoomID | undefined
+  ) => {
+    if (roomID === undefined) {
+      return <fragment></fragment>;
+    }
+    return (
+      <li>
+        {name}: {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))}
+      </li>
+    );
+  };
+  return (
+    <fragment>
+      <b>Notification rooms:</b>
+      <br />
+      <ul>
+        {renderNotificationRoom(
+          "Room discovery",
+          info.roomDiscoveryNotificationRoomID
+        )}
+      </ul>
+    </fragment>
   );
 }
 
@@ -161,6 +213,7 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
         "Subscribed and protected policy rooms",
         info.subscribedAndProtectedLists
       )}
+      {renderNotificationRooms(info)}
       <b>Version: </b>
       <code>{info.version}</code>
       <br />

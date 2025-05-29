@@ -15,6 +15,7 @@ import {
   ProtectionDescription,
   RoomBasicDetails,
   RoomMessageSender,
+  SHA256HashStore,
   StringRoomIDSchema,
   Task,
 } from "matrix-protection-suite";
@@ -26,7 +27,7 @@ import {
   SynapseAdminRoomDetailsProvider,
   SynapseAdminRoomTakedownCapability,
 } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
-import { isError, ResultError } from "@gnuxie/typescript-result";
+import { isError, Result, ResultError } from "@gnuxie/typescript-result";
 import {
   RoomDiscovery,
   RoomDiscoveryListener,
@@ -38,6 +39,8 @@ import { wrapInRoot } from "../../commands/interface-manager/MatrixHelpRenderer"
 import { Type } from "@sinclair/typebox";
 import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
+import { NotificationRoomCreator } from "../NotificationRoom/NotificationRoom";
+import { MatrixGlob } from "matrix-bot-sdk";
 
 const log = new Logger("RoomTakedownProtection");
 
@@ -52,12 +55,11 @@ const RoomTakedownProtectionSettings = Type.Object(
     discoveryNotificationRoom: Type.Optional(
       Type.Union([StringRoomIDSchema, Type.Undefined()], {
         default: undefined,
-        description:
-          "The room where notifications should be sent. Currently broken and needs to be edited from a state event while we figure something out",
+        description: "The room where notifications should be sent.",
       })
     ),
     discoveryNotificationEnabled: Type.Boolean({
-      default: false,
+      default: true,
       description:
         "Wether to send notifications for newly discovered rooms from the homerserver.",
     }),
@@ -89,10 +91,12 @@ export class RoomTakedownProtection
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     auditLog: RoomAuditLog,
+    hashStore: SHA256HashStore,
+    automaticallyRedactForReasons: MatrixGlob[],
     private readonly roomMessageSender: RoomMessageSender,
     private readonly discoveryNotificationEnabled: boolean,
     private readonly discoveryNotificationMembershipThreshold: number,
-    private readonly discoveryNotificationRoom: StringRoomID,
+    public readonly discoveryNotificationRoom: StringRoomID,
     private readonly roomDiscovery: RoomDiscovery | undefined
   ) {
     super(description, capabilities, protectedRoomsSet, {});
@@ -166,7 +170,29 @@ describeProtection<
     roomTakedownCapability: SynapseAdminRoomTakedownCapability.name,
   },
   configSchema: RoomTakedownProtectionSettings,
-  factory(description, protectedRoomsSet, draupnir, capabilitySet, settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    settings
+  ): Promise<Result<RoomTakedownProtection>> {
+    if (
+      settings.discoveryNotificationEnabled &&
+      settings.discoveryNotificationRoom === undefined
+    ) {
+      // FIXME: The type parameters are really fucked for the protection system
+      // and that needs fixing. The problem is that the protection system was written
+      // before we knew how to do this properly.
+      return (await NotificationRoomCreator.createNotificationRoomFromDraupnir(
+        draupnir,
+        description as unknown as ProtectionDescription,
+        settings,
+        "discoveryNotificationRoom",
+        "Room Discovery Notification",
+        log
+      )) as Result<RoomTakedownProtection>;
+    }
     if (
       draupnir.stores.hashStore === undefined ||
       draupnir.stores.roomAuditLog === undefined
@@ -204,6 +230,10 @@ describeProtection<
         capabilitySet,
         protectedRoomsSet,
         draupnir.stores.roomAuditLog,
+        draupnir.stores.hashStore,
+        draupnir.config.automaticallyRedactForReasons.map(
+          (reason) => new MatrixGlob(reason)
+        ),
         draupnir.clientPlatform.toRoomMessageSender(),
         settings.discoveryNotificationEnabled,
         settings.discoveryNotificationMembershipThreshold,

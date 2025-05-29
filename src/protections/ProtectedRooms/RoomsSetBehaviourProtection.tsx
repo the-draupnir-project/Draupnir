@@ -86,7 +86,13 @@ describeProtection<RoomsSetBehaviourCapabailities, Draupnir>({
     "Unprotects parted rooms and update the list of protected rooms.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
-  factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) {
     return Ok(
       new RoomsSetBehaviour(
         description,

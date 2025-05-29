@@ -164,7 +164,13 @@ describeProtection<PolicyChangeNotificationCapabilitites, Draupnir>({
   description: "Provides notification of policy changes from watched lists.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
-  factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) {
     return Ok(
       new PolicyChangeNotification(
         description,

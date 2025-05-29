@@ -58,7 +58,7 @@ describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir>({
     userConsequences: "StandardUserConsequences",
     eventConsequences: "StandardEventConsequences",
   },
-  factory: function (
+  factory: async function (
     description,
     protectedRoomsSet,
     draupnir,

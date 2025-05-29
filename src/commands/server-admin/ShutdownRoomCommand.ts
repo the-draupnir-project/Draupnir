@@ -63,10 +63,7 @@ export const SynapseAdminShutdownRoomCommand = describeCommand({
       return resolvedRoom;
     }
     const reason = reasonParts.join(" ");
-    // we use delte V1 because clients do not pick up the user's own leave event
-    // in V2 and i don't know why.
-    // That is very important in the case of stuck invitations.
-    return await draupnir.synapseAdminClient.deleteRoom(
+    return await draupnir.synapseAdminClient.shutdownRoomV2(
       resolvedRoom.ok.toRoomIDOrAlias(),
       {
         ...(notify

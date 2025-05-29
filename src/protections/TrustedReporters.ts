@@ -90,7 +90,7 @@ describeProtection<
     eventConsequences: "StandardEventConsequences",
   },
   configSchema: TrustedReportersProtectionSettings,
-  factory: function (
+  factory: async function (
     description,
     protectedRoomsSet,
     draupnir,

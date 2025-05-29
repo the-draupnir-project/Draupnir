@@ -97,7 +97,13 @@ describeProtection<
     userRestrictionCapability: SynapseAdminUserSuspensionCapability.name,
   },
   configSchema: HomeserverUserPolicyProtectionSettings,
-  factory(description, protectedRoomsSet, draupnir, capabilitySet, _settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet,
+    _settings
+  ) {
     if (draupnir.stores.userRestrictionAuditLog === undefined) {
       return ResultError.Result(
         "This protection requires the user audit log to be available to draupnir, and they are not in your configuration."

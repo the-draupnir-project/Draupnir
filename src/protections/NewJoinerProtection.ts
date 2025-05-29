@@ -96,7 +96,7 @@ describeProtection<NewJoinerProtectionCapabilities, Draupnir>({
   defaultCapabilities: {
     userConsequences: "StandardUserConsequences",
   },
-  factory: (decription, protectedRoomsSet, draupnir, capabilitySet) =>
+  factory: async (decription, protectedRoomsSet, draupnir, capabilitySet) =>
     Ok(
       new NewJoinerProtection(
         decription,

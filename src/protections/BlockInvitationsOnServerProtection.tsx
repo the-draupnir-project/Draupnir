@@ -155,7 +155,13 @@ describeProtection<BlockInvitationsOnServerProtectionCapabilities, Draupnir>({
     "Blocks invitations from users marked as takedown or have bans matching the the configured automaticallyRedactForReasons",
   capabilityInterfaces: {},
   defaultCapabilities: {},
-  factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) {
     if (draupnir.synapseHTTPAntispam === undefined) {
       return ResultError.Result(
         "This protection requires synapse-http-antispam to be enabled"

@@ -203,7 +203,13 @@ describeProtection<JoinRoomsOnInviteProtectionCapabilities, Draupnir>({
     "Automatically joins rooms when invited by members of the management room and offers to protect them",
   capabilityInterfaces: {},
   defaultCapabilities: {},
-  factory(description, protectedRoomsSet, draupnir, capabilities, _settings) {
+  async factory(
+    description,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) {
     return Ok(
       new JoinRoomsOnInviteProtection(
         description,

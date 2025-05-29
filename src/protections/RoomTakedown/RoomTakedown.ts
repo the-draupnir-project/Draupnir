@@ -86,26 +86,30 @@ export class StandardRoomTakedown implements RoomTakedownService {
     return await this.auditLog.takedownRoom(rule, details);
   }
 
+  // FIXME: I'm really unhappy with the length of these method bodies
+  // and also the slight duplication in regards to figuring out whether
+  // particular policies apply to rooms or not.
   public async handlePolicyChange(
     revision: PolicyListRevision,
     changes: PolicyRuleChange[]
   ): Promise<Result<void>> {
-    const roomsToTakedown: LiteralPolicyRule[] = [];
+    const roomsToTakedown = new Map<StringRoomID, LiteralPolicyRule>();
     for (const change of changes) {
       if (
+        change.rule.matchType !== PolicyRuleMatchType.Literal ||
+        change.changeType === PolicyRuleChangeType.Removed
+      ) {
+        continue; // We only care about literal policies
+      }
+      if (
         change.rule.kind === PolicyRuleType.Room &&
-        change.changeType !== PolicyRuleChangeType.Removed &&
-        change.rule.matchType === PolicyRuleMatchType.Literal &&
         change.rule.recommendation === Recommendation.Takedown
       ) {
-        roomsToTakedown.push(change.rule);
+        roomsToTakedown.set(change.rule.entity as StringRoomID, change.rule);
       }
     }
-    for (const policy of roomsToTakedown) {
-      const takedownResult = await this.takedownRoom(
-        policy.entity as StringRoomID,
-        policy
-      );
+    for (const [roomID, policy] of roomsToTakedown.entries()) {
+      const takedownResult = await this.takedownRoom(roomID, policy);
       if (isError(takedownResult)) {
         log.error(
           "Error while trying to takedown the room:",
@@ -120,17 +124,20 @@ export class StandardRoomTakedown implements RoomTakedownService {
   public async checkAllRooms(
     revision: PolicyListRevision
   ): Promise<Result<void>> {
+    log.debug("Checking all rooms for policies");
+    // We want all takedowns.
     const roomPolicies = revision
       .allRulesOfType(PolicyRuleType.Room, Recommendation.Takedown)
       .filter((policy) => policy.matchType === PolicyRuleMatchType.Literal);
+    const roomsToCheck = new Map<StringRoomID, LiteralPolicyRule>();
     for (const policy of roomPolicies) {
-      if (this.auditLog.isRoomTakendown(policy.entity as StringRoomID)) {
+      roomsToCheck.set(policy.entity as StringRoomID, policy);
+    }
+    for (const [roomID, policy] of roomsToCheck.entries()) {
+      if (this.auditLog.isRoomTakendown(roomID)) {
         continue; // room already takendown
       }
-      const takedownResult = await this.takedownRoom(
-        policy.entity as StringRoomID,
-        policy
-      );
+      const takedownResult = await this.takedownRoom(roomID, policy);
       if (isError(takedownResult)) {
         log.error(
           "Error while trying to takedown the room:",
@@ -139,6 +146,7 @@ export class StandardRoomTakedown implements RoomTakedownService {
         );
       }
     }
+    log.debug("Finished checking all rooms for policies");
     return Ok(undefined);
   }
 }
