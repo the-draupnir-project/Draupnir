@@ -56,6 +56,7 @@ export class NotificationRoomCreator<
     const revision = membershipRevisionIssuer.ok.currentRevision;
     return Ok(
       [...revision.members()]
+        .filter((member) => member.membership === "join")
         .map((member) => member.userID)
         .filter((userID) => userID !== draupnirUserID)
     );
