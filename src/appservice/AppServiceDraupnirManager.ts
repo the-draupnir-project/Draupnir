@@ -193,56 +193,48 @@ export class AppServiceDraupnirManager {
         `${requestingUserID} tried to provision a draupnir when they do not have access ${access.outcome} ${access.rule?.reason ?? "no reason specified"}`
       );
     }
-    const provisionedMjolnirs =
-      await this.dataStore.lookupByOwner(requestingUserID);
-    if (provisionedMjolnirs.length === 0) {
-      const mjolnirLocalPart = `draupnir_${randomUUID()}`;
-      const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
+    const mjolnirLocalPart = `draupnir_${randomUUID()}`;
+    const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
 
-      const managementRoomID = await mjIntent.matrixClient.createRoom({
-        preset: "private_chat",
-        invite: [requestingUserID],
-        name: `${requestingUserID}'s Draupnir`,
-        power_level_content_override: {
-          users: {
-            [requestingUserID]: 100,
-            // Give the draupnir a higher PL so that can avoid issues with managing the management room.
-            [await mjIntent.matrixClient.getUserId()]: 101,
-          },
+    const managementRoomID = await mjIntent.matrixClient.createRoom({
+      preset: "private_chat",
+      invite: [requestingUserID],
+      name: `${requestingUserID}'s Draupnir`,
+      power_level_content_override: {
+        users: {
+          [requestingUserID]: 100,
+          // Give the draupnir a higher PL so that can avoid issues with managing the management room.
+          [await mjIntent.matrixClient.getUserId()]: 101,
         },
-      });
-      if (!isStringRoomID(managementRoomID)) {
-        throw new TypeError(`${managementRoomID} malformed managmentRoomID`);
-      }
-      const draupnir = await this.makeInstance(
-        mjolnirLocalPart,
-        requestingUserID,
-        managementRoomID,
-        mjIntent.matrixClient
-      );
-      if (isError(draupnir)) {
-        return draupnir;
-      }
-      const policyListResult = await createFirstList(
-        draupnir.ok,
-        requestingUserID,
-        "list"
-      );
-      if (isError(policyListResult)) {
-        return policyListResult;
-      }
-      const record = {
-        local_part: mjolnirLocalPart,
-        owner: requestingUserID,
-        management_room: managementRoomID,
-      } as MjolnirRecord;
-      await this.dataStore.store(record);
-      return Ok(record);
-    } else {
-      return ActionError.Result(
-        `User: ${requestingUserID} has already provisioned ${provisionedMjolnirs.length} draupnirs.`
-      );
+      },
+    });
+    if (!isStringRoomID(managementRoomID)) {
+      throw new TypeError(`${managementRoomID} malformed managmentRoomID`);
     }
+    const draupnir = await this.makeInstance(
+      mjolnirLocalPart,
+      requestingUserID,
+      managementRoomID,
+      mjIntent.matrixClient
+    );
+    if (isError(draupnir)) {
+      return draupnir;
+    }
+    const policyListResult = await createFirstList(
+      draupnir.ok,
+      requestingUserID,
+      "list"
+    );
+    if (isError(policyListResult)) {
+      return policyListResult;
+    }
+    const record = {
+      local_part: mjolnirLocalPart,
+      owner: requestingUserID,
+      management_room: managementRoomID,
+    } as MjolnirRecord;
+    await this.dataStore.store(record);
+    return Ok(record);
   }
 
   public getUnstartedDraupnirs(): UnstartedDraupnir[] {
