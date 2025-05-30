@@ -53,6 +53,7 @@ in the documentation for an overview of server admin features.
   [homeserver administrative](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
   features we have added to Draupnir. Please try them out and give us your
   thoughts in [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org).
+- You can now search in the documentation thanks to @FSG-Cat.
 - The
   [mention limit protection](https://the-draupnir-project.github.io/draupnir-documentation/protections/mention-limit-protection)
   has been stabilised.
@@ -95,6 +96,12 @@ in the documentation for an overview of server admin features.
 - Fixed an issue where draupnir would write MSC4205 hashed entities without the
   proper namespacing. Reported by @deepbluev7.
 - Stopped content violation notifications appearing on room takedown.
+
+### Special thanks
+
+Thanks to @Mikaela @nexy7574 @tulir @FSG-Cat @MTRNord @enbea @ll-SKY-ll
+@cdesnoai for their contributions in the 2.3.0-beta that have made this release
+possible.
 
 ## [v2.3.0-beta.2]
 
