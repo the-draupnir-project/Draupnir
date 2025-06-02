@@ -19,7 +19,7 @@ import {
   RoomUpdateError,
   isError,
 } from "matrix-protection-suite";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
 import { Result } from "@gnuxie/typescript-result";
 
 function renderErrorItem(error: RoomUpdateError): DocumentNode {

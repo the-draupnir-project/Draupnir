@@ -18,11 +18,12 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import { TopPresentationSchema } from "@the-draupnir-project/interface-manager/dist/Command/PresentationSchema";
-import { renderTableHelp } from "./interface-manager/MatrixHelpRenderer";
+import { renderTableHelp } from "@the-draupnir-project/mps-interface-adaptor";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { DOCUMENTATION_URL } from "../config";
 
 function renderDraupnirHelp(mjolnirTable: CommandTable): DocumentNode {
-  return <root>{renderTableHelp(mjolnirTable)}</root>;
+  return <root>{renderTableHelp(mjolnirTable, DOCUMENTATION_URL)}</root>;
 }
 
 export const DraupnirHelpCommand = describeCommand({

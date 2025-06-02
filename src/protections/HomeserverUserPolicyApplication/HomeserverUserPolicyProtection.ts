@@ -27,7 +27,7 @@ import { SynapseAdminUserSuspensionCapability } from "./UserSuspensionCapability
 import {
   ConfirmationPromptSender,
   makeconfirmationPromptSender,
-} from "../../commands/interface-manager/MatrixPromptForConfirmation";
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 const HomeserverUserPolicyProtectionSettings = Type.Object(
   {},

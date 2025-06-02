@@ -17,7 +17,8 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
+
 export class DraupnirRendererMessageCollector
   implements RendererMessageCollector
 {

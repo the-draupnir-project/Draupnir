@@ -28,15 +28,15 @@ import {
   StandardPresentationArgumentStream,
   Presentation,
 } from "@the-draupnir-project/interface-manager";
-import { MatrixEventContext } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { MatrixReactionHandler } from "../../commands/interface-manager/MatrixReactionHandler";
+import "./AppserviceBotCommands";
 import {
   ARGUMENT_PROMPT_LISTENER,
   DEFAUILT_ARGUMENT_PROMPT_LISTENER,
   makeListenerForArgumentPrompt,
   makeListenerForPromptDefault,
-} from "../../commands/interface-manager/MatrixPromptForAccept";
-import "./AppserviceBotCommands";
+  MatrixEventContext,
+  MatrixReactionHandler,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 export type AppserviceBaseExecutor = (
   this: AppserviceAdaptorContext,
@@ -58,7 +58,6 @@ export class AppserviceCommandHandler {
   ) {
     this.reactionHandler = new MatrixReactionHandler(
       this.appservice.accessControlRoomID,
-      this.appservice.bridge.getBot().getClient(),
       this.appservice.botUserID,
       clientPlatform
     );

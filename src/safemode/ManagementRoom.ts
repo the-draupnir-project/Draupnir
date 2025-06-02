@@ -23,7 +23,7 @@ import {
   Value,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { MatrixEventContext } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { MatrixEventContext } from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("ManagementRoom");
 

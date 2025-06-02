@@ -31,7 +31,7 @@ import {
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { renderRuleSummary } from "../Rules";
-import { ConfirmationPromptSender } from "../interface-manager/MatrixPromptForConfirmation";
+import { ConfirmationPromptSender } from "@the-draupnir-project/mps-interface-adaptor";
 
 type DeactivateUserPreview = {
   isPurgingMessages: boolean;

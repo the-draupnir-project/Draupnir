@@ -21,16 +21,16 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import {
-  renderFailedSingularConsequence,
-  renderRoomSetResult,
-} from "./CommonRenderers";
 import { Draupnir } from "../Draupnir";
 import {
   StringRoomID,
   Permalinks,
 } from "@the-draupnir-project/matrix-basic-types";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
+import {
+  renderFailedSingularConsequence,
+  renderRoomSetResult,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 class StandardServerConsequencesRenderer implements ServerConsequences {
   constructor(

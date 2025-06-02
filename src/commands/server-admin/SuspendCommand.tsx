@@ -13,7 +13,7 @@ import { Draupnir } from "../../Draupnir";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
-import { renderMentionPill } from "../interface-manager/MatrixHelpRenderer";
+import { renderMentionPill } from "@the-draupnir-project/mps-interface-adaptor";
 import { SynapseAdminUserSuspensionCapability } from "../../protections/HomeserverUserPolicyApplication/UserSuspensionCapability";
 
 type SuspensionPreview = {

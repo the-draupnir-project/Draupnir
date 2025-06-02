@@ -17,7 +17,7 @@ import {
   MPSMatrixInterfaceAdaptorCallbacks,
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
-} from "./interface-manager/MPSMatrixInterfaceAdaptor";
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 export const DraupnirContextToCommandContextTranslator =
   new StandardAdaptorContextToCommandContextTranslator<Draupnir>();

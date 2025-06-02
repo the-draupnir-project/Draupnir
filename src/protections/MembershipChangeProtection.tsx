@@ -26,9 +26,11 @@ import {
 import { Type } from "@sinclair/typebox";
 import { LazyLeakyBucket, LeakyBucket } from "../queues/LeakyBucket";
 import { isError, Result } from "@gnuxie/typescript-result";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
+import {
+  renderMentionPill,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 const DEFAULT_MAX_PER_TIMESCALE = 7;
 const DEFAULT_TIMESCALE_MINUTES = 60;

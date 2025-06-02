@@ -9,26 +9,18 @@ import {
   RoomEvent,
   Task,
 } from "matrix-protection-suite";
-import { MatrixAdaptorContext } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import {
   StringUserID,
   StringRoomID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import { IConfig } from "../config";
 import { SafeModeCause } from "./SafeModeCause";
 import {
   makeSafeModeCommandDispatcher,
   makeSafeModeJSDispatcher,
 } from "./SafeModeCommandDispatcher";
-import {
-  ARGUMENT_PROMPT_LISTENER,
-  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-  makeListenerForArgumentPrompt,
-  makeListenerForPromptDefault,
-} from "../commands/interface-manager/MatrixPromptForAccept";
 import { makeCommandDispatcherTimelineListener } from "./ManagementRoom";
 import { SafeModeToggle } from "./SafeModeToggle";
 import { Result, isError } from "@gnuxie/typescript-result";
@@ -36,13 +28,19 @@ import {
   renderSafeModeStatusInfo,
   safeModeStatusInfo,
 } from "./commands/StatusCommand";
-import { wrapInRoot } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  ARGUMENT_PROMPT_LISTENER,
+  COMMAND_CONFIRMATION_LISTENER,
+  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  makeConfirmationPromptListener,
+  makeListenerForArgumentPrompt,
+  makeListenerForPromptDefault,
+  MatrixAdaptorContext,
+  MatrixReactionHandler,
+  wrapInRoot,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { sendAndAnnotateWithRecoveryOptions } from "./commands/RecoverCommand";
 import { StandardPersistentConfigEditor } from "./PersistentConfigEditor";
-import {
-  COMMAND_CONFIRMATION_LISTENER,
-  makeConfirmationPromptListener,
-} from "../commands/interface-manager/MatrixPromptForConfirmation";
 
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
@@ -71,7 +69,6 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
   ) {
     this.reactionHandler = new MatrixReactionHandler(
       managementRoom.toRoomIDOrAlias(),
-      client,
       this.clientUserID,
       this.clientPlatform
     );

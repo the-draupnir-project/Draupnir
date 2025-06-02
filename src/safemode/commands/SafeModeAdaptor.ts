@@ -11,7 +11,7 @@ import {
   invocationInformationFromMatrixEventcontext,
   MPSMatrixInterfaceAdaptorCallbacks,
   MPSCommandDispatcherCallbacks,
-} from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { SafeModeDraupnir } from "../DraupnirSafeMode";
 
 export const SafeModeContextToCommandContextTranslator =

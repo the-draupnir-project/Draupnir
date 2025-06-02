@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { renderRoomPill } from "./interface-manager/MatrixHelpRenderer";
+import { renderRoomPill } from "@the-draupnir-project/mps-interface-adaptor";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   DeadDocumentJSX,

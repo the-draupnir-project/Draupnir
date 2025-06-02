@@ -46,11 +46,11 @@ import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQu
 import { findUnbanInformationForMember, unbanMembers } from "./UnbanUsers";
 import { findPoliciesToRemove, unbanEntity } from "./UnbanEntity";
 import { ListMatches, renderListRules } from "../Rules";
-import { renderRoomSetResult } from "../../capabilities/CommonRenderers";
 import {
   renderMentionPill,
   renderRoomPill,
-} from "../interface-manager/MatrixHelpRenderer";
+  renderRoomSetResult,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 // FIXME: We will need a `policy edit` and `policy remove` command to cover
 // for the lack of such functionality in unban now.

@@ -21,7 +21,7 @@ import {
 import {
   renderMentionPill,
   renderRoomPill,
-} from "../commands/interface-manager/MatrixHelpRenderer";
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { PersistentConfigStatus } from "./PersistentConfigEditor";
 
 const ConfigStatusIndicator = Object.freeze({

@@ -12,7 +12,7 @@ import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { isError, Result } from "@gnuxie/typescript-result";
 import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { renderFailedSingularConsequence } from "../../capabilities/CommonRenderers";
+import { renderFailedSingularConsequence } from "@the-draupnir-project/mps-interface-adaptor";
 import {
   DeadDocumentJSX,
   DocumentNode,

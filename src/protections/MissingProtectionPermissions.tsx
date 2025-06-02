@@ -8,7 +8,10 @@ import {
   RoomMessageSender,
   Task,
 } from "matrix-protection-suite";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  renderRoomPill,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import {
   StringRoomID,
   MatrixRoomReference,
@@ -17,7 +20,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { Result } from "@gnuxie/typescript-result";
 
 function renderPermissions(

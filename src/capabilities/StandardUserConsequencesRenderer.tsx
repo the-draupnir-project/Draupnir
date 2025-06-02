@@ -24,14 +24,7 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import {
-  renderFailedSingularConsequence,
-  renderOutcome,
-  renderResultForUsersInRoom,
-  renderRoomSetResult,
-} from "./CommonRenderers";
 import { Draupnir } from "../Draupnir";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import {
   StringUserID,
   StringRoomID,
@@ -42,6 +35,13 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
+import {
+  renderFailedSingularConsequence,
+  renderOutcome,
+  renderResultForUsersInRoom,
+  renderRoomPill,
+  renderRoomSetResult,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 // yeah i know this is a bit insane but whatever, it can be our secret.
 function renderResultForUserInSetMap(

@@ -12,10 +12,13 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { ActionResult, Ok } from "matrix-protection-suite";
-import { MatrixAdaptorContext } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
-import { renderTableHelp } from "../../commands/interface-manager/MatrixHelpRenderer";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
+import {
+  MatrixAdaptorContext,
+  renderTableHelp,
+} from "@the-draupnir-project/mps-interface-adaptor";
+import { DOCUMENTATION_URL } from "../../config";
 
 export const AppserviceBotHelpCommand = describeCommand({
   rest: {
@@ -34,7 +37,9 @@ export const AppserviceBotHelpCommand = describeCommand({
 });
 
 function renderAppserviceBotHelp(): Result<DocumentNode> {
-  return Ok(<root>{renderTableHelp(AppserviceBotCommands)}</root>);
+  return Ok(
+    <root>{renderTableHelp(AppserviceBotCommands, DOCUMENTATION_URL)}</root>
+  );
 }
 
 AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceBotHelpCommand, {

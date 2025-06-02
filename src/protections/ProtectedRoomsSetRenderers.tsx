@@ -15,7 +15,7 @@ import {
   Task,
 } from "matrix-protection-suite";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 import { Result } from "@gnuxie/typescript-result";
 

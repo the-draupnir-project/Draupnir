@@ -29,7 +29,8 @@ import { Draupnir } from "../Draupnir";
 import {
   renderMentionPill,
   renderRoomPill,
-} from "../commands/interface-manager/MatrixHelpRenderer";
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import {
   StringRoomID,
   MatrixRoomReference,
@@ -38,7 +39,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { renderRuleHashes, renderRuleClearText } from "../commands/Rules";
 
 const log = new Logger("PolicyChangeNotification");

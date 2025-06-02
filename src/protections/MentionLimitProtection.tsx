@@ -28,9 +28,11 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { Type } from "@sinclair/typebox";
 import { LazyLeakyBucket } from "../queues/LeakyBucket";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
-import { renderMentionPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import {
+  renderMentionPill,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("MentionLimitProtection");
 

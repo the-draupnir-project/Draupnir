@@ -27,10 +27,11 @@ import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
 import { isInvitationForUser, isSenderJoinedInRevision } from "./inviteCore";
 import {
+  renderFailedSingularConsequence,
   renderMentionPill,
   renderRoomPill,
-} from "../../commands/interface-manager/MatrixHelpRenderer";
-import { renderFailedSingularConsequence } from "../../capabilities/CommonRenderers";
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { ProtectroomsOnInvite } from "./ProtectRoomsOnInvite";
 import { WatchRoomsOnInvite } from "./WatchRoomsOnInvite";
 import {
@@ -42,7 +43,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("JoinRoomsOnInviteProtection");
 

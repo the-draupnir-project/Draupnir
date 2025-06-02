@@ -8,7 +8,7 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { ConfigRecoverableError } from "matrix-protection-suite";
 import { SafeModeCause, SafeModeReason } from "./SafeModeCause";
-import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
+import { MatrixReactionHandler } from "@the-draupnir-project/mps-interface-adaptor";
 
 export function renderRecoveryOptions(cause: SafeModeCause): DocumentNode {
   const recoveryOptions =

@@ -15,11 +15,11 @@ import {
   RoomMessageSender,
   Task,
 } from "matrix-protection-suite";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import {
   renderMentionPill,
   renderRoomPill,
-} from "../../commands/interface-manager/MatrixHelpRenderer";
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 export class UnprotectPartedRooms {

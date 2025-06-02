@@ -23,7 +23,8 @@ import {
   renderActionResultToEvent,
   renderMentionPill,
   renderRoomPill,
-} from "../../commands/interface-manager/MatrixHelpRenderer";
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { StaticDecode, Type } from "@sinclair/typebox";
 import { Draupnir } from "../../Draupnir";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
@@ -31,7 +32,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 
 const log = new Logger("ProtectRoomsOnInvite");
 
@@ -112,7 +112,6 @@ export class ProtectroomsOnInvite {
           );
         }
         await this.draupnir.reactionHandler.addReactionsToEvent(
-          this.draupnir.client,
           this.draupnir.managementRoomID,
           promptEventID,
           reactionMap
@@ -141,7 +140,7 @@ export class ProtectroomsOnInvite {
       log.error(`Could not decode context from prompt event`, context.error);
       renderActionResultToEvent(
         this.draupnir.clientPlatform.toRoomMessageSender(),
-        this.draupnir.client,
+        this.draupnir.clientPlatform.toRoomReactionSender(),
         promptEvent,
         context
       );
@@ -158,7 +157,7 @@ export class ProtectroomsOnInvite {
           );
           renderActionResultToEvent(
             this.draupnir.clientPlatform.toRoomMessageSender(),
-            this.draupnir.client,
+            this.draupnir.clientPlatform.toRoomReactionSender(),
             promptEvent,
             resolvedRoom
           );
@@ -174,7 +173,7 @@ export class ProtectroomsOnInvite {
           );
           renderActionResultToEvent(
             this.draupnir.clientPlatform.toRoomMessageSender(),
-            this.draupnir.client,
+            this.draupnir.clientPlatform.toRoomReactionSender(),
             promptEvent,
             addResult
           );
@@ -182,7 +181,7 @@ export class ProtectroomsOnInvite {
         }
         renderActionResultToEvent(
           this.draupnir.clientPlatform.toRoomMessageSender(),
-          this.draupnir.client,
+          this.draupnir.clientPlatform.toRoomReactionSender(),
           promptEvent,
           addResult
         );
