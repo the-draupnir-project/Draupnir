@@ -41,7 +41,7 @@ import {
 import { Result } from "@gnuxie/typescript-result";
 import { DraupnirInterfaceAdaptor } from "../commands/DraupnirCommandPrerequisites";
 import { LazyLeakyBucket, LeakyBucket } from "../queues/LeakyBucket";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import { renderRoomPill } from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("JoinWaveShortCircuitProtection");
 

@@ -30,7 +30,7 @@ import {
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { RoomTakedownProtection } from "../protections/RoomTakedown/RoomTakedownProtection";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
+import { renderRoomPill } from "@the-draupnir-project/mps-interface-adaptor";
 
 export const DraupnirStatusCommand = describeCommand({
   summary: "Show the status of the bot.",

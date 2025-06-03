@@ -11,13 +11,13 @@ import {
   StandardAdaptorContextToCommandContextTranslator,
   StandardMatrixInterfaceAdaptor,
 } from "@the-draupnir-project/interface-manager";
-import {
-  MatrixEventContext,
-  invocationInformationFromMatrixEventcontext,
-  MPSMatrixInterfaceAdaptorCallbacks,
-  MPSCommandDispatcherCallbacks,
-} from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
+import {
+  invocationInformationFromMatrixEventcontext,
+  MatrixEventContext,
+  MPSCommandDispatcherCallbacks,
+  MPSMatrixInterfaceAdaptorCallbacks,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 export const AppserviceAdaptorContextToCommandContextTranslator =
   new StandardAdaptorContextToCommandContextTranslator<AppserviceAdaptorContext>();

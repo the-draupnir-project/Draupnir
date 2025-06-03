@@ -36,7 +36,7 @@ import {
 import { Result } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
-import { renderMentionPill } from "./interface-manager/MatrixHelpRenderer";
+import { renderMentionPill } from "@the-draupnir-project/mps-interface-adaptor";
 
 function renderListMatches(
   result: Result<ListMatches[]>

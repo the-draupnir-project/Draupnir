@@ -18,14 +18,16 @@ import {
   RoomEvent,
 } from "matrix-protection-suite";
 import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { ARGUMENT_PROMPT_LISTENER } from "../../commands/interface-manager/MatrixPromptForAccept";
-import { MatrixReactionHandler } from "../../commands/interface-manager/MatrixReactionHandler";
 import {
   PersistentConfigStatus,
   StandardPersistentConfigEditor,
 } from "../PersistentConfigEditor";
 import { StandardPersistentConfigRenderer } from "../PersistentConfigRenderer";
+import {
+  ARGUMENT_PROMPT_LISTENER,
+  MatrixReactionHandler,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 export type SafeModeRecoverEffectInfo = {
   readonly configStatus: PersistentConfigStatus[];
@@ -176,7 +178,6 @@ export async function sendAndAnnotateWithRecoveryOptions(
     throw new TypeError(`Something is really wrong with the code`);
   }
   await safeModeDraupnir.reactionHandler.addReactionsToEvent(
-    safeModeDraupnir.client,
     safeModeDraupnir.commandRoomID,
     sendResult.ok[0],
     reactionMap

@@ -14,7 +14,7 @@ import {
   MPSCommandDispatcherCallbacks,
   MatrixEventContext,
   invocationInformationFromMatrixEventcontext,
-} from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { SafeModeCommands } from "./commands/SafeModeCommands";
 import { SafeModeHelpCommand } from "./commands/HelpCommand";
 import {

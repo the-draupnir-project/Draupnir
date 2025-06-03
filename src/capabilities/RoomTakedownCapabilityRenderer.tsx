@@ -18,9 +18,11 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { renderFailedSingularConsequence } from "./CommonRenderers";
-import { renderRoomPill } from "../commands/interface-manager/MatrixHelpRenderer";
 import { Draupnir } from "../Draupnir";
+import {
+  renderFailedSingularConsequence,
+  renderRoomPill,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 function renderCodeOrDefault(
   item: string | undefined,

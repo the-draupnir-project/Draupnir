@@ -41,7 +41,7 @@ import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "../DraupnirCommandPrerequisites";
-import { renderRoomPill } from "../interface-manager/MatrixHelpRenderer";
+import { renderRoomPill } from "@the-draupnir-project/mps-interface-adaptor";
 import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
 import { SynapseAdminRoomDetailsProvider } from "../../capabilities/SynapseAdminRoomTakedown/SynapseAdminRoomTakedown";
 import { RoomTakedownProtection } from "../../protections/RoomTakedown/RoomTakedownProtection";

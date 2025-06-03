@@ -17,11 +17,6 @@ import {
   makeCommandNormaliser,
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../Draupnir";
-import {
-  MPSCommandDispatcherCallbacks,
-  MatrixEventContext,
-  invocationInformationFromMatrixEventcontext,
-} from "./interface-manager/MPSMatrixInterfaceAdaptor";
 import { DraupnirHelpCommand } from "./Help";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
@@ -31,6 +26,11 @@ import {
 } from "./DraupnirCommandPrerequisites";
 import "./DraupnirCommands";
 import { IConfig } from "../config";
+import {
+  MatrixEventContext,
+  invocationInformationFromMatrixEventcontext,
+  MPSCommandDispatcherCallbacks,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 export function makeDraupnirCommandNormaliser(
   clientUserID: StringUserID,

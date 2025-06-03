@@ -11,10 +11,7 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import {
-  renderMentionPill,
-  renderRoomPill,
-} from "../commands/interface-manager/MatrixHelpRenderer";
+
 import {
   AbstractProtection,
   ActionResult,
@@ -37,15 +34,13 @@ import {
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
-import { MatrixReactionHandler } from "../commands/interface-manager/MatrixReactionHandler";
 import {
   MatrixRoomID,
   StringRoomID,
   MatrixRoomReference,
   MatrixUserID,
+  StringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { sendMatrixEventsFromDeadDocument } from "../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { sendConfirmationPrompt } from "../commands/interface-manager/MatrixPromptForConfirmation";
 import {
   UnbanMembersPreview,
   renderUnbanMembersPreview,
@@ -54,6 +49,13 @@ import {
   findUnbanInformationForMember,
   revisionRulesMatchingUser,
 } from "../commands/unban/UnbanUsers";
+import {
+  MatrixReactionHandler,
+  renderMentionPill,
+  renderRoomPill,
+  sendConfirmationPrompt,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("BanPropagationProtection");
 
@@ -133,9 +135,8 @@ async function promptBanPropagation(
     return;
   }
   await draupnir.reactionHandler.addReactionsToEvent(
-    draupnir.client,
     draupnir.managementRoomID,
-    promptSendResult.ok[0] as string,
+    promptSendResult.ok[0] as StringEventID,
     reactionMap
   );
 }

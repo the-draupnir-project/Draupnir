@@ -21,8 +21,10 @@ import {
   StandardBatcher,
   Task,
 } from "matrix-protection-suite";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { renderRoomSetResult } from "../../capabilities/CommonRenderers";
+import {
+  renderRoomSetResult,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 const log = new Logger("ProtectAllJoinedRooms");

@@ -25,7 +25,7 @@ import {
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { sendPromptDeactivation } from "../../commands/server-admin/DeactivateCommand";
-import { ConfirmationPromptSender } from "../../commands/interface-manager/MatrixPromptForConfirmation";
+import { ConfirmationPromptSender } from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("HomeserverUserPolicyApplication");
 

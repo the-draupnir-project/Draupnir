@@ -34,19 +34,12 @@ import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
 import { ReportPoller } from "./report/ReportPoller";
 import { StandardReportManager } from "./report/ReportManager";
-import { MatrixReactionHandler } from "./commands/interface-manager/MatrixReactionHandler";
 import {
   MatrixSendClient,
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { LogLevel } from "matrix-bot-sdk";
-import {
-  ARGUMENT_PROMPT_LISTENER,
-  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
-  makeListenerForArgumentPrompt as makeListenerForArgumentPrompt,
-  makeListenerForPromptDefault,
-} from "./commands/interface-manager/MatrixPromptForAccept";
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";
@@ -61,10 +54,6 @@ import {
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
-  MatrixAdaptorContext,
-  sendMatrixEventsFromDeadDocument,
-} from "./commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import {
   makeDraupnirCommandDispatcher,
   makeDraupnirJSCommandDispatcher,
 } from "./commands/DraupnirCommandDispatcher";
@@ -77,13 +66,21 @@ import {
   StandardPresentationArgumentStream,
 } from "@the-draupnir-project/interface-manager";
 import { ManagementRoomDetail } from "./managementroom/ManagementRoomDetail";
-import {
-  COMMAND_CONFIRMATION_LISTENER,
-  makeConfirmationPromptListener,
-} from "./commands/interface-manager/MatrixPromptForConfirmation";
 import { SynapseHttpAntispam } from "./webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { DraupnirStores } from "./backingstore/DraupnirStores";
 import { HomeserverUserPurgingDeactivate } from "./protections/HomeserverUserPolicyApplication/HomeserverUserPurgingDeactivate";
+import {
+  ARGUMENT_PROMPT_LISTENER,
+  COMMAND_CONFIRMATION_LISTENER,
+  DEFAUILT_ARGUMENT_PROMPT_LISTENER,
+  makeConfirmationPromptListener,
+  makeListenerForArgumentPrompt,
+  makeListenerForPromptDefault,
+  MatrixAdaptorContext,
+  MatrixReactionHandler,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
+
 const log = new Logger("Draupnir");
 
 // webAPIS should not be included on the Draupnir class.
@@ -171,7 +168,6 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     );
     this.reactionHandler = new MatrixReactionHandler(
       this.managementRoom.toRoomIDOrAlias(),
-      client,
       clientUserID,
       clientPlatform
     );

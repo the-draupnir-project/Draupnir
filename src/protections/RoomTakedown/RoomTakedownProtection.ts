@@ -34,8 +34,10 @@ import {
   SynapseHTTPAntispamRoomDiscovery,
 } from "./RoomDiscovery";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { sendMatrixEventsFromDeadDocument } from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
-import { wrapInRoot } from "../../commands/interface-manager/MatrixHelpRenderer";
+import {
+  wrapInRoot,
+  sendMatrixEventsFromDeadDocument,
+} from "@the-draupnir-project/mps-interface-adaptor";
 import { Type } from "@sinclair/typebox";
 import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";

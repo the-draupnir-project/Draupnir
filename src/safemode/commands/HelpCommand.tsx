@@ -13,8 +13,9 @@ import {
   CommandTable,
 } from "@the-draupnir-project/interface-manager";
 import { Ok } from "matrix-protection-suite";
-import { renderTableHelp } from "../../commands/interface-manager/MatrixHelpRenderer";
+import { renderTableHelp } from "@the-draupnir-project/mps-interface-adaptor";
 import { safeModeHeader } from "./StatusCommand";
+import { DOCUMENTATION_URL } from "../../config";
 
 export const SafeModeHelpCommand = describeCommand({
   rest: {
@@ -36,7 +37,7 @@ SafeModeInterfaceAdaptor.describeRenderer(SafeModeHelpCommand, {
     return Ok(
       <root>
         {safeModeHeader()}
-        {renderTableHelp(SafeModeCommands)}
+        {renderTableHelp(SafeModeCommands, DOCUMENTATION_URL)}
       </root>
     );
   },

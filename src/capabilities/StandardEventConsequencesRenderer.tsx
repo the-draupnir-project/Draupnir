@@ -19,7 +19,6 @@ import {
   isError,
 } from "matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
-import { renderFailedSingularConsequence } from "./CommonRenderers";
 import { Draupnir } from "../Draupnir";
 import {
   Permalinks,
@@ -27,6 +26,7 @@ import {
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
+import { renderFailedSingularConsequence } from "@the-draupnir-project/mps-interface-adaptor";
 
 class StandardEventConsequencesRenderer implements EventConsequences {
   constructor(

@@ -16,11 +16,6 @@ import {
   StandardJSInterfaceCommandDispatcher,
   StandardMatrixInterfaceCommandDispatcher,
 } from "@the-draupnir-project/interface-manager";
-import {
-  MPSCommandDispatcherCallbacks,
-  MatrixEventContext,
-  invocationInformationFromMatrixEventcontext,
-} from "../../commands/interface-manager/MPSMatrixInterfaceAdaptor";
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { AppserviceBotHelpCommand } from "./AppserviceBotHelp";
@@ -28,6 +23,11 @@ import {
   AppserviceBotInterfaceAdaptor,
   AppserviceAdaptorContextToCommandContextTranslator,
 } from "./AppserviceBotInterfaceAdaptor";
+import {
+  invocationInformationFromMatrixEventcontext,
+  MatrixEventContext,
+  MPSCommandDispatcherCallbacks,
+} from "@the-draupnir-project/mps-interface-adaptor";
 
 function makeAppserviceCommandNormaliser(
   appserviceContext: AppserviceAdaptorContext
