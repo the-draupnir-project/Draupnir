@@ -189,3 +189,5 @@ web:
   synapseHTTPAntispam:
     enabled: true
     authorization: DEFAULT
+  ui:
+    enabled: true
