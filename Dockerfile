@@ -15,6 +15,10 @@ RUN cd /tmp/src \
     && yarn install --frozen-lockfile --production --network-timeout 100000
 
 FROM node:20-slim as final-stage
+
+# We dont want to be root when running so we create a draupnir user
+USER 1000:1000
+
 COPY --from=build-stage /tmp/src/version.txt version.txt
 COPY --from=build-stage /tmp/src/lib/ /draupnir/
 COPY --from=build-stage /tmp/src/node_modules /node_modules
