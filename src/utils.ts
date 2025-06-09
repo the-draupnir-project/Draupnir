@@ -23,6 +23,9 @@ import { IConfig } from "./config";
 import { Gauge } from "prom-client";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { Logger, RoomEvent } from "matrix-protection-suite";
+import { isIP } from "net";
+import { resolveSrv } from "dns/promises";
+import { SrvRecord } from "dns";
 
 const log = new Logger("utils");
 
@@ -606,3 +609,173 @@ export function initializeSentry(config: IConfig) {
 // Set to `true` once we have initialized `Sentry` to ensure
 // that we do not attempt to initialize it more than once.
 let sentryInitialized = false;
+
+interface WellKnownServerResponse {
+  "m.server": string;
+}
+
+async function checkSrvRecords(serverName: string): Promise<string> {
+  const srvRecord = await resolveSrv(`_matrix-fed._tcp.${serverName}`);
+
+  if (srvRecord.length > 0) {
+    const srv = srvRecord[0] as SrvRecord;
+    return `https://${srv.name}:${srv.port}`;
+  }
+
+  const srvRecord2 = await resolveSrv(`_matrix._tcp.${serverName}`);
+  if (srvRecord2.length > 0) {
+    const srv = srvRecord2[0] as SrvRecord;
+    return `https://${srv.name}:${srv.port}`;
+  }
+
+  return `https://${serverName}:8448`;
+}
+
+/**
+ * For the given serverName it does discover the actual federation URL based on https://spec.matrix.org/v1.14/server-server-api/#server-discovery
+ * @param serverName The server name to discover the federation URL for.
+ * @returns The federation URL for the given server name.
+ */
+async function discoverFederationUrl(serverName: string): Promise<string> {
+  if (!serverName) {
+    throw new Error("Server name is required");
+  }
+
+  // 1. Check if the server name is an IP(4|6) address. If it has an Port then use it as it otherwise add the port 8448
+
+  // Check for a port and split it off if it exists (last part of the string as it might be an IPv6 address)
+  const port = serverName.includes(":")
+    ? serverName.split(":").slice(-1)[0]
+    : "8448";
+  // Get the hostname part of the server name (everything before the last ":" since it might be an IPv6 address)
+  const hostnamePart = serverName.includes(":")
+    ? serverName.split(":").slice(0, -1).join(":")
+    : serverName;
+  if (!hostnamePart) {
+    throw new Error("Invalid server name");
+  }
+
+  // Check if the server name is an IP address
+  if (isIP(hostnamePart)) {
+    return `https://${hostnamePart}:${port}`;
+  }
+
+  // 2. If it is not an IP but contains an explicit port, then use it as it is
+  if (serverName.includes(":")) {
+    return `https://${serverName}`;
+  }
+
+  // 3. If it is not an IP and does not contain an explicit port make a request to `https://$serverName/.well-known/matrix/server`
+  const wellKnownURL = new URL(
+    "/.well-known/matrix/server",
+    `https://${serverName}`
+  );
+
+  const resp = await fetch(wellKnownURL);
+  if (!resp.ok) {
+    // 4. If the request fails try srv records for the server name
+    return await checkSrvRecords(serverName);
+  }
+
+  const wellKnown: WellKnownServerResponse = await resp.json();
+  const delegatedHostname = wellKnown["m.server"];
+  // Check for a port and split it off if it exists (last part of the string as it might be an IPv6 address)
+  const delegatedPort = delegatedHostname.includes(":")
+    ? delegatedHostname.split(":").slice(-1)[0]
+    : "8448";
+  // Get the hostname part of the server name (everything before the last ":" since it might be an IPv6 address)
+  const delegatedIP = delegatedHostname.includes(":")
+    ? delegatedHostname.split(":").slice(0, -1).join(":")
+    : delegatedHostname;
+  if (!delegatedIP) {
+    throw new Error("Invalid delegated server name");
+  }
+
+  if (isIP(delegatedIP)) {
+    return `https://${delegatedIP}:${delegatedPort}`;
+  }
+
+  // 3.4-3.5
+  return `https://${serverName}`;
+}
+
+interface OpenIDTokenCheckResponse {
+  sub: string;
+  errcode?: string;
+  error?: string;
+}
+
+/**
+ * Resolves an open id access token to find a matching user that the token is valid for.
+ * @param accessToken An openID token.
+ * @returns The mxid of the user that this token belongs to or null if the token could not be authenticated.
+ */
+export async function resolveOpenIDToken(
+  homeserver: string,
+  accessToken: string
+): Promise<string | null> {
+  const resolvedHomeserver = await discoverFederationUrl(homeserver);
+  if (!resolvedHomeserver) {
+    log.error(`Unable to resolve the homeserver ${homeserver} to a valid URL.`);
+    return null;
+  }
+
+  const url = new URL(
+    "/_matrix/federation/v1/openid/userinfo",
+    resolvedHomeserver
+  );
+  url.searchParams.set("access_token", accessToken);
+
+  let resp;
+  try {
+    resp = await fetch(url);
+  } catch (e) {
+    // Retry with http
+    const urlHttp = new URL(
+      "/_matrix/federation/v1/openid/userinfo",
+      resolvedHomeserver.replace("https://", "http://")
+    );
+    urlHttp.searchParams.set("access_token", accessToken);
+    const respHttp = await fetch(urlHttp);
+    if (!respHttp.ok) {
+      log.error(
+        `Error resolving openID token from ${homeserver}: ${respHttp.status} ${respHttp.statusText}`
+      );
+
+      if (resp instanceof Error) {
+        throw resp;
+      } else {
+        throw new Error(
+          `There was an error when resolving openID token from ${homeserver}`
+        );
+      }
+    } else {
+      resp = respHttp;
+    }
+  }
+
+  if (!resp.ok) {
+    log.error(
+      `Error resolving openID token from ${homeserver}: ${resp.status} ${resp.statusText}. Trying http instead of https.`
+    );
+
+    if (resp instanceof Error) {
+      throw resp;
+    } else {
+      throw new Error(
+        `There was an error when resolving openID token from ${homeserver}`
+      );
+    }
+  }
+
+  const data: OpenIDTokenCheckResponse = await resp.json();
+  if (data.errcode) {
+    log.error(
+      `Error resolving openID token from ${homeserver}: [${data.errcode}] ${data.error}`
+    );
+    throw new Error(
+      `Error resolving openID token from ${homeserver}: [${data.errcode}] ${data.error}`
+    );
+  }
+  return data.sub;
+}
