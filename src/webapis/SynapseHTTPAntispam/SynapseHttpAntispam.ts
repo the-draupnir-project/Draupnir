@@ -16,6 +16,7 @@ import {
   CheckEventForSpamEndpoint,
   CheckEventForSpamListenerArguments,
 } from "./CheckEventForSpamEndpoint";
+import { handleHttpAntispamPing } from "./PingEndpoint";
 
 const SPAM_CHECK_PREFIX = "/api/1/spam_check";
 const AUTHORIZATION = new RegExp("Bearer (.*)");
@@ -80,6 +81,10 @@ export class SynapseHttpAntispam {
           response
         );
       })
+    );
+    webController.post(
+      `${SPAM_CHECK_PREFIX}/ping`,
+      makeAuthenticatedEndpointHandler(this.secret, handleHttpAntispamPing)
     );
   }
 }

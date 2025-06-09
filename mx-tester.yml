@@ -46,6 +46,7 @@ modules:
       config:
         base_url: http://host.docker.internal:8082/api/1/spam_check
         authorization: DEFAULT
+        do_ping: true
         enabled_callbacks:
           - user_may_invite
           - user_may_join_room
