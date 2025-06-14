@@ -140,7 +140,8 @@ commands:
   # Controls what symbol will prefix the secondary prefix that is defined in additionalPrefixes.
   # If you wish the bot to use / commands instead of ! change the value to / and the bot will start responding to / commands.
 
-  symbolPrefixes: "!"
+  symbolPrefixes:
+    - "!"
 
   # Any additional bot prefixes that Draupnir will listen to. i.e. adding `mod` will allow `!mod help`.
   additionalPrefixes:

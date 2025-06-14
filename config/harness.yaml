@@ -106,7 +106,8 @@ commands:
   # above, the bot will respond to these names. The items here can be used either
   # as display names or prefixed with exclamation points.
 
-  symbolPrefixes: "!"
+  symbolPrefixes:
+    - "!"
 
   additionalPrefixes:
     - "mjolnir_bot"
