@@ -38,7 +38,7 @@ export function makeDraupnirCommandNormaliser(
   config: IConfig
 ): CommandNormaliser {
   return makeCommandNormaliser(clientUserID, {
-    symbolPrefixes: ["!"],
+    symbolPrefixes: config.commands.symbolPrefixes,
     isAllowedOnlySymbolPrefixes: config.commands.allowNoPrefix,
     additionalPrefixes: ["draupnir", ...config.commands.additionalPrefixes],
     getDisplayName: function (): string {

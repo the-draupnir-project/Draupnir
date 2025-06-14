@@ -106,6 +106,7 @@ export interface IConfig {
     | undefined;
   commands: {
     allowNoPrefix: boolean;
+    symbolPrefixes: string[];
     additionalPrefixes: string[];
     features: string[];
     ban: {
@@ -210,6 +211,7 @@ const defaultConfig: IConfig = {
   displayReports: true,
   commands: {
     allowNoPrefix: false,
+    symbolPrefixes: ["!"],
     additionalPrefixes: ["draupnir"],
     features: ["synapse admin"],
     ban: {
