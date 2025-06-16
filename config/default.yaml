@@ -137,8 +137,9 @@ commands:
   # will address only my_moderator_bot.
   allowNoPrefix: false
 
-  # Controls what symbol will prefix the secondary prefix that is defined in additionalPrefixes.
-  # If you wish the bot to use / commands instead of ! change the value to / and the bot will start responding to / commands.
+  # Controls which symbol will prefix a secondary prefix that is described in additionalPrefixes.
+  # For example the `!` in `!draupnir`.
+  # If you wish the bot to use "slash commands" with the "/" character instead of the exclamation mark "!" change the value to `"/"` and the bot will start responding to slash commands.
 
   symbolPrefixes:
     - "!"
