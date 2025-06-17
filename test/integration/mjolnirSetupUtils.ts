@@ -135,7 +135,7 @@ export async function makeBotModeToggle(
     stores: TopLevelStores;
     eraseAccountData?: boolean;
     allowSafeMode?: boolean;
-  } = { stores: {} }
+  } = { stores: { dispose() {} } }
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
   LogService.setLevel(LogLevel.fromString(config.logLevel, LogLevel.DEBUG));

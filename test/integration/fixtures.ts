@@ -105,14 +105,7 @@ export const mochaHooks = {
       this.timeout(10000);
       await this.toggle?.stopEverything();
       draupnirClient()?.stop();
-      this.stores?.roomStateBackingStore?.destroy();
-      this.stores?.roomAuditLog?.destroy();
-      // We forgot to add a destroy method in the interface in MPS
-      // and we'll probably need to wait until the next release to remove this.
-      if (this.stores?.hashStore instanceof SqliteHashReversalStore) {
-        this.stores.hashStore.destroy();
-      }
-      // remove alias from management room and leave it.
+      this.stores?.dispose();
       if (this.draupnir !== undefined) {
         await Promise.all([
           this.draupnir.client.setAccountData(
@@ -125,6 +118,7 @@ export const mochaHooks = {
           ),
         ]);
         const client = draupnirClient();
+        // remove alias from management room and leave it.
         if (client !== null && this.managementRoomAlias !== undefined) {
           await teardownManagementRoom(
             client,
