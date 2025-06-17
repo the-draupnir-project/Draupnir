@@ -241,7 +241,12 @@ export class MjolnirAppService {
       dataStore,
       DefaultEventDecoder,
       registrationFilePath,
-      { roomStateBackingStore: backingStore } // we don't support any stores in appservice atm except backing store.
+      {
+        roomStateBackingStore: backingStore,
+        dispose() {
+          backingStore?.destroy();
+        },
+      } // we don't support any stores in appservice atm except backing store.
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);

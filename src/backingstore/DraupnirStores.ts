@@ -15,6 +15,7 @@ export type TopLevelStores = {
   roomAuditLog?: RoomAuditLog | undefined;
   roomStateBackingStore?: SqliteRoomStateBackingStore | undefined;
   userRestrictionAuditLog?: UserRestrictionAuditLog | undefined;
+  dispose(): void;
 };
 
 /**
@@ -64,5 +65,11 @@ export function makeTopLevelStores(
     roomAuditLog: SqliteRoomAuditLog.createToplevel(storagePath),
     userRestrictionAuditLog:
       SqliteUserRestrictionAuditLog.createToplevel(storagePath),
+    dispose() {
+      this.roomStateBackingStore?.destroy();
+      this.hashStore?.destroy();
+      this.roomAuditLog?.destroy();
+      this.userRestrictionAuditLog?.destroy();
+    },
   } satisfies TopLevelStores);
 }
