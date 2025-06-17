@@ -94,7 +94,7 @@ export class SynapseRoomListScanner {
           roomID: room.room_id,
           details: {
             room_id: room.room_id,
-            creator: room.creator,
+            creator: room.creator ?? undefined,
             name: room.name ?? undefined,
           },
         }))
