@@ -5,19 +5,18 @@
 
 import {
   AbstractProtection,
-  ActionResult,
   EDStatic,
   EventConsequences,
   Logger,
+  MediaMixinTypes,
   Ok,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  RoomEvent,
   RoomMessageSender,
+  SafeMediaEvent,
   Task,
   UserConsequences,
-  Value,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -33,50 +32,31 @@ import {
   renderMentionPill,
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("MentionLimitProtection");
 
-const MentionsContentSchema = Type.Object({
-  "m.mentions": Type.Object({
-    user_ids: Type.Array(Type.String()),
-  }),
-});
-
-const NewContentMentionsSchema = Type.Object({
-  "m.new_content": MentionsContentSchema,
-});
-
-const WeakTextContentSchema = Type.Object({
-  body: Type.Optional(Type.String()),
-  formatted_body: Type.Optional(Type.String()),
-});
-
 export function isContainingMentionsOverLimit(
-  event: RoomEvent,
+  event: SafeMediaEvent,
   maxMentions: number,
   checkBody: boolean
 ): boolean {
+  const bodyMedia = event.media.filter(
+    (mixin) => mixin.mixinType === MediaMixinTypes.Body
+  );
+  const mentionMedia = event.media.filter(
+    (mixin) => mixin.mixinType === MediaMixinTypes.Mentions
+  );
   const isOverLimit = (user_ids: string[]): boolean =>
     user_ids.length > maxMentions;
-  if (
-    Value.Check(NewContentMentionsSchema, event.content) &&
-    isOverLimit(event.content["m.new_content"]["m.mentions"].user_ids)
-  ) {
+  if (mentionMedia.some((mixin) => isOverLimit(mixin.user_ids))) {
     return true;
   }
   if (
-    Value.Check(MentionsContentSchema, event.content) &&
-    isOverLimit(event.content["m.mentions"].user_ids)
+    checkBody &&
+    bodyMedia.some((mixin) => mixin.body.split("@").length - 1 > maxMentions)
   ) {
     return true;
-  }
-  if (checkBody && Value.Check(WeakTextContentSchema, event.content)) {
-    if (
-      event.content.body !== undefined &&
-      event.content.body.split("@").length - 1 > maxMentions
-    ) {
-      return true;
-    }
   }
   return false;
 }
@@ -141,12 +121,9 @@ export class MentionLimitProtection
     this.warningText = settings.warningText;
     this.includeLegacymentions = settings.includeLegacyMentions;
   }
-  public async handleTimelineEvent(
-    _room: MatrixRoomID,
-    event: RoomEvent
-  ): Promise<ActionResult<void>> {
+  public handleTimelineMedia(_room: MatrixRoomID, event: SafeMediaEvent): void {
     if (event.sender === this.protectedRoomsSet.userID) {
-      return Ok(undefined);
+      return;
     }
     if (
       isContainingMentionsOverLimit(
@@ -155,42 +132,48 @@ export class MentionLimitProtection
         this.includeLegacymentions
       )
     ) {
-      const infractions = this.consequenceBucket.getTokenCount(event.sender);
-      if (infractions > 0) {
-        const userResult = await this.userConsequences.consequenceForUserInRoom(
-          event.room_id,
-          event.sender,
-          this.warningText
-        );
-        if (isError(userResult)) {
-          log.error("Failed to ban the user", event.sender, userResult.error);
-        }
-        // fall through to the event consequence on purpose so we redact the event too.
-      } else {
-        // if they're not being banned we need to tell them why their message got redacted.
-        void Task(
-          sendMatrixEventsFromDeadDocument(
-            this.roomMessageSender,
-            event.room_id,
-            <root>
-              {renderMentionPill(event.sender, event.sender)} {this.warningText}
-            </root>,
-            { replyToEvent: event }
-          ),
-          {
-            log,
-          }
-        );
-      }
-      this.consequenceBucket.addToken(event.sender);
-      return await this.eventConsequences.consequenceForEvent(
+      void Task(this.handleEventOverLimit(event), {
+        log,
+      });
+    }
+  }
+
+  public async handleEventOverLimit(
+    event: SafeMediaEvent
+  ): Promise<Result<void>> {
+    const infractions = this.consequenceBucket.getTokenCount(event.sender);
+    if (infractions > 0) {
+      const userResult = await this.userConsequences.consequenceForUserInRoom(
         event.room_id,
-        event.event_id,
+        event.sender,
         this.warningText
       );
+      if (isError(userResult)) {
+        log.error("Failed to ban the user", event.sender, userResult.error);
+      }
+      // fall through to the event consequence on purpose so we redact the event too.
     } else {
-      return Ok(undefined);
+      // if they're not being banned we need to tell them why their message got redacted.
+      void Task(
+        sendMatrixEventsFromDeadDocument(
+          this.roomMessageSender,
+          event.room_id,
+          <root>
+            {renderMentionPill(event.sender, event.sender)} {this.warningText}
+          </root>,
+          { replyToEvent: event.sourceEvent }
+        ),
+        {
+          log,
+        }
+      );
     }
+    this.consequenceBucket.addToken(event.sender);
+    return await this.eventConsequences.consequenceForEvent(
+      event.room_id,
+      event.event_id,
+      this.warningText
+    );
   }
 }
 
