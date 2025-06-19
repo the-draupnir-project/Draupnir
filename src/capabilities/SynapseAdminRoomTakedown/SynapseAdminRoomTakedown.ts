@@ -31,7 +31,7 @@ export class SynapseAdminRoomDetailsProvider implements RoomDetailsProvider {
     } else {
       return Ok({
         name: detailsResponse.ok?.name ?? undefined,
-        creator: detailsResponse.ok?.creator,
+        creator: detailsResponse.ok?.creator ?? undefined,
         avatar: detailsResponse.ok?.avatar ?? undefined,
         topic: detailsResponse.ok?.topic ?? undefined,
         joined_members: detailsResponse.ok?.joined_members ?? undefined,
