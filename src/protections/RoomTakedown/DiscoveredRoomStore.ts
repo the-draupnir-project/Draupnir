@@ -4,8 +4,8 @@
 
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import {
+  roomIDServerName,
   StringRoomID,
-  userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   Logger,
@@ -23,6 +23,23 @@ export type RoomToCheck = {
   details?: RoomBasicDetails | undefined;
 };
 
+/**
+ * Currently the store is polluted because of https://github.com/element-hq/synapse/issues/18563
+ * Because of the fallout of this bug, there will be room details polluted in the following way:
+ *
+ * 1. empty string for `server`.
+ * 2. empty string for `creator`.
+ *
+ * To cleanup, we probably need to destroy the details table entirely
+ * and create a table for the server responsible for creating the room derived
+ * from the room_id.
+ * Then later if we find a way of obtaining the creator, we can store that
+ * instead.
+ *
+ * The reason why this didn't happen in the first place is because we thought
+ * that the creator would always be available and we would always derive the
+ * server from the creator.
+ */
 export class StandardDiscoveredRoomStore
   extends EventEmitter
   implements RoomDiscovery
@@ -62,7 +79,7 @@ export class StandardDiscoveredRoomStore
       const storeResult = await this.hashStore.storeRoomIdentification({
         creator: details.creator,
         roomID: details.room_id,
-        server: userServerName(details.creator),
+        server: roomIDServerName(details.room_id),
       });
       if (isError(storeResult)) {
         log.error(
