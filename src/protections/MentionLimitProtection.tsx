@@ -5,16 +5,20 @@
 
 import {
   AbstractProtection,
+  ContentMixins,
   EDStatic,
   EventConsequences,
+  EventWithMixins,
   Logger,
-  MediaMixinTypes,
+  MentionsMixin,
+  MentionsMixinDescription,
+  NewContentMixinDescription,
   Ok,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
+  RoomMessageBodyMixinDescription,
   RoomMessageSender,
-  SafeMediaEvent,
   Task,
   UserConsequences,
   describeProtection,
@@ -36,29 +40,57 @@ import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("MentionLimitProtection");
 
-export function isContainingMentionsOverLimit(
-  event: SafeMediaEvent,
+function isMentionsMixinOverLimit(
+  mentionsMixin: MentionsMixin,
+  maxMentions: number
+): boolean {
+  return mentionsMixin.user_ids.length > maxMentions;
+}
+
+function isContentContaningMentionsOverLimit(
+  content: ContentMixins,
   maxMentions: number,
   checkBody: boolean
 ): boolean {
-  const bodyMedia = event.media.filter(
-    (mixin) => mixin.mixinType === MediaMixinTypes.Body
-  );
-  const mentionMedia = event.media.filter(
-    (mixin) => mixin.mixinType === MediaMixinTypes.Mentions
-  );
-  const isOverLimit = (user_ids: string[]): boolean =>
-    user_ids.length > maxMentions;
-  if (mentionMedia.some((mixin) => isOverLimit(mixin.user_ids))) {
-    return true;
-  }
+  const mentionMixin = content.findMixin(MentionsMixinDescription);
   if (
-    checkBody &&
-    bodyMedia.some((mixin) => mixin.body.split("@").length - 1 > maxMentions)
+    mentionMixin?.isErroneous === false &&
+    isMentionsMixinOverLimit(mentionMixin, maxMentions)
   ) {
     return true;
   }
-  return false;
+  if (!checkBody) {
+    return false;
+  }
+  const bodyMixin = content.findMixin(RoomMessageBodyMixinDescription);
+  if (bodyMixin === undefined || bodyMixin.isErroneous) {
+    return false;
+  }
+  return bodyMixin.body.split("@").length - 1 > maxMentions;
+}
+
+export function isContainingMentionsOverLimit(
+  event: EventWithMixins,
+  maxMentions: number,
+  checkBody: boolean
+): boolean {
+  const isTopContentOverLimit = isContentContaningMentionsOverLimit(
+    event,
+    maxMentions,
+    checkBody
+  );
+  if (isTopContentOverLimit) {
+    return true;
+  }
+  const newContentMixin = event.findMixin(NewContentMixinDescription);
+  if (newContentMixin === undefined || newContentMixin.isErroneous) {
+    return false;
+  }
+  return isContentContaningMentionsOverLimit(
+    newContentMixin,
+    maxMentions,
+    checkBody
+  );
 }
 
 const MentionLimitProtectionSettings = Type.Object(
@@ -121,8 +153,11 @@ export class MentionLimitProtection
     this.warningText = settings.warningText;
     this.includeLegacymentions = settings.includeLegacyMentions;
   }
-  public handleTimelineMedia(_room: MatrixRoomID, event: SafeMediaEvent): void {
-    if (event.sender === this.protectedRoomsSet.userID) {
+  public handleTimelineEventMixins(
+    _room: MatrixRoomID,
+    event: EventWithMixins
+  ): void {
+    if (event.sourceEvent.sender === this.protectedRoomsSet.userID) {
       return;
     }
     if (
@@ -139,17 +174,24 @@ export class MentionLimitProtection
   }
 
   public async handleEventOverLimit(
-    event: SafeMediaEvent
+    event: EventWithMixins
   ): Promise<Result<void>> {
-    const infractions = this.consequenceBucket.getTokenCount(event.sender);
+    const sourceEvent = event.sourceEvent;
+    const infractions = this.consequenceBucket.getTokenCount(
+      sourceEvent.sender
+    );
     if (infractions > 0) {
       const userResult = await this.userConsequences.consequenceForUserInRoom(
-        event.room_id,
-        event.sender,
+        sourceEvent.room_id,
+        sourceEvent.sender,
         this.warningText
       );
       if (isError(userResult)) {
-        log.error("Failed to ban the user", event.sender, userResult.error);
+        log.error(
+          "Failed to ban the user",
+          sourceEvent.sender,
+          userResult.error
+        );
       }
       // fall through to the event consequence on purpose so we redact the event too.
     } else {
@@ -157,21 +199,22 @@ export class MentionLimitProtection
       void Task(
         sendMatrixEventsFromDeadDocument(
           this.roomMessageSender,
-          event.room_id,
+          sourceEvent.room_id,
           <root>
-            {renderMentionPill(event.sender, event.sender)} {this.warningText}
+            {renderMentionPill(sourceEvent.sender, sourceEvent.sender)}{" "}
+            {this.warningText}
           </root>,
-          { replyToEvent: event.sourceEvent }
+          { replyToEvent: sourceEvent }
         ),
         {
           log,
         }
       );
     }
-    this.consequenceBucket.addToken(event.sender);
+    this.consequenceBucket.addToken(sourceEvent.sender);
     return await this.eventConsequences.consequenceForEvent(
-      event.room_id,
-      event.event_id,
+      sourceEvent.room_id,
+      sourceEvent.event_id,
       this.warningText
     );
   }
