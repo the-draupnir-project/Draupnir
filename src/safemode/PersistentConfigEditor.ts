@@ -88,7 +88,7 @@ export class StandardPersistentConfigEditor implements PersistentConfigEditor {
   > {
     const info: PersistentConfigStatus[] = [];
     for (const adaptor of this.configAdaptors) {
-      const dataResult = await adaptor.requestConfig();
+      const dataResult = await adaptor.requestParsedConfig();
       if (isError(dataResult)) {
         if (dataResult.error instanceof ConfigParseError) {
           info.push({
