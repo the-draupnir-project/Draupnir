@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-XX-XX
+## [v2.4.0] - 2025-06-23
 
 ### Added
 
@@ -20,6 +20,23 @@ and this project adheres to
   [synapse-http-antispam](https://the-draupnir-project.github.io/draupnir-documentation/bot/synapse-http-antispam).
   It is now possible to check if synapse is misconfigured by searching for
   `Successfully pinged antispam server with request ID` in any worker log.
+
+- It is now possible to configure the _symbol prefix_ (by default `!`) used for
+  Draupnir commands by @FSG-Cat.
+
+- The `RoomTakedownProtection` now sources rooms from the Synapse admin API
+  aswell as synapse-http-antispam.
+
+### Changed
+
+- Room discovery notifications are now disabled by default. This is because if
+  enabled initially, they are likely to flood your management room with room
+  details that you will never go through.
+
+### Fixed
+
+- Bringing Draupnir into safe mode would not disable and dispose of enabled
+  protections.
 
 ## [v2.3.1] - 2025-05-29
 
