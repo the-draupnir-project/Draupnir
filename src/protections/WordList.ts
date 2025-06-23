@@ -57,7 +57,8 @@ describeProtection<WordListCapabilities, Draupnir>({
   name: "WordListProtection",
   description:
     "If a user posts a monitored word a set amount of time after joining, they\
-    will be banned from that room.  This will not publish the ban to a ban list.",
+    will be banned from that room.  This will not publish the ban to a ban list.\
+    This protection only targets recently joined users.",
   capabilityInterfaces: {
     userConsequences: "UserConsequences",
     eventConsequences: "EventConsequences",
