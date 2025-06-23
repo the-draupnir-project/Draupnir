@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.1] - 2025-06-23
+
+### Fixed
+
+- Fixed an issue where protection config values were not validated or
+  substituted with default values when protections were loaded. This effected
+  the `RoomTakedownProtection` as described in
+  https://github.com/the-draupnir-project/Draupnir/issues/911 reported by
+  @FSG-Cat.
+
 ## [v2.4.0] - 2025-06-23
 
 ### Added
