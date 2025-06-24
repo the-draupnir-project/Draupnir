@@ -218,6 +218,10 @@ export class MentionLimitProtection
       this.warningText
     );
   }
+
+  handleProtectionDisable(): void {
+    this.consequenceBucket.stop();
+  }
 }
 
 export type MentionLimitProtectionCapabilities = {

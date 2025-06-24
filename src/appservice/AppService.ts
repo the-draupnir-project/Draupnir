@@ -382,6 +382,7 @@ export class MjolnirAppService {
     await this.bridge.close();
     await this.dataStore.close();
     await this.api.close();
+    this.draupnirManager.unregisterListeners();
   }
 
   /**
