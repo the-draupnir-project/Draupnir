@@ -515,10 +515,18 @@ function patchMatrixClientForRetry() {
 let isMatrixClientPatchedForPrototypePollution = false;
 
 export function jsonReviver<T = unknown>(key: string, value: T): T | undefined {
-  if (key === "__proto__" || key === "constructor") {
-    return undefined;
-  } else {
-    return value;
+  switch (key) {
+    case "__proto__":
+    case "constructor":
+    case "prototype":
+    case "toString":
+    case "valueOf":
+    case "hasOwnProperty":
+    case "__defineGetter__":
+    case "__defineSetter__":
+      return undefined;
+    default:
+      return value;
   }
 }
 

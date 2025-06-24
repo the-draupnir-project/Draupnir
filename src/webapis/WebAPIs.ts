@@ -21,6 +21,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { Logger, Task } from "matrix-protection-suite";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
+import { jsonReviver } from "../utils";
 
 const log = new Logger("WebAPIs");
 
@@ -41,7 +42,7 @@ export class WebAPIs {
     private readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ) {
     // Setup JSON parsing.
-    this.webController.use(express.json());
+    this.webController.use(express.json({ reviver: jsonReviver }));
     this.synapseHTTPAntispam?.register(this.webController);
   }
 
