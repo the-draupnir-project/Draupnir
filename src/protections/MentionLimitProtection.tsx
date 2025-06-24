@@ -5,19 +5,22 @@
 
 import {
   AbstractProtection,
-  ActionResult,
+  ContentMixins,
   EDStatic,
   EventConsequences,
+  EventWithMixins,
   Logger,
+  MentionsMixin,
+  MentionsMixinDescription,
+  NewContentMixinDescription,
   Ok,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  RoomEvent,
+  RoomMessageBodyMixinDescription,
   RoomMessageSender,
   Task,
   UserConsequences,
-  Value,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -33,52 +36,61 @@ import {
   renderMentionPill,
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("MentionLimitProtection");
 
-const MentionsContentSchema = Type.Object({
-  "m.mentions": Type.Object({
-    user_ids: Type.Array(Type.String()),
-  }),
-});
+function isMentionsMixinOverLimit(
+  mentionsMixin: MentionsMixin,
+  maxMentions: number
+): boolean {
+  return mentionsMixin.user_ids.length > maxMentions;
+}
 
-const NewContentMentionsSchema = Type.Object({
-  "m.new_content": MentionsContentSchema,
-});
-
-const WeakTextContentSchema = Type.Object({
-  body: Type.Optional(Type.String()),
-  formatted_body: Type.Optional(Type.String()),
-});
-
-export function isContainingMentionsOverLimit(
-  event: RoomEvent,
+function isContentContaningMentionsOverLimit(
+  content: ContentMixins,
   maxMentions: number,
   checkBody: boolean
 ): boolean {
-  const isOverLimit = (user_ids: string[]): boolean =>
-    user_ids.length > maxMentions;
+  const mentionMixin = content.findMixin(MentionsMixinDescription);
   if (
-    Value.Check(NewContentMentionsSchema, event.content) &&
-    isOverLimit(event.content["m.new_content"]["m.mentions"].user_ids)
+    mentionMixin?.isErroneous === false &&
+    isMentionsMixinOverLimit(mentionMixin, maxMentions)
   ) {
     return true;
   }
-  if (
-    Value.Check(MentionsContentSchema, event.content) &&
-    isOverLimit(event.content["m.mentions"].user_ids)
-  ) {
+  if (!checkBody) {
+    return false;
+  }
+  const bodyMixin = content.findMixin(RoomMessageBodyMixinDescription);
+  if (bodyMixin === undefined || bodyMixin.isErroneous) {
+    return false;
+  }
+  return bodyMixin.body.split("@").length - 1 > maxMentions;
+}
+
+export function isContainingMentionsOverLimit(
+  event: EventWithMixins,
+  maxMentions: number,
+  checkBody: boolean
+): boolean {
+  const isTopContentOverLimit = isContentContaningMentionsOverLimit(
+    event,
+    maxMentions,
+    checkBody
+  );
+  if (isTopContentOverLimit) {
     return true;
   }
-  if (checkBody && Value.Check(WeakTextContentSchema, event.content)) {
-    if (
-      event.content.body !== undefined &&
-      event.content.body.split("@").length - 1 > maxMentions
-    ) {
-      return true;
-    }
+  const newContentMixin = event.findMixin(NewContentMixinDescription);
+  if (newContentMixin === undefined || newContentMixin.isErroneous) {
+    return false;
   }
-  return false;
+  return isContentContaningMentionsOverLimit(
+    newContentMixin,
+    maxMentions,
+    checkBody
+  );
 }
 
 const MentionLimitProtectionSettings = Type.Object(
@@ -141,12 +153,12 @@ export class MentionLimitProtection
     this.warningText = settings.warningText;
     this.includeLegacymentions = settings.includeLegacyMentions;
   }
-  public async handleTimelineEvent(
+  public handleTimelineEventMixins(
     _room: MatrixRoomID,
-    event: RoomEvent
-  ): Promise<ActionResult<void>> {
-    if (event.sender === this.protectedRoomsSet.userID) {
-      return Ok(undefined);
+    event: EventWithMixins
+  ): void {
+    if (event.sourceEvent.sender === this.protectedRoomsSet.userID) {
+      return;
     }
     if (
       isContainingMentionsOverLimit(
@@ -155,42 +167,60 @@ export class MentionLimitProtection
         this.includeLegacymentions
       )
     ) {
-      const infractions = this.consequenceBucket.getTokenCount(event.sender);
-      if (infractions > 0) {
-        const userResult = await this.userConsequences.consequenceForUserInRoom(
-          event.room_id,
-          event.sender,
-          this.warningText
-        );
-        if (isError(userResult)) {
-          log.error("Failed to ban the user", event.sender, userResult.error);
-        }
-        // fall through to the event consequence on purpose so we redact the event too.
-      } else {
-        // if they're not being banned we need to tell them why their message got redacted.
-        void Task(
-          sendMatrixEventsFromDeadDocument(
-            this.roomMessageSender,
-            event.room_id,
-            <root>
-              {renderMentionPill(event.sender, event.sender)} {this.warningText}
-            </root>,
-            { replyToEvent: event }
-          ),
-          {
-            log,
-          }
-        );
-      }
-      this.consequenceBucket.addToken(event.sender);
-      return await this.eventConsequences.consequenceForEvent(
-        event.room_id,
-        event.event_id,
+      void Task(this.handleEventOverLimit(event), {
+        log,
+      });
+    }
+  }
+
+  public async handleEventOverLimit(
+    event: EventWithMixins
+  ): Promise<Result<void>> {
+    const sourceEvent = event.sourceEvent;
+    const infractions = this.consequenceBucket.getTokenCount(
+      sourceEvent.sender
+    );
+    if (infractions > 0) {
+      const userResult = await this.userConsequences.consequenceForUserInRoom(
+        sourceEvent.room_id,
+        sourceEvent.sender,
         this.warningText
       );
+      if (isError(userResult)) {
+        log.error(
+          "Failed to ban the user",
+          sourceEvent.sender,
+          userResult.error
+        );
+      }
+      // fall through to the event consequence on purpose so we redact the event too.
     } else {
-      return Ok(undefined);
+      // if they're not being banned we need to tell them why their message got redacted.
+      void Task(
+        sendMatrixEventsFromDeadDocument(
+          this.roomMessageSender,
+          sourceEvent.room_id,
+          <root>
+            {renderMentionPill(sourceEvent.sender, sourceEvent.sender)}{" "}
+            {this.warningText}
+          </root>,
+          { replyToEvent: sourceEvent }
+        ),
+        {
+          log,
+        }
+      );
     }
+    this.consequenceBucket.addToken(sourceEvent.sender);
+    return await this.eventConsequences.consequenceForEvent(
+      sourceEvent.room_id,
+      sourceEvent.event_id,
+      this.warningText
+    );
+  }
+
+  handleProtectionDisable(): void {
+    this.consequenceBucket.stop();
   }
 }
 

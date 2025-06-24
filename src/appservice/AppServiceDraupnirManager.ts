@@ -83,6 +83,10 @@ export class AppServiceDraupnirManager {
     return `@${mjolnirRecord.local_part}:${this.serverName}` as StringUserID;
   }
 
+  public unregisterListeners(): void {
+    this.baseManager.unregisterListeners();
+  }
+
   /**
    * Create the draupnir manager from the datastore and the access control.
    * @param dataStore The data store interface that has the details for provisioned draupnirs.

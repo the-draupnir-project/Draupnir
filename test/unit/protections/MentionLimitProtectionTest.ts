@@ -3,7 +3,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RoomEvent } from "matrix-protection-suite";
+import {
+  DefaultMixinExtractor,
+  EventWithMixins,
+  randomRoomID,
+  randomUserID,
+  RoomEvent,
+} from "matrix-protection-suite";
 import { isContainingMentionsOverLimit } from "../../../src/protections/MentionLimitProtection";
 import expect from "expect";
 
@@ -11,8 +17,13 @@ function messageEvent(content: {
   body?: string;
   formatted_body?: string;
   "m.mentions"?: { user_ids: string[] };
-}): RoomEvent {
-  return { content } as RoomEvent;
+}): EventWithMixins {
+  return DefaultMixinExtractor.parseEvent({
+    content,
+    type: "m.room.message",
+    sender: randomUserID(),
+    room_id: randomRoomID([]).toRoomIDOrAlias(),
+  } as RoomEvent);
 }
 
 describe("MentionLimitProtection test", function () {

@@ -42,6 +42,15 @@ export class StandardDraupnirManager {
     // nothing to do.
   }
 
+  public unregisterListeners(): void {
+    for (const [, draupnir] of this.draupnir) {
+      draupnir.stop();
+    }
+    for (const [, safeModeDraupnir] of this.safeModeDraupnir) {
+      safeModeDraupnir.stop();
+    }
+  }
+
   public makeSafeModeToggle(
     clientUserID: StringUserID,
     managementRoom: MatrixRoomID,
@@ -52,6 +61,7 @@ export class StandardDraupnirManager {
     const draupnirManager = this;
     const toggle: SafeModeToggle = Object.freeze({
       async switchToSafeMode(cause: SafeModeCause) {
+        draupnirManager.stopDraupnir(clientUserID);
         return draupnirManager.makeSafeModeDraupnir(
           clientUserID,
           managementRoom,
@@ -60,6 +70,7 @@ export class StandardDraupnirManager {
         );
       },
       async switchToDraupnir() {
+        draupnirManager.stopDraupnir(clientUserID);
         return draupnirManager.makeDraupnir(
           clientUserID,
           managementRoom,
@@ -216,11 +227,14 @@ export class StandardDraupnirManager {
 
   public stopDraupnir(clientUserID: StringUserID): void {
     const draupnir = this.draupnir.get(clientUserID);
-    if (draupnir === undefined) {
-      return;
-    } else {
+    if (draupnir !== undefined) {
       draupnir.stop();
       this.draupnir.delete(clientUserID);
+    }
+    const safeModeDraupnir = this.safeModeDraupnir.get(clientUserID);
+    if (safeModeDraupnir) {
+      safeModeDraupnir.stop();
+      this.safeModeDraupnir.delete(clientUserID);
     }
   }
 }

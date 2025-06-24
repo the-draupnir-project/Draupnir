@@ -11,6 +11,7 @@
 import {
   ActionResult,
   ClientPlatform,
+  DefaultMixinExtractor,
   LoggableConfigTracker,
   Logger,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
@@ -219,6 +220,7 @@ export async function makeProtectedRoomsSet(
     protectedRoomsManager.ok,
     protectionsConfig.ok,
     userID,
+    DefaultMixinExtractor,
     makeHandleMissingProtectionPermissions(
       clientPlatform.toRoomMessageSender(),
       managementRoom.toRoomIDOrAlias()

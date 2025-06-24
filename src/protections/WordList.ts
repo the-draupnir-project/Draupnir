@@ -12,6 +12,8 @@ import {
   AbstractProtection,
   ActionResult,
   EventConsequences,
+  EventWithMixins,
+  ExtensibleTextMixinDescription,
   Logger,
   MembershipChange,
   MembershipChangeType,
@@ -19,12 +21,12 @@ import {
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-  RoomEvent,
   RoomMembershipRevision,
-  RoomMessage,
+  RoomMessageBodyMixinDescription,
+  RoomMessageFormattedBodyMixinDescription,
+  Task,
   UnknownConfig,
   UserConsequences,
-  Value,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -55,7 +57,8 @@ describeProtection<WordListCapabilities, Draupnir>({
   name: "WordListProtection",
   description:
     "If a user posts a monitored word a set amount of time after joining, they\
-    will be banned from that room.  This will not publish the ban to a ban list.",
+    will be banned from that room.  This will not publish the ban to a ban list.\
+    This protection only targets recently joined users.",
   capabilityInterfaces: {
     userConsequences: "UserConsequences",
     eventConsequences: "EventConsequences",
@@ -90,7 +93,7 @@ export class WordListProtection
   implements Protection<WordListDescription>
 {
   private justJoined: JustJoinedByRoom = new Map();
-  private badWords?: RegExp;
+  private badWords: RegExp;
 
   private readonly userConsequences: UserConsequences;
   private readonly eventConsequences: EventConsequences;
@@ -103,6 +106,15 @@ export class WordListProtection
     super(description, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
+    // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+    const escapeRegExp = (string: string) => {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    };
+    // Create a mega-regex from all the tiny words.
+    const words = this.draupnir.config.protections.wordlist.words
+      .filter((word) => word.length !== 0)
+      .map(escapeRegExp);
+    this.badWords = new RegExp(words.join("|"), "i");
   }
   public async handleMembershipChange(
     revision: RoomMembershipRevision,
@@ -136,90 +148,93 @@ export class WordListProtection
     return Ok(undefined);
   }
 
-  public async handleTimelineEvent(
+  public handleTimelineEventMixins(
     room: MatrixRoomID,
-    event: RoomEvent
-  ): Promise<ActionResult<void>> {
+    event: EventWithMixins
+  ): void {
     // If the sender is draupnir, ignore the message
-    if (event["sender"] === this.draupnir.clientUserID) {
-      log.debug(`Ignoring message from self: ${event.event_id}`);
-      return Ok(undefined);
+    if (event.sourceEvent["sender"] === this.draupnir.clientUserID) {
+      log.debug(`Ignoring message from self: ${event.sourceEvent.event_id}`);
+      return;
+    }
+    const bodies = [
+      ((mixin) => (mixin?.isErroneous === true ? undefined : mixin?.body))(
+        event.findMixin(RoomMessageBodyMixinDescription)
+      ),
+      ((mixin) => (mixin?.isErroneous ? undefined : mixin?.formatted_body))(
+        event.findMixin(RoomMessageFormattedBodyMixinDescription)
+      ),
+      ...(((mixin) =>
+        mixin?.isErroneous
+          ? undefined
+          : mixin?.representations.map(
+              (representation) => representation.body
+            ))(event.findMixin(ExtensibleTextMixinDescription)) ?? []),
+    ].filter((mixin) => mixin !== undefined);
+    if (bodies.length === 0) {
+      return;
     }
     const minsBeforeTrusting =
       this.draupnir.config.protections.wordlist.minutesBeforeTrusting;
-    if (Value.Check(RoomMessage, event)) {
-      if (!("msgtype" in event.content)) {
-        return Ok(undefined);
-      }
-      const message =
-        ("formatted_body" in event.content &&
-          event.content["formatted_body"]) ||
-        event.content["body"];
-      const roomID = room.toRoomIDOrAlias();
+    const roomID = room.toRoomIDOrAlias();
+    // Check conditions first
+    if (minsBeforeTrusting > 0) {
+      const roomEntry = this.justJoined.get(roomID);
+      const joinTime = roomEntry?.get(event.sourceEvent["sender"]);
+      if (joinTime !== undefined) {
+        // Disregard if the user isn't recently joined
 
-      // Check conditions first
-      if (minsBeforeTrusting > 0) {
-        const roomEntry = this.justJoined.get(roomID);
-        const joinTime = roomEntry?.get(event["sender"]);
-        if (joinTime !== undefined) {
-          // Disregard if the user isn't recently joined
-
-          // Check if they did join recently, was it within the timeframe
-          const now = new Date();
-          if (
-            now.valueOf() - joinTime.valueOf() >
-            minsBeforeTrusting * 60 * 1000
-          ) {
-            roomEntry?.delete(event["sender"]); // Remove the user
-            log.info(`${event["sender"]} is no longer considered suspect`);
-            return Ok(undefined);
-          }
-        } else {
-          // The user isn't in the recently joined users list, no need to keep
-          // looking
-          return Ok(undefined);
+        // Check if they did join recently, was it within the timeframe
+        const now = new Date();
+        if (
+          now.valueOf() - joinTime.valueOf() >
+          minsBeforeTrusting * 60 * 1000
+        ) {
+          roomEntry?.delete(event.sourceEvent["sender"]); // Remove the user
+          log.info(
+            `${event.sourceEvent["sender"]} is no longer considered suspect`
+          );
+          return;
         }
+      } else {
+        // The user isn't in the recently joined users list, no need to keep
+        // looking
+        return;
       }
-      if (!this.badWords) {
-        // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
-        const escapeRegExp = (string: string) => {
-          return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        };
-
-        // Create a mega-regex from all the tiny words.
-        const words = this.draupnir.config.protections.wordlist.words
-          .filter((word) => word.length !== 0)
-          .map(escapeRegExp);
-        this.badWords = new RegExp(words.join("|"), "i");
-      }
-
-      const match = this.badWords.exec(message);
-      if (match) {
-        const reason = `Said a bad word. Moderators, consult the management room for more information.`;
+    }
+    const match = bodies.find((body) => this.badWords.exec(body));
+    if (!match) {
+      return;
+    }
+    const reason = `Said a bad word. Moderators, consult the management room for more information.`;
+    void Task(
+      (async () => {
         await this.userConsequences.consequenceForUserInRoom(
           roomID,
-          event.sender,
+          event.sourceEvent.sender,
           reason
         );
         const messageResult = await this.draupnir.client
           .sendMessage(this.draupnir.managementRoomID, {
             msgtype: "m.notice",
-            body: `Banned ${event.sender} in ${roomID} for saying '${match[0]}'.`,
+            body: `Banned ${event.sourceEvent.sender} in ${roomID} for saying '${match[0]}'.`,
           })
           .then((_) => Ok(undefined), resultifyBotSDKRequestError);
         if (isError(messageResult)) {
           log.error(
-            `Failed to send a message to the management room after banning ${event.sender} in ${roomID} for saying '${match[0]}'.`,
+            `Failed to send a message to the management room after banning ${event.sourceEvent.sender} in ${roomID} for saying '${match[0]}'.`,
             messageResult.error
           );
         }
         await this.eventConsequences.consequenceForEvent(
           roomID,
-          event.event_id,
+          event.sourceEvent.event_id,
           reason
         );
+      })(),
+      {
+        log,
       }
-    }
-    return Ok(undefined);
+    );
   }
 }
