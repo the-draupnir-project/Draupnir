@@ -31,7 +31,11 @@ import {
 import { BetterSqliteStore, makeBetterSqliteDB } from "./BetterSqliteStore";
 import { Database, Statement } from "better-sqlite3";
 import path from "path";
-import { checkKnownTables, SqliteSchemaOptions } from "./SqliteSchema";
+import {
+  checkKnownTables,
+  SqliteSchemaOptions,
+  wrapInTryCatch,
+} from "./SqliteSchema";
 import EventEmitter from "events";
 import { createHash } from "crypto";
 
@@ -82,21 +86,6 @@ const SchemaOptions = {
     ]);
   },
 } satisfies SqliteSchemaOptions;
-
-function wrapInTryCatch<T>(cb: () => Result<T>, message: string): Result<T> {
-  try {
-    return cb();
-  } catch (e) {
-    if (e instanceof Error) {
-      return ActionException.Result(message, {
-        exception: e,
-        exceptionKind: ActionExceptionKind.Unknown,
-      });
-    } else {
-      throw e;
-    }
-  }
-}
 
 export class SqliteHashReversalStore
   extends EventEmitter

@@ -3,8 +3,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { Result } from "@gnuxie/typescript-result";
 import { Database } from "better-sqlite3";
-import { Logger } from "matrix-protection-suite";
+import {
+  ActionException,
+  ActionExceptionKind,
+  Logger,
+} from "matrix-protection-suite";
 
 export type SqliteSchemaOptions = {
   upgradeSteps: ((db: Database) => void)[];
@@ -99,4 +104,22 @@ export function checkKnownTables(
     return false;
   }
   return true;
+}
+
+export function wrapInTryCatch<T>(
+  cb: () => Result<T>,
+  message: string
+): Result<T> {
+  try {
+    return cb();
+  } catch (e) {
+    if (e instanceof Error) {
+      return ActionException.Result(message, {
+        exception: e,
+        exceptionKind: ActionExceptionKind.Unknown,
+      });
+    } else {
+      throw e;
+    }
+  }
 }
