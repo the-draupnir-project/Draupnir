@@ -12,6 +12,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.5.0] - 2025-07-08
+
+### Added
+
+- There is a new protection enabled by default called the
+  `InvalidEventProtection`. This protection redacts events that contain
+  malformed
+  [mixins](https://github.com/matrix-org/matrix-spec-proposals/blob/main/proposals/1767-extensible-events.md#mixins-specifically-allowed)
+  that are likely to trip up other Matrix clients, or potentially represent an
+  attempt to bypass Draupnir protections. For Matrix developers, what qualifies
+  as a malformed mixin is very conservative, and we only focus on the core
+  properties of a given mixin.
+
+- The `WordListProtection`, and `MentionLimitProtection` are updated to use a
+  new method of parsing Matrix events by extracting
+  [mixins](https://github.com/matrix-org/matrix-spec-proposals/blob/main/proposals/1767-extensible-events.md#mixins-specifically-allowed)
+  that is provided by the matrix-protection-suite. This will allow these
+  protections to continue to function should extensible events ever make it into
+  a release of the Matrix specification. And generally this is a more robust way
+  of parsing Matrix events.
+
+### Fixed
+
+- Draupnir deployed in appservice mode were not being disposed of correctly when
+  being placed into or restarting from safe mode. This could be a root cause a
+  variety of issues.
+
+### Changed
+
+- The JSON reviver used by Draupnir for handling http requests and responses has
+  been modified to cover more property names found on the `Object.prototype`, in
+  addition to the existing restrictions preventing prototype pollution. This
+  adds redundancy to code handling objects parsed from untrusted sources.
+
 ## [v2.4.1] - 2025-06-23
 
 ### Fixed
