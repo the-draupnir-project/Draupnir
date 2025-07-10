@@ -37,7 +37,14 @@ const SchemaText = [
     user_id TEXT PRIMARY KEY NOT NULL,
     familiarity_at_observation TEXT NOT NULL,
     observed_interactions INTEGER NOT NULL,
-    last_observed_interaction_at INTEGER NOT NULL
+    last_observed_interaction_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user_familiarity(user_id)
+  ) STRICT;
+  CREATE TABLE user_infraction_summary (
+    user_id TEXT PRIMARY KEY NOT NULL,
+    familiarity_at_observation TEXT NOT NULL,
+    infractions INTEGER NOT NULL,
+    last_observed_infraction_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user_familiarity(user_id)
   ) STRICT;
   `,
@@ -54,6 +61,7 @@ const SchemaOptions = {
     return checkKnownTables(db, [
       "user_familiarity",
       "user_interaction_summary",
+      "user_infraction_summary",
     ]);
   },
 } satisfies SqliteSchemaOptions;
@@ -65,9 +73,7 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
   }
   public async findEntityFamiliarityRecord(
     userID: StringUserID
-  ): Promise<Result<UserFamiliarityRecord>> {
-    // FIXME: Do we need to make something up if we can't find
-    //        a record or return undefined?
+  ): Promise<Result<UserFamiliarityRecord | undefined>> {
     return wrapInTryCatch(() => {
       return Ok(
         this.db
@@ -77,14 +83,17 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
             uf.user_id as user_id,
             uf.familiarity as current_familiarity,
             uf.attained_at as attained_current_familiarity_at,
-            uis.observed_interactions as observed_interactions_at_current_familiarity,
-            uis.last_observed_interaction_at as last_observed_interaction_ts
+            uints.observed_interactions as observed_interactions_at_current_familiarity,
+            uints.last_observed_interaction_at as last_observed_interaction_ts,
+            uifrs.infractions as number_of_infracions
             FROM user_familiarity uf
-            INNER JOIN user_interaction_summary uis
-            ON uis.user_id = uf.user_id;
+            INNER JOIN user_interaction_summary uints
+            ON uints.user_id = uf.user_id
+            INNER JOIN user_infraction_summary uifrs
+            ON uifrs.user_id = uf.user_id
+            WHERE uf.user_id = ?;
             `
           )
-          .pluck()
           .get(userID) as UserFamiliarityRecord
       );
     }, `Failed to fetch the familiarity record for the user ${userID}`);
@@ -101,9 +110,21 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         ON CONFLICT(user_id) DO NOTHING
       `);
 
+      const insertInfractions = this.db.prepare(`
+        INSERT INTO user_infraction_summary (
+          user_id,
+          familiarity_at_observation,
+          infractions,
+          last_observed_infraction_at
+        ) VALUES (?, ?, 0, ?)
+        ON CONFLICT(user_id) DO NOTHING`);
+
       const upsertInteractionSummary = this.db.prepare(`
         INSERT INTO user_interaction_summary (
-          user_id, familiarity_at_observation, observed_interactions, last_observed_interaction_at
+          user_id,
+          familiarity_at_observation,
+          observed_interactions,
+          last_observed_interaction_at
         )
         SELECT
           uf.user_id,
@@ -123,6 +144,7 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         (userIDs: StringUserID[]) => {
           for (const userID of userIDs) {
             insertFamiliarity.run(userID, EntityFamiliarity.Encountered, now);
+            insertInfractions.run(userID, EntityFamiliarity.Encountered, now);
             upsertInteractionSummary.run(now, userID);
           }
         }
@@ -131,6 +153,60 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
       return Ok(undefined);
     }, "Unable to observe interactions from users");
   }
+
+  public async observeInfractions(
+    userIDs: StringUserID[]
+  ): Promise<Result<void>> {
+    return wrapInTryCatch(() => {
+      const now = Date.now();
+
+      const insertFamiliarity = this.db.prepare(`
+        INSERT INTO user_familiarity (user_id, familiarity, attained_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id) DO NOTHING
+      `);
+
+      const insertInteractions = this.db.prepare(`
+        INSERT INTO user_interaction_summary (
+          user_id,
+          familiarity_at_observation,
+          observed_interactions,
+          last_observed_interaction_at
+        ) VALUES (?, ?, 0, ?)
+        ON CONFLICT(user_id) DO NOTHING`);
+
+      const upsertInfractionSummary = this.db.prepare(`
+        INSERT INTO user_infraction_summary (
+          user_id, familiarity_at_observation, infractions, last_observed_infraction_at
+        )
+        SELECT
+          uf.user_id,
+          uf.familiarity,
+          1,
+          ?
+        FROM user_familiarity uf
+        WHERE uf.user_id = ?
+        ON CONFLICT(user_id) DO UPDATE SET
+          infractions = infractions + 1,
+          last_observed_infraction_at = excluded.last_observed_infraction_at,
+          familiarity_at_observation = excluded.familiarity_at_observation
+      `);
+
+      const transaction = flatTransaction(
+        this.db,
+        (userIDs: StringUserID[]) => {
+          for (const userID of userIDs) {
+            insertFamiliarity.run(userID, EntityFamiliarity.Encountered, now);
+            insertInteractions.run(userID, EntityFamiliarity.Encountered, now);
+            upsertInfractionSummary.run(now, userID);
+          }
+        }
+      );
+      transaction(userIDs);
+      return Ok(undefined);
+    }, "Unable to observe interactions from users");
+  }
+
   // FIXME: this method should just promote entities
   //        that match the spec.
   public async findEntitiesElegiableForPromotion(
@@ -143,18 +219,24 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         this.db
           .prepare(
             `
-          SELECT user_id
-          FROM user_interaction_summary
-          WHERE familiarity_at_observation = ?
-          AND attained_at <= ?
-          AND observed_interactions >= ?
+          SELECT uf.user_id
+          FROM user_familiarity as uf
+          INNER JOIN user_interaction_summary as uints
+          ON uf.user_id = uints.user_id
+          INNER JOIN user_infraction_summary as uifrs
+          ON uints.user_id = uifrs.user_id
+          WHERE uints.familiarity_at_observation = ?
+          AND uf.attained_at <= ?
+          AND uints.observed_interactions >= ?
+          AND uifrs.infractions <= ?
         `
           )
           .pluck()
           .all(
             spec.current_familiarity,
             minAttainedAt,
-            spec.mandatory_number_of_interactions
+            spec.mandatory_number_of_interactions,
+            spec.maximum_number_of_infractions
           ) as StringUserID[]
       );
     }, "Unable to fetch entities elgiable for promotion");
@@ -178,7 +260,17 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
 
       const updateInteractionSummary = this.db.prepare(`
         UPDATE user_interaction_summary
-        SET familiarity_at_observation = ?, observed_interactions = 0, last_observed_interaction_at = ?
+        SET familiarity_at_observation = ?,
+        observed_interactions = 0,
+        last_observed_interaction_at = ?
+        WHERE user_id = ?
+      `);
+
+      const updateInfractionSummary = this.db.prepare(`
+        UPDATE user_infraction_summary
+        SET familiarity_at_observation = ?,
+        infractions = 0,
+        last_observed_infraction_at = ?
         WHERE user_id = ?
       `);
 
@@ -186,6 +278,7 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         for (const user_id of userIDs) {
           updateFamiliarity.run(spec.next_familiarity, now, user_id);
           updateInteractionSummary.run(spec.next_familiarity, now, user_id);
+          updateInfractionSummary.run(spec.next_familiarity, now, user_id);
         }
       });
 
@@ -210,15 +303,22 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         SET familiarity_at_observation = ?, observed_interactions = 0, last_observed_interaction_at = ?
         WHERE user_id = ?
       `);
+      const resetInfractionSummary = this.db.prepare(`
+        UPDATE user_infraction_summary
+        SET familiarity_at_observation = ?, infractions = 0, last_observed_infraction_at = ?
+        WHERE user_id = ?
+      `);
 
       const transaction = this.db.transaction(() => {
         forceFamiliarity.run(nextFamiliarity, now, userID);
         resetInteractionSummary.run(nextFamiliarity, now, userID);
+        resetInfractionSummary.run(nextFamiliarity, now, userID);
       });
       transaction();
       return Ok(undefined);
     }, `Failed to force familiarity of the user ${userID}`);
   }
+
   public async clearUserRecord(userID: StringUserID): Promise<Result<void>> {
     return wrapInTryCatch(() => {
       const deleteFamiliarity = this.db.prepare(`
@@ -226,12 +326,17 @@ export class BetterSqliteUserFamiliarityStore implements UserFamiliarityStore {
         WHERE user_id = ?
       `);
       const deleteInteractionSummary = this.db.prepare(`
-        DELTE FROM user_interaction_summary
+        DELETE FROM user_interaction_summary
+        WHERE user_id = ?
+      `);
+      const deleteInfractionSummary = this.db.prepare(`
+        DELETE FROM user_infraction_summary
         WHERE user_id = ?
       `);
       this.db.transaction(() => {
         deleteFamiliarity.run(userID);
         deleteInteractionSummary.run(userID);
+        deleteInfractionSummary.run(userID);
       });
       return Ok(undefined);
     }, `Failed to clear ${userID}'s record`);

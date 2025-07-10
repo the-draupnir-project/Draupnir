@@ -13,9 +13,6 @@ import { BetterSqliteUserFamiliarityStore } from "../../../src/backingstore/bett
 import { EntityFamiliarity, randomUserID } from "matrix-protection-suite";
 import expect from "expect";
 
-// FIXME: Change the store so that we always delete when promoting
-// rather tahn overwriting fields.
-
 describe("RoomAuditLog test", function () {
   const options = { path: ":memory:" } satisfies BetterSqliteOptions;
   const db = new Database(options.path);
@@ -30,18 +27,21 @@ describe("RoomAuditLog test", function () {
     const findResult = (
       await store.findEntityFamiliarityRecord(newUser)
     ).expect("Should be able to find the user");
-    expect(findResult.user_id).toBe(newUser);
-    expect(findResult.attained_current_familiarity_at).toBeGreaterThan(
+    expect(findResult?.user_id).toBe(newUser);
+    expect(findResult?.attained_current_familiarity_at).toBeGreaterThanOrEqual(
       testStart
     );
-    expect(findResult.current_familiarity).toBe(EntityFamiliarity.Encountered);
-    expect(findResult.last_observed_interaction_ts).toBeGreaterThan(testStart);
+    expect(findResult?.current_familiarity).toBe(EntityFamiliarity.Encountered);
+    expect(findResult?.last_observed_interaction_ts).toBeGreaterThanOrEqual(
+      testStart
+    );
     const eligiablePromotion = (
       await store.findEntitiesElegiableForPromotion({
         current_familiarity: EntityFamiliarity.Encountered,
         next_familiarity: EntityFamiliarity.Acknowledged,
         mandatory_number_of_interactions: 1,
-        mandatory_presence_ms: testStart,
+        mandatory_presence_ms: 1,
+        maximum_number_of_infractions: 0,
       })
     ).expect("Should be able to find that the user is eligiable for promotion");
     expect(eligiablePromotion.length).toBe(1);
@@ -51,7 +51,8 @@ describe("RoomAuditLog test", function () {
         current_familiarity: EntityFamiliarity.Encountered,
         next_familiarity: EntityFamiliarity.Acknowledged,
         mandatory_number_of_interactions: 1,
-        mandatory_presence_ms: testStart,
+        mandatory_presence_ms: 1,
+        maximum_number_of_infractions: 0,
       })
     ).expect("Should be able to promote users");
     expect(promotedUsers.at(0)).toBe(newUser);
@@ -60,9 +61,33 @@ describe("RoomAuditLog test", function () {
       "Should be able to force the familiarity of users"
     );
     // now test clearing their record.
-
+    (await store.clearUserRecord(newUser)).expect(
+      "Should be able to clear their record"
+    );
     // test that we can't promote users who haven't reached minimum interaction
+    (await store.observeInteractions([newUser])).expect(
+      "Should be able to observe interactions again"
+    );
+    const usersWithoutInteraction = (
+      await store.findEntitiesElegiableForPromotion({
+        current_familiarity: EntityFamiliarity.Encountered,
+        next_familiarity: EntityFamiliarity.Acknowledged,
+        mandatory_number_of_interactions: 10,
+        mandatory_presence_ms: 1,
+        maximum_number_of_infractions: 0,
+      })
+    ).expect("Should be able to find users without interaction");
+    expect(usersWithoutInteraction.length).toBe(0);
     // and minimum time so that both conditions get tested.
-    // verify that promoting resets the record.
+    const usersWithoutMinimumPresence = (
+      await store.findEntitiesElegiableForPromotion({
+        current_familiarity: EntityFamiliarity.Encountered,
+        next_familiarity: EntityFamiliarity.Acknowledged,
+        mandatory_number_of_interactions: 0,
+        mandatory_presence_ms: 1,
+        maximum_number_of_infractions: 0,
+      })
+    ).expect("Should be able to find users without interaction");
+    expect(usersWithoutMinimumPresence.length).toBe(0);
   });
 });
