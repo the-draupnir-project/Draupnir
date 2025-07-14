@@ -253,7 +253,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       }
     })();
     if (isError(acceptInvitesFromRoom)) {
-      return acceptInvitesFromRoom;
+      return acceptInvitesFromRoom.elaborate(
+        "Unable to join the space from config.acceptInvitesFromSpace"
+      );
     }
     const acceptInvitesFromRoomIssuer =
       await roomMembershipManager.getRoomMembershipRevisionIssuer(
