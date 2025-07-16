@@ -319,10 +319,10 @@
     "@gnuxie/super-cool-stream" "^0.2.1"
     "@gnuxie/typescript-result" "^1.0.0"
 
-"@the-draupnir-project/matrix-basic-types@1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-1.3.0.tgz#02fa9bd75eeed778a57da0844447feca3a4c663c"
-  integrity sha512-WkUD7cqs9qFr1NQZiJWxa+/1trWrhQqv8SbPxrMLRKv1LMm93ELeguROP470kHNWHrCkVcKmYQVc4uC2Yup+EQ==
+"@the-draupnir-project/matrix-basic-types@1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-1.4.0.tgz#18fcfc7561ad495f4868ef4298131a3e20e7d946"
+  integrity sha512-nKK9vmAXh87VwaANvlNlUaq/rIu50VcdRXfoPJB99RqY4dt6iXRu/1b8mQJ5rDCK4yun/4IyGexw6FVQAqT58Q==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     glob-to-regexp "^0.4.1"

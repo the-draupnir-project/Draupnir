@@ -4,8 +4,8 @@
 
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import {
-  roomIDServerName,
   StringRoomID,
+  userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   Logger,
@@ -79,7 +79,7 @@ export class StandardDiscoveredRoomStore
       const storeResult = await this.hashStore.storeRoomIdentification({
         creator: details.creator,
         roomID: details.room_id,
-        server: roomIDServerName(details.room_id),
+        server: userServerName(details.creator),
       });
       if (isError(storeResult)) {
         log.error(
