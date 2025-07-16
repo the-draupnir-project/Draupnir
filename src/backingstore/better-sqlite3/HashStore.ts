@@ -9,7 +9,6 @@
 
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import {
-  roomIDServerName,
   StringRoomID,
   StringServerName,
   StringUserID,
@@ -323,8 +322,7 @@ export class SqliteHashReversalStore
       (room_id: StringRoomID, sha256) => ({ room_id, sha256 }),
       (roomRecords) => {
         this.emit("ReversedHashes", roomRecords, [], []);
-      },
-      (roomRecord) => roomIDServerName(roomRecord.room_id)
+      }
     );
   }
 

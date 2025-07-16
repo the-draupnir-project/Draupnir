@@ -89,6 +89,7 @@ describe("meow", function () {
     const bannedServer = StringServerName("banned.example.com");
     const roomBannedViaServer = StringRoomID("!banned:banned.example.com");
     const policyRoom = randomRoomID([]);
+    const roomCreator = StringUserID("@creator:banned.example.com");
     const bannedServerHash = base64sha256(bannedServer);
     const findResult = (await store.findServerHash(bannedServerHash)).expect(
       "Should be able to at least query this"
@@ -117,6 +118,18 @@ describe("meow", function () {
     // now try storing the room and testing that the policy is there
     (await store.storeUndiscoveredRooms([roomBannedViaServer])).expect(
       "Should be able to discover rooms jsut fine"
+    );
+    // previously storing an undiscovered room would extract the server name.
+    // this is no longer possible to do indirectly https://matrix.org/blog/2025/07/security-predisclosure/.
+    (
+      await store.storeRoomIdentification({
+        roomID: roomBannedViaServer,
+        creator: roomCreator,
+        server: bannedServer,
+      })
+    ).expect("Should be able to store identification for the room");
+    (await store.storeUndiscoveredUsers([roomCreator])).expect(
+      "Should be able to store the creator of the room"
     );
     const foundHash = (await store.findServerHash(bannedServerHash)).expect(
       "Should be able to now find the server hash from the room we discovered"
