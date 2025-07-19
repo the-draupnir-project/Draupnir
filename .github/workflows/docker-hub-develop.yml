@@ -13,9 +13,11 @@ on:
 
 env:
   DOCKER_NAMESPACE: gnuxie
+  GHCR_IO_NAMESPACE: ${{ github.repository_owner }}
   PLATFORMS: linux/amd64,linux/arm64
   # Only push if this is main, otherwise we just want to build
   PUSH: ${{ github.ref == 'refs/heads/main' }}
+  IMG_SOURCE: ${{ github.repository }}${{ github.ref_name }}
 
 jobs:
   docker-latest:
@@ -46,6 +48,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build image
         id: push
         uses: docker/build-push-action@v5
@@ -54,5 +63,9 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUSH }}
+          labels: |
+            org.opencontainers.image.source=${{ env.IMG_SOURCE }}
+            org.opencontainers.image.licenses=AFL-3.0
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
+            ${{ env.GHCR_IO_NAMESPACE }}/draupnir:develop
