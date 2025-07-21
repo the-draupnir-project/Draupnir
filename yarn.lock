@@ -209,6 +209,14 @@
     https-proxy-agent "^5.0.1"
     node-downloader-helper "^2.1.5"
 
+"@matrix-org/matrix-sdk-crypto-nodejs@0.3.0-beta.1":
+  version "0.3.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@matrix-org/matrix-sdk-crypto-nodejs/-/matrix-sdk-crypto-nodejs-0.3.0-beta.1.tgz#e5dc6b505d42ddbb571e896cdc434e5ad5e3e1a6"
+  integrity sha512-FfVjTVuY/HUUx1j3P60iGp7dnHLTXIvRMBHrE0gV4mMIXlH5wO+yqjvDqlKxIZSoW7jfdoRflSz9JnXDob2ocg==
+  dependencies:
+    https-proxy-agent "^7.0.5"
+    node-downloader-helper "^2.1.9"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -662,11 +670,11 @@
     eslint-visitor-keys "^3.4.3"
 
 "@vector-im/matrix-bot-sdk@^0.7.1-element.6":
-  version "0.7.1-element.6"
-  resolved "https://registry.yarnpkg.com/@vector-im/matrix-bot-sdk/-/matrix-bot-sdk-0.7.1-element.6.tgz#d1f8a86d3bd60084d92d150f42a48b25199871e1"
-  integrity sha512-0KfyTpQV5eyY4vPUZW89t7EZf1YF0UyFkyYqpsxL/6S7XIlbTMC4onod7vx/QpKC0lSREmwIiXx2JSjExP6CIw==
+  version "0.7.1-element.11"
+  resolved "https://registry.yarnpkg.com/@vector-im/matrix-bot-sdk/-/matrix-bot-sdk-0.7.1-element.11.tgz#5827d9d381d0290d6f87039840584d5c2d61b403"
+  integrity sha512-+Btt441GaegnuGO4b2JaGHNu4FYxy1Zi8vJxMk9VsSkGvZENNQB84hzXqfpKAk5UF2S5uGchCzN9TsXdZkWrWg==
   dependencies:
-    "@matrix-org/matrix-sdk-crypto-nodejs" "0.2.0-beta.1"
+    "@matrix-org/matrix-sdk-crypto-nodejs" "0.3.0-beta.1"
     "@types/express" "^4.17.21"
     another-json "^0.2.0"
     async-lock "^1.4.0"
@@ -2803,7 +2811,7 @@ node-abi@^3.3.0:
   dependencies:
     semver "^7.3.5"
 
-node-downloader-helper@^2.1.5:
+node-downloader-helper@^2.1.5, node-downloader-helper@^2.1.9:
   version "2.1.9"
   resolved "https://registry.yarnpkg.com/node-downloader-helper/-/node-downloader-helper-2.1.9.tgz#a59ee7276b2bf708bbac2cc5872ad28fc7cd1b0e"
   integrity sha512-FSvAol2Z8UP191sZtsUZwHIN0eGoGue3uEXGdWIH5228e9KH1YHXT7fN8Oa33UGf+FbqGTQg3sJfrRGzmVCaJA==
