@@ -22,7 +22,10 @@ import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
+  ClientCapabilitiesNegotiation,
+  ClientsInRoomMap,
   Ok,
+  RoomCreator,
   Task,
   isError,
 } from "matrix-protection-suite";
@@ -30,6 +33,7 @@ import { Draupnir } from "../Draupnir";
 import {
   ClientCapabilityFactory,
   ClientForUserID,
+  joinedRoomsSafe,
   RoomStateManagerFactory,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
@@ -43,9 +47,10 @@ import {
   StringRoomID,
   MatrixRoomReference,
   userLocalpart,
-  isStringRoomID,
+  MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("AppServiceDraupnirManager");
 
@@ -66,6 +71,7 @@ export class AppServiceDraupnirManager {
     private readonly roomStateManagerFactory: RoomStateManagerFactory,
     stores: TopLevelStores,
     private readonly clientCapabilityFactory: ClientCapabilityFactory,
+    private readonly clientsInRoomMap: ClientsInRoomMap,
     clientProvider: ClientForUserID,
     private readonly instanceCountGauge: Gauge<"status" | "uuid">
   ) {
@@ -102,6 +108,7 @@ export class AppServiceDraupnirManager {
     roomStateManagerFactory: RoomStateManagerFactory,
     stores: TopLevelStores,
     clientCapabilityFactory: ClientCapabilityFactory,
+    clientsInRoomMap: ClientsInRoomMap,
     clientProvider: ClientForUserID,
     instanceCountGauge: Gauge<"status" | "uuid">
   ): Promise<AppServiceDraupnirManager> {
@@ -113,6 +120,7 @@ export class AppServiceDraupnirManager {
       roomStateManagerFactory,
       stores,
       clientCapabilityFactory,
+      clientsInRoomMap,
       clientProvider,
       instanceCountGauge
     );
@@ -202,26 +210,36 @@ export class AppServiceDraupnirManager {
     if (provisionedMjolnirs.length === 0) {
       const mjolnirLocalPart = `draupnir_${randomUUID()}`;
       const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
-
-      const managementRoomID = await mjIntent.matrixClient.createRoom({
-        preset: "private_chat",
-        invite: [requestingUserID],
-        name: `${requestingUserID}'s Draupnir`,
-        power_level_content_override: {
-          users: {
-            [requestingUserID]: 100,
-            // Give the draupnir a higher PL so that can avoid issues with managing the management room.
-            [await mjIntent.matrixClient.getUserId()]: 101,
-          },
-        },
-      });
-      if (!isStringRoomID(managementRoomID)) {
-        throw new TypeError(`${managementRoomID} malformed managmentRoomID`);
+      const draupnirUserID = StringUserID(mjIntent.userId);
+      // we need to make sure the client rooms are available for the capability factory
+      const clientRooms = await this.clientsInRoomMap.makeClientRooms(
+        draupnirUserID,
+        async () => joinedRoomsSafe(mjIntent.matrixClient)
+      );
+      if (isError(clientRooms)) {
+        return clientRooms.elaborate(
+          "Unable to make client rooms for draupnir"
+        );
+      }
+      const clientPlatform = this.clientCapabilityFactory.makeClientPlatform(
+        draupnirUserID,
+        mjIntent.matrixClient
+      );
+      const managementRoom = await makeManagementRoom(
+        clientPlatform.toRoomCreator(),
+        clientPlatform.toClientCapabilitiesNegotiation(),
+        requestingUserID,
+        draupnirUserID
+      );
+      if (isError(managementRoom)) {
+        return managementRoom.elaborate(
+          "Failed to create management room for draupnir"
+        );
       }
       const draupnir = await this.makeInstance(
         mjolnirLocalPart,
         requestingUserID,
-        managementRoomID,
+        managementRoom.ok.toRoomIDOrAlias(),
         mjIntent.matrixClient
       );
       if (isError(draupnir)) {
@@ -238,7 +256,7 @@ export class AppServiceDraupnirManager {
       const record = {
         local_part: mjolnirLocalPart,
         owner: requestingUserID,
-        management_room: managementRoomID,
+        management_room: managementRoom.ok.toRoomIDOrAlias(),
       } as MjolnirRecord;
       await this.dataStore.store(record);
       return Ok(record);
@@ -423,4 +441,39 @@ async function createFirstList(
   return await draupnir.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
     policyRoom.ok
   );
+}
+
+export async function makeManagementRoom(
+  roomCreator: RoomCreator,
+  clientCapabilitiesNegotiation: ClientCapabilitiesNegotiation,
+  requestingUserID: StringUserID,
+  draupnirUserID: StringUserID
+): Promise<Result<MatrixRoomID>> {
+  const capabilities =
+    await clientCapabilitiesNegotiation.getClientCapabilities();
+  if (isError(capabilities)) {
+    return capabilities.elaborate(
+      "Failed to fetch room versions from client capabilities"
+    );
+  }
+  const isV12OrAboveDefault =
+    capabilities.ok.capabilities["m.room_versions"].default >= "12";
+  return await roomCreator.createRoom({
+    preset: "private_chat",
+    invite: [requestingUserID],
+    name: `${requestingUserID}'s Draupnir`,
+    power_level_content_override: isV12OrAboveDefault
+      ? {
+          users: {
+            [requestingUserID]: 150,
+          },
+        }
+      : {
+          users: {
+            [requestingUserID]: 100,
+            // Give the draupnir a higher PL so that can avoid issues with managing the management room.
+            [draupnirUserID]: 101,
+          },
+        },
+  });
 }
