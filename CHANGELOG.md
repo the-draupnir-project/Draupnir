@@ -12,6 +12,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.5.1] - 2025-08-06
+
+This is a small release that makes Draupnir compatible with V12 rooms. Please
+update your Draupnir now. We do not recommend anyone upgrade their rooms to V12
+unless they have to. See
+https://marewolf.me/posts/draupnir/25/do-not-upgrade-to-v12.html . We are
+working on features that will make room upgrades very easy for Draupnir users.
+See https://github.com/the-draupnir-project/planning/issues/44.
+
+### Fixed
+
+- Draupnir can now join and interact with V12 rooms.
+
+- If you are a Draupnir for all / appservice administrator and your homesever
+  sets the default room version to 12, new Draupnir will be able to be
+  provisioned.
+
+- The error logging when the config for `acceptInvitesFromSpace` is incorrect
+  has been improved.
+
 ## [v2.5.0] - 2025-07-08
 
 ### Added
