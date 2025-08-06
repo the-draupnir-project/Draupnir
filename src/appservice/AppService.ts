@@ -193,6 +193,7 @@ export class MjolnirAppService {
       roomStateManagerFactory,
       stores,
       clientCapabilityFactory,
+      clientsInRoomMap,
       clientProvider,
       instanceCountGauge
     );
