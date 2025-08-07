@@ -48,6 +48,7 @@ import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { TopLevelStores } from "./backingstore/DraupnirStores";
+import { patchMatrixClient } from "./utils";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -111,6 +112,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     config: IConfig,
     stores: TopLevelStores
   ): Promise<DraupnirBotModeToggle> {
+    patchMatrixClient();
     const clientUserID = await client.getUserId();
     if (!isStringUserID(clientUserID)) {
       throw new TypeError(`${clientUserID} is not a valid mxid`);

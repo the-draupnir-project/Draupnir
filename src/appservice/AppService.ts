@@ -49,6 +49,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
+import { patchMatrixClient } from "../utils";
 
 const log = new Logger("AppService");
 /**
@@ -230,6 +231,7 @@ export class MjolnirAppService {
     registrationFilePath: string
   ): Promise<MjolnirAppService> {
     Logger.configure(config.logging ?? { console: "debug" });
+    patchMatrixClient();
     const dataStore = new PgDataStore(config.db.connectionString);
     await dataStore.init();
     const eventDecoder = DefaultEventDecoder;
