@@ -10,6 +10,8 @@ import {
   ProtectedRoomsSet,
   ProtectionDescription,
   RoomMembershipRevision,
+  RoomStateRevision,
+  StateChange,
   UnknownConfig,
 } from "matrix-protection-suite";
 import { DraupnirProtection } from "../Protection";
@@ -18,6 +20,7 @@ import { Ok, Result } from "@gnuxie/typescript-result";
 import { ProtectedJoinedRooms } from "./ProtectJoinedRooms";
 import { UnprotectPartedRooms } from "./UnprotectPartedRooms";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import { ProtectReplacementRooms } from "./ProtectReplacementRooms";
 
 export type RoomsSetBehaviourCapabailities = Record<string, never>;
 export type RoomsSetBehaviourSettings = UnknownConfig;
@@ -44,6 +47,12 @@ export class RoomsSetBehaviour
     this.draupnir.managementRoomID,
     this.protectedRoomsSet.protectedRoomsManager,
     this.draupnir.clientPlatform.toRoomMessageSender()
+  );
+  private readonly protectReplacementRooms = new ProtectReplacementRooms(
+    this.draupnir.managementRoomID,
+    this.draupnir.clientPlatform.toRoomJoiner(),
+    this.draupnir.clientPlatform.toRoomMessageSender(),
+    this.protectedRoomsSet.protectedRoomsManager
   );
   public constructor(
     description: RoomsSetBehaviourDescription,
@@ -77,6 +86,14 @@ export class RoomsSetBehaviour
     if (this.draupnir.config.protectAllJoinedRooms) {
       this.protectJoinedRooms.handleExternalMembership(roomID, event);
     }
+  }
+
+  public handleStateChange(
+    _revision: RoomStateRevision,
+    changes: StateChange[]
+  ): Promise<Result<void>> {
+    this.protectReplacementRooms.handleRoomStateChange(changes);
+    return Promise.resolve(Ok(undefined));
   }
 }
 
