@@ -2606,10 +2606,10 @@ matrix-appservice@^2.0.0:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@3.8.0":
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-3.8.0.tgz#8e6370381d3bed0578624a3ba8c2ca3df7899024"
-  integrity sha512-R+6om4Mrf2evEaYZWzkLukjMdsyZv+0xyslCoQ0exd7i3LiAQ6TbcMyML7FD9UFxtPBHCO3my6OyWKCFtt5fQA==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@3.9.0":
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-3.9.0.tgz#35b8889cf110d703858d05f0d8a7d93ff547071b"
+  integrity sha512-6hVsvt5FeNZwYyoyi5N2gbKWaoWMCCAO2vrsG3Rg52srxbAPm6b2SyZ0U7TsfkybLG1L/sARYWlsJQaA5LBf9g==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"
