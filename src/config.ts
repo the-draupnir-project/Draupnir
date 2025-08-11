@@ -321,6 +321,19 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
   };
 }
 
+let configHookExitDump: undefined | (() => void) = undefined;
+
+function registerConfigExitHook(config: IConfig): void {
+  if (configHookExitDump) {
+    return;
+  }
+  configHookExitDump = () => {
+    logNonDefaultConfiguration(config);
+    logConfigMeta(config);
+  };
+  process.on("exit", configHookExitDump);
+}
+
 /**
  * @returns The users's raw config, deep copied over the `defaultConfig`.
  */
@@ -349,10 +362,7 @@ function readConfigSource(): IConfig {
       unknownProperties
     );
   }
-  process.on("exit", () => {
-    logNonDefaultConfiguration(config);
-    logConfigMeta(config);
-  });
+  registerConfigExitHook(config);
   return config;
 }
 

@@ -20,7 +20,7 @@ import {
 } from "matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { configRead as configRead, getStoragePath } from "./config";
-import { initializeSentry, patchMatrixClient } from "./utils";
+import { initializeSentry } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
@@ -81,7 +81,6 @@ void (async function () {
         storage
       );
     }
-    patchMatrixClient();
     const eventDecoder = DefaultEventDecoder;
     const stores = makeTopLevelStores(storagePath, eventDecoder, {
       isRoomStateBackingStoreEnabled:
