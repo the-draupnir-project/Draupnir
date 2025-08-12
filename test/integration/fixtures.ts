@@ -107,8 +107,6 @@ export const mochaHooks = {
       await this.toggle?.stopEverything();
       draupnirClient()?.stop();
       this.stores?.dispose();
-      // With regret, please see https://github.com/the-draupnir-project/Draupnir/issues/927.
-      await new Promise((resolve) => setTimeout(resolve, 50));
       if (this.draupnir !== undefined) {
         await Promise.all([
           this.draupnir.client.setAccountData(
