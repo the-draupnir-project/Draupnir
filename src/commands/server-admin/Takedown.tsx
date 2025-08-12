@@ -25,7 +25,6 @@ import {
   ProtectionDescription,
   RoomResolver,
   SHA256HashStore,
-  Task,
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
 import { Result, ResultError } from "@gnuxie/typescript-result";
@@ -59,52 +58,48 @@ const DownstreamTakedownProtectionNames = [
 /**
  * Make sure that the hash store is up to date with the entity
  */
-function handleRoomDiscovery(
+async function handleRoomDiscovery(
   roomID: StringRoomID,
   store: SHA256HashStore | undefined,
   detailsProvider: RoomDetailsProvider | undefined
-): void {
+): Promise<Result<void>> {
   if (store === undefined) {
     log.warn(
       "Unable to discover a room provided by the takedown command because the hash store has not been configured"
     );
-    return;
+    return Ok(undefined);
   }
   if (detailsProvider === undefined) {
     log.warn(
       "Unable to discover a room provided by the takedown command because the details provider has not been configured"
     );
-    return;
+    return Ok(undefined);
   }
-  void Task(
-    (async () => {
-      const storeResult = await store.storeUndiscoveredRooms([roomID]);
-      if (isError(storeResult)) {
-        return storeResult.elaborate(
-          "Unable to store the room from takedown command into the hash store"
-        );
-      }
-      const detailsResult = await detailsProvider.getRoomDetails(roomID);
-      if (isError(detailsResult)) {
-        return detailsResult.elaborate(
-          "Failed to fetch details for a room discovered via the takedown command"
-        );
-      }
-      if (detailsResult.ok.creator === undefined) {
-        log.warn(
-          "No creator was provided in the details for the room, so we cannot store them",
-          roomID,
-          detailsResult.ok
-        );
-        return Ok(undefined);
-      }
-      return await store.storeRoomIdentification({
-        roomID,
-        creator: detailsResult.ok.creator,
-        server: userServerName(detailsResult.ok.creator),
-      });
-    })()
-  );
+  const storeResult = await store.storeUndiscoveredRooms([roomID]);
+  if (isError(storeResult)) {
+    return storeResult.elaborate(
+      "Unable to store the room from takedown command into the hash store"
+    );
+  }
+  const detailsResult = await detailsProvider.getRoomDetails(roomID);
+  if (isError(detailsResult)) {
+    return detailsResult.elaborate(
+      "Failed to fetch details for a room discovered via the takedown command"
+    );
+  }
+  if (detailsResult.ok.creator === undefined) {
+    log.warn(
+      "No creator was provided in the details for the room, so we cannot store them",
+      roomID,
+      detailsResult.ok
+    );
+    return Ok(undefined);
+  }
+  return await store.storeRoomIdentification({
+    roomID,
+    creator: detailsResult.ok.creator,
+    server: userServerName(detailsResult.ok.creator),
+  });
 }
 
 export type TakedownPolicyPreview = {
@@ -248,19 +243,30 @@ export const DraupnirTakedownCommand = describeCommand({
     if (!keywords.getKeywordValue<boolean>("no-confirm", false)) {
       return preview;
     }
-    if (preview.ok.ruleType === PolicyRuleType.Room) {
-      handleRoomDiscovery(
-        preview.ok.entity as StringRoomID,
-        hashStore,
-        detailsProvider
-      );
-    }
+
     const plainText = keywords.getKeywordValue<boolean>("plain-text", false);
-    return await policyRoomEditor.takedownEntity(
+    const takedownResult = await policyRoomEditor.takedownEntity(
       preview.ok.ruleType,
       preview.ok.entity,
       { shouldHash: !plainText }
     );
+    if (
+      isError(takedownResult) ||
+      preview.ok.ruleType !== PolicyRuleType.Room
+    ) {
+      return takedownResult;
+    }
+    const roomDiscoveryResult = await handleRoomDiscovery(
+      preview.ok.entity as StringRoomID,
+      hashStore,
+      detailsProvider
+    );
+    if (isError(roomDiscoveryResult)) {
+      return roomDiscoveryResult.elaborate(
+        "Failed to inform room discovery of the room provided in this command"
+      );
+    }
+    return takedownResult;
   },
 });
 
