@@ -66,6 +66,12 @@ describe("RoomTakedownProtectionTest", function () {
       )
     ).expect("Should be able to create the policy targetting the dodgy user");
 
+    // We have to wait here for the policy to come down sync and for the internal
+    // models to process and update it.
+    // There doesn't seem to be a reliable way in concept to update the model.
+    // where we could avoid doing this.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const invitationResult = await takedownTarget
       .inviteUser(moderatorUserID, takedownTargetRoomID)
       .then((_) => Ok(undefined), resultifyBotSDKRequestError);
