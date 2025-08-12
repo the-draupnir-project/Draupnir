@@ -311,10 +311,10 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@the-draupnir-project/interface-manager@4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-4.1.0.tgz#bc5ca52e4d042f73c832b2069a625fff0b7ef193"
-  integrity sha512-sv+G38Ua4rB/MOtz6keE9TI9PfhlpRlCiBeQhbqkesAJ5h5p8ZfeVRpUFTwuk6WB3NDV40QJZpOBDo9YkE/P5g==
+"@the-draupnir-project/interface-manager@4.2.5":
+  version "4.2.5"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/interface-manager/-/interface-manager-4.2.5.tgz#fcbcd47a9c926054b7e25936acf9d9e67a76b83e"
+  integrity sha512-KSeYx5aklMJ+VzfO+UcE2/IacQQRaEKcfUUG6xBClpmp0CGZzI6tREs2pP2RR7OISX+I/qsPTMc7eitKlGzSxw==
   dependencies:
     "@gnuxie/super-cool-stream" "^0.2.1"
     "@gnuxie/typescript-result" "^1.0.0"
