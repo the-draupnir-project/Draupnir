@@ -97,6 +97,7 @@ export class SynapseHTTPAntispamRoomExplorer implements RoomExplorer {
     this.synapseHTTPAntispam.userMayJoinRoomHandles.unregisterHandle(
       this.handleUserMayJoin
     );
+    this.batcher.dispose();
   }
 
   public handlePolicyChange(_change: PolicyRuleChange[]): void {
