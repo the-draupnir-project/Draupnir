@@ -12,6 +12,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.6.0] - 2025-08-12
+
+### Advice on the hydra disclosure
+
+do not upgrade rooms until the following conditions have been met:
+
+1. You are using Draupnir v2.5.1 or above (you should really wait until the next
+   release though).
+2. You have considered that not every user in your room will be able to follow
+   the tombstone, because their own server has not upgraded yet. This could lead
+   to them NEVER following the tombstone when the room becomes dead/lost to
+   history
+3. You are confident that you know what you are doing. The upgrade UX on Matrix
+   is poor and you are likely to dos your own community in a worse way than an
+   exploiter of any supposed vulnerability.
+
+See https://matrix.org/docs/communities/administration/#room-upgrades for
+current advice on upgrading rooms. We are adding features to Draupnir to make
+room upgrades easier for users. See
+https://github.com/the-draupnir-project/planning/issues/44.
+
+### Added
+
+- Replacement rooms will automatically be protected when protected rooms are
+  upgraded.
+
+### Fixed
+
+- V12 room identifiers can now be used in commands. Thanks to @cremesk for
+  reporting.
+
+### Changed
+
+- Room discovery has been made a synchronous part of the takedown command. This
+  would happen in background before which could cause confusion if it failed.
+
 ## [v2.5.1] - 2025-08-06
 
 This is a small release that makes Draupnir compatible with V12 rooms. Please
