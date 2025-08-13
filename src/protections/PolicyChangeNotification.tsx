@@ -11,6 +11,7 @@
 import {
   AbstractProtection,
   ActionResult,
+  EDStatic,
   Logger,
   Ok,
   PolicyListRevision,
@@ -20,7 +21,7 @@ import {
   PolicyRuleMatchType,
   ProtectedRoomsSet,
   ProtectionDescription,
-  UnknownConfig,
+  StringRoomIDSchema,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -40,15 +41,31 @@ import {
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
 import { renderRuleHashes, renderRuleClearText } from "../commands/Rules";
+import { NotificationRoomCreator } from "./NotificationRoom/NotificationRoom";
+import { Type } from "@sinclair/typebox";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("PolicyChangeNotification");
+
+const PolicyChangeNotificationSettings = Type.Object({
+  notificationRoomID: Type.Optional(
+    Type.Union([StringRoomIDSchema, Type.Undefined()], {
+      default: undefined,
+      description: "The room where notifications should be sent.",
+    })
+  ),
+});
+
+export type PolicyChangeNotificationSettings = EDStatic<
+  typeof PolicyChangeNotificationSettings
+>;
 
 export type PolicyChangeNotificationCapabilitites = Record<never, never>;
 
 export type PolicyChangeNotificationProtectionDescription =
   ProtectionDescription<
     Draupnir,
-    UnknownConfig,
+    typeof PolicyChangeNotificationSettings,
     PolicyChangeNotificationCapabilitites
   >;
 
@@ -62,7 +79,8 @@ export class PolicyChangeNotification
     description: PolicyChangeNotificationProtectionDescription,
     capabilities: PolicyChangeNotificationCapabilitites,
     protectedRoomsSet: ProtectedRoomsSet,
-    private readonly draupnir: Draupnir
+    private readonly draupnir: Draupnir,
+    public readonly notificationRoomID: StringRoomID
   ) {
     super(description, capabilities, protectedRoomsSet, {});
   }
@@ -92,7 +110,7 @@ export class PolicyChangeNotification
     }
     const sendResult = await sendMatrixEventsFromDeadDocument(
       this.draupnir.clientPlatform.toRoomMessageSender(),
-      this.draupnir.managementRoomID,
+      this.notificationRoomID,
       <root>{renderGroupedChanges(groupedChanges.ok)}</root>,
       {}
     );
@@ -159,24 +177,40 @@ function renderGroupedChanges(groupedChanges: GroupedChange[]): DocumentNode {
   return <fragment>{groupedChanges.map(renderListChanges)}</fragment>;
 }
 
-describeProtection<PolicyChangeNotificationCapabilitites, Draupnir>({
+describeProtection<
+  PolicyChangeNotificationCapabilitites,
+  Draupnir,
+  typeof PolicyChangeNotificationSettings
+>({
   name: PolicyChangeNotification.name,
   description: "Provides notification of policy changes from watched lists.",
   capabilityInterfaces: {},
   defaultCapabilities: {},
+  configSchema: PolicyChangeNotificationSettings,
   async factory(
     description,
     protectedRoomsSet,
     draupnir,
     capabilities,
-    _settings
+    settings
   ) {
+    if (settings.notificationRoomID === undefined) {
+      return (await NotificationRoomCreator.createNotificationRoomFromDraupnir(
+        draupnir,
+        description as unknown as ProtectionDescription,
+        settings,
+        "notificationRoomID",
+        "Policy Change Notifications",
+        log
+      )) as Result<PolicyChangeNotification>;
+    }
     return Ok(
       new PolicyChangeNotification(
         description,
         capabilities,
         protectedRoomsSet,
-        draupnir
+        draupnir,
+        settings.notificationRoomID
       )
     );
   },
