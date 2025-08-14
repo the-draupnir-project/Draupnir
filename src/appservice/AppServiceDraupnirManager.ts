@@ -457,7 +457,7 @@ export async function makeManagementRoom(
     );
   }
   const isV12OrAboveDefault =
-    capabilities.ok.capabilities["m.room_versions"].default >= "12";
+    parseInt(capabilities.ok.capabilities["m.room_versions"].default) >= 12;
   return await roomCreator.createRoom({
     preset: "private_chat",
     invite: [requestingUserID],
