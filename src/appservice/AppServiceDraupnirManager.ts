@@ -26,6 +26,7 @@ import {
   ClientsInRoomMap,
   Ok,
   RoomCreator,
+  RoomVersionMirror,
   Task,
   isError,
 } from "matrix-protection-suite";
@@ -456,13 +457,15 @@ export async function makeManagementRoom(
       "Failed to fetch room versions from client capabilities"
     );
   }
-  const isV12OrAboveDefault =
-    parseInt(capabilities.ok.capabilities["m.room_versions"].default) >= 12;
+  const isRoomVersionWithPrivilidgedCreators =
+    RoomVersionMirror.isVersionWithPrivilidgedCreators(
+      capabilities.ok.capabilities["m.room_versions"].default
+    );
   return await roomCreator.createRoom({
     preset: "private_chat",
     invite: [requestingUserID],
     name: `${requestingUserID}'s Draupnir`,
-    power_level_content_override: isV12OrAboveDefault
+    power_level_content_override: isRoomVersionWithPrivilidgedCreators
       ? {
           users: {
             [requestingUserID]: 150,
