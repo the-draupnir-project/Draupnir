@@ -411,6 +411,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
                 "m.text": [{"body": "The reason for the ban"}],
               },
             },
+            "description": {
+              "m.text": [{"body": "Ban a user in all protected rooms"}],
+            },
           },
           {
             "syntax": "draupnir kick {userId} {roomId} {reason}",
@@ -425,6 +428,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
                 "m.text": [{"body": "The reason for the kick"}],
               },
             },
+            "description": {
+              "m.text": [{"body": "Kick a user from a room"}],
+            },
           },
           {
             "syntax": "draupnir redact {permalink}",
@@ -433,6 +439,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
                 "m.text": [{"body": "The event ID link to redact"}],
               },
             },
+            "description": {
+              "m.text": [{"body": "Redact an event"}],
+            },
           },
           {
             "syntax": "draupnir redact {userId}",
@@ -440,6 +449,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
               "userId": {
                 "m.text": [{"body": "The user ID to redact"}],
               },
+            },
+            "description": {
+              "m.text": [{"body": "Redact as many of the user's events as possible"}],
             },
           },
         ]
