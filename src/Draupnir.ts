@@ -434,6 +434,14 @@ export class Draupnir implements Client, MatrixAdaptorContext {
               },
             },
           },
+          {
+            "syntax": "draupnir redact {userId}",
+            "variables": {
+              "userId": {
+                "m.text": [{"body": "The user ID to redact"}],
+              },
+            },
+          },
         ]
       });
 
@@ -450,8 +458,12 @@ export class Draupnir implements Client, MatrixAdaptorContext {
             "use": "draupnir kick {userId} {roomId} {reason}",
             "prefill_variables": {},
           },
-          "redact": {
+          "redact_event": {
             "use": "draupnir redact {permalink}",
+            "prefill_variables": {},
+          },
+          "redact_user": {
+            "use": "draupnir redact {userId}",
             "prefill_variables": {},
           },
         },
