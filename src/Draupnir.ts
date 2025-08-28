@@ -440,7 +440,7 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       // Now set that MSC4333 event.
       // TODO: Update when the protected room set changes.
       await this.client.sendStateEvent(this.managementRoomID, "org.matrix.msc4333.moderation_config", await this.client.getUserId(), {
-        "protected_room_ids": [this.protectedRoomsSet.allProtectedRooms.map(r => r.toString())],
+        "protected_room_ids": [this.protectedRoomsSet.allProtectedRooms.map(r => r.toRoomIDOrAlias())],
         "commands": {
           "ban": {
             "use": "draupnir ban {userId} {reason}",
