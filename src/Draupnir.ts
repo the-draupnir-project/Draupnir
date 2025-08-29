@@ -402,13 +402,16 @@ export class Draupnir implements Client, MatrixAdaptorContext {
         "sigil": "!",
         "commands": [
           {
-            "syntax": "draupnir ban {userId} {reason}",
+            "syntax": "draupnir ban {userId} {list} {reason}",
             "variables": {
               "userId": {
                 "m.text": [{"body": "The user ID to ban"}],
               },
               "reason": {
                 "m.text": [{"body": "The reason for the ban"}],
+              },
+              "list": {
+                "m.text": [{"body": "The policy list to ban the user on"}],
               },
             },
             "description": {
@@ -463,8 +466,10 @@ export class Draupnir implements Client, MatrixAdaptorContext {
         "protected_room_ids": this.protectedRoomsSet.allProtectedRooms.map(r => r.toRoomIDOrAlias()),
         "commands": {
           "ban": {
-            "use": "draupnir ban {userId} {reason}",
-            "prefill_variables": {},
+            "use": "draupnir ban {userId} {list} {reason}",
+            "prefill_variables": {
+              "list": "conduct",
+            },
           },
           "kick": {
             "use": "draupnir kick {userId} {roomId} {reason}",
