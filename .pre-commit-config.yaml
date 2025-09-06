@@ -27,7 +27,7 @@ repos:
       - id: editorconfig-checker
         alias: ec
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v4.0.3
+    rev: v5.1.1
     hooks:
       - id: reuse
   - repo: local
