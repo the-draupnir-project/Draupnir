@@ -22,6 +22,8 @@ import {
   TextMessageContent,
   Value,
   StringEventIDSchema,
+  ReactionContent,
+  hasOwn,
 } from "matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
 import { Draupnir } from "../../../src/Draupnir";
@@ -145,6 +147,7 @@ export async function getFirstReaction(
   const addEvent = function (roomId: string, event: RoomEvent) {
     if (roomId !== targetRoom) return;
     if (!Value.Check(ReactionEvent, event)) return;
+    if (Object.keys(event.content).length === 0) return;
     reactionEvents.push(event);
   };
   let targetCb;
@@ -152,7 +155,11 @@ export async function getFirstReaction(
     matrix.on("room.event", addEvent);
     const targetEventId = await targetEventThunk();
     for (const event of reactionEvents) {
-      const relates_to = event.content?.["m.relates_to"];
+      const relates_to = (
+        hasOwn(event.content, "m.relates_to")
+          ? event.content["m.relates_to"]
+          : undefined
+      ) as ReactionContent["m.relates_to"];
       if (
         relates_to?.event_id === targetEventId &&
         relates_to.key === reactionKey
@@ -164,7 +171,11 @@ export async function getFirstReaction(
       targetCb = function (roomId: string, event: RoomEvent) {
         if (roomId !== targetRoom) return;
         if (!Value.Check(ReactionEvent, event)) return;
-        const relates_to = event.content["m.relates_to"];
+        const relates_to = (
+          hasOwn(event.content, "m.relates_to")
+            ? event.content["m.relates_to"]
+            : undefined
+        ) as ReactionContent["m.relates_to"];
         if (
           relates_to?.event_id === targetEventId &&
           relates_to.key === reactionKey
