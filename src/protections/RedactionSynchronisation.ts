@@ -4,8 +4,6 @@
 
 import {
   AbstractProtection,
-  ActionException,
-  ActionExceptionKind,
   ActionResult,
   Capability,
   CapabilityMethodSchema,
@@ -41,10 +39,9 @@ import {
   StringRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Result } from "@gnuxie/typescript-result";
+import { isError, Result } from "@gnuxie/typescript-result";
 import { Type } from "@sinclair/typebox";
 import { revisionRulesMatchingUser } from "../commands/unban/UnbanUsers";
-import { redactUserMessagesIn } from "../utils";
 
 export type RedactionSynchronisationProtectionCapabilitiesSet = {
   consequences: RedactionSynchronisationConsequences;
@@ -106,23 +103,20 @@ describeCapabilityProvider({
       requiredStatePermissions: [],
       requiredEventPermissions: [],
       async redactMessagesIn(userIDOrGlob, reason, roomIDs) {
-        const redactionResult = await redactUserMessagesIn(
-          draupnir.client,
-          draupnir.managementRoomOutput,
-          userIDOrGlob,
-          roomIDs
-        ).then(
-          (_) => Ok(undefined),
-          (error) =>
-            ActionException.Result(
-              `Error redacting messages for ${userIDOrGlob}`,
-              {
-                exception: error,
-                exceptionKind: ActionExceptionKind.Unknown,
-              }
+        const redactionResults = await Promise.all(
+          roomIDs.map((roomID) =>
+            draupnir.timelineRedactionQueue.enqueueRedaction(
+              userIDOrGlob,
+              roomID
             )
+          )
         );
-        return redactionResult;
+        const firstError = redactionResults.find((result) => isError(result));
+        if (firstError) {
+          return firstError;
+        } else {
+          return Ok(undefined);
+        }
       },
       async rejectInvite(roomID, _sender, target, reason) {
         return await draupnir.clientPlatform

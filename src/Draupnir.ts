@@ -80,6 +80,7 @@ import {
   MatrixReactionHandler,
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
+import { TimelineRedactionQueue } from "./queues/TimelineRedactionQueue";
 
 const log = new Logger("Draupnir");
 
@@ -135,6 +136,12 @@ export class Draupnir implements Client, MatrixAdaptorContext {
 
   private readonly JSInterfaceDispatcher: JSInterfaceCommandDispatcher<BasicInvocationInformation> =
     makeDraupnirJSCommandDispatcher(this);
+
+  public readonly timelineRedactionQueue = new TimelineRedactionQueue(
+    this.clientPlatform.toRoomMessages(),
+    this.clientPlatform.toRoomEventRedacter()
+  );
+
   private constructor(
     public readonly client: MatrixSendClient,
     public readonly clientUserID: StringUserID,
