@@ -189,9 +189,10 @@ async function sendPromptForReplacementRoom(
 /**
  * This class sends prompts to the management room to watch upgraded policy rooms.
  *
- * Lifecycle: `unregisterListeners` must be called to dispose.
- * `handleRoomStateChange` must be called if you want it to detect active tombstones.
- * `syncTombstonedPolicyRooms` must be called if you want it to detect stale tombstones.
+ * Lifecycle:
+ * - `unregisterListeners` must be called to dispose.
+ * - `handleRoomStateChange` must be called if you want it to detect active tombstones.
+ * - `syncTombstonedPolicyRooms` must be called if you want it to detect stale tombstones at startup.
  */
 export class WatchReplacementPolicyRooms {
   private readonly watchReplacementPolicyRoomsPromptListener =
