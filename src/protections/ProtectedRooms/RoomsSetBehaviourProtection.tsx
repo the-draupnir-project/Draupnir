@@ -76,6 +76,7 @@ export class RoomsSetBehaviour
     if (this.draupnir.config.protectAllJoinedRooms) {
       void this.protectJoinedRooms.syncProtectedRooms();
     }
+    void this.watchReplacementPolicyRooms.syncTombstonedPolicyRooms();
   }
 
   public handleMembershipChange(

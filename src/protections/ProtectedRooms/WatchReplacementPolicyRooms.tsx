@@ -188,7 +188,9 @@ async function sendPromptForReplacementRoom(
 /**
  * This class sends prompts to the management room to watch upgraded policy rooms.
  *
- * Lifecycle: unregisterListeners must be called to dispose.
+ * Lifecycle: `unregisterListeners` must be called to dispose.
+ * `handleRoomStateChange` must be called if you want it to detect active tombstones.
+ * `syncTombstonedPolicyRooms` must be called if you want it to detect stale tombstones.
  */
 export class WatchReplacementPolicyRooms {
   private readonly watchReplacementPolicyRoomsPromptListener =
@@ -228,6 +230,38 @@ export class WatchReplacementPolicyRooms {
           log,
         });
       }
+    }
+  }
+
+  public async syncTombstonedPolicyRooms(): Promise<void> {
+    for (const profile of this.watchedPolicyRooms.allRooms) {
+      const roomStateRevision = (
+        await this.roomStateManager.getRoomStateRevisionIssuer(profile.room)
+      ).expect(
+        "Should always be able to get the room state revision issuer for a watched policy room"
+      ).currentRevision;
+      const tombstoneEvent = roomStateRevision.getStateEvent<TombstoneEvent>(
+        "m.room.tombstone",
+        ""
+      );
+      if (
+        tombstoneEvent === undefined ||
+        tombstoneEvent.content.replacement_room === undefined
+      ) {
+        continue; // room hasn't been upgraded yet.
+      }
+      const replacementWatchProfile = this.watchedPolicyRooms.allRooms.find(
+        (profile) =>
+          profile.room.toRoomIDOrAlias() ===
+          tombstoneEvent.content.replacement_room
+      );
+      if (replacementWatchProfile !== undefined) {
+        continue; // room upgrade has been handled
+        // TODO: in MSC4321 if the state is move then we should still send the prompt.
+      }
+      // FIXME: We need to handle the errors from this and render them to
+      // the management room me thinks.
+      void this.handleTombstone(tombstoneEvent);
     }
   }
 
