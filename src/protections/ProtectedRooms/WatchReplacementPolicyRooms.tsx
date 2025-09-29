@@ -338,6 +338,12 @@ export class WatchReplacementPolicyRooms {
     // Shouldn't this be a prompt to watch the new room?
     // Yes. it shouldn't happen automatically because it could be a hostile
     // takeover or something.
+    // It is important to prompt specifically because new replacement rooms
+    // are always prone to configuration errors. Ie room admins may misconfigure
+    // the permissions in the new room and need to make yet another replacement.
+    // This could allow a hypothetical attack where the tombstone permission
+    // can be insecure in a new room and with automatic following they can
+    // cause absolute havoc.
     const sendResult = await sendPromptForReplacementRoom(
       this.roomMessageSender,
       this.managementRoomID,
