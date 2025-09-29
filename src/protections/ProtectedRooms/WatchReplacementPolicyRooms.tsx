@@ -39,6 +39,7 @@ import {
   renderActionResultToEvent,
   renderMentionPill,
   sendMatrixEventsFromDeadDocument,
+  renderErrorDetails,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 
@@ -226,9 +227,7 @@ export class WatchReplacementPolicyRooms {
           continue;
       }
       if (Value.Check(TombstoneEvent, change.state)) {
-        void Task(this.handleTombstone(change.state), {
-          log,
-        });
+        void this.handleTombstoneAndPhoneManagementRoom(change.state);
       }
     }
   }
@@ -259,10 +258,31 @@ export class WatchReplacementPolicyRooms {
         continue; // room upgrade has been handled
         // TODO: in MSC4321 if the state is move then we should still send the prompt.
       }
-      // FIXME: We need to handle the errors from this and render them to
-      // the management room me thinks.
-      void this.handleTombstone(tombstoneEvent);
+      void this.handleTombstoneAndPhoneManagementRoom(tombstoneEvent);
     }
+  }
+
+  private async handleTombstoneAndPhoneManagementRoom(
+    event: TombstoneEvent
+  ): Promise<void> {
+    const handleTombstoneResult = await this.handleTombstone(event);
+    if (isOk(handleTombstoneResult)) {
+      return;
+    }
+    const error = handleTombstoneResult.error;
+    void Task(
+      sendMatrixEventsFromDeadDocument(
+        this.roomMessageSender,
+        this.managementRoomID,
+        <root>
+          A policy room was replaced, but there was an error during the upgrade
+          process.
+          {renderErrorDetails(error)}
+        </root>,
+        {}
+      ),
+      { log }
+    );
   }
 
   private async handleTombstone(event: TombstoneEvent): Promise<Result<void>> {
@@ -277,14 +297,13 @@ export class WatchReplacementPolicyRooms {
       // Make sure that we aren't already watching the replacement room.
       findWatchProfile(event.content.replacement_room)
     ) {
-      return Ok(undefined);
+      return Ok(undefined); // already watching the replacement.
     }
     const originalRoomStateRevisionIssuer =
       await this.roomStateManager.getRoomStateRevisionIssuer(
         oldRoomWatchProfile.room
       );
     if (isError(originalRoomStateRevisionIssuer)) {
-      // FIXME: Report to management room meow!
       return originalRoomStateRevisionIssuer.elaborate(
         "Unable to fetch room state revision for original policy room"
       );
@@ -294,13 +313,11 @@ export class WatchReplacementPolicyRooms {
     ]);
     const joinAttempt = await this.roomJoiner.joinRoom(replacementRoom);
     if (isError(joinAttempt)) {
-      // TODO: Report this to the management room.
-      return Ok(undefined);
+      return joinAttempt.elaborate("Unable to join the replacement room");
     }
     const replacementRoomStateRevisionIssuer =
       await this.roomStateManager.getRoomStateRevisionIssuer(replacementRoom);
     if (isError(replacementRoomStateRevisionIssuer)) {
-      // FIXME: Report to management room meow!!
       return replacementRoomStateRevisionIssuer.elaborate(
         "Unable to fetch room state revision for an upgraded policy room"
       );
@@ -308,7 +325,6 @@ export class WatchReplacementPolicyRooms {
     const policyRoomRevisionIssuer =
       await this.policyRoomManager.getPolicyRoomRevisionIssuer(replacementRoom);
     if (isError(policyRoomRevisionIssuer)) {
-      // FIXME: This needs to be reported to the management room still.
       return policyRoomRevisionIssuer.elaborate(
         "Unable to fetch a policy room revision for an upgraded policy room"
       );
@@ -318,7 +334,7 @@ export class WatchReplacementPolicyRooms {
       propagation: oldRoomWatchProfile.propagation,
       revision: policyRoomRevisionIssuer.ok.currentRevision,
     } satisfies WatchedPolicyRoom;
-    // shouldn't this be a prompt to watch the new room?
+    // Shouldn't this be a prompt to watch the new room?
     // Yes. it shouldn't happen automatically because it could be a hostile
     // takeover or something.
     const sendResult = await sendPromptForReplacementRoom(
