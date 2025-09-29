@@ -6,9 +6,16 @@ import { DocumentNode } from "@the-draupnir-project/interface-manager";
 import {
   Logger,
   PolicyRoomManager,
+  PolicyRuleType,
+  PowerLevelsEvent,
+  PowerLevelsMirror,
+  RoomCreateEvent,
   RoomEvent,
   RoomJoiner,
   RoomMessageSender,
+  RoomStateManager,
+  RoomStateRevision,
+  RoomVersionMirror,
   StateChange,
   StateChangeType,
   Task,
@@ -30,6 +37,7 @@ import { isError, isOk, Ok, Result } from "@gnuxie/typescript-result";
 import {
   MatrixReactionHandler,
   renderActionResultToEvent,
+  renderMentionPill,
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
@@ -51,9 +59,68 @@ type WatchPolicyRoomPromptContext = {
   readonly tombstoneSender: StringUserID;
 };
 
+function renderPrivilegedUsers(revision: RoomStateRevision): DocumentNode {
+  const powerLevels = revision.getStateEvent<PowerLevelsEvent>(
+    "m.room.power_levels",
+    ""
+  );
+  if (powerLevels === undefined) {
+    throw new TypeError(
+      "Mate can't find power levels within a room this is awful"
+    );
+  }
+  const poweredUsers = powerLevels.content.users
+    ? Object.entries(powerLevels.content.users)
+        .filter(([userID]) =>
+          PowerLevelsMirror.isUserAbleToSendEvent(
+            userID as StringUserID,
+            PolicyRuleType.User,
+            powerLevels.content
+          )
+        )
+        // Descending order.
+        .sort(([_u1, a], [_u2, b]) => b - a)
+    : [];
+  const createEvent = revision.getStateEvent<RoomCreateEvent>(
+    "m.room.create",
+    ""
+  );
+  if (createEvent === undefined) {
+    throw new TypeError("Mate can't find create event in the room");
+  }
+  const privilegedCreators = RoomVersionMirror.priviligedCreators(createEvent);
+  return (
+    <fragment>
+      <details>
+        <summary>
+          Privileged users ({poweredUsers.length + privilegedCreators.length})
+        </summary>
+        <h6>Creators</h6>
+        <ul>
+          {privilegedCreators.map((creator) => (
+            <li>{renderMentionPill(creator, creator)}</li>
+          ))}
+        </ul>
+        <h6>Powered Users</h6>
+        <ul>
+          {" "}
+          {poweredUsers.map(([poweredUser, powerLevel]) => (
+            <li>
+              {renderMentionPill(poweredUser, poweredUser)}:{" "}
+              <code>{powerLevel}</code>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </fragment>
+  );
+}
+
 function renderReplacementPrompt(
-  policyRoom: WatchedPolicyRoom,
-  replacementRoom: WatchedPolicyRoom
+  originalWatchProfile: WatchedPolicyRoom,
+  originalRoomStateRevision: RoomStateRevision,
+  replacementWatchProfile: WatchedPolicyRoom,
+  replacementRoomStateRevision: RoomStateRevision
 ): DocumentNode {
   return (
     <root>
@@ -61,9 +128,11 @@ function renderReplacementPrompt(
       The following policy room has been replaced, would you like Draupnir to
       watch the new policy room?
       <h5>Old room</h5>
-      <ul>{renderPolicyList(policyRoom)}</ul>
+      <ul>{renderPolicyList(originalWatchProfile)}</ul>
+      {renderPrivilegedUsers(originalRoomStateRevision)}
       <h5>Replacement room</h5>
-      <ul>{renderPolicyList(replacementRoom)}</ul>
+      <ul>{renderPolicyList(replacementWatchProfile)}</ul>
+      {renderPrivilegedUsers(replacementRoomStateRevision)}
       <h4>Prompt</h4>
       Unfortunately we are unable to determine the policy list curator's intent
       with this upgrade, and whether or not they want you to still watch the old
@@ -77,8 +146,10 @@ async function sendPromptForReplacementRoom(
   managementRoomID: StringRoomID,
   tombstoneSender: StringUserID,
   reactionHandler: MatrixReactionHandler,
-  oldRoomWatchProfile: WatchedPolicyRoom,
-  replacementRoomWatchProfile: WatchedPolicyRoom
+  originalWatchProfile: WatchedPolicyRoom,
+  originalRoomStateRevision: RoomStateRevision,
+  replacementWatchProfile: WatchedPolicyRoom,
+  replacementRoomStateRevision: RoomStateRevision
 ) {
   const reactionMap = new Map(
     Object.entries(WatchReplacementPolicyRoomsPromptReactionMap)
@@ -86,16 +157,20 @@ async function sendPromptForReplacementRoom(
   const sendResult = await sendMatrixEventsFromDeadDocument(
     roomMessageSender,
     managementRoomID,
-    renderReplacementPrompt(oldRoomWatchProfile, replacementRoomWatchProfile),
+    renderReplacementPrompt(
+      originalWatchProfile,
+      originalRoomStateRevision,
+      replacementWatchProfile,
+      replacementRoomStateRevision
+    ),
     {
       additionalContent: reactionHandler.createAnnotation(
         WatchReplacementPolicyRoomsPromptListenerName,
         reactionMap,
         {
           tombstoneSender,
-          original_room_id: oldRoomWatchProfile.room.toRoomIDOrAlias(),
-          replacement_room_id:
-            replacementRoomWatchProfile.room.toRoomIDOrAlias(),
+          original_room_id: originalWatchProfile.room.toRoomIDOrAlias(),
+          replacement_room_id: replacementWatchProfile.room.toRoomIDOrAlias(),
         } satisfies WatchPolicyRoomPromptContext
       ),
     }
@@ -124,6 +199,7 @@ export class WatchReplacementPolicyRooms {
     private readonly roomMessageSender: RoomMessageSender,
     private readonly roomReactionSender: RoomReactionSender,
     private readonly watchedPolicyRooms: WatchedPolicyRooms,
+    private readonly roomStateManager: RoomStateManager,
     private readonly policyRoomManager: PolicyRoomManager,
     private readonly reactionHandler: MatrixReactionHandler
   ) {
@@ -169,6 +245,16 @@ export class WatchReplacementPolicyRooms {
     ) {
       return Ok(undefined);
     }
+    const originalRoomStateRevisionIssuer =
+      await this.roomStateManager.getRoomStateRevisionIssuer(
+        oldRoomWatchProfile.room
+      );
+    if (isError(originalRoomStateRevisionIssuer)) {
+      // FIXME: Report to management room meow!
+      return originalRoomStateRevisionIssuer.elaborate(
+        "Unable to fetch room state revision for original policy room"
+      );
+    }
     const replacementRoom = new MatrixRoomID(event.content.replacement_room, [
       userServerName(event.sender),
     ]);
@@ -176,6 +262,14 @@ export class WatchReplacementPolicyRooms {
     if (isError(joinAttempt)) {
       // TODO: Report this to the management room.
       return Ok(undefined);
+    }
+    const replacementRoomStateRevisionIssuer =
+      await this.roomStateManager.getRoomStateRevisionIssuer(replacementRoom);
+    if (isError(replacementRoomStateRevisionIssuer)) {
+      // FIXME: Report to management room meow!!
+      return replacementRoomStateRevisionIssuer.elaborate(
+        "Unable to fetch room state revision for an upgraded policy room"
+      );
     }
     const policyRoomRevisionIssuer =
       await this.policyRoomManager.getPolicyRoomRevisionIssuer(replacementRoom);
@@ -199,7 +293,9 @@ export class WatchReplacementPolicyRooms {
       event.sender,
       this.reactionHandler,
       oldRoomWatchProfile,
-      replacementRoomWatchProfile
+      originalRoomStateRevisionIssuer.ok.currentRevision,
+      replacementRoomWatchProfile,
+      replacementRoomStateRevisionIssuer.ok.currentRevision
     );
     if (isError(sendResult)) {
       return sendResult.elaborate(

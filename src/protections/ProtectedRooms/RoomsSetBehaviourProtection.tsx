@@ -62,6 +62,7 @@ export class RoomsSetBehaviour
       this.draupnir.clientPlatform.toRoomMessageSender(),
       this.draupnir.clientPlatform.toRoomReactionSender(),
       this.draupnir.protectedRoomsSet.watchedPolicyRooms,
+      this.draupnir.roomStateManager,
       this.draupnir.policyRoomManager,
       this.draupnir.reactionHandler
     );
