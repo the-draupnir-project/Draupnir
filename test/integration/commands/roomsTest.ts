@@ -89,10 +89,12 @@ describe("Test: The rooms commands", function () {
           });
         }
       );
+      // wait for policy change notification to create
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       assert.equal(
-        protectedRoomsMessage["content"]["body"].includes("1"),
+        protectedRoomsMessage["content"]["body"].includes("2"),
         true,
-        "Only the management room should be protected."
+        "Only the management room should be protected and the policy change notification room."
       );
     } as unknown as Mocha.AsyncFunc
   );
