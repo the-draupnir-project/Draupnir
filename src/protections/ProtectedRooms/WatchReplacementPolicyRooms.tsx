@@ -6,6 +6,7 @@ import { DocumentNode } from "@the-draupnir-project/interface-manager";
 import {
   Logger,
   PolicyRoomManager,
+  RoomEvent,
   RoomJoiner,
   RoomMessageSender,
   StateChange,
@@ -20,22 +21,35 @@ import { renderPolicyList } from "../../commands/StatusCommand";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 import {
   MatrixRoomID,
+  StringEventID,
   StringRoomID,
+  StringUserID,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
-import { isError, Ok, Result } from "@gnuxie/typescript-result";
+import { isError, isOk, Ok, Result } from "@gnuxie/typescript-result";
 import {
   MatrixReactionHandler,
+  renderActionResultToEvent,
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
-
-// TODO: Implement the listener and the methods to watch the rooms
-// with the various options with regards to the MSC.
+import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 
 const log = new Logger("WatchReplacementPolicyRooms");
 
 const WatchReplacementPolicyRoomsPromptListenerName =
   "space.draupnir.watch_replacement_policy_rooms";
+
+const WatchReplacementPolicyRoomsPromptReactionMap = {
+  "Watch replacement only": "Watch replacement only",
+  "Watch both": "Watch both",
+  Cancel: "Cancel",
+};
+
+type WatchPolicyRoomPromptContext = {
+  readonly replacement_room_id: StringRoomID;
+  readonly original_room_id: StringRoomID;
+  readonly tombstoneSender: StringUserID;
+};
 
 function renderReplacementPrompt(
   policyRoom: WatchedPolicyRoom,
@@ -47,11 +61,13 @@ function renderReplacementPrompt(
       The following policy room has been replaced, would you like Draupnir to
       watch the new policy room?
       <h5>Old room</h5>
-      {renderPolicyList(policyRoom)}
+      <ul>{renderPolicyList(policyRoom)}</ul>
       <h5>Replacement room</h5>
-      {renderPolicyList(replacementRoom)}. Unfortunatley we are unable to
-      determine the policy list curator's intent with this upgrade, and whether
-      or not they want you to still watch the old room.
+      <ul>{renderPolicyList(replacementRoom)}</ul>
+      <h4>Prompt</h4>
+      Unfortunately we are unable to determine the policy list curator's intent
+      with this upgrade, and whether or not they want you to still watch the old
+      room.
     </root>
   );
 }
@@ -59,39 +75,62 @@ function renderReplacementPrompt(
 async function sendPromptForReplacementRoom(
   roomMessageSender: RoomMessageSender,
   managementRoomID: StringRoomID,
+  tombstoneSender: StringUserID,
   reactionHandler: MatrixReactionHandler,
   oldRoomWatchProfile: WatchedPolicyRoom,
   replacementRoomWatchProfile: WatchedPolicyRoom
 ) {
-  return await sendMatrixEventsFromDeadDocument(
+  const reactionMap = new Map(
+    Object.entries(WatchReplacementPolicyRoomsPromptReactionMap)
+  );
+  const sendResult = await sendMatrixEventsFromDeadDocument(
     roomMessageSender,
     managementRoomID,
     renderReplacementPrompt(oldRoomWatchProfile, replacementRoomWatchProfile),
     {
       additionalContent: reactionHandler.createAnnotation(
         WatchReplacementPolicyRoomsPromptListenerName,
-        new Map(
-          Object.entries({
-            "Watch replacement only": "Watch replacement only",
-            "Watch both": "Watch both",
-            Cancel: "Cancel",
-          })
-        )
+        reactionMap,
+        {
+          tombstoneSender,
+          original_room_id: oldRoomWatchProfile.room.toRoomIDOrAlias(),
+          replacement_room_id:
+            replacementRoomWatchProfile.room.toRoomIDOrAlias(),
+        } satisfies WatchPolicyRoomPromptContext
       ),
     }
   );
+  if (isError(sendResult)) {
+    return sendResult;
+  }
+  return await reactionHandler.addReactionsToEvent(
+    managementRoomID,
+    sendResult.ok[0] as StringEventID,
+    reactionMap
+  );
 }
 
+/**
+ * This class sends prompts to the management room to watch upgraded policy rooms.
+ *
+ * Lifecycle: unregisterListeners must be called to dispose.
+ */
 export class WatchReplacementPolicyRooms {
+  private readonly watchReplacementPolicyRoomsPromptListener =
+    this.handlePromptReaction.bind(this);
   public constructor(
     private readonly managementRoomID: StringRoomID,
     private readonly roomJoiner: RoomJoiner,
     private readonly roomMessageSender: RoomMessageSender,
+    private readonly roomReactionSender: RoomReactionSender,
     private readonly watchedPolicyRooms: WatchedPolicyRooms,
     private readonly policyRoomManager: PolicyRoomManager,
     private readonly reactionHandler: MatrixReactionHandler
   ) {
-    // nothing to do.
+    this.reactionHandler.addListener(
+      WatchReplacementPolicyRoomsPromptListenerName,
+      this.watchReplacementPolicyRoomsPromptListener
+    );
   }
 
   handleRoomStateChange(changes: StateChange[]): void {
@@ -141,7 +180,7 @@ export class WatchReplacementPolicyRooms {
     const policyRoomRevisionIssuer =
       await this.policyRoomManager.getPolicyRoomRevisionIssuer(replacementRoom);
     if (isError(policyRoomRevisionIssuer)) {
-      // FIXME: This needs to be reported to the managemnt room still.
+      // FIXME: This needs to be reported to the management room still.
       return policyRoomRevisionIssuer.elaborate(
         "Unable to fetch a policy room revision for an upgraded policy room"
       );
@@ -157,6 +196,7 @@ export class WatchReplacementPolicyRooms {
     const sendResult = await sendPromptForReplacementRoom(
       this.roomMessageSender,
       this.managementRoomID,
+      event.sender,
       this.reactionHandler,
       oldRoomWatchProfile,
       replacementRoomWatchProfile
@@ -167,5 +207,78 @@ export class WatchReplacementPolicyRooms {
       );
     }
     return Ok(undefined);
+  }
+
+  public async handlePromptReaction(
+    key: string,
+    item: unknown,
+    context: WatchPolicyRoomPromptContext,
+    _reactionMap: Map<string, unknown>,
+    promptEvent: RoomEvent
+  ): Promise<void> {
+    const renderResultToPromptEvent = (result: Result<void>) => {
+      renderActionResultToEvent(
+        this.roomMessageSender,
+        this.roomReactionSender,
+        promptEvent,
+        result
+      );
+      if (isOk(result)) {
+        void Task(
+          this.reactionHandler.completePrompt(
+            promptEvent.room_id,
+            promptEvent.event_id
+          )
+        );
+      }
+    };
+    if (key === WatchReplacementPolicyRoomsPromptReactionMap.Cancel) {
+      void Task(this.reactionHandler.cancelPrompt(promptEvent));
+      return;
+    }
+    if (key === WatchReplacementPolicyRoomsPromptReactionMap["Watch both"]) {
+      const watchReplacementPolicyRoomResult =
+        await this.watchedPolicyRooms.watchPolicyRoomDirectly(
+          new MatrixRoomID(context.replacement_room_id, [
+            userServerName(context.tombstoneSender),
+          ])
+        );
+      renderResultToPromptEvent(watchReplacementPolicyRoomResult);
+      return;
+    }
+    if (
+      key ===
+      WatchReplacementPolicyRoomsPromptReactionMap["Watch replacement only"]
+    ) {
+      const watchReplacementPolicyRoomResult =
+        await this.watchedPolicyRooms.watchPolicyRoomDirectly(
+          new MatrixRoomID(context.replacement_room_id, [
+            userServerName(context.tombstoneSender),
+          ])
+        );
+      if (isError(watchReplacementPolicyRoomResult)) {
+        renderResultToPromptEvent(watchReplacementPolicyRoomResult);
+        return;
+      }
+      const unwatchOriginalPolicyRoomResult =
+        await this.watchedPolicyRooms.unwatchPolicyRoom(
+          new MatrixRoomID(context.original_room_id, [
+            userServerName(context.tombstoneSender),
+          ])
+        );
+      renderResultToPromptEvent(unwatchOriginalPolicyRoomResult);
+      return;
+    }
+    log.error(
+      "Could not handle the prompt to upgrade the room",
+      context.original_room_id
+    );
+  }
+
+  public unregisterListeners(): void {
+    this.reactionHandler.removeListener(
+      WatchReplacementPolicyRoomsPromptListenerName,
+      this.watchReplacementPolicyRoomsPromptListener
+    );
   }
 }

@@ -21,6 +21,7 @@ import { ProtectedJoinedRooms } from "./ProtectJoinedRooms";
 import { UnprotectPartedRooms } from "./UnprotectPartedRooms";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { ProtectReplacementRooms } from "./ProtectReplacementRooms";
+import { WatchReplacementPolicyRooms } from "./WatchReplacementPolicyRooms";
 
 export type RoomsSetBehaviourCapabailities = Record<string, never>;
 export type RoomsSetBehaviourSettings = UnknownConfig;
@@ -54,6 +55,16 @@ export class RoomsSetBehaviour
     this.draupnir.clientPlatform.toRoomMessageSender(),
     this.protectedRoomsSet.protectedRoomsManager
   );
+  private readonly watchReplacementPolicyRooms =
+    new WatchReplacementPolicyRooms(
+      this.draupnir.managementRoomID,
+      this.draupnir.clientPlatform.toRoomJoiner(),
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.draupnir.clientPlatform.toRoomReactionSender(),
+      this.draupnir.protectedRoomsSet.watchedPolicyRooms,
+      this.draupnir.policyRoomManager,
+      this.draupnir.reactionHandler
+    );
   public constructor(
     description: RoomsSetBehaviourDescription,
     capabilities: RoomsSetBehaviourCapabailities,
@@ -93,7 +104,12 @@ export class RoomsSetBehaviour
     changes: StateChange[]
   ): Promise<Result<void>> {
     this.protectReplacementRooms.handleRoomStateChange(changes);
+    this.watchReplacementPolicyRooms.handleRoomStateChange(changes);
     return Promise.resolve(Ok(undefined));
+  }
+
+  public handleProtectionDisable(): void {
+    this.watchReplacementPolicyRooms.unregisterListeners();
   }
 }
 
