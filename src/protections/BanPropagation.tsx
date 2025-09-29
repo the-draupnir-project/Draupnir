@@ -62,7 +62,6 @@ const log = new Logger("BanPropagationProtection");
 const BAN_PROPAGATION_PROMPT_LISTENER =
   "ge.applied-langua.ge.draupnir.ban_propagation";
 
-// FIXME: https://github.com/the-draupnir-project/Draupnir/issues/160
 function makePolicyRoomReactionReferenceMap(
   rooms: MatrixRoomID[]
 ): Map<string, string> {
