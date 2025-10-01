@@ -17,7 +17,7 @@ import {
   Task,
   Value,
   isError,
-  PermalinkSchema,
+  RoomIDPermalinkSchema,
 } from "matrix-protection-suite";
 import {
   renderActionResultToEvent,
@@ -40,7 +40,7 @@ const PROTECT_ROOMS_ON_INVITE_PROMPT_LISTENER =
 
 // would be nice to be able to use presentation types here idk.
 const ProtectRoomsOnInvitePromptContext = Type.Object({
-  invited_room: PermalinkSchema,
+  invited_room: RoomIDPermalinkSchema,
 });
 // this rule is stupid.
 
