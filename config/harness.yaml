@@ -139,6 +139,8 @@ protections:
 roomStateBackingStore:
   enabled: false
 
+draupnirNewsURL: http://127.0.0.1:8081/draupnir_news.json
+
 # Options for monitoring the health of the bot
 health:
   # healthz options. These options are best for use in container environments
