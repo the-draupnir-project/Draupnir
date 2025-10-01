@@ -17,6 +17,8 @@ up:
     # Launch the reverse proxy, listening for connections *only* on the local host.
     - docker run --rm --network host --name mjolnir-test-reverse-proxy -p
       127.0.0.1:8081:80 -v $MX_TEST_CWD/test/nginx.conf:/etc/nginx/nginx.conf:ro
+      -v
+      $MX_TEST_CWD/test/draupnir_news.json:/var/www/test/draupnir_news.json:ro
       -d nginx
     - corepack yarn install
     - corepack yarn ts-node src/appservice/cli.ts -r -u

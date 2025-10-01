@@ -14,6 +14,7 @@ import "../capabilities/capabilityIndex";
 // keep alphabetical please.
 import "./BanPropagation";
 import "./BasicFlooding";
+import "./DraupnirNews/DraupnirNews";
 import "./FirstMessageIsImage";
 import "./HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
 import "./InvalidEventProtection";
