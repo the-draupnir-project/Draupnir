@@ -58,7 +58,8 @@ const FSNews = (() => {
 type UpdateSeenNews = (seenNews: DraupnirNewsItem[]) => Promise<Result<void>>;
 
 /**
- * This class manages request news about the longhouse assembly sessions.
+ * This class manages requests to the Draupnir news endpoint to collect news
+ * items. It uses a repository version as a fallback.
  *
  * Lifecycle:
  * - unregisterListeners MUST be called when the parent protection is disposed.
@@ -109,16 +110,22 @@ export class DraupnirLonghouseAssemblySessionNotification {
       log.error("Unable to fetch news blob", newsBlob.error);
       return;
     }
-    const unseenNews = newsBlob.ok.news.filter(
-      (item) => !this.seenNewsIDs.has(item.news_id)
-    );
-    if (unseenNews.length !== 0) {
-      await this.notifyOfNews(unseenNews);
-    }
+    await this.notifyOfNews(newsBlob.ok.news);
   }
 
-  private async notifyOfNews(unseenNews: DraupnirNewsItem[]): Promise<void> {
-    const notifiedNews: DraupnirNewsItem[] = [];
+  private async notifyOfNews(news: DraupnirNewsItem[]): Promise<void> {
+    const allNews = new Map(
+      [...news, ...this.fileSystemNewsBlob.news].map((item) => [
+        item.news_id,
+        item,
+      ])
+    );
+    const unseenNews = [...allNews.values()].filter(
+      (item) => !this.seenNewsIDs.has(item.news_id)
+    );
+    const notifiedNews = [...allNews.values()].filter((item) =>
+      this.seenNewsIDs.has(item.news_id)
+    );
     for (const item of unseenNews) {
       const sendResult = await this.roomMessageSender.sendMessage(
         this.managementRoomID,
@@ -130,8 +137,7 @@ export class DraupnirLonghouseAssemblySessionNotification {
         notifiedNews.push(item);
       }
     }
-    const allNews = new Set([...notifiedNews, ...this.fileSystemNewsBlob.news]);
-    const updateResult = await this.updatePreviousNews([...allNews]);
+    const updateResult = await this.updatePreviousNews(notifiedNews);
     if (isError(updateResult)) {
       log.error("Unable to update stored news", updateResult.error);
       return;
