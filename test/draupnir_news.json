@@ -1,6 +1,11 @@
 {
-  "longhouse_cycle": {
-    "summary": "Announcing the Draupnir Longhouse Assembly!",
-    "permalink": "https://matrix.to/#/!DtwZFWORUIApKsOVWi:matrix.org/%24GdBN1XqoOnAfc5tJgxhoXNoAdW2YUbS1Mtsb8LbzIJ4?via=matrix.org&via=feline.support&via=asgard.chat"
-  }
+  "news": [
+    {
+      "news_id": "59e0dd6e-87da-4459-98ae-627c0f2a7d8b",
+      "matrix_event_content": {
+        "body": "Announcing the Draupnir Longhouse Assembly! https://matrix.to/#/!DtwZFWORUIApKsOVWi:matrix.org/%24GdBN1XqoOnAfc5tJgxhoXNoAdW2YUbS1Mtsb8LbzIJ4?via=matrix.org&via=feline.support&via=asgard.chat",
+        "msgtype": "m.notice"
+      }
+    }
+  ]
 }
