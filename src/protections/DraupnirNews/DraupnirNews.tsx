@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { readFileSync } from "fs";
-import { Ok, Result } from "@gnuxie/typescript-result";
+import { isOk, Ok, Result } from "@gnuxie/typescript-result";
 import { Type } from "@sinclair/typebox";
 import {
   AbstractProtection,
@@ -88,11 +88,11 @@ export class DraupnirNewsLifecycle {
     const remoteNews = await this.fetchRemoteNews();
     if (isError(remoteNews)) {
       log.error("Unable to fetch news blob", remoteNews.error);
-      return;
+      // fall through, we still want to be able to show filesystem news.
     }
     const allNews = DraupnirNewsHelper.mergeSources(
       this.localNews,
-      remoteNews.ok
+      isOk(remoteNews) ? remoteNews.ok : { news: [] }
     );
     const unseenNews = DraupnirNewsHelper.removeSeenNews(
       allNews,
