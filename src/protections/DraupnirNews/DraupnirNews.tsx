@@ -56,6 +56,25 @@ const FSNews = (() => {
 })();
 
 type UpdateSeenNews = (seenNews: DraupnirNewsItem[]) => Promise<Result<void>>;
+type FetchNews = (newsURL: string) => Promise<Result<DraupnirNewsBlob>>;
+
+async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
+  return await fetch(newsURL, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  })
+    .then((response) => response.json())
+    .then(
+      (json) => Value.Decode(DraupnirNewsBlob, json),
+      (error) =>
+        ActionException.Result("unable to fetch news", {
+          exception: error,
+          exceptionKind: ActionExceptionKind.Unknown,
+        })
+    );
+}
 
 /**
  * This class manages requests to the Draupnir news endpoint to collect news
@@ -72,6 +91,7 @@ export class DraupnirLonghouseAssemblySessionNotification {
   private requestLoop: ConstantPeriodBatch;
   public constructor(
     private readonly newsURL: string,
+    private readonly fetchNews: FetchNews,
     private readonly updatePreviousNews: UpdateSeenNews,
     private readonly roomMessageSender: RoomMessageSender,
     private readonly managementRoomID: StringRoomID,
@@ -91,21 +111,7 @@ export class DraupnirLonghouseAssemblySessionNotification {
   }
 
   private async requestNews(): Promise<void> {
-    const newsBlob = await fetch(this.newsURL, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then(
-        (json) => Value.Decode(DraupnirNewsBlob, json),
-        (error) =>
-          ActionException.Result("unable to fetch news", {
-            exception: error,
-            exceptionKind: ActionExceptionKind.Unknown,
-          })
-      );
+    const newsBlob = await this.fetchNews(this.newsURL);
     if (isError(newsBlob)) {
       log.error("Unable to fetch news blob", newsBlob.error);
       return;
@@ -181,6 +187,7 @@ export class DraupnirNews
   private readonly longhouseCycleNews =
     new DraupnirLonghouseAssemblySessionNotification(
       this.draupnir.config.draupnirNewsURL,
+      fetchNews,
       this.updateNews.bind(this),
       this.draupnir.clientPlatform.toRoomMessageSender(),
       this.draupnir.managementRoomID,
