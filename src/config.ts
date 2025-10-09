@@ -169,6 +169,9 @@ export interface IConfig {
   // This can not be used with Pantalaimon.
   experimentalRustCrypto: boolean;
 
+  // Where to fetch news from
+  draupnirNewsURL: string;
+
   configMeta:
     | {
         /**
@@ -262,6 +265,8 @@ const defaultConfig: IConfig = {
     enabled: true,
   },
   experimentalRustCrypto: false,
+  draupnirNewsURL:
+    "https://raw.githubusercontent.com/the-draupnir-project/Draupnir/refs/heads/main/src/protections/DraupnirNews/news.json",
   configMeta: undefined,
 };
 

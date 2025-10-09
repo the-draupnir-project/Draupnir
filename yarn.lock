@@ -319,10 +319,10 @@
     "@gnuxie/super-cool-stream" "^0.2.1"
     "@gnuxie/typescript-result" "^1.0.0"
 
-"@the-draupnir-project/matrix-basic-types@1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-1.4.0.tgz#18fcfc7561ad495f4868ef4298131a3e20e7d946"
-  integrity sha512-nKK9vmAXh87VwaANvlNlUaq/rIu50VcdRXfoPJB99RqY4dt6iXRu/1b8mQJ5rDCK4yun/4IyGexw6FVQAqT58Q==
+"@the-draupnir-project/matrix-basic-types@1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/matrix-basic-types/-/matrix-basic-types-1.4.1.tgz#2e8fdbadb0781fba29383c5cdf530357d25b8718"
+  integrity sha512-NzA2EWiTQK774J6hZZ4W5xJWY0G9J1gadrTWJfVrAo5GupwfY3nmRtVgZogpqwWbMV0t2zKcqXYuYqyP+1ju5w==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     glob-to-regexp "^0.4.1"
@@ -2606,10 +2606,10 @@ matrix-appservice@^2.0.0:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@3.13.0":
-  version "3.13.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-3.13.0.tgz#cff398d88a1e4230074b4e29671cd088efa85943"
-  integrity sha512-sgBDvHwR1J/1//Z5grWz2+J46Q2VZpzF4QjlaE2VzBQxLjlQS7d8csM2/QxRpaiLcMUdU+d+5QTqxQT131Bd9g==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-4.0.0.tgz#86d9522397f79672dd65077c1c4d344bcc63094e"
+  integrity sha512-NmkqQMgPr3mDyg8KYfSx9Prb/T1RgGG/O2ASXmJzGfEBTfWf9NeXiDeG4VqgIqJkuoxvp8vbk1/nRLcYnMDDuQ==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"

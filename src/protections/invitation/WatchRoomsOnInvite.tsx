@@ -14,9 +14,9 @@ import {
   MJOLNIR_SHORTCODE_EVENT_TYPE,
   MembershipEvent,
   Ok,
-  PermalinkSchema,
   ProtectedRoomsSet,
   RoomEvent,
+  RoomIDPermalinkSchema,
   RoomStateRevision,
   Task,
   Value,
@@ -43,7 +43,7 @@ const WATCH_LISTS_ON_INVITE_PROMPT_LISTENER =
 
 // would be nice to be able to use presentation types here idk.
 const WatchRoomsOnInvitePromptContext = Type.Object({
-  invited_room: PermalinkSchema,
+  invited_room: RoomIDPermalinkSchema,
 });
 // this rule is stupid.
 
