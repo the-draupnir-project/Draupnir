@@ -182,6 +182,8 @@ export class DraupnirNewsReader {
   }
 }
 
+// Seen news gets cleaned up by storing the merged file system and remote
+// news items which have been notified.
 export const DraupnirNewsProtectionSettings = Type.Object(
   {
     seenNews: Type.Array(Type.String(), {
