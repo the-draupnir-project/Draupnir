@@ -5,7 +5,6 @@
 import { readFileSync } from "fs";
 import { Ok, Result } from "@gnuxie/typescript-result";
 import { Type } from "@sinclair/typebox";
-import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   AbstractProtection,
   ActionException,
@@ -18,7 +17,6 @@ import {
   MessageContent,
   ProtectedRoomsSet,
   ProtectionDescription,
-  RoomMessageSender,
   StandardTimedGate,
   Value,
 } from "matrix-protection-suite";
@@ -46,6 +44,80 @@ export const DraupnirNewsBlob = Type.Object({
   news: Type.Array(DraupnirNewsItem),
 });
 
+export const DraupnirNewsHelper = Object.freeze({
+  mergeSources(...blobs: DraupnirNewsBlob[]): DraupnirNewsItem[] {
+    return [
+      ...new Map(
+        blobs
+          .reduce<DraupnirNewsItem[]>((acc, blob) => [...acc, ...blob.news], [])
+          .map((item) => [item.news_id, item])
+      ).values(),
+    ];
+  },
+  removeSeenNews(news: DraupnirNewsItem[], seenNewsIDs: Set<string>) {
+    return news.filter((item) => !seenNewsIDs.has(item.news_id));
+  },
+  removeUnseenNews(news: DraupnirNewsItem[], seenNewsIDs: Set<string>) {
+    return news.filter((item) => seenNewsIDs.has(item.news_id));
+  },
+});
+
+export type StoreSeenNews = (
+  seenNews: DraupnirNewsItem[]
+) => Promise<Result<void>>;
+export type FetchRemoteNews = () => Promise<Result<DraupnirNewsBlob>>;
+export type NotifyNewsItem = (item: DraupnirNewsItem) => Promise<Result<void>>;
+
+/**
+ * This class manages requesting news from upstream, notifying, and storing
+ * the newly seen news. Once seen news is updated, the instance should be
+ * disposed.
+ */
+export class DraupnirNewsLifecycle {
+  public constructor(
+    private readonly seenNewsIDs: Set<string>,
+    private readonly localNews: DraupnirNewsBlob,
+    private readonly storeNews: StoreSeenNews,
+    private readonly fetchRemoteNews: FetchRemoteNews,
+    private readonly notifyNewsItem: NotifyNewsItem
+  ) {
+    // nothing to do.
+  }
+
+  public async checkForNews(): Promise<void> {
+    const remoteNews = await this.fetchRemoteNews();
+    if (isError(remoteNews)) {
+      log.error("Unable to fetch news blob", remoteNews.error);
+      return;
+    }
+    const allNews = DraupnirNewsHelper.mergeSources(
+      this.localNews,
+      remoteNews.ok
+    );
+    const unseenNews = DraupnirNewsHelper.removeSeenNews(
+      allNews,
+      this.seenNewsIDs
+    );
+    const notifiedNews = DraupnirNewsHelper.removeUnseenNews(
+      allNews,
+      this.seenNewsIDs
+    );
+    for (const item of unseenNews) {
+      const sendResult = await this.notifyNewsItem(item);
+      if (isError(sendResult)) {
+        log.error("Unable to notify of news item");
+      } else {
+        notifiedNews.push(item);
+      }
+    }
+    const updateResult = await this.storeNews(notifiedNews);
+    if (isError(updateResult)) {
+      log.error("Unable to update stored news", updateResult.error);
+      return;
+    }
+  }
+}
+
 const FSNews = (() => {
   const content = JSON.parse(
     readFileSync(path.join(__dirname, "./news.json"), "utf8")
@@ -54,9 +126,6 @@ const FSNews = (() => {
     "File system news should match the schema"
   );
 })();
-
-type UpdateSeenNews = (seenNews: DraupnirNewsItem[]) => Promise<Result<void>>;
-type FetchNews = (newsURL: string) => Promise<Result<DraupnirNewsBlob>>;
 
 async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
   return await fetch(newsURL, {
@@ -77,8 +146,7 @@ async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
 }
 
 /**
- * This class manages requests to the Draupnir news endpoint to collect news
- * items. It uses a repository version as a fallback.
+ * This class schedules when to request news from the upstream repository.
  *
  * Lifecycle:
  * - unregisterListeners MUST be called when the parent protection is disposed.
@@ -90,14 +158,8 @@ export class DraupnirNewsReader {
   );
   private requestLoop: ConstantPeriodBatch;
   public constructor(
-    private readonly newsURL: string,
-    private readonly fetchNews: FetchNews,
-    private readonly updatePreviousNews: UpdateSeenNews,
-    private readonly roomMessageSender: RoomMessageSender,
-    private readonly managementRoomID: StringRoomID,
-    private readonly requestIntervalMS: number,
-    private readonly fileSystemNewsBlob: DraupnirNewsBlob,
-    private readonly seenNewsIDs: Set<string>
+    private readonly lifecycle: DraupnirNewsLifecycle,
+    private readonly requestIntervalMS: number
   ) {
     this.newsGate.enqueueOpen();
     this.requestLoop = this.createRequestLoop();
@@ -111,43 +173,7 @@ export class DraupnirNewsReader {
   }
 
   private async requestNews(): Promise<void> {
-    const newsBlob = await this.fetchNews(this.newsURL);
-    if (isError(newsBlob)) {
-      log.error("Unable to fetch news blob", newsBlob.error);
-      return;
-    }
-    await this.notifyOfNews(newsBlob.ok.news);
-  }
-
-  private async notifyOfNews(news: DraupnirNewsItem[]): Promise<void> {
-    const allNews = new Map(
-      [...news, ...this.fileSystemNewsBlob.news].map((item) => [
-        item.news_id,
-        item,
-      ])
-    );
-    const unseenNews = [...allNews.values()].filter(
-      (item) => !this.seenNewsIDs.has(item.news_id)
-    );
-    const notifiedNews = [...allNews.values()].filter((item) =>
-      this.seenNewsIDs.has(item.news_id)
-    );
-    for (const item of unseenNews) {
-      const sendResult = await this.roomMessageSender.sendMessage(
-        this.managementRoomID,
-        item.matrix_event_content
-      );
-      if (isError(sendResult)) {
-        log.error("Unable to send news to the management room");
-      } else {
-        notifiedNews.push(item);
-      }
-    }
-    const updateResult = await this.updatePreviousNews(notifiedNews);
-    if (isError(updateResult)) {
-      log.error("Unable to update stored news", updateResult.error);
-      return;
-    }
+    await this.lifecycle.checkForNews();
   }
 
   public unregisterListeners(): void {
@@ -184,15 +210,21 @@ export class DraupnirNews
   extends AbstractProtection<DraupnirNewsDescription>
   implements DraupnirProtection<DraupnirNewsDescription>
 {
-  private readonly longhouseCycleNews = new DraupnirNewsReader(
-    this.draupnir.config.draupnirNewsURL,
-    fetchNews,
-    this.updateNews.bind(this),
-    this.draupnir.clientPlatform.toRoomMessageSender(),
-    this.draupnir.managementRoomID,
-    4.32e7, // 12 hours
-    FSNews,
-    new Set(this.settings.seenNews)
+  private readonly newsReader = new DraupnirNewsReader(
+    new DraupnirNewsLifecycle(
+      new Set(this.settings.seenNews),
+      FSNews,
+      this.updateNews.bind(this),
+      () => fetchNews(this.draupnir.config.draupnirNewsURL),
+      (item) =>
+        this.draupnir.clientPlatform
+          .toRoomMessageSender()
+          .sendMessage(
+            this.draupnir.managementRoomID,
+            item.matrix_event_content
+          ) as Promise<Result<void>>
+    ),
+    4.32e7 // 12 hours
   );
   public constructor(
     description: DraupnirNewsDescription,
@@ -227,7 +259,7 @@ export class DraupnirNews
   }
 
   handleProtectionDisable(): void {
-    this.longhouseCycleNews.unregisterListeners();
+    this.newsReader.unregisterListeners();
   }
 }
 
