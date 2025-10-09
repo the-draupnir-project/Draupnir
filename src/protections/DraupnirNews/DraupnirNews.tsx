@@ -83,7 +83,7 @@ async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
  * Lifecycle:
  * - unregisterListeners MUST be called when the parent protection is disposed.
  */
-export class DraupnirLonghouseAssemblySessionNotification {
+export class DraupnirNewsReader {
   private readonly newsGate = new StandardTimedGate(
     this.requestNews.bind(this),
     this.requestIntervalMS
@@ -184,17 +184,16 @@ export class DraupnirNews
   extends AbstractProtection<DraupnirNewsDescription>
   implements DraupnirProtection<DraupnirNewsDescription>
 {
-  private readonly longhouseCycleNews =
-    new DraupnirLonghouseAssemblySessionNotification(
-      this.draupnir.config.draupnirNewsURL,
-      fetchNews,
-      this.updateNews.bind(this),
-      this.draupnir.clientPlatform.toRoomMessageSender(),
-      this.draupnir.managementRoomID,
-      4.32e7, // 12 hours
-      FSNews,
-      new Set(this.settings.seenNews)
-    );
+  private readonly longhouseCycleNews = new DraupnirNewsReader(
+    this.draupnir.config.draupnirNewsURL,
+    fetchNews,
+    this.updateNews.bind(this),
+    this.draupnir.clientPlatform.toRoomMessageSender(),
+    this.draupnir.managementRoomID,
+    4.32e7, // 12 hours
+    FSNews,
+    new Set(this.settings.seenNews)
+  );
   public constructor(
     description: DraupnirNewsDescription,
     capabilities: DraupnirNewsProtectionCapabilities,
