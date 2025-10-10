@@ -98,6 +98,9 @@ export class DraupnirNewsLifecycle {
       allNews,
       this.seenNewsIDs
     );
+    if (unseenNews.length === 0) {
+      return;
+    }
     const notifiedNews = DraupnirNewsHelper.removeUnseenNews(
       allNews,
       this.seenNewsIDs
@@ -128,6 +131,7 @@ const FSNews = (() => {
 })();
 
 async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
+  log.debug("Fetching remote news", newsURL);
   return await fetch(newsURL, {
     method: "GET",
     headers: {
