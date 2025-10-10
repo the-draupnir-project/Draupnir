@@ -8,7 +8,8 @@
   "license": "AFL-3.0",
   "private": true,
   "scripts": {
-    "build": "tsc --project test/tsconfig.json && tsc > /dev/null 2>&1",
+    "build": "tsc --project test/tsconfig.json && tsc > /dev/null 2>&1 && corepack yarn copy-assets",
+    "copy-assets": "cp src/protections/DraupnirNews/news.json lib/protections/DraupnirNews/news.json",
     "postbuild": "corepack yarn describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
