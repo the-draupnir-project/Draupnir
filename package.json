@@ -8,7 +8,8 @@
   "license": "AFL-3.0",
   "private": true,
   "scripts": {
-    "build": "tsc --project test/tsconfig.json && tsc > /dev/null 2>&1",
+    "build": "tsc --project test/tsconfig.json && tsc > /dev/null 2>&1 && corepack yarn copy-assets",
+    "copy-assets": "cp src/protections/DraupnirNews/news.json lib/protections/DraupnirNews/news.json",
     "postbuild": "corepack yarn describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "remove-tests-from-lib": "rm -rf lib/test/ && cp -r lib/src/* lib/ && rm -rf lib/src/",
@@ -63,7 +64,7 @@
     "jsdom": "^24.0.0",
     "matrix-appservice-bridge": "^10.3.1",
     "matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.7.1-element.6",
-    "matrix-protection-suite": "npm:@gnuxie/matrix-protection-suite@4.0.0",
+    "matrix-protection-suite": "npm:@gnuxie/matrix-protection-suite@4.1.0",
     "matrix-protection-suite-for-matrix-bot-sdk": "npm:@gnuxie/matrix-protection-suite-for-matrix-bot-sdk@3.12.0",
     "pg": "^8.8.0",
     "yaml": "^2.3.2"
