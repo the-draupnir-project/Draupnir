@@ -12,6 +12,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.7.0] - 2025-10-10
+
+### Project update
+
+The Draupnir project is in the process of introducing formal governance for the
+project in order to sustain development and build momentum.
+
+Progress can be tracked
+[here](https://github.com/the-draupnir-project/planning/milestone/1), and the
+documentation on our model can be found on our documentation website:
+https://the-draupnir-project.github.io/draupnir-documentation/category/governance.
+
+### Added
+
+- A new `DraupnirNews` protection has been added that will notify the management
+  room of any news about the project. We intend to use this to onboard users
+  into
+  [Draupnir's longhouse](https://matrix.to/#/!NIqTkvQDFRpmVlwjlQ:matrix.org?via=matrix.org&via=asgard.chat&via=feline.support)
+  so that our users can vote on proposals
+  https://the-draupnir-project.github.io/draupnir-documentation/governance/longhouse-presentation.
+
+- The `RoomsSetBehaviour` protection has a new feature to send a prompt to the
+  management room when a watched policy room is replaced by its curators. This
+  is a small step in our
+  [project hydra mitigation route](https://github.com/the-draupnir-project/planning/issues/44),
+  and we expect to provide more full support for policy room upgrades at a later
+  date. DO NOT upgrade policy rooms at this time.
+
+### Changed
+
+- Draupnir is easier on the homeserver when redacting messages in rooms.
+  Previously Draupnir could overload the homeserver in some circimstances. There
+  should be a big improvement to redaction during spam waves.
+
 ## [v2.6.1] - 2025-08-14
 
 ### Fixed
