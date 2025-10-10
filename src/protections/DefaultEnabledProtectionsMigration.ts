@@ -187,4 +187,25 @@ export const DefaultEnabledProtectionsMigration =
         [DRAUPNIR_SCHEMA_VERSION_KEY]: toVersion,
       });
     },
+    async function enableDraupnirNews(input, toVersion) {
+      if (!Value.Check(MjolnirEnabledProtectionsEvent, input)) {
+        return ActionError.Result(
+          `The data for ${MjolnirEnabledProtectionsEventType} is corrupted.`
+        );
+      }
+      const enabledProtections = new Set(input.enabled);
+      const protection = findProtection("DraupnirNews");
+      if (protection === undefined) {
+        const message = `Cannot find the DraupnirNews protection`;
+        return ActionException.Result(message, {
+          exception: new TypeError(message),
+          exceptionKind: ActionExceptionKind.Unknown,
+        });
+      }
+      enabledProtections.add(protection.name);
+      return Ok({
+        enabled: [...enabledProtections],
+        [DRAUPNIR_SCHEMA_VERSION_KEY]: toVersion,
+      });
+    },
   ]);
