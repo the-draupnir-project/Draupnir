@@ -10,6 +10,7 @@
 import { StandardCommandTable } from "@the-draupnir-project/interface-manager";
 import { DraupnirResolveAliasCommand } from "./ResolveAlias";
 import {
+  DraupnirAliasAddCommand,
   DraupnirAliasMoveCommand,
   DraupnirAliasRemoveCommand,
 } from "./AliasCommands";
@@ -70,6 +71,7 @@ export const SynapseAdminCommands = new StandardCommandTable("synapse admin")
   .internCommand(SynpaseAdminUnrestrictUserCommand, ["unrestrict"]);
 
 const DraupnirCommands = new StandardCommandTable("draupnir")
+  .internCommand(DraupnirAliasAddCommand, ["alias", "add"])
   .internCommand(DraupnirAliasMoveCommand, ["alias", "move"])
   .internCommand(DraupnirAliasRemoveCommand, ["alias", "remove"])
   .internCommand(DraupnirBanCommand, ["ban"])
