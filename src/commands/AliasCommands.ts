@@ -17,6 +17,53 @@ import {
   MatrixRoomReferencePresentationSchema,
 } from "@the-draupnir-project/interface-manager";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
+import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+
+export const DraupnirAliasAddCommand = describeCommand({
+  summary: "Add a new alias to the room on Draupnir's homeserver",
+  parameters: tuple(
+    {
+      name: "alias",
+      description: "The alias that will be created",
+      acceptor: MatrixRoomAliasPresentationType,
+    },
+    {
+      name: "target room",
+      description: "The room the alias should point to",
+      acceptor: MatrixRoomReferencePresentationSchema,
+    }
+  ),
+  async executor(
+    draupnir: Draupnir,
+    _info,
+    _keywords,
+    _rest,
+    aliasToCreate,
+    targetRoom
+  ): Promise<ActionResult<void>> {
+    const resolvedTargetRoom = await draupnir.clientPlatform
+      .toRoomResolver()
+      .resolveRoom(targetRoom);
+    if (isError(resolvedTargetRoom)) {
+      return resolvedTargetRoom.elaborate(
+        "Unable to resolve the room for which the alias is meant to point to"
+      );
+    }
+    return await draupnir.client
+      .createRoomAlias(
+        aliasToCreate.toRoomIDOrAlias(),
+        resolvedTargetRoom.ok.toRoomIDOrAlias()
+      )
+      .then(
+        () => Ok(undefined),
+        (e: unknown) => resultifyBotSDKRequestError(e)
+      );
+  },
+});
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirAliasAddCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
+});
 
 export const DraupnirAliasMoveCommand = describeCommand({
   summary: "Move an alias from one room to another.",
