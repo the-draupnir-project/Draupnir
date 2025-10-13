@@ -12,6 +12,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.7.1] - 2025-10-13
+
+### Fixed
+
+- V12 policy rooms will not appear in the prompt for the ban command again.
+  Reported by @ll-SKY-ll.
+
+- Re-added the missing `alias add` command. Reported by @piegamesde.
+
+- Added some logging to support
+  https://github.com/the-draupnir-project/Draupnir/issues/976. Reported by
+  @TheArcaneBrony.
+
 ## [v2.7.0] - 2025-10-10
 
 ### Project update
