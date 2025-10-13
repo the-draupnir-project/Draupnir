@@ -327,10 +327,10 @@
     "@gnuxie/typescript-result" "^1.0.0"
     glob-to-regexp "^0.4.1"
 
-"@the-draupnir-project/mps-interface-adaptor@0.5.1":
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/mps-interface-adaptor/-/mps-interface-adaptor-0.5.1.tgz#48911b379e505dc2843b396b5cd142dc014af561"
-  integrity sha512-X7ed1jA7MhFOLYIz/jctOlHa/P7EViSWkAODYNR/WKRv32nS3MLwBKSTDZxR45AtkzlLrlcAy1NwBk4ABIb6OA==
+"@the-draupnir-project/mps-interface-adaptor@0.5.2":
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/mps-interface-adaptor/-/mps-interface-adaptor-0.5.2.tgz#e68aed42a5630085e810a3c1aea33a123f7235ac"
+  integrity sha512-RPR99a4l4JIvgyAFIiWA79/zl0ZN8zO+backS/GjNmsFQz3o0yDxnqUAFq/iJA44QgLDXJsw0h2t2LyytqGWHQ==
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.11"
