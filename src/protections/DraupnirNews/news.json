@@ -1,3 +1,13 @@
 {
-  "news": []
+  "news": [
+    {
+      "news_id": "cd1881d2-60d0-49ad-9951-321205efa64b",
+      "matrix_event_content": {
+        "msgtype": "m.notice",
+        "body": "#### 📰 Draupnir Assembly: Call for Participation\n\nThe Longhouse Assembly is discussing the next direction of the project.\n\nIf you value what the Draupnir project does for your community, then we really want to hear from you:\n\n- ➡️ [Read about the current longhouse cycle](https://the-draupnir-project.github.io/draupnir-documentation/governance/reports/2510A-cycle-review)\n- ➡️ [Read about the pathways going forward](https://the-draupnir-project.github.io/draupnir-documentation/governance/reports/2510A-selection)\n- ➡️ [Cast your vote](https://cryptpad.fr/form/#/2/form/view/ewtgdO-YIwCjLhfJpwsj87m7RU7v6hJKHbu3BWqa1kg/)\n- ➡️ [Join the Assembly Discussion](https://matrix.to/#/!UMROhYUQcvtGuoIIka:matrix.org/%247C2Sv-B-6HJ7fVMlCRd3R9jlZqe2rUxlPliEaB-M4yE?via=matrix.org&via=feline.support&via=asgard.chat)",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<h4>📰 Draupnir Assembly: Call for Participation</h4>\n<p>The Longhouse Assembly is discussing the next direction of the project.</p>\n<p>If you value what the Draupnir project does for your community, then we really want to hear from you:</p>\n<ul>\n<li>➡️ <a href=\"https://the-draupnir-project.github.io/draupnir-documentation/governance/reports/2510A-cycle-review\">Read about the current longhouse cycle</a></li>\n<li>➡️ <a href=\"https://the-draupnir-project.github.io/draupnir-documentation/governance/reports/2510A-selection\">Read about the pathways going forward</a></li>\n<li>➡️ <a href=\"https://cryptpad.fr/form/#/2/form/view/ewtgdO-YIwCjLhfJpwsj87m7RU7v6hJKHbu3BWqa1kg/\">Cast your vote</a></li>\n<li>➡️ <a href=\"https://matrix.to/#/!UMROhYUQcvtGuoIIka:matrix.org/%247C2Sv-B-6HJ7fVMlCRd3R9jlZqe2rUxlPliEaB-M4yE?via=matrix.org&amp;via=feline.support&amp;via=asgard.chat\">Join the Assembly Discussion</a></li>\n</ul>\n"
+      }
+    }
+  ]
 }
