@@ -11,9 +11,13 @@
 import { strict as assert } from "assert";
 
 import { newTestUser } from "../clientHelper";
-import { DraupnirTestContext, draupnirClient } from "../mjolnirSetupUtils";
+import {
+  DraupnirTestContext,
+  draupnirClient,
+  draupnirSafeEmitter,
+} from "../mjolnirSetupUtils";
 import { MatrixClient, MatrixError } from "matrix-bot-sdk";
-import { Task } from "matrix-protection-suite";
+import { getFirstReaction } from "./commandUtils";
 
 describe("Test: shutdown command", function () {
   let client: MatrixClient;
@@ -38,28 +42,16 @@ describe("Test: shutdown command", function () {
     }
     await client.joinRoom(draupnir.managementRoomID);
 
-    const reply1 = new Promise((resolve) => {
-      void Task(
-        (async () => {
-          const msgid = await client.sendMessage(draupnir.managementRoomID, {
-            msgtype: "m.text",
-            body: `!draupnir shutdown room ${badRoom} closure test`,
-          });
-          client.on("room.event", (roomId, event) => {
-            if (
-              roomId === draupnir.managementRoomID &&
-              event?.type === "m.reaction" &&
-              event.sender === draupnir.clientUserID &&
-              event.content?.["m.relates_to"]?.event_id === msgid
-            ) {
-              resolve(event);
-            }
-          });
-        })()
-      );
-    });
-
-    await reply1;
+    await getFirstReaction(
+      draupnirSafeEmitter(),
+      draupnir.managementRoomID,
+      "✅",
+      async () =>
+        await client.sendMessage(draupnir.managementRoomID, {
+          msgtype: "m.text",
+          body: `!draupnir shutdown room ${badRoom} closure test`,
+        })
+    );
 
     await assert.rejects(client.joinRoom(badRoom), (e: MatrixError) => {
       assert.equal(e.statusCode, 403);
