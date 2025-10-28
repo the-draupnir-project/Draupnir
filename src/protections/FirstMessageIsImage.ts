@@ -16,6 +16,7 @@ import {
   MembershipChange,
   MembershipChangeType,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -60,6 +61,7 @@ describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir>({
   },
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -68,6 +70,7 @@ describeProtection<FirstMessageIsImageProtectionCapabilities, Draupnir>({
     return Ok(
       new FirstMessageIsImageProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir
@@ -87,11 +90,12 @@ export class FirstMessageIsImageProtection
   private readonly eventConsequences: EventConsequences;
   constructor(
     description: FirstMessageIsImageProtectionDescription,
+    lifetime: OwnLifetime<FirstMessageIsImageProtectionDescription>,
     capabilities: FirstMessageIsImageProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
   }

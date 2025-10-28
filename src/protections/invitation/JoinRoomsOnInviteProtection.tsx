@@ -15,11 +15,14 @@ import {
   Logger,
   MembershipEvent,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   StandardDeduplicator,
   Task,
   UnknownConfig,
+  allocateProtection,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -71,11 +74,12 @@ export class JoinRoomsOnInviteProtection
   );
   public constructor(
     description: JoinRoomsOnInviteProtectionDescription,
+    lifetime: OwnLifetime<Protection<JoinRoomsOnInviteProtectionDescription>>,
     capabilities: JoinRoomsOnInviteProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
   }
 
   handleProtectionDisable(): void {
@@ -205,14 +209,17 @@ describeProtection<JoinRoomsOnInviteProtectionCapabilities, Draupnir>({
   defaultCapabilities: {},
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
     _settings
   ) {
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new JoinRoomsOnInviteProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir

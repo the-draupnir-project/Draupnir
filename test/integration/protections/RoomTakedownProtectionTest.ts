@@ -17,6 +17,7 @@ import expect from "expect";
 import { Draupnir } from "../../../src/Draupnir";
 import {
   findProtection,
+  Lifetime,
   parsePolicyRule,
   PolicyRuleChangeType,
   PolicyRuleType,
@@ -76,6 +77,7 @@ function createSynapseHTTPAntispamRoomExplorer(
 }
 
 function createRoomTakedownProtection(
+  lifetime: Lifetime,
   draupnir: Draupnir,
   roomDiscovery: RoomDiscovery,
   explorerers: RoomExplorer[]
@@ -101,6 +103,7 @@ function createRoomTakedownProtection(
   }
   return new RoomTakedownProtection(
     roomTakedownProtectionDescription,
+    lifetime.toChild().expect("Should be able to allocate to lifetime"),
     {
       roomTakedownCapability: new SynapseAdminRoomTakedownCapability(
         draupnir.synapseAdminClient
@@ -194,6 +197,7 @@ describe("RoomTakedownProtectionTest", function () {
 
       const roomDiscovery = createRoomDiscovery(draupnir);
       const roomTakedownProtection = createRoomTakedownProtection(
+        this.lifetime,
         draupnir,
         roomDiscovery,
         [createSynapseHTTPAntispamRoomExplorer(draupnir, roomDiscovery)]

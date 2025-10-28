@@ -29,6 +29,7 @@ import {
   DefaultEventDecoder,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
+  OwnLifetime,
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
@@ -49,6 +50,7 @@ export type SafeMochaContext = Pick<
 >;
 
 export interface DraupnirTestContext extends SafeMochaContext {
+  lifetime: OwnLifetime;
   draupnir?: Draupnir;
   managementRoomAlias?: string;
   toggle?: DraupnirBotModeToggle;

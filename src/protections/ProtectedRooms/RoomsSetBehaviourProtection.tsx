@@ -4,10 +4,13 @@
 
 import {
   AbstractProtection,
+  allocateProtection,
   describeProtection,
   MembershipChange,
   MembershipEvent,
+  OwnLifetime,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   RoomMembershipRevision,
   RoomStateRevision,
@@ -68,11 +71,12 @@ export class RoomsSetBehaviour
     );
   public constructor(
     description: RoomsSetBehaviourDescription,
+    lifetime: OwnLifetime<Protection<RoomsSetBehaviourDescription>>,
     capabilities: RoomsSetBehaviourCapabailities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     if (this.draupnir.config.protectAllJoinedRooms) {
       void this.protectJoinedRooms.syncProtectedRooms();
     }
@@ -123,14 +127,17 @@ describeProtection<RoomsSetBehaviourCapabailities, Draupnir>({
   defaultCapabilities: {},
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
     _settings
   ) {
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new RoomsSetBehaviour(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir

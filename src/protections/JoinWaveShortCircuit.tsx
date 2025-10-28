@@ -18,9 +18,12 @@ import {
   MembershipChange,
   MembershipChangeType,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   RoomMembershipRevision,
+  allocateProtection,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -95,6 +98,7 @@ describeProtection<
   configSchema: JoinWaveShortCircuitProtectionSettings,
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -104,9 +108,11 @@ describeProtection<
     if (isError(parsedSettings)) {
       return parsedSettings;
     }
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new JoinWaveShortCircuitProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir,
@@ -124,12 +130,15 @@ export class JoinWaveShortCircuitProtection
 
   constructor(
     description: JoinWaveShortCircuitProtectionDescription,
+    lifetime: OwnLifetime<
+      Protection<JoinWaveShortCircuitProtectionDescription>
+    >,
     capabilities: CapabilitySet,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir,
     public readonly settings: JoinWaveShortCircuitProtectionSettings
   ) {
-    super(description, capabilities, protectedRoomsSet, {
+    super(description, lifetime, capabilities, protectedRoomsSet, {
       requiredStatePermissions: ["m.room.join_rules"],
     });
     this.joinBuckets = new LazyLeakyBucket(

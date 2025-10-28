@@ -15,6 +15,7 @@ import {
   EventConsequences,
   EventReport,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -92,6 +93,7 @@ describeProtection<
   configSchema: TrustedReportersProtectionSettings,
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -105,6 +107,7 @@ describeProtection<
     return Ok(
       new TrustedReporters(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir,
@@ -128,12 +131,13 @@ export class TrustedReporters
   private readonly eventConsequences: EventConsequences;
   public constructor(
     description: TrustedReportersDescription,
+    lifetime: OwnLifetime<Protection<TrustedReportersDescription>>,
     capabilities: TrustedReportersCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir,
     public readonly settings: TrustedReportersProtectionSettings
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
     this.reporters = new Set(settings.mxids);

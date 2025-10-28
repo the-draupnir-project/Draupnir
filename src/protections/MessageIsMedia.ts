@@ -14,6 +14,7 @@ import {
   ActionResult,
   EventConsequences,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -54,6 +55,7 @@ describeProtection<MessageIsMediaCapabilities, Draupnir>({
   },
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -62,6 +64,7 @@ describeProtection<MessageIsMediaCapabilities, Draupnir>({
     return Ok(
       new MessageIsMediaProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir
@@ -77,11 +80,12 @@ export class MessageIsMediaProtection
   private readonly eventConsequences: EventConsequences;
   constructor(
     description: MessageIsMediaProtectionDescription,
+    lifetime: OwnLifetime<Protection<MessageIsMediaProtectionDescription>>,
     capabilities: MessageIsMediaCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.eventConsequences = capabilities.eventConsequences;
   }
 

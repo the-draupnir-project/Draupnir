@@ -5,9 +5,10 @@
 import {
   AbstractProtection,
   ActionResult,
+  allocateProtection,
   describeProtection,
   Logger,
-  Ok,
+  OwnLifetime,
   PolicyListRevision,
   PolicyRuleChange,
   ProtectedRoomsSet,
@@ -117,6 +118,7 @@ export class RoomTakedownProtection
   private readonly roomTakedown: StandardRoomTakedown;
   constructor(
     description: RoomTakedownProtectionDescription,
+    lifetime: OwnLifetime<Protection<RoomTakedownProtectionDescription>>,
     capabilities: RoomTakedownProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     auditLog: RoomAuditLog,
@@ -129,7 +131,7 @@ export class RoomTakedownProtection
     private readonly roomExplorers: RoomExplorer[],
     private readonly roomDiscovery: RoomDiscovery | undefined
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.roomTakedown = new StandardRoomTakedown(
       auditLog,
       capabilities.roomTakedownCapability
@@ -204,6 +206,7 @@ describeProtection<
   configSchema: RoomTakedownProtectionSettings,
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilitySet,
@@ -267,9 +270,11 @@ describeProtection<
     if (synapseRoomListRoomExplorer) {
       roomExploreres.push(synapseRoomListRoomExplorer);
     }
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new RoomTakedownProtection(
         description,
+        lifetime,
         capabilitySet,
         protectedRoomsSet,
         draupnir.stores.roomAuditLog,

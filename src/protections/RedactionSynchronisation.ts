@@ -11,6 +11,7 @@ import {
   MembershipChange,
   MembershipChangeType,
   Ok,
+  OwnLifetime,
   PolicyListRevision,
   PolicyRule,
   PolicyRuleChange,
@@ -310,11 +311,14 @@ export class RedactionSynchronisationProtection
   private readonly redactionSynchronisation: RedactionSynchronisation;
   public constructor(
     description: RedactionSynchronisationProtectionDescription,
+    lifetime: OwnLifetime<
+      Protection<RedactionSynchronisationProtectionDescription>
+    >,
     capabilities: RedactionSynchronisationProtectionCapabilitiesSet,
     protectedRoomsSet: ProtectedRoomsSet,
     automaticallyRedactForReasons: string[]
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.redactionSynchronisation = new StandardRedactionSynchronisation(
       automaticallyRedactForReasons.map((reason) => new MatrixGlob(reason)),
       capabilities.consequences,
@@ -357,10 +361,17 @@ describeProtection<RedactionSynchronisationProtectionCapabilitiesSet, Draupnir>(
     defaultCapabilities: {
       consequences: "StandardRedactionSynchronisationConsequences",
     },
-    async factory(description, protectedRoomsSet, draupnir, capabilities) {
+    async factory(
+      description,
+      lifetime,
+      protectedRoomsSet,
+      draupnir,
+      capabilities
+    ) {
       return Ok(
         new RedactionSynchronisationProtection(
           description,
+          lifetime,
           capabilities,
           protectedRoomsSet,
           draupnir.config.automaticallyRedactForReasons

@@ -12,6 +12,7 @@ import {
   DefaultEventDecoder,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
+  StandardLifetime,
 } from "matrix-protection-suite";
 import { configRead, getStoragePath } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
@@ -78,6 +79,7 @@ export const mochaHooks = {
       console.log("mochaHooks.beforeEach");
       // Sometimes it takes a little longer to register users.
       this.timeout(30000);
+      this.lifetime = new StandardLifetime();
       const config = (this.config = configRead());
       this.managementRoomAlias = config.managementRoom;
       const storagePath = getStoragePath(config.dataPath);
@@ -107,6 +109,7 @@ export const mochaHooks = {
       await this.toggle?.stopEverything();
       draupnirClient()?.stop();
       this.stores?.dispose();
+      await this.lifetime[Symbol.asyncDispose]();
       if (this.draupnir !== undefined) {
         await Promise.all([
           this.draupnir.client.setAccountData(

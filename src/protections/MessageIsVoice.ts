@@ -14,6 +14,7 @@ import {
   ActionResult,
   EventConsequences,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -53,6 +54,7 @@ describeProtection<MessageIsVoiceCapabilities, Draupnir>({
   },
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -61,6 +63,7 @@ describeProtection<MessageIsVoiceCapabilities, Draupnir>({
     return Ok(
       new MessageIsVoiceProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir
@@ -76,11 +79,12 @@ export class MessageIsVoiceProtection
   private readonly eventConsequences: EventConsequences;
   constructor(
     description: MessageIsVoiceDescription,
+    lifetime: OwnLifetime<Protection<MessageIsVoiceDescription>>,
     capabilities: MessageIsVoiceCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.eventConsequences = capabilities.eventConsequences;
   }
 

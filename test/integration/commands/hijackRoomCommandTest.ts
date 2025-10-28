@@ -13,6 +13,7 @@ import { newTestUser } from "../clientHelper";
 import { getFirstReaction } from "./commandUtils";
 import { DraupnirTestContext, draupnirSafeEmitter } from "../mjolnirSetupUtils";
 
+// Breaks with this test.
 describe("Test: The make admin command", function () {
   it("Draupnir make the bot self room administrator", async function (
     this: DraupnirTestContext

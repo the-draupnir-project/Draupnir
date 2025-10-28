@@ -18,6 +18,7 @@ import {
   MembershipChange,
   MembershipChangeType,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -69,6 +70,7 @@ describeProtection<WordListCapabilities, Draupnir>({
   },
   factory: async function (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -77,6 +79,7 @@ describeProtection<WordListCapabilities, Draupnir>({
     return Ok(
       new WordListProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir
@@ -99,11 +102,12 @@ export class WordListProtection
   private readonly eventConsequences: EventConsequences;
   constructor(
     description: WordListDescription,
+    lifetime: OwnLifetime<Protection<WordListDescription>>,
     capabilities: WordListCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
     // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping

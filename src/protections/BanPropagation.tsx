@@ -30,6 +30,9 @@ import {
   UserConsequences,
   Membership,
   UnknownConfig,
+  allocateProtection,
+  OwnLifetime,
+  Protection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -212,11 +215,14 @@ export class BanPropagationProtection
     this.banReactionListener.bind(this);
   constructor(
     description: BanPropagationProtectionCapabilitiesDescription,
+    lifetime: OwnLifetime<
+      Protection<BanPropagationProtectionCapabilitiesDescription>
+    >,
     capabilities: BanPropagationProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.draupnir.reactionHandler.on(
       BAN_PROPAGATION_PROMPT_LISTENER,
       this.banPropagationPromptListener
@@ -338,14 +344,17 @@ describeProtection<BanPropagationProtectionCapabilities, Draupnir>({
   },
   factory: async (
     decription,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
     _settings
   ) =>
-    Ok(
+    allocateProtection(
+      lifetime,
       new BanPropagationProtection(
         decription,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir
