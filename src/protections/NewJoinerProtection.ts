@@ -10,6 +10,7 @@ import {
   MembershipChangeType,
   MultipleErrors,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -38,11 +39,12 @@ export class NewJoinerProtection
   private readonly banReason: string;
   constructor(
     description: NewJoinerProtectionDescription,
+    lifetime: OwnLifetime<Protection<NewJoinerProtectionDescription>>,
     capabilities: NewJoinerProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     draupnirConfig: IConfig
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.bannedServers = new Set(
       draupnirConfig.protections.newJoinerProtection.serverNames
@@ -96,10 +98,17 @@ describeProtection<NewJoinerProtectionCapabilities, Draupnir>({
   defaultCapabilities: {
     userConsequences: "StandardUserConsequences",
   },
-  factory: async (decription, protectedRoomsSet, draupnir, capabilitySet) =>
+  factory: async (
+    decription,
+    lifetime,
+    protectedRoomsSet,
+    draupnir,
+    capabilitySet
+  ) =>
     Ok(
       new NewJoinerProtection(
         decription,
+        lifetime,
         capabilitySet,
         protectedRoomsSet,
         draupnir.config

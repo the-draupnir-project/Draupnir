@@ -24,7 +24,9 @@ import {
   EventConsequences,
   Logger,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   RoomEvent,
   UserConsequences,
@@ -80,6 +82,7 @@ describeProtection<
   configSchema: BasicFloodingProtectionSettings,
   factory: async (
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -93,6 +96,7 @@ describeProtection<
     return Ok(
       new BasicFloodingProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir,
@@ -154,12 +158,13 @@ export class BasicFloodingProtection
   private readonly eventConsequences: EventConsequences;
   public constructor(
     description: BasicFloodingProtectionDescription,
+    lifetime: OwnLifetime<Protection<BasicFloodingProtectionDescription>>,
     capabilities: BasicFloodingProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir,
     private readonly maxPerMinute: number
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userConsequences = capabilities.userConsequences;
     this.eventConsequences = capabilities.eventConsequences;
   }

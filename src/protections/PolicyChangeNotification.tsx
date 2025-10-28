@@ -14,12 +14,14 @@ import {
   EDStatic,
   Logger,
   Ok,
+  OwnLifetime,
   PolicyListRevision,
   PolicyRoomManager,
   PolicyRoomRevisionIssuer,
   PolicyRuleChange,
   PolicyRuleMatchType,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   StringRoomIDSchema,
   describeProtection,
@@ -77,12 +79,15 @@ export class PolicyChangeNotification
 {
   constructor(
     description: PolicyChangeNotificationProtectionDescription,
+    lifetime: OwnLifetime<
+      Protection<PolicyChangeNotificationProtectionDescription>
+    >,
     capabilities: PolicyChangeNotificationCapabilitites,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly draupnir: Draupnir,
     public readonly notificationRoomID: StringRoomID
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
   }
 
   public async handlePolicyChange(
@@ -189,6 +194,7 @@ describeProtection<
   configSchema: PolicyChangeNotificationSettings,
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -207,6 +213,7 @@ describeProtection<
     return Ok(
       new PolicyChangeNotification(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir,

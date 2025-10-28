@@ -7,6 +7,7 @@ import {
   AbstractProtection,
   describeProtection,
   EDStatic,
+  OwnLifetime,
   PolicyListRevision,
   PolicyRuleChange,
   ProtectedRoomsSet,
@@ -55,6 +56,7 @@ export class HomeserverUserPolicyProtection
   private readonly policyApplication: HomeserverUserPolicyApplication;
   constructor(
     description: HomeserverUserProtectionDescription,
+    lifetime: OwnLifetime<HomeserverUserProtectionDescription>,
     capabilities: HomeserverUserPolicyProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     auditLog: UserRestrictionAuditLog,
@@ -62,7 +64,7 @@ export class HomeserverUserPolicyProtection
     managementRoomID: StringRoomID,
     confirmationPromptSender: ConfirmationPromptSender
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.policyApplication = new HomeserverUserPolicyApplication(
       managementRoomID,
       capabilities.userRestrictionCapability,
@@ -99,6 +101,7 @@ describeProtection<
   configSchema: HomeserverUserPolicyProtectionSettings,
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilitySet,
@@ -112,6 +115,7 @@ describeProtection<
     return Ok(
       new HomeserverUserPolicyProtection(
         description,
+        lifetime,
         capabilitySet,
         protectedRoomsSet,
         draupnir.stores.userRestrictionAuditLog,

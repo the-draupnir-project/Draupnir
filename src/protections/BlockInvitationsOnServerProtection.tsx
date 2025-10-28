@@ -4,8 +4,10 @@
 
 import {
   AbstractProtection,
+  allocateProtection,
   describeProtection,
   Logger,
+  OwnLifetime,
   PolicyRuleType,
   ProtectedRoomsSet,
   Protection,
@@ -23,7 +25,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { SynapseHttpAntispam } from "../webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { Draupnir } from "../Draupnir";
-import { Ok, ResultError } from "@gnuxie/typescript-result";
+import { ResultError } from "@gnuxie/typescript-result";
 
 const log = new Logger("SynapseHTTPUserMayInvite");
 
@@ -131,12 +133,15 @@ export class BlockInvitationsOnServerProtection
   private readonly userMayInvite: SynapseHTTPUserMayInvite;
   public constructor(
     description: BlockInvitationsOnServerProtectionDescription,
+    lifetime: OwnLifetime<
+      Protection<BlockInvitationsOnServerProtectionDescription>
+    >,
     capabilities: BlockInvitationsOnServerProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     automaticallyRedactForReasons: string[],
     synapseHTTPAntispam: SynapseHttpAntispam
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.userMayInvite = new SynapseHTTPUserMayInvite(
       protectedRoomsSet.watchedPolicyRooms,
       automaticallyRedactForReasons,
@@ -157,6 +162,7 @@ describeProtection<BlockInvitationsOnServerProtectionCapabilities, Draupnir>({
   defaultCapabilities: {},
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
@@ -167,9 +173,11 @@ describeProtection<BlockInvitationsOnServerProtectionCapabilities, Draupnir>({
         "This protection requires synapse-http-antispam to be enabled"
       );
     }
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new BlockInvitationsOnServerProtection(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         draupnir.config.automaticallyRedactForReasons,

@@ -5,13 +5,14 @@
 import { Type } from "@sinclair/typebox";
 import {
   AbstractProtection,
+  allocateProtection,
   describeProtection,
   EDStatic,
   EventConsequences,
   EventWithMixins,
   isError,
   Logger,
-  Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -75,13 +76,14 @@ export class InvalidEventProtection
   );
   public constructor(
     description: InvalidEventProtectionDescription,
+    lifetime: OwnLifetime<InvalidEventProtectionDescription>,
     capabilities: InvalidEventProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly warningText: string,
     private readonly roomMessageSender: RoomMessageSender,
     private readonly managentRoomID: StringRoomID
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.eventConsequences = capabilities.eventConsequences;
     this.userConsequences = capabilities.userConsequences;
   }
@@ -196,14 +198,17 @@ describeProtection<
   configSchema: InvalidEventProtectionSettings,
   factory: async (
     decription,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilitySet,
     settings
   ) =>
-    Ok(
+    allocateProtection(
+      lifetime,
       new InvalidEventProtection(
         decription,
+        lifetime,
         capabilitySet,
         protectedRoomsSet,
         settings.warningText,

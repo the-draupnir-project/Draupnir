@@ -9,13 +9,16 @@ import {
   AbstractProtection,
   ActionException,
   ActionExceptionKind,
+  allocateProtection,
   ConstantPeriodBatch,
   describeProtection,
   EDStatic,
   isError,
   Logger,
   MessageContent,
+  OwnLifetime,
   ProtectedRoomsSet,
+  Protection,
   ProtectionDescription,
   StandardTimedGate,
   Value,
@@ -234,12 +237,13 @@ export class DraupnirNews
   );
   public constructor(
     description: DraupnirNewsDescription,
+    lifetime: OwnLifetime<Protection<DraupnirNewsDescription>>,
     capabilities: DraupnirNewsProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly settings: DraupnirNewsProtectionSettings,
     private readonly draupnir: Draupnir
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
   }
 
   private async updateNews(allNews: DraupnirNewsItem[]): Promise<Result<void>> {
@@ -281,14 +285,17 @@ describeProtection<
   configSchema: DraupnirNewsProtectionSettings,
   async factory(
     description,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilities,
     settings
   ) {
-    return Ok(
+    return allocateProtection(
+      lifetime,
       new DraupnirNews(
         description,
+        lifetime,
         capabilities,
         protectedRoomsSet,
         settings,

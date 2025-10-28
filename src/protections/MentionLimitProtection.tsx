@@ -13,7 +13,7 @@ import {
   MentionsMixin,
   MentionsMixinDescription,
   NewContentMixinDescription,
-  Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -21,6 +21,7 @@ import {
   RoomMessageSender,
   Task,
   UserConsequences,
+  allocateProtection,
   describeProtection,
   isError,
 } from "matrix-protection-suite";
@@ -141,12 +142,13 @@ export class MentionLimitProtection
   );
   constructor(
     description: MentionLimitProtectionDescription,
+    lifetime: OwnLifetime<Protection<MentionLimitProtectionDescription>>,
     capabilities: MentionLimitProtectionCapabilities,
     private readonly roomMessageSender: RoomMessageSender,
     protectedRoomsSet: ProtectedRoomsSet,
     settings: MentionLimitProtectionSettings
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.eventConsequences = capabilities.eventConsequences;
     this.userConsequences = capabilities.userConsequences;
     this.maxMentions = settings.maxMentions;
@@ -249,14 +251,17 @@ describeProtection<
   configSchema: MentionLimitProtectionSettings,
   factory: async (
     decription,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilitySet,
     settings
   ) =>
-    Ok(
+    allocateProtection(
+      lifetime,
       new MentionLimitProtection(
         decription,
+        lifetime,
         capabilitySet,
         draupnir.clientPlatform.toRoomMessageSender(),
         protectedRoomsSet,

@@ -7,6 +7,7 @@ import {
   EDStatic,
   Logger,
   Ok,
+  OwnLifetime,
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
@@ -15,6 +16,7 @@ import {
   SafeMembershipEvent,
   SafeMembershipEventMirror,
   UserConsequences,
+  allocateProtection,
   describeProtection,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
@@ -95,12 +97,13 @@ export class MembershipChangeProtection
   );
   constructor(
     description: MembershipChangeProtectionDescription,
+    lifetime: OwnLifetime<Protection<MembershipChangeProtectionDescription>>,
     capabilities: MembershipChangeProtectionCapabilities,
     protectedRoomsSet: ProtectedRoomsSet,
     private readonly messageSender: RoomMessageSender,
     public readonly settings: MembershipChangeProtectionSettings
   ) {
-    super(description, capabilities, protectedRoomsSet, {});
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.finalConsequences = capabilities.finalConsequences;
     this.changeBucket = new LazyLeakyBucket(
       this.settings.maxChangesPerUser,
@@ -198,14 +201,17 @@ describeProtection<
   configSchema: MembershipChangeProtectionSettings,
   factory: async (
     decription,
+    lifetime,
     protectedRoomsSet,
     draupnir,
     capabilitySet,
     settings
   ) =>
-    Ok(
+    allocateProtection(
+      lifetime,
       new MembershipChangeProtection(
         decription,
+        lifetime,
         capabilitySet,
         protectedRoomsSet,
         draupnir.clientPlatform.toRoomMessageSender(),
