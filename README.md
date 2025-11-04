@@ -6,56 +6,78 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Draupnir
 
-A highly capable [Matrix](https://matrix.org) moderation bot and protection
-platform, trusted by room moderators and homeserver admins alike.
+Draupnir is a unified platform to grow, manage, and sustain communities on
+Matrix.
+
+## Why communities choose Draupnir
+
+- Draupnir provides **Unified control** to manage your Matrix community from one
+  place.
+- Draupnir has **Open governance** and
+  [transparent project leadership](https://the-draupnir-project.github.io/draupnir-documentation/category/governance)
+  grounded in grassroots community focus.
+- Draupnir is **Extensible**, dynamically reconfigure protections and plugins
+  for your circumstances or needs.
+- Draupnir utilizes **Distributed moderation**: Subscribe to trusted,
+  community-curated policy lists that keep spaces safe around the clock.
+
+## Status
+
+We have recently passed a huge milestone: Draupnir's 2.0.0 release 🎉
+
+See
+[governance reports](https://the-draupnir-project.github.io/draupnir-documentation/category/reports)
+for the current project focus.
+
+Draupnir is supported by [NLnet](https://nlnet.nl/project/Draupnir/) through the
+NGI Zero Core programme. The goals of this work are described
+[here](https://marewolf.me/posts/draupnir/24-nlnet-goals.html).
+
+## Quick start
+
+See
+[Setting up Draupnir](https://the-draupnir-project.github.io/draupnir-documentation/bot/setup).
 
 Visit [#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org) in your
 client and come say hi.
 
-Please see the
-[draupnir documentation](https://the-draupnir-project.github.io/draupnir-documentation/)
-for installation instructions and usage guides.
+## Core Features
 
-## Features
-
-- Draupnir's UX is centred around prompting you with questions to carry out
-  specific moderation tasks by shadowing the actions taken by your Matrix
-  Client.
-
-- Draupnir synchonises bans for users, and servers across all of the matrix
-  rooms that you moderate
+- Draupnir's UX is centred around intuitive interactive prompts, with no need to
+  type out commands for most activities. Just use your client to invite the bot
+  to rooms, or manage community members, and Draupnir will prompt you to
+  complete your changes.
 
 - Draupnir can protect your community by applying policies from community
   curated policy lists. For example lists such as the the
-  [community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev),
+  [community moderation effort](https://matrix.to/#/#community-moderation-effort-bl:neko.dev)
   can be watched to protect your rooms around the clock. This means that
   adjacent Matrix communities can warn and protect each other of known threats.
   Draupnir and the list provided by the community moderation effort are the
   bread and butter essentials of moderating public spaces on Matrix.
+
+- Draupnir includes advanced
+  [homeserver administrative](https:/the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
+  features, such as automatically suspending user accounts, blocking
+  invitations, and taking down rooms. As well as reviewing abuse reports. This
+  also includes protecting your homeserver with Draupnir's watched policy rooms.
+
+- Draupnir can be used standalone to protect a community without a homeserver.
 
 - Draupnir includes a series of
   [protections](https://the-draupnir-project.github.io/draupnir-documentation/protections)
   that can be enabled that can help you in given scenarios when your community
   is being targeted.
 
-- Draupnir includes
-  [homeserver administrative](https:/the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
-  features, such as reviewing abuse reports, deactivating user accounts and
-  shutting down rooms. This also includes protecting your homeserver with
-  Draupnir's watched policy rooms.
-
-- Draupnir is primarily a room moderation bot and can be used with or without
-  server administrative capabilities.
-
 - **Draupnir is a forwards and backwards compatible drop in replacement for
   [Mjolnir](https://github.com/matrix-org/mjolnir)**.
 
 ### Prompt UX
 
-The main difference from Mjolnir is that it is no longer necessary to use
-commands for some functions. Banning a user in a protected room from your Matrix
-client will cause Draupnir to show a prompt in the management room, which will
-offer to add the ban to a policy list[^the-gif-width].
+It is no longer necessary to use commands for most core functions. Banning a
+user in a protected room from your Matrix client will cause Draupnir to show a
+prompt in the management room, which will offer to add the ban to a policy
+list[^the-gif-width].
 
 ![A demo showing a propagation prompt](docs/ban-propagation-prompt.gif)
 
@@ -80,13 +102,11 @@ unexpected errors much more easily.
 
 > I offer you the ring, which was burned, laid upon the pyre of Baldr by Odin.
 
-Draupnir started as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir),
-in order to radically refactor the code base and break a feature freeze.
-Draupnir has now completed this refactor and large sections of the the code base
-are now very distinct, as much of Draupnir was rewritten.
+Draupnir began as a fork of [Mjolnir](https://github.com/matrix-org/mjolnir), in
+order to break a feature freeze and improve the architecture.
 
 **Draupnir remains a forwards and backwards compatible drop in replacement for
-Mjolnir**.
+Mjolnir** that provides significant technical improvements:
 
 - Draupnir is much less dependant on commands and will automatically send
   prompts to the management room. Prompts are sent for inviting Draupnir to
@@ -129,21 +149,13 @@ Mjolnir**.
   [typescript-eslint](https://typescript-eslint.io/) into Draupnir's development
   tooling, modernising TypeScript development.
 
-## Status
-
-Draupnir is being supported with a grant from NLnet, the goals of the work are
-described [here](https://marewolf.me/posts/draupnir/24-nlnet-goals.html)
-
-Currently The UX and code base of Draupnir has been overhauled and we have
-recently passed a huge milestone: Draupnir's 2.0.0 release.
-
 ### Migration
 
 Migrating from Mjolnir is straightforward and requires no manual steps,
 migration for your setup is likely as simple as changing your server config to
-pull the latest Draupnir docker image instead of a mjolnir one. Draupnir remains
-backwards compatible so that it is possible to try Draupnir and still have the
-option to switch back to Mjolnir.
+pull the latest Draupnir docker image `gnuxie/draupnir:latest` instead of a
+mjolnir one. Draupnir remains backwards compatible so that it is possible to try
+Draupnir and still have the option to switch back to Mjolnir.
 
 Any problems with migration should be reported to our
 [support room](https://matrix.to/#/#draupnir:matrix.org).
@@ -160,8 +172,6 @@ detailed information about Draupnir's configuration.
 See
 [homeserver administration](https://the-draupnir-project.github.io/draupnir-documentation/bot/homeserver-administration)
 for how to use Draupnir's features to protect your homeserver and users.
-
-## Quickstart guide
 
 After your bot is up and running, you'll want to run a couple commands to get
 everything set up:
@@ -183,7 +193,7 @@ documentation for which can be found
 
 ## Contributing & Opening Issues
 
-Draupnir wants to be yours as much as it is ours. Please see or
+Please see or
 [contributing document](https://the-draupnir-project.github.io/draupnir-documentation/contributing),
 but do not worry too much about following the guidance to the letter. And keep
 that in mind throughout.
