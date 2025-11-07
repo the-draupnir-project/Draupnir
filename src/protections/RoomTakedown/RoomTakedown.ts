@@ -58,7 +58,9 @@ export class StandardRoomTakedown implements RoomTakedownService {
       return isRoomTakendownResult;
     }
     if (isRoomTakendownResult.ok) {
-      log.debug(`The room ${roomID} has already been taken down according to your homeserver`);
+      log.debug(
+        `The room ${roomID} has already been taken down according to your homeserver`
+      );
       return Ok(undefined);
     }
     const detailsResult = await this.takedownCapability.getRoomDetails(roomID);
