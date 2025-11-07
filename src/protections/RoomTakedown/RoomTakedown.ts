@@ -14,7 +14,7 @@ import {
   Recommendation,
 } from "matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
-import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
+import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapability";
 
 const log = new Logger("RoomTakedown");
@@ -58,9 +58,10 @@ export class StandardRoomTakedown implements RoomTakedownService {
       return isRoomTakendownResult;
     }
     if (isRoomTakendownResult.ok) {
-      return ResultError.Result(
-        `The room ${roomID} has already been takendown according to your homeserver`
+      log.debug(
+        `The room ${roomID} has already been taken down according to your homeserver`
       );
+      return Ok(undefined);
     }
     const detailsResult = await this.takedownCapability.getRoomDetails(roomID);
     const takedownResult = await this.takedownCapability.takedownRoom(roomID);
