@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0 AND AFL-3.0
 
 FROM node:20-slim as build-stage
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get full-upgrade -y && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY . /tmp/src
 # describe the version.
 RUN cd /tmp/src && git describe > version.txt.tmp && mv version.txt.tmp version.txt
@@ -20,6 +20,8 @@ COPY --from=build-stage /tmp/src/lib/ /draupnir/
 COPY --from=build-stage /tmp/src/node_modules /node_modules
 COPY --from=build-stage /tmp/src/draupnir-entrypoint.sh /
 COPY --from=build-stage /tmp/src/package.json /
+
+RUN apt-get update && apt-get full-upgrade -y && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NODE_CONFIG_DIR=/data/config
