@@ -11,7 +11,7 @@ import expect from "expect";
 import {
   Ok,
   PropagationType,
-  RoomResolver,
+  RoomJoiner,
   WatchedPolicyRooms,
   isError,
   isOk,
@@ -20,6 +20,7 @@ import { createMock } from "ts-auto-mock";
 import {
   DraupnirUnwatchPolicyRoomCommand,
   DraupnirWatchPolicyRoomCommand,
+  DraupnirWatchUnwatchCommandContext,
 } from "../../../src/commands/WatchUnwatchCommand";
 import { CommandExecutorHelper } from "@the-draupnir-project/interface-manager";
 
@@ -33,7 +34,13 @@ describe("Test the WatchUnwatchCommmands", function () {
       return Ok(undefined);
     },
   });
-  const roomResolver = createMock<RoomResolver>({
+  const roomJoiner = createMock<RoomJoiner>({
+    async joinRoom(roomReference) {
+      if (roomReference instanceof MatrixRoomID) {
+        return Ok(roomReference);
+      }
+      throw new TypeError(`We don't really expect to resolve anything`);
+    },
     async resolveRoom(roomReference) {
       if (roomReference instanceof MatrixRoomID) {
         return Ok(roomReference);
@@ -44,8 +51,11 @@ describe("Test the WatchUnwatchCommmands", function () {
   it("DraupnirWatchCommand", async function () {
     const result = await CommandExecutorHelper.execute(
       DraupnirWatchPolicyRoomCommand,
-      { watchedPolicyRooms, roomResolver },
-      {},
+      createMock<DraupnirWatchUnwatchCommandContext>({
+        watchedPolicyRooms,
+        roomJoiner,
+      }),
+      { keywords: { "no-confirm": true } },
       policyRoom
     );
     expect(isOk(result)).toBe(true);
@@ -56,8 +66,11 @@ describe("Test the WatchUnwatchCommmands", function () {
     });
     const result = await CommandExecutorHelper.execute(
       DraupnirWatchPolicyRoomCommand,
-      { watchedPolicyRooms: issuerManagerWithWatchedList, roomResolver },
-      {},
+      createMock<DraupnirWatchUnwatchCommandContext>({
+        watchedPolicyRooms: issuerManagerWithWatchedList,
+        roomJoiner,
+      }),
+      { keywords: { "no-confirm": true } },
       policyRoom
     );
     expect(isError(result)).toBe(true);
@@ -65,8 +78,11 @@ describe("Test the WatchUnwatchCommmands", function () {
   it("DraupnirUnwatchCommand", async function () {
     const result = await CommandExecutorHelper.execute(
       DraupnirUnwatchPolicyRoomCommand,
-      { watchedPolicyRooms, roomResolver },
-      {},
+      createMock<DraupnirWatchUnwatchCommandContext>({
+        watchedPolicyRooms,
+        roomJoiner,
+      }),
+      { keywords: { "no-confirm": true } },
       policyRoom
     );
     expect(isOk(result)).toBe(true);

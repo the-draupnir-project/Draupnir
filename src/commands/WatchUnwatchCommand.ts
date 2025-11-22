@@ -1,4 +1,4 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022, 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -9,7 +9,9 @@
 // </text>
 
 import {
-  RoomResolver,
+  PolicyRoomManager,
+  ProtectedRoomsSet,
+  RoomJoiner,
   WatchedPolicyRooms,
   isError,
 } from "matrix-protection-suite";
@@ -18,16 +20,23 @@ import {
   describeCommand,
   tuple,
 } from "@the-draupnir-project/interface-manager";
-import { Result, ResultError } from "@gnuxie/typescript-result";
+import { Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { Draupnir } from "../Draupnir";
 import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
+import {
+  generateWatchPreview,
+  renderWatchCommandPreview,
+  WatchPolicyRoomPreview,
+} from "./WatchPreview";
 
 export type DraupnirWatchUnwatchCommandContext = {
   watchedPolicyRooms: WatchedPolicyRooms;
-  roomResolver: RoomResolver;
+  roomJoiner: RoomJoiner;
+  policyRoomManager: PolicyRoomManager;
+  protectedRoomsSet: ProtectedRoomsSet;
 };
 
 export const DraupnirWatchPolicyRoomCommand = describeCommand({
@@ -37,16 +46,29 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
     name: "policy room",
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
+  keywords: {
+    keywordDescriptions: {
+      "no-confirm": {
+        isFlag: true,
+        description: "Runs the command without the preview.",
+      },
+    },
+  },
   async executor(
-    { watchedPolicyRooms, roomResolver }: DraupnirWatchUnwatchCommandContext,
+    {
+      watchedPolicyRooms,
+      roomJoiner,
+      policyRoomManager,
+      protectedRoomsSet,
+    }: DraupnirWatchUnwatchCommandContext,
     _info,
-    _keywords,
+    keywords,
     _rest,
     policyRoomReference
-  ): Promise<Result<void>> {
-    const policyRoom = await roomResolver.resolveRoom(policyRoomReference);
+  ): Promise<Result<undefined | WatchPolicyRoomPreview>> {
+    const policyRoom = await roomJoiner.joinRoom(policyRoomReference);
     if (isError(policyRoom)) {
-      return policyRoom;
+      return policyRoom.elaborate("Failed to resolve or join the room");
     }
     if (
       watchedPolicyRooms.allRooms.some(
@@ -56,9 +78,45 @@ export const DraupnirWatchPolicyRoomCommand = describeCommand({
     ) {
       return ResultError.Result("We are already watching this list.");
     }
-    return await watchedPolicyRooms.watchPolicyRoomDirectly(policyRoom.ok);
+    if (keywords.getKeywordValue<boolean>("no-confirm", false)) {
+      const watchResult = await watchedPolicyRooms.watchPolicyRoomDirectly(
+        policyRoom.ok
+      );
+      if (isError(watchResult)) {
+        return watchResult;
+      }
+      return Ok(undefined);
+    }
+    const revisionIssuer = await policyRoomManager.getPolicyRoomRevisionIssuer(
+      policyRoom.ok
+    );
+    if (isError(revisionIssuer)) {
+      return revisionIssuer.elaborate(
+        "Failed to fetch policy room revision issuer"
+      );
+    }
+    return Ok(
+      generateWatchPreview(protectedRoomsSet, revisionIssuer.ok.currentRevision)
+    );
   },
 });
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirWatchPolicyRoomCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
+  confirmationPromptJSXRenderer(commandResult) {
+    if (isError(commandResult)) {
+      return Ok(undefined);
+    } else if (commandResult.ok === undefined) {
+      return Ok(undefined);
+    } else {
+      return Ok(renderWatchCommandPreview(commandResult.ok));
+    }
+  },
+});
+DraupnirContextToCommandContextTranslator.registerTranslation(
+  DraupnirWatchPolicyRoomCommand,
+  buildWatchContext
+);
 
 export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
   summary:
@@ -68,13 +126,13 @@ export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
     acceptor: MatrixRoomReferencePresentationSchema,
   }),
   async executor(
-    { watchedPolicyRooms, roomResolver }: DraupnirWatchUnwatchCommandContext,
+    { watchedPolicyRooms, roomJoiner }: DraupnirWatchUnwatchCommandContext,
     _info,
     _keywords,
     _rest,
     policyRoomReference
   ): Promise<Result<void>> {
-    const policyRoom = await roomResolver.resolveRoom(policyRoomReference);
+    const policyRoom = await roomJoiner.resolveRoom(policyRoomReference);
     if (isError(policyRoom)) {
       return policyRoom;
     }
@@ -82,18 +140,21 @@ export const DraupnirUnwatchPolicyRoomCommand = describeCommand({
   },
 });
 
-for (const command of [
-  DraupnirWatchPolicyRoomCommand,
-  DraupnirUnwatchPolicyRoomCommand,
-]) {
-  DraupnirInterfaceAdaptor.describeRenderer(command, {
-    isAlwaysSupposedToUseDefaultRenderer: true,
-  });
-  DraupnirContextToCommandContextTranslator.registerTranslation(
-    command,
-    (draupnir: Draupnir) => ({
-      watchedPolicyRooms: draupnir.protectedRoomsSet.watchedPolicyRooms,
-      roomResolver: draupnir.clientPlatform.toRoomResolver(),
-    })
-  );
+function buildWatchContext(
+  draupnir: Draupnir
+): DraupnirWatchUnwatchCommandContext {
+  return {
+    watchedPolicyRooms: draupnir.protectedRoomsSet.watchedPolicyRooms,
+    roomJoiner: draupnir.clientPlatform.toRoomJoiner(),
+    policyRoomManager: draupnir.policyRoomManager,
+    protectedRoomsSet: draupnir.protectedRoomsSet,
+  };
 }
+
+DraupnirInterfaceAdaptor.describeRenderer(DraupnirUnwatchPolicyRoomCommand, {
+  isAlwaysSupposedToUseDefaultRenderer: true,
+});
+DraupnirContextToCommandContextTranslator.registerTranslation(
+  DraupnirUnwatchPolicyRoomCommand,
+  buildWatchContext
+);
