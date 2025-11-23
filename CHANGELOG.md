@@ -12,6 +12,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.8.0] - 2025-11-23
+
+### Changed
+
+- The `watch` command now includes a preview of the effects of policy room
+  subscription. Without using the `--no-confirm` argument, you will be provided
+  with a list of effects and prompted to confirm or cancel the command.
+
+### Fixed
+
+- Protections now use a
+  [_Lifetime_](https://github.com/the-draupnir-project/planning/blob/main/design/2510-lifetimes.md)
+  abstraction for resource allocation and disposal. Which structurally
+  eliminates issues such as use after free and memory leaks.
+
+- When starting Draupnir spurious log lines would appear for each taken down
+  room. Fixed by @esoteric_programmer in
+  https://github.com/the-draupnir-project/Draupnir/pull/995 and reported by @
+  TommyTran732.
+
+### Special thanks
+
+Special thanks to @FSG-Cat for continuing to review changes to documentation.
+
 ## [v2.7.1] - 2025-10-13
 
 ### Fixed
