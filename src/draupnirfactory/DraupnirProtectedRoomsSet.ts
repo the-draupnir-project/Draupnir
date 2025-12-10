@@ -28,6 +28,7 @@ import {
   PolicyRoomManager,
   ProtectedRoomsConfig,
   ProtectedRoomsSet,
+  ProtectionHandleRegistryDescription,
   ProtectionsManager,
   RoomJoiner,
   RoomMembershipManager,
@@ -47,7 +48,7 @@ import {
   BotSDKRoomStateConfigBackend,
   MatrixSendClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEnabledProtectionsMigration } from "../protections/DefaultEnabledProtectionsMigration";
+import { DefaultEnabledProtectionsMigration } from "../protections/ConfigMigration/DefaultEnabledProtectionsMigration";
 import "../protections/DraupnirProtectionsIndex";
 import { IConfig } from "../config";
 import { runProtectionConfigHooks } from "../protections/ConfigHooks";
@@ -155,7 +156,8 @@ async function makeProtectionsManager(
             description.name
           )
         )
-      )
+      ),
+      ProtectionHandleRegistryDescription
     )
   );
 }
