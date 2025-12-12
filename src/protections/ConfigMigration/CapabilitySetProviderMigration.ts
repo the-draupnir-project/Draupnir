@@ -65,9 +65,6 @@ export async function serverBanSynchronisationCapabilityRename(
   }
 }
 
-// FIXME: How do we make sure that this is tested?
-// And do we need to test this as an integration test?
-// Or just by using the capability and interface names?
 export const DefaultEnabledProtectionsMigration =
   new SchemedDataManager<CapabilityProviderConfig>([
     serverBanSynchronisationCapabilityRename,
