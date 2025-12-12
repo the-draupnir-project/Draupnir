@@ -26,10 +26,10 @@ export async function serverBanSynchronisationCapabilityRename(
       `The data for the capability provider config is corrupted.`
     );
   }
-  const oldServerConsequencesInterfaceName = "serverConsequences";
+  const protectionCapabilityName = "serverConsequences";
   const oldSimulatedServerConsequencesName = "SimulatedServerConsequences";
   const oldServerACLConsequencesName = "ServerACLConsequences";
-  const oldServerConsequencesSet = input[oldServerConsequencesInterfaceName];
+  const oldServerConsequencesSet = input[protectionCapabilityName];
   if (oldServerConsequencesSet === undefined) {
     return Ok({
       ...input,
@@ -37,13 +37,13 @@ export async function serverBanSynchronisationCapabilityRename(
     } as unknown as CapabilityProviderConfig);
   }
   log.debug(
-    `Migrating capability provider from ${oldServerConsequencesInterfaceName} to ServerBanSynchronisationCapability`
+    `Migrating capability provider from ${protectionCapabilityName} to ServerBanSynchronisationCapability`
   );
   const makeProviderSet = (
     capabilityName: string
   ): CapabilityProviderConfig => {
     return {
-      ["ServerBanSynchronisationCapability"]: {
+      [protectionCapabilityName]: {
         capability_provider_name: capabilityName,
       },
       [DRAUPNIR_SCHEMA_VERSION_KEY]: toVersion,

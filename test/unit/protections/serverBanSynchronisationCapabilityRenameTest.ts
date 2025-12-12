@@ -13,6 +13,8 @@ import {
   SimulatedServerBanSynchronisationCapability,
 } from "matrix-protection-suite";
 
+const serverBanCapabilityName = "serverConsequences";
+
 const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
   typeof serverBanSynchronisationCapabilityRename
 >("serverBanSynchronisationCapabilityRename").Law({
@@ -25,7 +27,7 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
         "Should be able to make the subject"
       );
       const input = {
-        serverConsequences: {
+        [serverBanCapabilityName]: {
           capability_provider_name: "SimulatedServerConsequences",
         },
       } as unknown as CapabilityProviderConfig;
@@ -33,12 +35,9 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
       const output = (await migration(input, toVersion)).expect(
         "Migration should succeed for SimulatedServerConsequences"
       );
-      expect(
-        output.ServerBanSynchronisationCapability?.capability_provider_name
-      ).toBe(SimulatedServerBanSynchronisationCapability.name);
-      expect(
-        (output as Record<string, unknown>).ServerConsequences
-      ).toBeUndefined();
+      expect(output[serverBanCapabilityName]?.capability_provider_name).toBe(
+        SimulatedServerBanSynchronisationCapability.name
+      );
     },
   },
   updateServerACLConsequences: {
@@ -50,7 +49,7 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
         "Should be able to make the subject"
       );
       const input = {
-        serverConsequences: {
+        [serverBanCapabilityName]: {
           capability_provider_name: "ServerACLConsequences",
         },
       } as unknown as CapabilityProviderConfig;
@@ -60,12 +59,9 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
       );
 
       expect(output[DRAUPNIR_SCHEMA_VERSION_KEY]).toBe(toVersion);
-      expect(
-        output.ServerBanSynchronisationCapability?.capability_provider_name
-      ).toBe(ServerACLSynchronisationCapability.name);
-      expect(
-        (output as Record<string, unknown>).ServerConsequences
-      ).toBeUndefined();
+      expect(output[serverBanCapabilityName]?.capability_provider_name).toBe(
+        ServerACLSynchronisationCapability.name
+      );
     },
   },
   maintainOtherConfigs: {
@@ -91,7 +87,7 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
         "SomeOtherProvider"
       );
       expect(
-        (output as Record<string, unknown>).ServerBanSynchronisationCapability
+        (output as Record<string, unknown>)[serverBanCapabilityName]
       ).toBeUndefined();
     },
   },
@@ -104,7 +100,7 @@ const serverBanSynchronisationCapabilityRenameSemanticType = SemanticType<
         "Should be able to make the subject"
       );
       const input = {
-        serverConsequences: {
+        [serverBanCapabilityName]: {
           capability_provider_name: "CustomServerConsequences",
         },
       } as unknown as CapabilityProviderConfig;
