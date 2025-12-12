@@ -327,10 +327,10 @@
     "@gnuxie/typescript-result" "^1.0.0"
     glob-to-regexp "^0.4.1"
 
-"@the-draupnir-project/mps-interface-adaptor@0.5.2":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@the-draupnir-project/mps-interface-adaptor/-/mps-interface-adaptor-0.5.2.tgz#e68aed42a5630085e810a3c1aea33a123f7235ac"
-  integrity sha512-RPR99a4l4JIvgyAFIiWA79/zl0ZN8zO+backS/GjNmsFQz3o0yDxnqUAFq/iJA44QgLDXJsw0h2t2LyytqGWHQ==
+"@the-draupnir-project/mps-interface-adaptor@0.5.3":
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/@the-draupnir-project/mps-interface-adaptor/-/mps-interface-adaptor-0.5.3.tgz#4e9bca69fb435cfc03c2c2788530a287f3927671"
+  integrity sha512-RfDE+AKNKb5monSGSO4q9FvxD8VlnujkJOw58WqKdX7KachUy4IiZN7rUEfrrjcdBgrdL6PEQSNzusMLmT7+zg==
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.11"
@@ -2606,10 +2606,10 @@ matrix-appservice@^2.0.0:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"
 
-"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@5.1.0":
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-5.1.0.tgz#bd7bd9309c9501e4a9e68d5331837d268baeee5a"
-  integrity sha512-NgxtYmUjdhfCY3J+72hIlzp83lQhAYmRR6w/taNjDORlaX7sSpNOSLi58JOzgGqyMCrsE5ZoKUaem+qzsM4TrQ==
+"matrix-protection-suite@npm:@gnuxie/matrix-protection-suite@6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@gnuxie/matrix-protection-suite/-/matrix-protection-suite-6.0.0.tgz#b2dd227132f6e8660d23b3bfbbad9ffde8d251f6"
+  integrity sha512-OLtY0LGFSY4qwl4/d+g3VJf/6fmPsgFwp8MR8r/MiRHp+Li/QTP68Sgdll/d0eNgHlvQU2D9cHhffwqkVMYLTQ==
   dependencies:
     "@gnuxie/typescript-result" "^1.0.0"
     await-lock "^2.2.2"

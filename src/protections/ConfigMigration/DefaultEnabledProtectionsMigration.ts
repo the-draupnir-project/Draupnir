@@ -14,11 +14,11 @@ import {
   Value,
   findProtection,
 } from "matrix-protection-suite";
-import { RedactionSynchronisationProtection } from "./RedactionSynchronisation";
-import { PolicyChangeNotification } from "./PolicyChangeNotification";
-import { JoinRoomsOnInviteProtection } from "./invitation/JoinRoomsOnInviteProtection";
-import { RoomsSetBehaviour } from "./ProtectedRooms/RoomsSetBehaviourProtection";
-import { InvalidEventProtection } from "./InvalidEventProtection";
+import { RedactionSynchronisationProtection } from "../RedactionSynchronisation";
+import { PolicyChangeNotification } from "../PolicyChangeNotification";
+import { JoinRoomsOnInviteProtection } from "../invitation/JoinRoomsOnInviteProtection";
+import { RoomsSetBehaviour } from "../ProtectedRooms/RoomsSetBehaviourProtection";
+import { InvalidEventProtection } from "../InvalidEventProtection";
 
 export const DefaultEnabledProtectionsMigration =
   new SchemedDataManager<MjolnirEnabledProtectionsEvent>([

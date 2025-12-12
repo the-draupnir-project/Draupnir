@@ -12,10 +12,10 @@ import {
   ActionResult,
   Capability,
   DescriptionMeta,
-  PolicyListRevisionIssuer,
   RoomSetResult,
-  ServerACLConsequencesContext,
-  ServerConsequences,
+  ServerACLSynchronisationCapabilityContext,
+  ServerBanIntentProjection,
+  ServerBanSynchronisationCapability,
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
   isError,
@@ -32,11 +32,13 @@ import {
   renderRoomSetResult,
 } from "@the-draupnir-project/mps-interface-adaptor";
 
-class StandardServerConsequencesRenderer implements ServerConsequences {
+class StandardServerBanSynchronisationCapabilityRenderer
+  implements ServerBanSynchronisationCapability
+{
   constructor(
     private readonly description: DescriptionMeta,
     private readonly messageCollector: RendererMessageCollector,
-    private readonly capability: ServerConsequences
+    private readonly capability: ServerBanSynchronisationCapability
   ) {
     // nothing to do.
   }
@@ -45,13 +47,13 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
   public readonly requiredPermissions = this.capability.requiredPermissions;
   public readonly requiredStatePermissions =
     this.capability.requiredStatePermissions;
-  public async consequenceForServersInRoom(
+  public async outcomeFromIntentInRoom(
     roomID: StringRoomID,
-    issuer: PolicyListRevisionIssuer
+    projection: ServerBanIntentProjection
   ): Promise<ActionResult<boolean>> {
-    const capabilityResult = await this.capability.consequenceForServersInRoom(
+    const capabilityResult = await this.capability.outcomeFromIntentInRoom(
       roomID,
-      issuer
+      projection
     );
     const title = (
       <fragment>
@@ -59,6 +61,7 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
         with watched policies.
       </fragment>
     );
+    // only add the message if we failed, otherwise it's too spammy.
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
         this.description,
@@ -71,21 +74,13 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
       );
       return capabilityResult;
     }
-    // only add the message if we changed anything in the room.
-    if (capabilityResult.ok) {
-      this.messageCollector.addOneliner(
-        this.description,
-        this.capability,
-        title
-      );
-    }
     return capabilityResult;
   }
-  public async consequenceForServersInRoomSet(
-    issuer: PolicyListRevisionIssuer
+  public async outcomeFromIntentInRoomSet(
+    projection: ServerBanIntentProjection
   ): Promise<ActionResult<RoomSetResult>> {
     const capabilityResult =
-      await this.capability.consequenceForServersInRoomSet(issuer);
+      await this.capability.outcomeFromIntentInRoomSet(projection);
     const title = <fragment>Updating server ACL in protected rooms.</fragment>;
     if (isError(capabilityResult)) {
       this.messageCollector.addMessage(
@@ -99,65 +94,31 @@ class StandardServerConsequencesRenderer implements ServerConsequences {
       );
       return capabilityResult;
     }
-    this.messageCollector.addMessage(
-      this.description,
-      this.capability,
-      renderRoomSetResult(capabilityResult.ok, {
-        summary: (
-          <fragment>
-            <code>{this.description.name}</code>: {title}
-          </fragment>
-        ),
-      })
-    );
-    return capabilityResult;
-  }
-  public async unbanServerFromRoomSet(
-    serverName: string,
-    reason: string
-  ): Promise<ActionResult<RoomSetResult>> {
-    const capabilityResult = await this.capability.unbanServerFromRoomSet(
-      serverName,
-      reason
-    );
-    const title = (
-      <fragment>
-        Removing {serverName} from denied servers in protected rooms.
-      </fragment>
-    );
-    if (isError(capabilityResult)) {
+    // Only show this when results are failing.
+    if (!capabilityResult.ok.isEveryResultOk) {
       this.messageCollector.addMessage(
         this.description,
         this.capability,
-        renderFailedSingularConsequence(
-          this.description,
-          title,
-          capabilityResult.error
-        )
+        renderRoomSetResult(capabilityResult.ok, {
+          summary: (
+            <fragment>
+              <code>{this.description.name}</code>: {title}
+            </fragment>
+          ),
+          showOnlyFailed: true,
+        })
       );
-      return capabilityResult;
     }
-    this.messageCollector.addMessage(
-      this.description,
-      this.capability,
-      renderRoomSetResult(capabilityResult.ok, {
-        summary: (
-          <fragment>
-            <code>{this.description.name}</code>: {title}
-          </fragment>
-        ),
-      })
-    );
     return capabilityResult;
   }
 }
 
-describeCapabilityRenderer<ServerConsequences, Draupnir>({
-  name: "ServerACLConsequences",
-  description: "Render server consequences.",
-  interface: "ServerConsequences",
+describeCapabilityRenderer<ServerBanSynchronisationCapability, Draupnir>({
+  name: "ServerACLSynchronisationCapability",
+  description: "Render the server ban capability.",
+  interface: "ServerBanSynchronisationCapability",
   factory(description, draupnir, capability) {
-    return new StandardServerConsequencesRenderer(
+    return new StandardServerBanSynchronisationCapabilityRenderer(
       description,
       draupnir.capabilityMessageRenderer,
       capability
@@ -166,8 +127,11 @@ describeCapabilityRenderer<ServerConsequences, Draupnir>({
   isDefaultForInterface: true,
 });
 
-describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
-  name: "ServerACLConsequences",
+describeCapabilityContextGlue<
+  Draupnir,
+  ServerACLSynchronisationCapabilityContext
+>({
+  name: "ServerACLSynchronisationCapability",
   glueMethod: function (
     protectionDescription,
     draupnir,
@@ -180,8 +144,11 @@ describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
   },
 });
 
-describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
-  name: "SimulatedServerConsequences",
+describeCapabilityContextGlue<
+  Draupnir,
+  ServerACLSynchronisationCapabilityContext
+>({
+  name: "SimulatedServerBanSynchronisationCapability",
   glueMethod: function (
     protectionDescription,
     draupnir,
@@ -189,6 +156,6 @@ describeCapabilityContextGlue<Draupnir, ServerACLConsequencesContext>({
   ): Capability {
     return capabilityProvider.factory(protectionDescription, {
       protectedRoomsSet: draupnir.protectedRoomsSet,
-    } as ServerACLConsequencesContext);
+    } as ServerACLSynchronisationCapabilityContext);
   },
 });
