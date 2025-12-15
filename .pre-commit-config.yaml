@@ -37,7 +37,7 @@ repos:
         entry: corepack yarn lint
         language: system
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.3
+    rev: 0.36.0
     hooks:
       - id: check-renovate
         additional_dependencies: ["pyjson5"]
