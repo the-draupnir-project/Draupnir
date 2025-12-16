@@ -65,7 +65,7 @@ export async function serverBanSynchronisationCapabilityRename(
   }
 }
 
-export const DefaultEnabledProtectionsMigration =
+export const CapabilitySetProviderMigration =
   new SchemedDataManager<CapabilityProviderConfig>([
     serverBanSynchronisationCapabilityRename,
   ]);
