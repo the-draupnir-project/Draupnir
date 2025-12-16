@@ -57,6 +57,7 @@ import {
   MatrixRoomID,
   StringUserID,
 } from "@the-draupnir-project/matrix-basic-types";
+import { CapabilitySetProviderMigration } from "../protections/ConfigMigration/CapabilitySetProviderMigration";
 
 const log = new Logger("DraupnirProtectedRoomsSet");
 
@@ -137,15 +138,17 @@ async function makeProtectionsManager(
   return Ok(
     new StandardProtectionsManager(
       protectionsConfigResult.ok,
-      new StandardProtectionCapabilityProviderSetConfig((description) =>
-        Ok(
-          new BotSDKRoomStateConfigBackend(
-            client,
-            managementRoom.toRoomIDOrAlias(),
-            "me.marewolf.draupnir.set_capability_provider",
-            description.name
-          )
-        )
+      new StandardProtectionCapabilityProviderSetConfig(
+        (description) =>
+          Ok(
+            new BotSDKRoomStateConfigBackend(
+              client,
+              managementRoom.toRoomIDOrAlias(),
+              "me.marewolf.draupnir.set_capability_provider",
+              description.name
+            )
+          ),
+        CapabilitySetProviderMigration
       ),
       new MjolnirProtectionSettingsConfig((description) =>
         Ok(
