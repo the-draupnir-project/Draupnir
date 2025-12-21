@@ -400,6 +400,99 @@ export class Draupnir implements Client, MatrixAdaptorContext {
         this.managementRoomOutput
       );
     }
+
+    // Open a new closure. We're not concerned too much if this fails.
+    void (async () => {
+      // Set some command structures we'll use in our MSC4333 event.
+      // TODO: Populate all commands available, using the registered commands rather than hardcoding.
+      await this.client.sendStateEvent(this.managementRoomID, "org.matrix.msc4332.commands", await this.client.getUserId(), {
+        "sigil": "!",
+        "commands": [
+          {
+            "syntax": "draupnir ban {userId} {list} {reason}",
+            "variables": {
+              "userId": {
+                "m.text": [{"body": "The user ID to ban"}],
+              },
+              "reason": {
+                "m.text": [{"body": "The reason for the ban"}],
+              },
+              "list": {
+                "m.text": [{"body": "The policy list to ban the user on"}],
+              },
+            },
+            "description": {
+              "m.text": [{"body": "Ban a user in all protected rooms"}],
+            },
+          },
+          {
+            "syntax": "draupnir kick {userId} {roomId} {reason}",
+            "variables": {
+              "userId": {
+                "m.text": [{"body": "The user ID to kick"}],
+              },
+              "roomId": {
+                "m.text": [{"body": "The room ID to kick the user from"}],
+              },
+              "reason": {
+                "m.text": [{"body": "The reason for the kick"}],
+              },
+            },
+            "description": {
+              "m.text": [{"body": "Kick a user from a room"}],
+            },
+          },
+          {
+            "syntax": "draupnir redact {permalink}",
+            "variables": {
+              "permalink": {
+                "m.text": [{"body": "The event ID link to redact"}],
+              },
+            },
+            "description": {
+              "m.text": [{"body": "Redact an event"}],
+            },
+          },
+          {
+            "syntax": "draupnir redact {userId}",
+            "variables": {
+              "userId": {
+                "m.text": [{"body": "The user ID to redact"}],
+              },
+            },
+            "description": {
+              "m.text": [{"body": "Redact as many of the user's events as possible"}],
+            },
+          },
+        ]
+      });
+
+      // Now set that MSC4333 event.
+      // TODO: Update when the protected room set changes.
+      await this.client.sendStateEvent(this.managementRoomID, "org.matrix.msc4333.moderation_config", await this.client.getUserId(), {
+        "protected_room_ids": this.protectedRoomsSet.allProtectedRooms.map(r => r.toRoomIDOrAlias()),
+        "commands": {
+          "ban": {
+            "use": "draupnir ban {userId} {list} {reason}",
+            "prefill_variables": {
+              "list": "conduct",
+            },
+          },
+          "kick": {
+            "use": "draupnir kick {userId} {roomId} {reason}",
+            "prefill_variables": {},
+          },
+          "redact_event": {
+            "use": "draupnir redact {permalink}",
+            "prefill_variables": {},
+          },
+          "redact_user": {
+            "use": "draupnir redact {userId}",
+            "prefill_variables": {},
+          },
+        },
+      });
+    })();
   }
 
   public stop(): void {
