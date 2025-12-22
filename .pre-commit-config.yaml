@@ -10,7 +10,7 @@ ci:
   skip: [yarn-lint]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: ["--markdown-linebreak-ext", "md"]
@@ -22,12 +22,12 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: check-illegal-windows-names
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: "3.0.3"
+    rev: "3.6.0"
     hooks:
       - id: editorconfig-checker
         alias: ec
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v4.0.3
+    rev: v6.2.0
     hooks:
       - id: reuse
   - repo: local
@@ -37,7 +37,7 @@ repos:
         entry: corepack yarn lint
         language: system
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.3
+    rev: 0.36.0
     hooks:
       - id: check-renovate
         additional_dependencies: ["pyjson5"]
