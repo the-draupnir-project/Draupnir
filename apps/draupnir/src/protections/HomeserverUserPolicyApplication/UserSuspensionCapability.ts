@@ -21,9 +21,7 @@ import "./UserRestrictionCapability";
 
 const log = new Logger("SynapseAdminUserSuspensionCapability");
 
-export class SynapseAdminUserSuspensionCapability
-  implements UserRestrictionCapability
-{
+export class SynapseAdminUserSuspensionCapability implements UserRestrictionCapability {
   public readonly requiredPermissions = [];
   public readonly requiredStatePermissions = [];
   public readonly requiredEventPermissions = [];

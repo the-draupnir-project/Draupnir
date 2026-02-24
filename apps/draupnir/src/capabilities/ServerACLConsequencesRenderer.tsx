@@ -32,9 +32,7 @@ import {
   renderRoomSetResult,
 } from "@the-draupnir-project/mps-interface-adaptor";
 
-class StandardServerBanSynchronisationCapabilityRenderer
-  implements ServerBanSynchronisationCapability
-{
+class StandardServerBanSynchronisationCapabilityRenderer implements ServerBanSynchronisationCapability {
   constructor(
     private readonly description: DescriptionMeta,
     private readonly messageCollector: RendererMessageCollector,
