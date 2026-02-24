@@ -10,6 +10,12 @@ config/*
 draupnir-registration.yaml
 test/harness/mjolnir-data/*
 
+# Monorepo
+**/node_modules/
+**/dist/
+**/lib/
+*.tsbuildinfo
+
 # Misc
 
 lib/

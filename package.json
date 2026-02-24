@@ -1,0 +1,30 @@
+{
+  "name": "@the-draupnir-project/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-draupnir-project/Draupnir.git"
+  },
+  "author": "Gnuxie",
+  "license": "AFL-3.0",
+  "bugs": {
+    "url": "https://github.com/the-draupnir-project/Draupnir/issues"
+  },
+  "homepage": "https://github.com/the-draupnir-project/Draupnir#readme",
+  "scripts": {
+    "build": "tsc -b",
+    "build:clean": "tsc -b --clean",
+    "lint": "eslint --cache \"packages/**/{src,test}/**/*.{ts,tsx}\" && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "eslint": "^9.39.3",
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  }
+}
