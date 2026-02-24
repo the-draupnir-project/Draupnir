@@ -41,9 +41,7 @@ export class SynapseAdminRoomDetailsProvider implements RoomDetailsProvider {
   }
 }
 
-export class SynapseAdminRoomTakedownCapability
-  implements RoomTakedownCapability
-{
+export class SynapseAdminRoomTakedownCapability implements RoomTakedownCapability {
   public readonly requiredPermissions = [];
   public readonly requiredStatePermissions = [];
   public readonly requiredEventPermissions = [];

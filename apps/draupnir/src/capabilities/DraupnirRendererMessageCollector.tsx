@@ -19,9 +19,7 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
 
-export class DraupnirRendererMessageCollector
-  implements RendererMessageCollector
-{
+export class DraupnirRendererMessageCollector implements RendererMessageCollector {
   constructor(
     private readonly roomMessageSender: RoomMessageSender,
     private readonly managementRoomID: StringRoomID

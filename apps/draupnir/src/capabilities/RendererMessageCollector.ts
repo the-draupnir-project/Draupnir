@@ -35,9 +35,7 @@ export interface RendererMessage {
 /**
  * Used by capabilities to send messages to the users of Draupnir.
  */
-export class AbstractRendererMessageCollector
-  implements RendererMessageCollector
-{
+export class AbstractRendererMessageCollector implements RendererMessageCollector {
   private readonly messages: RendererMessage[] = [];
   public getMessages(): RendererMessage[] {
     return this.messages;

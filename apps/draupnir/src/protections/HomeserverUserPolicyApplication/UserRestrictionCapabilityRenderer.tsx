@@ -54,9 +54,7 @@ function renderUserRestriction(
   );
 }
 
-class StandardUserRestrictionCapabilityRenderer
-  implements UserRestrictionCapability
-{
+class StandardUserRestrictionCapabilityRenderer implements UserRestrictionCapability {
   public readonly requiredEventPermissions =
     this.capability.requiredEventPermissions;
   public readonly requiredPermissions = this.capability.requiredPermissions;

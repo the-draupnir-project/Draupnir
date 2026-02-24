@@ -186,9 +186,7 @@ interface RedactionSynchronisation {
   handleMembershipChange(change: MembershipChange): void;
 }
 
-export class StandardRedactionSynchronisation
-  implements RedactionSynchronisation
-{
+export class StandardRedactionSynchronisation implements RedactionSynchronisation {
   public constructor(
     private readonly automaticRedactionReasons: MatrixGlob[],
     private readonly consequences: RedactionSynchronisationConsequences,

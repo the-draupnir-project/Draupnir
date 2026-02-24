@@ -65,8 +65,8 @@ export class NotificationRoomCreator<
   }
 
   public static async createNotificationRoomFromDraupnir<
-    TProtectionDescription extends
-      ProtectionDescription = ProtectionDescription,
+    TProtectionDescription extends ProtectionDescription =
+      ProtectionDescription,
   >(
     draupnir: Draupnir,
     description: TProtectionDescription,

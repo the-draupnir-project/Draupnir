@@ -10,5 +10,6 @@
 
 import { Protection } from "matrix-protection-suite";
 
-export interface DraupnirProtection<TProtectionDescription>
-  extends Protection<TProtectionDescription> {}
+export interface DraupnirProtection<
+  TProtectionDescription,
+> extends Protection<TProtectionDescription> {}
