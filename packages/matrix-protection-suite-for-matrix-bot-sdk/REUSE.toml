@@ -1,0 +1,46 @@
+version = 1
+SPDX-PackageName = "the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk"
+SPDX-PackageSupplier = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/the-draupnir-project/Draupnir"
+
+[[annotations]]
+path = "REUSE.toml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "tsconfig.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "package-lock.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "package.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "NOTICE"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "README.md"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "typedoc.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
