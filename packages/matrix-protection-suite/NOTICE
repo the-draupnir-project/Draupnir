@@ -1,0 +1,22 @@
+This project incorporates modified work from:
+
+- mjolnir https://github.com/matrix-org/mjolnir
+- matrix-appservice-bridge https://github.com/matrix-org/matrix-appservice-bridge
+- matrix-spec https://github.com/matrix-org/matrix-spec
+- matrix-bot-sdk https://github.com/turt2live/matrix-bot-sdk
+- synapse https://github.com/matrix-org/synapse
+
+Any source file incorporating work retains copyright notices.
+All source files include an SPDX license identifier.
+Licenses relating to the identifiers can be found in the LICENSES directory.
+Any source file incorporating work includes an attribution notice to indicate modification and origin.
+These attribution notices use the SPDX file attribution text field and must be
+respected as attribution notices to be reproduced in all copies or derivatives of the source file.
+Derivatives and copies of the source file must also provide attribution to the source they obtained
+the original work from.
+As an example, copying a file from a clone or copy of this source repository
+must include the following attribution notice:
+SPDX-FileAttributionText: <text>
+This modified file incorporates work from matrix-protection-suite
+https://github.com/Gnuxie/matrix-protection-suite
+</text>

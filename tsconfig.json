@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/matrix-basic-types" },
-    { "path": "./packages/interface-manager"},
+    { "path": "./packages/interface-manager" },
+    { "path": "./packages/matrix-protection-suite" }
   ]
 }
