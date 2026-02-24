@@ -1,0 +1,43 @@
+{
+  "name": "@the-draupnir-project/interface-manager",
+  "version": "4.2.6",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": {
+    "name": "Gnuxie",
+    "email": "Gnuxie@protonmail.com"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "url": "https://github.com/the-draupnir-project/interface-manager.git",
+    "type": "git"
+  },
+  "private": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc --project tsconfig.json",
+    "lint": "eslint src && prettier --check src",
+    "prepare": "npm run build",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@the-draupnir-project/tsconfig": "^0.1.0",
+    "@types/jest": "^29.5.12",
+    "eslint": "^9.28.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0"
+  },
+  "dependencies": {
+    "@gnuxie/super-cool-stream": "^0.2.1",
+    "@gnuxie/typescript-result": "^1.1.1"
+  },
+  "peerDependencies": {
+    "@the-draupnir-project/matrix-basic-types": "^1.4.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@the-draupnir-project/tsconfig",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Gnuxie",
+    "email": "Gnuxie@protonmail.com"
+  },
+  "description": "Keeps package typescript stack versions in sync",
+  "repository": {
+    "url": "https://github.com/the-draupnir-project/Draupnir.git",
+    "type": "git"
+  },
+  "files": [
+    "src/*"
+  ],
+  "peerDependencies": {
+    "@eslint/js": "^9.14.0",
+    "eslint": "^9.14.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0"
+  }
+}

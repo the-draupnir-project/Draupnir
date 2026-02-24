@@ -752,7 +752,6 @@ Special thanks to all contributors who helped in the beta programme: @avdb13,
   https://github.com/the-draupnir-project/Draupnir/issues/622.
 
 - The `JoinWaveShortCircuitProtection` has been improved:
-
   - The `JoinWaveShortCircuitProtection` now uses a leaky bucket token
     algorithm, prior to this the entire bucket got dumped after a preconfigured
     time.
