@@ -1,26 +1,6 @@
 {
-  "compilerOptions": {
-    "alwaysStrict": true,
-    "esModuleInterop": true,
-    "exactOptionalPropertyTypes": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "outDir": "./lib",
-    "sourceMap": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "target": "es2021",
-    "types": ["node", "mocha"],
-    "jsx": "react",
-    "jsxFactory": "DeadDocumentJSX.JSXFactory"
-  },
-  "include": ["./src/**/*"]
+  "files": [],
+  "references": [
+    { "path": "./packages/matrix-basic-types" },
+  ]
 }
