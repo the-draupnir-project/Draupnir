@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@the-draupnir-project/tsconfig": "^0.1.0",
     "@types/glob-to-regexp": "^0.4.4",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.0.0",
