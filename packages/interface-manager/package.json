@@ -17,9 +17,8 @@
   },
   "private": false,
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.json",
     "lint": "eslint src && prettier --check src",
-    "prepare": "npm run build",
     "test": "jest"
   },
   "devDependencies": {
