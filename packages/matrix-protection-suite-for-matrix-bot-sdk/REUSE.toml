@@ -16,6 +16,12 @@ SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-License-Identifier = "0BSD"
 
 [[annotations]]
+path = "tsconfig.test.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
 path = "package-lock.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
