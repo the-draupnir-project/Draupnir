@@ -17,9 +17,15 @@ const ignores = [
   "**/coverage/**",
   "**/dist/**",
   "**/lib/**",
+  "**/node_modules/**",
+  "**/*.js",
+  "**/*.jsx"
 ];
 
 export default tseslint.config(
+  {
+    ignores
+  },
   {
     // This is a typescript-eslint configurartion for typescript files.
     // This will not work against js files.
@@ -28,10 +34,6 @@ export default tseslint.config(
       "packages/**/src/**/*.tsx",
       "packages/**/test/**/*.ts",
       "packages/**/test/**/*.tsx",
-      "apps/**/src/**/*.ts",
-      "apps/**/src/**/*.tsx",
-      "apps/**/test/**/*.ts",
-      "apps/**/test/**/*.tsx",
     ],
     extends: [
       eslint.configs.recommended,
@@ -39,7 +41,7 @@ export default tseslint.config(
     ],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: "tsconfig.eslint.json"
       },
     },
     // This is needed in order to specify the desired behavior for its rules
@@ -77,7 +79,7 @@ export default tseslint.config(
       "@typescript-eslint/no-unnecessary-type-parameters": "off",
       // We intentionally use enums to compare against non enum values, but no doubt this one will bite us in the ass later
     },
-    ignores: [...ignores, "**/*.js", "**/*.jsx"],
+    ignores,
   },
   {
     files: ["packages/matrix-protection-suite/**/*.{ts,tsx}"],
@@ -85,5 +87,6 @@ export default tseslint.config(
       // We intentionally compare enums to non enum values but no doubt it will bite us in the ass later
       "@typescript-eslint/no-unsafe-enum-comparison": "off",
     },
+    ignores,
   }
 );

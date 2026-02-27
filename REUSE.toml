@@ -22,6 +22,18 @@ SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-License-Identifier = "0BSD"
 
 [[annotations]]
+path = "tsconfig.all.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "tsconfig.eslint.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
 path = "REUSE.toml"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
@@ -41,12 +53,6 @@ SPDX-License-Identifier = "0BSD"
 
 [[annotations]]
 path = "NOTICE"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
-SPDX-License-Identifier = "0BSD"
-
-[[annotations]]
-path = "test/tsconfig.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-License-Identifier = "0BSD"

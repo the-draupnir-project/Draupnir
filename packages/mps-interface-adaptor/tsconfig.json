@@ -9,11 +9,5 @@
     "jsxFactory": "DeadDocumentJSX.JSXFactory"
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/__tests__",
-    "**/*.test.tsx",
-    "**/*.spec.tsx"
-  ]
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }
