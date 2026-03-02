@@ -4,7 +4,10 @@
     "composite": true,
     "declarationDir": "dist",
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "jsx": "react",
+    "jsxFactory": "DeadDocumentJSX.JSXFactory"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

@@ -5,6 +5,7 @@
     { "path": "./packages/interface-manager/tsconfig.test.json" },
     { "path": "./packages/matrix-protection-suite/tsconfig.test.json" },
     { "path": "./packages/matrix-protection-suite-for-matrix-bot-sdk/tsconfig.test.json" },
-    { "path": "./packages/mps-interface-adaptor/tsconfig.test.json" }
+    { "path": "./packages/mps-interface-adaptor/tsconfig.test.json" },
+    { "path": "./apps/draupnir/tsconfig.test.json"}
   ]
 }
