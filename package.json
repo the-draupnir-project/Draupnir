@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "repository": {
     "type": "git",
@@ -16,8 +17,8 @@
   },
   "homepage": "https://github.com/the-draupnir-project/Draupnir#readme",
   "scripts": {
-    "build": "tsc -b",
-    "build:all": "tsc -b tsconfig.all.json",
+    "build": "tsc -b && npm run -ws build:assets --if-present",
+    "build:all": "tsc -b tsconfig.all.json && -ws build:assets --if-present",
     "build:clean": "tsc -b --clean",
     "lint": "eslint --cache 'packages/**/*{ts, tsx}' && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md"
   },
@@ -28,5 +29,8 @@
     "prettier": "^3.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
+  },
+  "overrides": {
+    "@vector-im/matrix-bot-sdk": "0.7.1-element.6"
   }
 }
