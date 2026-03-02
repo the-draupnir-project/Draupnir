@@ -10,7 +10,7 @@
 
 import { Server } from "http";
 import express from "express";
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { StandardReportManager } from "../report/ReportManager";
 import { IConfig } from "../config";
 import {

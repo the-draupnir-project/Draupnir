@@ -22,7 +22,7 @@ import {
   StringRoomID,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
-import { MatrixGlob } from "matrix-bot-sdk";
+import { MatrixGlob } from "@vector-im/matrix-bot-sdk";
 import { Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { SynapseAdminUserSuspensionCapability } from "./UserSuspensionCapability";
 import {

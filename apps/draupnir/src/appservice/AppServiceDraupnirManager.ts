@@ -10,7 +10,7 @@
 
 import { Bridge, Intent, Logger } from "matrix-appservice-bridge";
 import { getProvisionedMjolnirConfig } from "../config";
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { DataStore, MjolnirRecord } from "./datastore";
 import { AccessControl } from "./AccessControl";
 import { randomUUID } from "crypto";

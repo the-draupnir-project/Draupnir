@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { redactUserMessagesIn } from "../utils";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";

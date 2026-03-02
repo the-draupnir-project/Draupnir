@@ -14,7 +14,7 @@ import {
   MemoryStorageProvider,
   LogService,
   LogLevel,
-} from "matrix-bot-sdk";
+} from "@vector-im/matrix-bot-sdk";
 import { overrideRatelimitForUser, registerUser } from "./clientHelper";
 import { initializeSentry, patchMatrixClient } from "../../src/utils";
 import { IConfig } from "../../src/config";

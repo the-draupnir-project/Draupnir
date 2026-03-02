@@ -39,7 +39,7 @@ import {
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";
 import { DraupnirRendererMessageCollector } from "./capabilities/DraupnirRendererMessageCollector";
 import { renderProtectionFailedToStart } from "./protections/ProtectedRoomsSetRenderers";

@@ -10,7 +10,7 @@
 
 import * as fs from "fs";
 import { load } from "js-yaml";
-import { LogService, RichConsoleLogger } from "matrix-bot-sdk";
+import { LogService, RichConsoleLogger } from "@vector-im/matrix-bot-sdk";
 // Needed for https://github.com/the-draupnir-project/Draupnir/issues/480
 // sorry buddy...
 process.env.SUPPRESS_NO_CONFIG_WARNING = "y";

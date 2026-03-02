@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { Result, isError } from "@gnuxie/typescript-result";
 

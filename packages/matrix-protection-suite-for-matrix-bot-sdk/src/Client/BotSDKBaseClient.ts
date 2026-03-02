@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AFL-3.0
 
 import { StaticDecode, Type } from "@sinclair/typebox";
-import { MatrixError } from "matrix-bot-sdk";
+import { MatrixError } from "@vector-im/matrix-bot-sdk";
 import {
   ActionException,
   ActionExceptionKind,

@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { LogLevel, LogService } from "matrix-bot-sdk";
+import { LogLevel, LogService } from "@vector-im/matrix-bot-sdk";
 import {
   AbstractProtection,
   ActionResult,

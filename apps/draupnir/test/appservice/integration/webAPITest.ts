@@ -15,7 +15,7 @@ import {
   CreateMjolnirResponse,
   MjolnirWebAPIClient,
 } from "../utils/webAPIClient";
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import expect from "expect";
 

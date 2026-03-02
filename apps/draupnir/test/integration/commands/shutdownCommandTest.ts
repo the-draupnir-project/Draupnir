@@ -16,7 +16,7 @@ import {
   draupnirClient,
   draupnirSafeEmitter,
 } from "../mjolnirSetupUtils";
-import { MatrixClient, MatrixError } from "matrix-bot-sdk";
+import { MatrixClient, MatrixError } from "@vector-im/matrix-bot-sdk";
 import { getFirstReaction } from "./commandUtils";
 
 describe("Test: shutdown command", function () {

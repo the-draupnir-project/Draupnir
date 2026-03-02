@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import {

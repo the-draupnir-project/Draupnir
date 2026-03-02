@@ -30,7 +30,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^20.14.9",
     "jest": "^30.2.0",
-    "matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@^0.7.1-element.6",
+    "@vector-im/matrix-bot-sdk": "0.7.1-element.6",
     "matrix-protection-suite": "file:../matrix-protection-suite",
     "ts-jest": "^29.4.5",
     "ts-patch": "^3.2.1",
@@ -43,7 +43,7 @@
   "peerDependencies": {
     "@sinclair/typebox": "0.34.13",
     "@the-draupnir-project/matrix-basic-types": "1.5.0",
-    "matrix-bot-sdk": "npm:@vector-im/matrix-bot-sdk@0.7.1-element.6",
+    "@vector-im/matrix-bot-sdk": "0.7.1-element.6",
     "matrix-protection-suite": "file:../matrix-protection-suite"
   },
   "publishConfig": {
