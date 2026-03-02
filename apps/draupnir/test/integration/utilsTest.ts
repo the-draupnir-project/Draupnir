@@ -9,7 +9,7 @@
 // </text>
 
 import { strict as assert } from "assert";
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 import {
   NoticeMessageContent,

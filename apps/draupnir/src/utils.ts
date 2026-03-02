@@ -15,7 +15,7 @@ import {
   getRequestFn,
   setRequestFn,
   MatrixError,
-} from "matrix-bot-sdk";
+} from "@vector-im/matrix-bot-sdk";
 import { ClientRequest, IncomingMessage } from "http";
 import * as Sentry from "@sentry/node";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";

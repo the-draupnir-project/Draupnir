@@ -13,7 +13,7 @@ import {
   isStringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import EventEmitter from "events";
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import {
   MembershipEvent,
   EventDecoder,

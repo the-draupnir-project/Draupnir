@@ -17,7 +17,7 @@ import {
   PantalaimonClient,
   SimpleFsStorageProvider,
   RustSdkCryptoStorageProvider,
-} from "matrix-bot-sdk";
+} from "@vector-im/matrix-bot-sdk";
 import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { configRead as configRead, getStoragePath } from "./config";
 import { initializeSentry } from "./utils";

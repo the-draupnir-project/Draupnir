@@ -16,7 +16,7 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";
-import { LogLevel } from "matrix-bot-sdk";
+import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import {
   AbstractProtection,
   ActionResult,

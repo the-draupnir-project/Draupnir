@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { MatrixGlob } from "matrix-bot-sdk";
+import { MatrixGlob } from "@vector-im/matrix-bot-sdk";
 import {
   ActionError,
   Ok,

@@ -12,7 +12,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction, getFirstReply } from "./commandUtils";
 import { draupnirSafeEmitter, DraupnirTestContext } from "../mjolnirSetupUtils";
-import { MatrixClient } from "matrix-bot-sdk";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 
 interface RoomsTestContext extends DraupnirTestContext {
   moderator?: MatrixClient;

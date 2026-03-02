@@ -8,8 +8,8 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { PowerLevelAction } from "matrix-bot-sdk/lib/models/PowerLevelAction";
-import { LogService, UserID } from "matrix-bot-sdk";
+import { PowerLevelAction } from "@vector-im/matrix-bot-sdk/lib/models/PowerLevelAction";
+import { LogService, UserID } from "@vector-im/matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
 import { htmlEscape } from "../utils";
 import { JSDOM } from "jsdom";

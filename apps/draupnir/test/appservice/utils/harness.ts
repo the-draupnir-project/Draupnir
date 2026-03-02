@@ -16,7 +16,7 @@ import {
   AppserviceConfig,
 } from "../../../src/appservice/config/config";
 import { newTestUser } from "../../integration/clientHelper";
-import { CreateEvent, MatrixClient } from "matrix-bot-sdk";
+import { CreateEvent, MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { POLICY_ROOM_TYPE_VARIANTS } from "matrix-protection-suite";
 import { isStringRoomAlias } from "@the-draupnir-project/matrix-basic-types";
 

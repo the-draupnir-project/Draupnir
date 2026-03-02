@@ -15,7 +15,7 @@ import {
   MatrixClient,
   MemoryStorageProvider,
   PantalaimonClient,
-} from "matrix-bot-sdk";
+} from "@vector-im/matrix-bot-sdk";
 import "../../src/utils"; // we need this for the patches to matrix-bot-sdk's `getRequestFn`.
 import {
   NoticeMessageContent,

@@ -14,7 +14,7 @@ import {
   LogService,
   MessageType,
   TextualMessageEventContent,
-} from "matrix-bot-sdk";
+} from "@vector-im/matrix-bot-sdk";
 import { IConfig } from "../config";
 import { htmlEscape } from "../utils";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";

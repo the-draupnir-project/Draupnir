@@ -9,7 +9,7 @@ import {
   isOk,
   MatrixException,
 } from "matrix-protection-suite";
-import { MatrixError } from "matrix-bot-sdk";
+import { MatrixError } from "@vector-im/matrix-bot-sdk";
 
 describe("Test for http antispam callbacks", function () {
   it("We can process check_event_for_spam", async function (

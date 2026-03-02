@@ -14,7 +14,7 @@ import { BlockInvitationsOnServerProtection } from "../../../src/protections/Blo
 import expect from "expect";
 import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { isOk, MatrixException, Ok } from "matrix-protection-suite";
-import { MatrixError } from "matrix-bot-sdk";
+import { MatrixError } from "@vector-im/matrix-bot-sdk";
 
 async function createWatchedPolicyRoom(
   draupnir: Draupnir
