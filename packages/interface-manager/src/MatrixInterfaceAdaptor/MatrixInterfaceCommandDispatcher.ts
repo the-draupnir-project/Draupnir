@@ -15,6 +15,7 @@ import {
 } from "./MatrixInterfaceAdaptor";
 import {
   CommandDescription,
+  CommandMeta,
   CommandTable,
   PresentationArgumentStream,
 } from "../Command";
@@ -35,6 +36,7 @@ export interface MatrixInterfaceCommandDispatcher<MatrixEventContext> {
 export class StandardMatrixInterfaceCommandDispatcher<
   AdaptorContext,
   MatrixEventContext,
+  THelpCommandMeta extends CommandMeta,
 > implements MatrixInterfaceCommandDispatcher<MatrixEventContext> {
   private readonly baseDispatcher: StandardCommandDispatcher<BasicInvocationInformation>;
   public constructor(
@@ -44,7 +46,7 @@ export class StandardMatrixInterfaceCommandDispatcher<
     >,
     private readonly adaptorContext: AdaptorContext,
     private readonly commandTable: CommandTable,
-    private readonly helpCommand: CommandDescription,
+    private readonly helpCommand: CommandDescription<THelpCommandMeta>,
     private readonly invocationInformationFromEventContext: InvocationInformationFromEventContext<MatrixEventContext>,
     callbacks: CommandDispatcherCallbacks<BasicInvocationInformation>,
     /**

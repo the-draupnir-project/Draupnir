@@ -12,7 +12,6 @@ import {
   Command,
   CommandDescription,
   CompleteCommand,
-  ExtractCommandMeta,
   ParameterDescription,
   PartialCommand,
   Presentation,
@@ -347,12 +346,12 @@ export class StandardMatrixInterfaceAdaptor<
     this.renderers.set(commandDescription, rendererDescription);
     return this;
   }
-  public describeRenderer<TCommandDescription extends CommandDescription>(
-    commandDescription: TCommandDescription,
+  public describeRenderer<TCommandMeta extends CommandMeta>(
+    commandDescription: CommandDescription<TCommandMeta>,
     rendererDescription: DescribeMatrixRenderer<
       AdaptorContext,
       MatrixEventContext,
-      ExtractCommandMeta<TCommandDescription>["CommandResult"]
+      TCommandMeta["CommandResult"]
     >
   ): MatrixInterfaceAdaptor<AdaptorContext, MatrixEventContext> {
     return this.registerRendererDescription(commandDescription, {
