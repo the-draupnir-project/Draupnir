@@ -88,13 +88,8 @@ export class MembershipChangeProtection
   private readonly finalConsequences: UserConsequences;
   public readonly changeBucket: LeakyBucket<string>;
   // just a crap attempt to stop consequences being spammed
-  private readonly consequenceBucket = new LazyLeakyBucket(
-    1,
-    this.timescaleMilliseconds()
-  );
-  private readonly warningThreshold = Math.floor(
-    this.settings.maxChangesPerUser * 0.6
-  );
+  private readonly consequenceBucket: LazyLeakyBucket<string>;
+  private readonly warningThreshold: number;
   constructor(
     description: MembershipChangeProtectionDescription,
     lifetime: OwnLifetime<Protection<MembershipChangeProtectionDescription>>,
@@ -105,6 +100,11 @@ export class MembershipChangeProtection
   ) {
     super(description, lifetime, capabilities, protectedRoomsSet, {});
     this.finalConsequences = capabilities.finalConsequences;
+    this.consequenceBucket = new LazyLeakyBucket(
+      1,
+      this.timescaleMilliseconds()
+    );
+    this.warningThreshold = Math.floor(this.settings.maxChangesPerUser * 0.6);
     this.changeBucket = new LazyLeakyBucket(
       this.settings.maxChangesPerUser,
       this.timescaleMilliseconds()

@@ -97,7 +97,9 @@ export class Draupnir implements Client, MatrixAdaptorContext {
    */
   public unlistedUserRedactionQueue = new UnlistedUserRedactionQueue();
 
-  private readonly commandDispatcher = makeDraupnirCommandDispatcher(this);
+  private readonly commandDispatcher: ReturnType<
+    typeof makeDraupnirCommandDispatcher
+  >;
   public taskQueue: ThrottlingQueue;
   /**
    * Reporting back to the management room.
@@ -115,32 +117,21 @@ export class Draupnir implements Client, MatrixAdaptorContext {
 
   public readonly reactionHandler: MatrixReactionHandler;
 
-  public readonly purgingDeactivate =
-    this.synapseAdminClient && this.stores.userRestrictionAuditLog
-      ? new HomeserverUserPurgingDeactivate(
-          this.synapseAdminClient,
-          this.stores.userRestrictionAuditLog
-        )
-      : undefined;
+  public readonly purgingDeactivate:
+    | HomeserverUserPurgingDeactivate
+    | undefined;
 
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
 
   public readonly capabilityMessageRenderer: RendererMessageCollector;
 
-  private readonly commandDispatcherTimelineListener =
-    makeCommandDispatcherTimelineListener(
-      this.managementRoom,
-      this.client,
-      this.commandDispatcher
-    );
+  private readonly commandDispatcherTimelineListener: ReturnType<
+    typeof makeCommandDispatcherTimelineListener
+  >;
 
-  private readonly JSInterfaceDispatcher: JSInterfaceCommandDispatcher<BasicInvocationInformation> =
-    makeDraupnirJSCommandDispatcher(this);
+  private readonly JSInterfaceDispatcher: JSInterfaceCommandDispatcher<BasicInvocationInformation>;
 
-  public readonly timelineRedactionQueue = new TimelineRedactionQueue(
-    this.clientPlatform.toRoomMessages(),
-    this.clientPlatform.toRoomEventRedacter()
-  );
+  public readonly timelineRedactionQueue: TimelineRedactionQueue;
 
   private constructor(
     public readonly client: MatrixSendClient,
@@ -163,6 +154,25 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     public readonly synapseAdminClient: SynapseAdminClient | undefined,
     public readonly synapseHTTPAntispam: SynapseHttpAntispam | undefined
   ) {
+    this.commandDispatcher = makeDraupnirCommandDispatcher(this);
+    this.purgingDeactivate =
+      this.synapseAdminClient && this.stores.userRestrictionAuditLog
+        ? new HomeserverUserPurgingDeactivate(
+            this.synapseAdminClient,
+            this.stores.userRestrictionAuditLog
+          )
+        : undefined;
+    this.commandDispatcherTimelineListener =
+      makeCommandDispatcherTimelineListener(
+        this.managementRoom,
+        this.client,
+        this.commandDispatcher
+      );
+    this.JSInterfaceDispatcher = makeDraupnirJSCommandDispatcher(this);
+    this.timelineRedactionQueue = new TimelineRedactionQueue(
+      this.clientPlatform.toRoomMessages(),
+      this.clientPlatform.toRoomEventRedacter()
+    );
     this.managementRoomOutput = new ManagementRoomOutput(
       this.managementRoomDetail,
       this.clientUserID,

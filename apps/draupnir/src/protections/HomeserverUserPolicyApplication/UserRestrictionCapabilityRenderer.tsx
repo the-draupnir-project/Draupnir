@@ -55,18 +55,28 @@ function renderUserRestriction(
 }
 
 class StandardUserRestrictionCapabilityRenderer implements UserRestrictionCapability {
-  public readonly requiredEventPermissions =
-    this.capability.requiredEventPermissions;
-  public readonly requiredPermissions = this.capability.requiredPermissions;
-  public readonly requiredStatePermissions =
-    this.capability.requiredStatePermissions;
-  public readonly isSimulated = Boolean(this.capability.isSimulated);
   constructor(
     private readonly description: DescriptionMeta,
     private readonly messageCollector: RendererMessageCollector,
     private readonly capability: UserRestrictionCapability
   ) {
     // nothing to do.
+  }
+
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
+  }
+
+  public get isSimulated() {
+    return Boolean(this.capability.isSimulated);
   }
   public async isUserRestricted(
     userID: StringUserID

@@ -40,11 +40,6 @@ class StandardServerBanSynchronisationCapabilityRenderer implements ServerBanSyn
   ) {
     // nothing to do.
   }
-  public readonly requiredEventPermissions =
-    this.capability.requiredEventPermissions;
-  public readonly requiredPermissions = this.capability.requiredPermissions;
-  public readonly requiredStatePermissions =
-    this.capability.requiredStatePermissions;
   public async outcomeFromIntentInRoom(
     roomID: StringRoomID,
     projection: ServerBanIntentProjection
@@ -108,6 +103,18 @@ class StandardServerBanSynchronisationCapabilityRenderer implements ServerBanSyn
       );
     }
     return capabilityResult;
+  }
+
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
   }
 }
 

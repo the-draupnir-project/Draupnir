@@ -45,14 +45,15 @@ import { StandardPersistentConfigEditor } from "./PersistentConfigEditor";
 export class SafeModeDraupnir implements MatrixAdaptorContext {
   public reactionHandler: MatrixReactionHandler;
   private readonly timelineEventListener = this.handleTimelineEvent.bind(this);
-  private readonly commandDispatcher = makeSafeModeCommandDispatcher(this);
-  private readonly commandDispatcherTimelineListener =
-    makeCommandDispatcherTimelineListener(
-      this.managementRoom,
-      this.client,
-      this.commandDispatcher
-    );
-  private readonly JSInterfaceDispatcher = makeSafeModeJSDispatcher(this);
+  private readonly commandDispatcher: ReturnType<
+    typeof makeSafeModeCommandDispatcher
+  >;
+  private readonly commandDispatcherTimelineListener: ReturnType<
+    typeof makeCommandDispatcherTimelineListener
+  >;
+  private readonly JSInterfaceDispatcher: ReturnType<
+    typeof makeSafeModeJSDispatcher
+  >;
   public constructor(
     public readonly cause: SafeModeCause,
     public readonly client: MatrixSendClient,
@@ -67,6 +68,14 @@ export class SafeModeDraupnir implements MatrixAdaptorContext {
     //private readonly policyRoomManager: PolicyRoomManager,
     //private readonly roomMembershipManager: RoomMembershipManager,
   ) {
+    this.commandDispatcher = makeSafeModeCommandDispatcher(this);
+    this.commandDispatcherTimelineListener =
+      makeCommandDispatcherTimelineListener(
+        this.managementRoom,
+        this.client,
+        this.commandDispatcher
+      );
+    this.JSInterfaceDispatcher = makeSafeModeJSDispatcher(this);
     this.reactionHandler = new MatrixReactionHandler(
       managementRoom.toRoomIDOrAlias(),
       this.clientUserID,

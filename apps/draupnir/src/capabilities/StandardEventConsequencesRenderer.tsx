@@ -36,11 +36,6 @@ class StandardEventConsequencesRenderer implements EventConsequences {
   ) {
     // nothing to do.
   }
-  public readonly requiredEventPermissions =
-    this.capability.requiredEventPermissions;
-  public readonly requiredPermissions = this.capability.requiredPermissions;
-  public readonly requiredStatePermissions =
-    this.capability.requiredStatePermissions;
   public async consequenceForEvent(
     roomID: StringRoomID,
     eventID: StringEventID,
@@ -68,6 +63,18 @@ class StandardEventConsequencesRenderer implements EventConsequences {
     }
     this.messageCollector.addOneliner(this.description, this.capability, title);
     return capabilityResult;
+  }
+
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
   }
 }
 

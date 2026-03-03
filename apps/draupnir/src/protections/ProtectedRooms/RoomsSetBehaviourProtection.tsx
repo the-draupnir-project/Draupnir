@@ -39,27 +39,38 @@ export class RoomsSetBehaviour
   extends AbstractProtection<RoomsSetBehaviourDescription>
   implements DraupnirProtection<RoomsSetBehaviourDescription>
 {
-  private readonly protectJoinedRooms = new ProtectedJoinedRooms(
-    this.draupnir.clientUserID,
-    this.draupnir.managementRoomID,
-    this.protectedRoomsSet,
-    this.draupnir.clientRooms,
-    this.draupnir.clientPlatform.toRoomMessageSender()
-  );
-  private readonly unprotectedPartedRooms = new UnprotectPartedRooms(
-    this.draupnir.clientUserID,
-    this.draupnir.managementRoomID,
-    this.protectedRoomsSet.protectedRoomsManager,
-    this.draupnir.clientPlatform.toRoomMessageSender()
-  );
-  private readonly protectReplacementRooms = new ProtectReplacementRooms(
-    this.draupnir.managementRoomID,
-    this.draupnir.clientPlatform.toRoomJoiner(),
-    this.draupnir.clientPlatform.toRoomMessageSender(),
-    this.protectedRoomsSet.protectedRoomsManager
-  );
-  private readonly watchReplacementPolicyRooms =
-    new WatchReplacementPolicyRooms(
+  private readonly protectJoinedRooms: ProtectedJoinedRooms;
+  private readonly unprotectedPartedRooms: UnprotectPartedRooms;
+  private readonly protectReplacementRooms: ProtectReplacementRooms;
+  private readonly watchReplacementPolicyRooms: WatchReplacementPolicyRooms;
+  public constructor(
+    description: RoomsSetBehaviourDescription,
+    lifetime: OwnLifetime<Protection<RoomsSetBehaviourDescription>>,
+    capabilities: RoomsSetBehaviourCapabailities,
+    protectedRoomsSet: ProtectedRoomsSet,
+    private readonly draupnir: Draupnir
+  ) {
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
+    this.protectJoinedRooms = new ProtectedJoinedRooms(
+      this.draupnir.clientUserID,
+      this.draupnir.managementRoomID,
+      this.protectedRoomsSet,
+      this.draupnir.clientRooms,
+      this.draupnir.clientPlatform.toRoomMessageSender()
+    );
+    this.unprotectedPartedRooms = new UnprotectPartedRooms(
+      this.draupnir.clientUserID,
+      this.draupnir.managementRoomID,
+      this.protectedRoomsSet.protectedRoomsManager,
+      this.draupnir.clientPlatform.toRoomMessageSender()
+    );
+    this.protectReplacementRooms = new ProtectReplacementRooms(
+      this.draupnir.managementRoomID,
+      this.draupnir.clientPlatform.toRoomJoiner(),
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.protectedRoomsSet.protectedRoomsManager
+    );
+    this.watchReplacementPolicyRooms = new WatchReplacementPolicyRooms(
       this.draupnir.managementRoomID,
       this.draupnir.clientPlatform.toRoomJoiner(),
       this.draupnir.clientPlatform.toRoomMessageSender(),
@@ -69,14 +80,6 @@ export class RoomsSetBehaviour
       this.draupnir.policyRoomManager,
       this.draupnir.reactionHandler
     );
-  public constructor(
-    description: RoomsSetBehaviourDescription,
-    lifetime: OwnLifetime<Protection<RoomsSetBehaviourDescription>>,
-    capabilities: RoomsSetBehaviourCapabailities,
-    protectedRoomsSet: ProtectedRoomsSet,
-    private readonly draupnir: Draupnir
-  ) {
-    super(description, lifetime, capabilities, protectedRoomsSet, {});
     if (this.draupnir.config.protectAllJoinedRooms) {
       void this.protectJoinedRooms.syncProtectedRooms();
     }

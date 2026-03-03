@@ -45,11 +45,11 @@ export class SynapseAdminRoomTakedownCapability implements RoomTakedownCapabilit
   public readonly requiredPermissions = [];
   public readonly requiredStatePermissions = [];
   public readonly requiredEventPermissions = [];
-  private readonly roomDetailsProvider = new SynapseAdminRoomDetailsProvider(
-    this.adminClient
-  );
+  private readonly roomDetailsProvider: SynapseAdminRoomDetailsProvider;
   public constructor(private readonly adminClient: SynapseAdminClient) {
-    // nothing to do mare.
+    this.roomDetailsProvider = new SynapseAdminRoomDetailsProvider(
+      this.adminClient
+    );
   }
 
   public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {
@@ -116,12 +116,12 @@ export class SimulatedRoomTakedownCapability implements RoomTakedownCapability {
   public readonly requiredPermissions = [];
   public readonly requiredStatePermissions = [];
   public readonly requiredEventPermissions = [];
-  private readonly roomDetailsProvider = new SynapseAdminRoomDetailsProvider(
-    this.adminClient
-  );
+  private readonly roomDetailsProvider: SynapseAdminRoomDetailsProvider;
   isSimulated?: true;
   public constructor(private readonly adminClient: SynapseAdminClient) {
-    // nothing to do mare.
+    this.roomDetailsProvider = new SynapseAdminRoomDetailsProvider(
+      this.adminClient
+    );
   }
 
   public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {

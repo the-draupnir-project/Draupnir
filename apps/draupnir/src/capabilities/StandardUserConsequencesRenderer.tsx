@@ -103,11 +103,17 @@ class StandardUserConsequencesRenderer implements UserConsequences {
   ) {
     // nothing to do.
   }
-  public readonly requiredEventPermissions =
-    this.capability.requiredEventPermissions;
-  public readonly requiredPermissions = this.capability.requiredPermissions;
-  public readonly requiredStatePermissions =
-    this.capability.requiredStatePermissions;
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
+  }
 
   public async consequenceForUserInRoom(
     roomID: StringRoomID,
