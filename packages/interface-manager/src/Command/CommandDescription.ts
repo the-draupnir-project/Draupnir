@@ -14,7 +14,7 @@
 
 import { Result } from "@gnuxie/typescript-result";
 import { ParsedKeywords } from "./ParsedKeywords";
-import { CommandMeta } from "./CommandMeta";
+import { CommandMeta, KeywordsMeta } from "./CommandMeta";
 import { CommandParametersDescription } from "./ParameterParsing";
 
 export type CommandExecutorFunction<TCommandMeta extends CommandMeta> = (
@@ -48,3 +48,12 @@ export type ExtractCommandMeta<TCommandDescription> =
   TCommandDescription extends CommandDescription<infer TCommandMeta>
     ? TCommandMeta
     : never;
+
+export type AnyCommandDescription = CommandDescription<{
+  Context: unknown;
+  InvocationInformation: unknown;
+  CommandResult: unknown;
+  TImmediateArgumentsObjectTypes: unknown[];
+  TRestArgumentObjectType: unknown;
+  TKeywordsMeta: KeywordsMeta;
+}>;

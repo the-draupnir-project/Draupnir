@@ -14,6 +14,7 @@
 
 import { StringPresentationType } from "../TextReader";
 import { CommandDescription } from "./CommandDescription";
+import { CommandMeta } from "./CommandMeta";
 import {
   Presentation,
   PresentationType,
@@ -72,8 +73,8 @@ export interface CommandTable {
   findAMatchingCommand(
     stream: PresentationArgumentStream
   ): CommandDescription | undefined;
-  internCommand(
-    command: CommandDescription,
+  internCommand<TCommandMeta extends CommandMeta>(
+    command: CommandDescription<TCommandMeta>,
     designator: string[]
   ): CommandTable;
   /**
@@ -213,8 +214,8 @@ export class StandardCommandTable implements CommandTable {
     }
   }
 
-  public internCommand(
-    command: CommandDescription,
+  public internCommand<TCommandMeta extends CommandMeta>(
+    command: CommandDescription<TCommandMeta>,
     designator: string[]
   ): this {
     this.internCommandHelper(

@@ -7,7 +7,12 @@
 // https://github.com/the-draupnir-project/interface-manager
 // </text>
 
-import { CommandDescription, CommandTable, PartialCommand } from "../Command";
+import {
+  CommandDescription,
+  CommandMeta,
+  CommandTable,
+  PartialCommand,
+} from "../Command";
 import { PresentationArgumentStream } from "../Command/PresentationStream";
 import { BasicInvocationInformation } from "../MatrixInterfaceAdaptor";
 import {
@@ -22,12 +27,13 @@ import { StandardCommandDispatcher } from "./StandardCommandDispatcher";
 
 export class StandardJSInterfaceCommandDispatcher<
   AdaptorContext,
+  THelpCommandMeta extends CommandMeta,
 > implements JSInterfaceCommandDispatcher<BasicInvocationInformation> {
   private readonly commandInvoker: CommandInvoker<BasicInvocationInformation>;
   private readonly commandDispatcher: CommandDispatcher<BasicInvocationInformation>;
   public constructor(
     private readonly commandTable: CommandTable,
-    private readonly helpCommand: CommandDescription,
+    private readonly helpCommand: CommandDescription<THelpCommandMeta>,
     private readonly adaptorContext: AdaptorContext,
     private readonly callbacks: CommandDispatcherCallbacks<BasicInvocationInformation>,
     private readonly contextTranslator?: AdaptorContextToCommandContextTranslator<AdaptorContext>
