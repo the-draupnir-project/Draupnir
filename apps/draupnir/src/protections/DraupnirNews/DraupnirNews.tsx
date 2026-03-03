@@ -159,15 +159,16 @@ async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
  * - unregisterListeners MUST be called when the parent protection is disposed.
  */
 export class DraupnirNewsReader {
-  private readonly newsGate = new StandardTimedGate(
-    this.requestNews.bind(this),
-    this.requestIntervalMS
-  );
+  private readonly newsGate: StandardTimedGate;
   private requestLoop: ConstantPeriodBatch;
   public constructor(
     private readonly lifecycle: DraupnirNewsLifecycle,
     private readonly requestIntervalMS: number
   ) {
+    this.newsGate = new StandardTimedGate(
+      this.requestNews.bind(this),
+      this.requestIntervalMS
+    );
     this.newsGate.enqueueOpen();
     this.requestLoop = this.createRequestLoop();
   }
@@ -219,22 +220,7 @@ export class DraupnirNews
   extends AbstractProtection<DraupnirNewsDescription>
   implements DraupnirProtection<DraupnirNewsDescription>
 {
-  private readonly newsReader = new DraupnirNewsReader(
-    new DraupnirNewsLifecycle(
-      new Set(this.settings.seenNews),
-      FSNews,
-      this.updateNews.bind(this),
-      () => fetchNews(this.draupnir.config.draupnirNewsURL),
-      (item) =>
-        this.draupnir.clientPlatform
-          .toRoomMessageSender()
-          .sendMessage(
-            this.draupnir.managementRoomID,
-            item.matrix_event_content
-          ) as Promise<Result<void>>
-    ),
-    4.32e7 // 12 hours
-  );
+  private readonly newsReader: DraupnirNewsReader;
   public constructor(
     description: DraupnirNewsDescription,
     lifetime: OwnLifetime<Protection<DraupnirNewsDescription>>,
@@ -244,6 +230,22 @@ export class DraupnirNews
     private readonly draupnir: Draupnir
   ) {
     super(description, lifetime, capabilities, protectedRoomsSet, {});
+    this.newsReader = new DraupnirNewsReader(
+      new DraupnirNewsLifecycle(
+        new Set(this.settings.seenNews),
+        FSNews,
+        this.updateNews.bind(this),
+        () => fetchNews(this.draupnir.config.draupnirNewsURL),
+        (item) =>
+          this.draupnir.clientPlatform
+            .toRoomMessageSender()
+            .sendMessage(
+              this.draupnir.managementRoomID,
+              item.matrix_event_content
+            ) as Promise<Result<void>>
+      ),
+      4.32e7 // 12 hours
+    );
   }
 
   private async updateNews(allNews: DraupnirNewsItem[]): Promise<Result<void>> {

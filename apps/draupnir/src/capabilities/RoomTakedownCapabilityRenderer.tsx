@@ -64,17 +64,24 @@ function renderTakedown(
 }
 
 class StandardRoomTakedownCapabilityRenderer implements RoomTakedownCapability {
-  public readonly requiredEventPermissions =
-    this.capability.requiredEventPermissions;
-  public readonly requiredPermissions = this.capability.requiredPermissions;
-  public readonly requiredStatePermissions =
-    this.capability.requiredStatePermissions;
   constructor(
     private readonly description: DescriptionMeta,
     private readonly messageCollector: RendererMessageCollector,
     private readonly capability: RoomTakedownCapability
   ) {
     // nothing to do.
+  }
+
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
   }
 
   public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {

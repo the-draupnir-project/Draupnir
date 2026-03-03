@@ -64,14 +64,8 @@ export class JoinRoomsOnInviteProtection
 {
   private readonly promptedToProtectedDeduplicator =
     new StandardDeduplicator<StringRoomID>();
-  private readonly protectRoomsOnInvite = new ProtectroomsOnInvite(
-    this.draupnir,
-    this.protectedRoomsSet
-  );
-  private readonly watchRoomsOnInvite = new WatchRoomsOnInvite(
-    this.draupnir,
-    this.protectedRoomsSet
-  );
+  private readonly protectRoomsOnInvite: ProtectroomsOnInvite;
+  private readonly watchRoomsOnInvite: WatchRoomsOnInvite;
   public constructor(
     description: JoinRoomsOnInviteProtectionDescription,
     lifetime: OwnLifetime<Protection<JoinRoomsOnInviteProtectionDescription>>,
@@ -80,6 +74,14 @@ export class JoinRoomsOnInviteProtection
     private readonly draupnir: Draupnir
   ) {
     super(description, lifetime, capabilities, protectedRoomsSet, {});
+    this.protectRoomsOnInvite = new ProtectroomsOnInvite(
+      this.draupnir,
+      this.protectedRoomsSet
+    );
+    this.watchRoomsOnInvite = new WatchRoomsOnInvite(
+      this.draupnir,
+      this.protectedRoomsSet
+    );
   }
 
   handleProtectionDisable(): void {

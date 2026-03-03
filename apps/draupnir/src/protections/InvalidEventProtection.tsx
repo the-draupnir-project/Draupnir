@@ -54,7 +54,7 @@ type InvalidEventProtectionSettings = EDStatic<
 >;
 
 export type InvalidEventProtectionDescription = ProtectionDescription<
-  unknown,
+  Draupnir,
   typeof InvalidEventProtectionSettings,
   InvalidEventProtectionCapabilities
 >;

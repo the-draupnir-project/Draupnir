@@ -27,10 +27,7 @@ export class SynapseRoomListRoomExplorer
   extends EventEmitter
   implements RoomExplorer
 {
-  private readonly gate = new StandardTimedGate(
-    this.scanRoomDirectory.bind(this),
-    this.cooldownMS
-  );
+  private readonly gate: StandardTimedGate;
   private backgroundScan: ConstantPeriodBatch;
 
   private createScanLoop(): ConstantPeriodBatch {
@@ -46,6 +43,10 @@ export class SynapseRoomListRoomExplorer
     private readonly scanner: SynapseRoomListScanner
   ) {
     super();
+    this.gate = new StandardTimedGate(
+      this.scanRoomDirectory.bind(this),
+      this.cooldownMS
+    );
     this.gate.enqueueOpen();
     this.backgroundScan = this.createScanLoop();
   }
