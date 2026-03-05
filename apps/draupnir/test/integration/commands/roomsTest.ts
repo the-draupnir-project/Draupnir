@@ -20,7 +20,7 @@ interface RoomsTestContext extends DraupnirTestContext {
 
 describe("Test: The rooms commands", function () {
   // If a test has a timeout while awaitng on a promise then we never get given control back.
-  afterEach(function () {
+  afterEach(function (this: RoomsTestContext) {
     this.moderator?.stop();
   });
 

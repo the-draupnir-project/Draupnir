@@ -21,17 +21,17 @@ import { createMock } from "ts-auto-mock";
 import { ReportManager } from "../../src/report/ReportManager";
 import { ReportPoller } from "../../src/report/ReportPoller";
 
-describe("Test: Report polling", function () {
+describe("Test: Report polling", function (this: Mocha.Suite) {
   let client: MatrixClient;
   let reportPoller: ReportPoller | undefined;
-  this.beforeEach(async function () {
+  this.beforeEach(async function (this: DraupnirTestContext) {
     client = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "protection-settings" },
     });
-  });
-  this.afterEach(function () {
+  } as unknown as Mocha.AsyncFunc);
+  this.afterEach(function (this: DraupnirTestContext) {
     reportPoller?.stop();
-  });
+  } as unknown as Mocha.Func);
   it("Draupnir correctly retrieves a report from synapse", async function (
     this: DraupnirTestContext
   ) {

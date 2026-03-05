@@ -14,7 +14,7 @@ import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
 
-describe("Test: !help command", function () {
+describe("Test: !help command", function (this: Mocha.Suite) {
   let client: MatrixClient;
   this.beforeEach(async function (this: DraupnirTestContext) {
     client = await newTestUser(this.config.homeserverUrl, {
@@ -22,7 +22,7 @@ describe("Test: !help command", function () {
     });
     await client.start();
   } as unknown as Mocha.AsyncFunc);
-  this.afterEach(async function () {
+  this.afterEach(async function (this: DraupnirTestContext) {
     client.stop();
   } as unknown as Mocha.AsyncFunc);
   it("Draupnir responded to !mjolnir help", async function (
