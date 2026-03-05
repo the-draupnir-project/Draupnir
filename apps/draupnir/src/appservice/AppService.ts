@@ -20,7 +20,6 @@ import {
 } from "matrix-appservice-bridge";
 import { DataStore } from ".//datastore";
 import { PgDataStore } from "./postgres/PgDataStore";
-import { Api } from "./Api";
 import { AppserviceConfig } from "./config/config";
 import { AccessControl } from "./AccessControl";
 import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
@@ -57,7 +56,6 @@ const log = new Logger("AppService");
  * the entrypoint of the application.
  */
 export class MjolnirAppService {
-  private readonly api: Api;
   public readonly commands: AppserviceCommandHandler;
 
   /**
@@ -78,7 +76,6 @@ export class MjolnirAppService {
     public readonly accessControlRoomID: StringRoomID,
     public readonly botUserID: StringUserID
   ) {
-    this.api = new Api(config.homeserver.url, draupnirManager);
     const client = this.bridge.getBot().getClient();
     this.commands = new AppserviceCommandHandler(
       botUserID,
@@ -364,7 +361,6 @@ export class MjolnirAppService {
       "Starting DraupnirAppService, Matrix-side to listen on port",
       port
     );
-    this.api.start(this.config.webAPI.port);
     await this.bridge.listen(port);
     this.prometheusMetrics.addAppServicePath(this.bridge);
     this.bridge.addAppServicePath({
@@ -384,7 +380,6 @@ export class MjolnirAppService {
   public async close(): Promise<void> {
     await this.bridge.close();
     await this.dataStore.close();
-    await this.api.close();
     this.draupnirManager.unregisterListeners();
   }
 
