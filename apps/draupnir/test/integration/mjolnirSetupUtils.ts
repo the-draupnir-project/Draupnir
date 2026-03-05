@@ -71,15 +71,21 @@ export async function ensureAliasedRoomExists(
   try {
     return await client.resolveRoom(alias);
   } catch (e) {
-    if (e?.body?.errcode === "M_NOT_FOUND") {
-      console.info(`${alias} hasn't been created yet, so we're making it now.`);
-      const roomId = await client.createRoom({
-        visibility: "public",
-      });
-      await client.createRoomAlias(alias, roomId);
-      return roomId;
+    if (typeof e !== "object" || e === null) {
+      throw new TypeError("Something is throwing garbage");
     }
-    throw e;
+    if (!("body" in e) || typeof e.body !== "object" || e.body === null) {
+      throw e;
+    }
+    if (!("errcode" in e.body) || e.body.errcode !== "M_NOT_FOUND") {
+      throw e;
+    }
+    console.info(`${alias} hasn't been created yet, so we're making it now.`);
+    const roomId = await client.createRoom({
+      visibility: "public",
+    });
+    await client.createRoomAlias(alias, roomId);
+    return roomId;
   }
 }
 
@@ -95,13 +101,17 @@ async function configureMjolnir(config: IConfig) {
       true
     );
   } catch (e) {
-    if (e?.body?.errcode === "M_USER_IN_USE") {
-      console.log(
-        `${config.pantalaimon.username} already registered, skipping`
-      );
-      return;
+    if (typeof e !== "object" || e === null) {
+      throw new TypeError("Something is throwing garbage");
     }
-    throw e;
+    if (!("body" in e) || typeof e.body !== "object" || e.body === null) {
+      throw e;
+    }
+    if (!("errcode" in e.body) || e.body.errcode !== "M_USER_IN_USE") {
+      throw e;
+    }
+    console.log(`${config.pantalaimon.username} already registered, skipping`);
+    return;
   }
 }
 

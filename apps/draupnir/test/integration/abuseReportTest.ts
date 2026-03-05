@@ -14,12 +14,14 @@ import { ABUSE_REPORT_KEY, IReport } from "../../src/report/ReportManager";
 import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
 import {
   NoticeMessageContent,
+  Ok,
   ReactionContent,
   ReactionEvent,
   RoomMessage,
   Value,
 } from "matrix-protection-suite";
 import { StringEventID } from "@the-draupnir-project/matrix-basic-types";
+import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 /**
  * Test the ability to turn abuse reports into room messages.
@@ -121,93 +123,88 @@ describe("Test: Reporting abuse", () => {
         const reportsToFind: ReportTemplate[] = [];
 
         // Time to report, first without a comment, then with one.
-        try {
-          await goodUser.doRequest(
-            "POST",
-            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
-          );
-          reportsToFind.push({
-            reporter_id: goodUserId,
-            accused_id: badUserId,
-            event_id: badEventId,
-            text: badText,
-          });
-        } catch (e) {
-          console.error("Could not send first report", e.body || e);
-          throw e;
-        }
+        (
+          await goodUser
+            .doRequest(
+              "POST",
+              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
+            )
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+        ).expect("Could not send first report");
+        reportsToFind.push({
+          reporter_id: goodUserId,
+          accused_id: badUserId,
+          event_id: badEventId,
+          text: badText,
+        });
 
-        try {
-          await goodUser.doRequest(
-            "POST",
-            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId2)}`,
-            "",
-            {
-              reason: badEvent2Comment,
-            }
-          );
-          reportsToFind.push({
-            reporter_id: goodUserId,
-            accused_id: badUserId,
-            event_id: badEventId2,
-            text: badText2,
-            comment: badEvent2Comment,
-          });
-        } catch (e) {
-          console.error("Could not send second report", e.body || e);
-          throw e;
-        }
+        (
+          await goodUser
+            .doRequest(
+              "POST",
+              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId2)}`,
+              "",
+              {
+                reason: badEvent2Comment,
+              }
+            )
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+        ).expect("Could not send second report");
+        reportsToFind.push({
+          reporter_id: goodUserId,
+          accused_id: badUserId,
+          event_id: badEventId2,
+          text: badText2,
+          comment: badEvent2Comment,
+        });
 
-        try {
-          await goodUser.doRequest(
-            "POST",
-            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId3)}`,
-            ""
-          );
-          reportsToFind.push({
-            reporter_id: goodUserId,
-            accused_id: badUserId,
-            event_id: badEventId3,
-            text: badText3,
-          });
-        } catch (e) {
-          console.error("Could not send third report", e.body || e);
-          throw e;
-        }
+        (
+          await goodUser
+            .doRequest(
+              "POST",
+              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId3)}`,
+              ""
+            )
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+        ).expect("Could not send third report");
+        reportsToFind.push({
+          reporter_id: goodUserId,
+          accused_id: badUserId,
+          event_id: badEventId3,
+          text: badText3,
+        });
 
-        try {
-          await goodUser.doRequest(
-            "POST",
-            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId4)}`,
-            ""
-          );
-          reportsToFind.push({
-            reporter_id: goodUserId,
-            accused_id: badUserId,
-            event_id: badEventId4,
-            text_prefix: badText4.substring(0, 256),
-          });
-        } catch (e) {
-          console.error("Could not send fourth report", e.body || e);
-          throw e;
-        }
+        (
+          await goodUser
+            .doRequest(
+              "POST",
+              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId4)}`,
+              ""
+            )
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+        ).expect("Could not send fourth report");
+        reportsToFind.push({
+          reporter_id: goodUserId,
+          accused_id: badUserId,
+          event_id: badEventId4,
+          text_prefix: badText4.substring(0, 256),
+        });
 
-        try {
-          await goodUser.doRequest(
-            "POST",
-            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId5)}`,
-            ""
-          );
-          reportsToFind.push({
-            reporter_id: goodUserId,
-            accused_id: badUserId,
-            event_id: badEventId5,
-            text_prefix: badText5.substring(0, 256).split("\n").join(" "),
-          });
-        } catch (e) {
-          console.error("Could not send fifth report", e.body || e);
-          throw e;
-        }
+        (
+          await goodUser
+            .doRequest(
+              "POST",
+              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId5)}`,
+              ""
+            )
+            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+        ).expect("Could not send fifth report");
+        reportsToFind.push({
+          reporter_id: goodUserId,
+          accused_id: badUserId,
+          event_id: badEventId5,
+          text_prefix: badText5.substring(0, 256).split("\n").join(" "),
+        });
 
         console.log("Test: Reporting abuse - wait");
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -432,15 +429,14 @@ describe("Test: Reporting abuse", () => {
 
     console.log("Test: Reporting abuse - send reports");
 
-    try {
-      await goodUser.doRequest(
-        "POST",
-        `/_matrix/client/r0/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
-      );
-    } catch (e) {
-      console.error("Could not send first report", e.body || e);
-      throw e;
-    }
+    (
+      await goodUser
+        .doRequest(
+          "POST",
+          `/_matrix/client/r0/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
+        )
+        .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+    ).expect("Could not send first report");
 
     console.log("Test: Reporting abuse - wait");
     await new Promise((resolve) => setTimeout(resolve, 1000));

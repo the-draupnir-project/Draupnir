@@ -10,6 +10,7 @@
 
 import {
   MatrixSendClient,
+  resultifyBotSDKRequestErrorWith404AsUndefined,
   SynapseAdminClient,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { ReportManager } from "./ReportManager";
@@ -178,23 +179,26 @@ export class ReportPoller {
     client: MatrixSendClient,
     managementRoomOutput: ManagementRoomOutput
   ): Promise<ReportPollSetting> {
-    let reportPollSetting: ReportPollSetting = { from: 0 };
-    try {
-      reportPollSetting = await client.getAccountData(REPORT_POLL_EVENT_TYPE);
-    } catch (err) {
-      if (err.body?.errcode !== "M_NOT_FOUND") {
-        throw err;
-      } else {
-        void Task(
-          managementRoomOutput.logMessage(
-            LogLevel.INFO,
-            "Draupnir@startup",
-            "report poll setting does not exist yet"
-          )
-        );
-      }
+    const reportPollAccountData = (
+      await client
+        .getAccountData(REPORT_POLL_EVENT_TYPE)
+        .then(
+          (value) => Ok(value),
+          resultifyBotSDKRequestErrorWith404AsUndefined
+        )
+    ).expect("Unable to fetch report poll setting");
+    if (reportPollAccountData === undefined) {
+      return { from: 0 };
     }
-    return reportPollSetting;
+    if (
+      typeof reportPollAccountData !== "object" ||
+      reportPollAccountData === null ||
+      !("from" in reportPollAccountData) ||
+      !Number.isInteger(reportPollAccountData.from)
+    ) {
+      throw new TypeError("report poll setting is corrupted");
+    }
+    return reportPollAccountData as ReportPollSetting;
   }
 
   public async startFromStoredSetting(
