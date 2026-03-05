@@ -18,9 +18,9 @@
   "homepage": "https://github.com/the-draupnir-project/Draupnir#readme",
   "scripts": {
     "build": "tsc -b && npm run -ws build:assets --if-present",
-    "build:all": "tsc -b tsconfig.all.json && -ws build:assets --if-present",
+    "build:all": "tsc -b tsconfig.all.json && npm run -ws build:assets --if-present",
     "build:clean": "tsc -b --clean",
-    "lint": "eslint --cache 'packages/**/*{ts, tsx}' && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md"
+    "lint": "eslint --cache 'packages/**/*{ts, tsx}' 'apps/**/*{ts, tsx}' && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md DEPENDENCIES.md"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
