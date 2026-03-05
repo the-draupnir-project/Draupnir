@@ -34,6 +34,10 @@ export default tseslint.config(
       "packages/**/src/**/*.tsx",
       "packages/**/test/**/*.ts",
       "packages/**/test/**/*.tsx",
+      "apps/**/src/**/*.ts",
+      "apps/**/src/**/*.tsx",
+      "apps/**/test/**/*.ts",
+      "apps/**/test/**/*.tsx",
     ],
     extends: [
       eslint.configs.recommended,
