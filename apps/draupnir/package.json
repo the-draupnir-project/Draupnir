@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
-    "build:assets": "cp src/protections/DraupnirNews/news.json lib/protections/DraupnirNews/news.json && npm run describe-version",
+    "build:assets": "cp src/protections/DraupnirNews/news.json dist/protections/DraupnirNews/news.json && npm run describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
