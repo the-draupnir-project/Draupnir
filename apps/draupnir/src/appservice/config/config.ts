@@ -80,18 +80,6 @@ export const AppserviceConfig = Type.Object({
     },
     { description: "Details for the database backend" }
   ),
-  webAPI: Type.Object(
-    {
-      port: Type.Number({
-        description:
-          "Port number for the web API used to access the appservice via the widget",
-      }),
-    },
-    {
-      description:
-        "Config for the web api used to access the appservice via the widget",
-    }
-  ),
   adminRoom: Type.String({
     description:
       "The admin room for the appservice bot. Not called managementRoom like draupnir on purpose, so they're not mixed in code somehow.",
