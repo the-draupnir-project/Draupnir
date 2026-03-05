@@ -138,7 +138,22 @@ export class EventRedactionQueue {
         try {
           await redaction.redact(client, managementRoom);
         } catch (e) {
-          const message = e.message || (e.body ? e.body.error : "<no message>");
+          // FIXME: all of this code is "legacy", from the RoomUpdateException
+          // type to the message destructuring. Instead it should be using
+          let message = "<no message>";
+          if (typeof e === "object" && e !== null) {
+            if ("message" in e && typeof e.message === "string") {
+              message = e.message;
+            } else if (
+              "body" in e &&
+              typeof e.body === "object" &&
+              e.body !== null &&
+              "error" in e.body &&
+              typeof e.body.error === "string"
+            ) {
+              message = e.body.error;
+            }
+          }
           const error = new RoomUpdateException(
             MatrixRoomReference.fromRoomID(redaction.roomID),
             ActionExceptionKind.Unknown,

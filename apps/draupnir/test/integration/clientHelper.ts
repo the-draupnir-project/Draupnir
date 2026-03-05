@@ -102,19 +102,27 @@ export async function registerUser(
         });
       });
       return;
-    } catch (ex) {
+    } catch (e) {
       // In case of timeout or throttling, backoff and retry.
       if (
-        ex?.code === "ESOCKETTIMEDOUT" ||
-        ex?.code === "ETIMEDOUT" ||
-        ex?.body?.errcode === "M_LIMIT_EXCEEDED"
+        (typeof e === "object" &&
+          e !== null &&
+          "code" in e &&
+          (e.code === "ESOCKETTIMEDOUT" || e.code === "ETIMEDOUT")) ||
+        (typeof e === "object" &&
+          e !== null &&
+          "body" in e &&
+          typeof e.body === "object" &&
+          e.body !== null &&
+          "errcode" in e.body &&
+          e.body.errcode === "M_LIMIT_EXCEEDED")
       ) {
         await new Promise((resolve) =>
           setTimeout(resolve, REGISTRATION_RETRY_BASE_DELAY_MS * i * i)
         );
         continue;
       }
-      throw ex;
+      throw e;
     }
   }
   throw new Error(
@@ -167,7 +175,15 @@ async function registerNewTestUser(
       );
       return username;
     } catch (e) {
-      if (e?.body?.errcode === "M_USER_IN_USE") {
+      if (
+        typeof e === "object" &&
+        e !== null &&
+        "body" in e &&
+        typeof e.body === "object" &&
+        e.body !== null &&
+        "errcode" in e.body &&
+        e.body.errcode === "M_USER_IN_USE"
+      ) {
         if ("exact" in options.name) {
           LogService.debug(
             "test/clientHelper",
@@ -226,7 +242,15 @@ async function getGlobalAdminUser(homeserver: string): Promise<MatrixClient> {
     try {
       await registerUser(homeserver, USERNAME, USERNAME, USERNAME, true);
     } catch (e) {
-      if (e?.body?.errcode === "M_USER_IN_USE") {
+      if (
+        typeof e === "object" &&
+        e !== null &&
+        "body" in e &&
+        typeof e.body === "object" &&
+        e.body !== null &&
+        "errcode" in e.body &&
+        e.body.errcode === "M_USER_IN_USE"
+      ) {
         // Then we've already registered the user in a previous run and that is ok.
       } else {
         throw e;
