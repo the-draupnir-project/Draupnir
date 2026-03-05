@@ -259,19 +259,19 @@ export class SqliteHashReversalStore
     }, "Error trying to reverse hashed policies");
   }
 
-  private storeUndiscoveredEntities<Record>(
-    entities: string[],
+  private storeUndiscoveredEntities<TEntity extends string, TRecord>(
+    entities: TEntity[],
     filterStatement: Statement,
     insertOrIgnore: Statement,
-    recordFactoryFn: (entity: string, hash: string) => Record,
-    eventEmitFn: (newRecords: Record[]) => void,
-    serverExtractFn?: (record: Record) => StringServerName
-  ): Result<Record[]> {
+    recordFactoryFn: (entity: TEntity, hash: string) => TRecord,
+    eventEmitFn: (newRecords: TRecord[]) => void,
+    serverExtractFn?: (record: TRecord) => StringServerName
+  ): Result<TRecord[]> {
     return wrapInTryCatch(() => {
       const undiscoveredEntities = entities.filter((entity) =>
         filterStatement.get(entity)
       );
-      const rowsToInsert: Record[] = undiscoveredEntities.map((entity) =>
+      const rowsToInsert: TRecord[] = undiscoveredEntities.map((entity) =>
         recordFactoryFn(
           entity,
           createHash("sha256").update(entity, "utf8").digest("base64")
