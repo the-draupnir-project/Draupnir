@@ -8,7 +8,6 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../Draupnir";
-import { ActionError } from "matrix-protection-suite";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
 

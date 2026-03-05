@@ -26,7 +26,10 @@ const cli = new Cli({
     defaults: {},
   },
   generateRegistration: MjolnirAppService.generateRegistration,
-  run: function (port: number) {
+  run: function (port) {
+    if (port === null) {
+      throw new Error("Please specify a port for the appservice to run");
+    }
     const config = cli.getConfig();
     if (config === null) {
       throw new Error("Couldn't load config");

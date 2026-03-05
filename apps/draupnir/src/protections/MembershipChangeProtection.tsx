@@ -76,7 +76,7 @@ function makeBucketKey(roomID: StringRoomID, userID: StringUserID): string {
 }
 
 export type MembershipChangeProtectionDescription = ProtectionDescription<
-  unknown,
+  Draupnir,
   typeof MembershipChangeProtectionSettings,
   MembershipChangeProtectionCapabilities
 >;

@@ -86,10 +86,12 @@ export function checkKnownTables(
   unsortedKnownTables: string[]
 ): boolean {
   const knownTables = unsortedKnownTables.slice().sort(),
-    currentTables = db
-      .prepare(`SELECT name FROM "sqlite_master" WHERE type = 'table';`)
-      .pluck()
-      .all()
+    currentTables = (
+      db
+        .prepare(`SELECT name FROM "sqlite_master" WHERE type = 'table';`)
+        .pluck()
+        .all() as string[]
+    )
       .sort()
       .filter((table: string) => !/^sqlite_/.test(table));
   if (knownTables.length !== currentTables.length) {

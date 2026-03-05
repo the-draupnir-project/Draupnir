@@ -12,8 +12,8 @@ import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { strict as assert } from "assert";
 import * as crypto from "crypto";
 import {
-  MatrixEmitter,
   MatrixSendClient,
+  SafeMatrixEmitter,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   NoticeMessageContent,
@@ -53,7 +53,7 @@ export type ReplyContent = typeof ReplyContent;
  * @returns The replying event.
  */
 export async function getFirstReply(
-  matrix: MatrixEmitter,
+  matrix: SafeMatrixEmitter,
   targetRoom: string,
   targetEventThunk: () => Promise<string>
 ): Promise<RoomEvent<ReplyContent>> {
@@ -70,7 +70,7 @@ export async function getFirstReply(
  * @returns The replying event.
  */
 export async function getNthReply(
-  matrix: MatrixEmitter,
+  matrix: SafeMatrixEmitter,
   targetRoom: string,
   n: number,
   targetEventThunk: () => Promise<string>
@@ -138,7 +138,7 @@ export async function getNthReply(
  * @returns The reaction event.
  */
 export async function getFirstReaction(
-  matrix: MatrixEmitter,
+  matrix: SafeMatrixEmitter,
   targetRoom: string,
   reactionKey: string,
   targetEventThunk: () => Promise<string>
@@ -203,7 +203,7 @@ export async function getFirstReaction(
  * @returns The event matching the predicate provided.
  */
 export async function getFirstEventMatching(details: {
-  matrix: MatrixEmitter;
+  matrix: SafeMatrixEmitter;
   targetRoom: string;
   lookAfterEvent: () => Promise</*event id*/ string | undefined>;
   predicate: (event: RoomEvent) => boolean;
@@ -239,18 +239,18 @@ export async function getFirstEventMatching(details: {
 /**
  * Create a new banlist for draupnir to watch and return the shortcode that can be used to refer to the list in future commands.
  * @param managementRoom The room to send the create command to.
- * @param mjolnir A syncing matrix client.
+ * @param matrix A syncing matrix client.
  * @param client A client that isn't draupnir to send the message with, as you will be invited to the room.
  * @returns The shortcode for the list that can be used to refer to the list in future commands.
  */
 export async function createBanList(
   managementRoom: string,
-  mjolnir: MatrixEmitter,
+  matrix: SafeMatrixEmitter,
   client: MatrixClient
 ): Promise<string> {
   const listName = crypto.randomUUID();
   const listCreationResponse = await getFirstReply(
-    mjolnir,
+    matrix,
     managementRoom,
     async () => {
       return await client.sendMessage(managementRoom, {

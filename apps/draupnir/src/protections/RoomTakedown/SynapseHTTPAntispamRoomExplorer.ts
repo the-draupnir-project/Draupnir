@@ -46,7 +46,7 @@ export class SynapseHTTPAntispamRoomExplorer implements RoomExplorer {
 
   private readonly forwardDiscoveredBatch = async function (
     this: SynapseHTTPAntispamRoomExplorer,
-    rawEntries: [StringRoomID, undefined][]
+    rawEntries: [StringRoomID, void][]
   ): Promise<void> {
     const discoveryResult = await this.discoveredRoomStore.checkRoomsDiscovered(
       rawEntries.map(([roomID]) => ({ roomID }))
