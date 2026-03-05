@@ -122,7 +122,7 @@ type MentionLimitProtectionSettings = EDStatic<
 >;
 
 export type MentionLimitProtectionDescription = ProtectionDescription<
-  unknown,
+  Draupnir,
   typeof MentionLimitProtectionSettings,
   MentionLimitProtectionCapabilities
 >;
