@@ -11,6 +11,7 @@
 import { strict as assert } from "assert";
 
 import { newTestUser } from "./clientHelper";
+import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import { getMessagesByUserIn } from "../../src/utils";
 import { TextMessageContent } from "matrix-protection-suite";
 
@@ -18,7 +19,7 @@ import { TextMessageContent } from "matrix-protection-suite";
  * Ensure that Draupnir paginates only the necessary segment of the room timeline when backfilling.
  */
 describe("Test: timeline pagination", function () {
-  it("does not paginate across the entire room history while backfilling.", async function () {
+  it("does not paginate across the entire room history while backfilling.", async function (this: DraupnirTestContext) {
     this.timeout(60000);
     // Create a few users and a room.
     const badUser = await newTestUser(this.config.homeserverUrl, {
@@ -94,7 +95,7 @@ describe("Test: timeline pagination", function () {
       "There shouldn't be any more events (1 member event and 6 messages), and they should all be from the same account."
     );
   });
-  it("does not call the callback with an empty array when there are no relevant events", async function () {
+  it("does not call the callback with an empty array when there are no relevant events", async function (this: DraupnirTestContext) {
     this.timeout(60000);
     const badUser = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "spammer" },
@@ -126,7 +127,7 @@ describe("Test: timeline pagination", function () {
     );
     assert.equal(cbCount, 0, "The callback should never get called");
   });
-  it("The limit provided is respected", async function () {
+  it("The limit provided is respected", async function (this: DraupnirTestContext) {
     this.timeout(60000);
     const badUser = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "spammer" },
@@ -197,7 +198,7 @@ describe("Test: timeline pagination", function () {
       "The callback should be called once with events matching the glob."
     );
   });
-  it("Gives the events to the callback ordered by youngest first (even more important when the limit is reached halfway through a chunk).", async function () {
+  it("Gives the events to the callback ordered by youngest first (even more important when the limit is reached halfway through a chunk).", async function (this: DraupnirTestContext) {
     this.timeout(60000);
     const moderator = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "moderator" },

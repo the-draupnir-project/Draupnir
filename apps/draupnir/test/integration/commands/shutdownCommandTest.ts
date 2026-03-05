@@ -19,17 +19,17 @@ import {
 import { MatrixClient, MatrixError } from "@vector-im/matrix-bot-sdk";
 import { getFirstReaction } from "./commandUtils";
 
-describe("Test: shutdown command", function () {
+describe("Test: shutdown command", function (this: Mocha.Suite) {
   let client: MatrixClient;
-  this.beforeEach(async function () {
+  this.beforeEach(async function (this: DraupnirTestContext) {
     client = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "shutdown-command" },
     });
     await client.start();
-  });
-  this.afterEach(async function () {
+  } as unknown as Mocha.AsyncFunc);
+  this.afterEach(async function (this: DraupnirTestContext) {
     client.stop();
-  });
+  } as unknown as Mocha.AsyncFunc);
   it("Draupnir asks synapse to shut down a channel", async function (
     this: DraupnirTestContext
   ) {

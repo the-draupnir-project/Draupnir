@@ -11,9 +11,10 @@
 import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
 import { getMessagesByUserIn } from "../../src/utils";
+import { DraupnirTestContext } from "./mjolnirSetupUtils";
 
 describe("Test: throttled users can function with Draupnir.", function () {
-  it("throttled users survive being throttled by synapse", async function () {
+  it("throttled users survive being throttled by synapse", async function (this: DraupnirTestContext) {
     const throttledUser = await newTestUser(this.config.homeserverUrl, {
       name: { contains: "throttled" },
       isThrottled: true,

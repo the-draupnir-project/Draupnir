@@ -10,12 +10,15 @@
 
 import { Ok } from "matrix-protection-suite";
 import { ThrottlingQueue } from "../../src/queues/ThrottlingQueue";
+import { DraupnirTestContext } from "./mjolnirSetupUtils";
 
 describe("Test: ThrottlingQueue", function () {
-  it("Tasks enqueued with `push()` are executed exactly once and in the right order", async function () {
+  it("Tasks enqueued with `push()` are executed exactly once and in the right order", async function (this: DraupnirTestContext) {
     this.timeout(20000);
-
-    const queue = new ThrottlingQueue(this.mjolnir, 10);
+    if (this.draupnir === undefined) {
+      throw new TypeError("Test isn't setup correctly");
+    }
+    const queue = new ThrottlingQueue(this.draupnir.managementRoomOutput, 10);
     const state = new Map();
     const promises: Promise<void>[] = [];
     for (let counter = 0; counter < 10; ++counter) {
@@ -54,9 +57,12 @@ describe("Test: ThrottlingQueue", function () {
     queue.dispose();
   });
 
-  it("Tasks enqueued with `push()` are executed exactly once and in the right order, even if we call `block()` at some point", async function () {
+  it("Tasks enqueued with `push()` are executed exactly once and in the right order, even if we call `block()` at some point", async function (this: DraupnirTestContext) {
     this.timeout(20000);
-    const queue = new ThrottlingQueue(this.mjolnir, 10);
+    if (this.draupnir === undefined) {
+      throw new TypeError("Test isn't setup correctly");
+    }
+    const queue = new ThrottlingQueue(this.draupnir.managementRoomOutput, 10);
     const state = new Map();
     const promises: Promise<void>[] = [];
     for (let counter = 0; counter < 10; ++counter) {

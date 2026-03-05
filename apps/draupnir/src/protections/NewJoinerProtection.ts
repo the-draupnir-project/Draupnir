@@ -25,7 +25,7 @@ import { IConfig } from "../config";
 import { userServerName } from "@the-draupnir-project/matrix-basic-types";
 
 export type NewJoinerProtectionDescription = ProtectionDescription<
-  unknown,
+  Draupnir,
   UnknownConfig,
   NewJoinerProtectionCapabilities
 >;
