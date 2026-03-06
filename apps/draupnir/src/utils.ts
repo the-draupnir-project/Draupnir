@@ -56,6 +56,7 @@ export function incrementGaugeValue(
   uuid: string
 ) {
   // @ts-expect-error we access a private method due to lack of a public one.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   if (!gauge._getValue({ status: status, uuid: uuid })) {
     gauge.inc({ status: status, uuid: uuid });
   }
@@ -78,6 +79,7 @@ export function decrementGaugeValue(
   uuid: string
 ) {
   // @ts-expect-error we access a private method due to lack of a public one.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   if (gauge._getValue({ status: status, uuid: uuid })) {
     gauge.dec({ status: status, uuid: uuid });
   }
@@ -219,11 +221,11 @@ export async function getMessagesByUserIn(
       ...(from ? { from } : {}),
     };
     LogService.info("utils", "Backfilling with token: ", from);
-    return client.doRequest(
+    return (await client.doRequest(
       "GET",
       `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`,
       qs
-    );
+    )) as BackfillResponse;
   }
 
   let processed = 0;
@@ -286,6 +288,11 @@ interface RequestOptions {
 }
 
 type RequestError =
+  | (Error & {
+      body?: {
+        [key: string]: unknown;
+      };
+    })
   | {
       body?: {
         [key: string]: unknown;
@@ -293,9 +300,18 @@ type RequestError =
       [key: string]: unknown;
     }
   | undefined;
+
 type RequestResponse =
   | { statusCode: number; [key: string]: unknown }
   | undefined;
+
+type RequestCallback = (
+  err: RequestError,
+  response: RequestResponse,
+  resBody: unknown
+) => void;
+
+type RequestFunction = (params: RequestOptions, cb: RequestCallback) => void;
 
 /**
  * Patch `MatrixClient` into something that throws concise exceptions.
@@ -314,8 +330,8 @@ function patchMatrixClientForConciseExceptions() {
   if (isMatrixClientPatchedForConciseExceptions) {
     return;
   }
-  const originalRequestFn = getRequestFn();
-  setRequestFn((params: RequestOptions, cb: typeof originalRequestFn) => {
+  const originalRequestFn = getRequestFn() as unknown as RequestFunction;
+  setRequestFn((params: RequestOptions, cb: RequestCallback) => {
     // Store an error early, to maintain *some* semblance of stack.
     // We'll only throw the error if there is one.
     const error = new Error("STACK CAPTURE");
@@ -357,7 +373,8 @@ function patchMatrixClientForConciseExceptions() {
         }
         if (!(err instanceof IncomingMessage)) {
           // In most cases, we're happy with the result.
-          return cb(err, response, resBody);
+          cb(err, response, resBody);
+          return;
         }
         // However, MatrixClient has a tendency of throwing
         // instances of `IncomingMessage` instead of instances
@@ -383,7 +400,7 @@ function patchMatrixClientForConciseExceptions() {
         if (typeof body === "string") {
           try {
             body = JSON.parse(body, jsonReviver);
-          } catch (ex) {
+          } catch (_) {
             // Not JSON.
           }
         }
@@ -418,9 +435,11 @@ function patchMatrixClientForConciseExceptions() {
           if (error.stack !== undefined) {
             matrixError.stack = error.stack;
           }
-          return cb(matrixError, response, resBody);
+          cb(matrixError, response, resBody);
+          return;
         } else {
-          return cb(error, response, resBody);
+          cb(error, response, resBody);
+          return;
         }
       }
     );
@@ -444,8 +463,8 @@ function patchMatrixClientForRetry() {
   if (isMatrixClientPatchedForRetryWhenThrottled) {
     return;
   }
-  const originalRequestFn = getRequestFn();
-  setRequestFn(async (params: RequestOptions, cb: typeof originalRequestFn) => {
+  const originalRequestFn = getRequestFn() as unknown as RequestFunction;
+  setRequestFn(async (params: RequestOptions, cb: RequestCallback) => {
     let attempt = 1;
     while (true) {
       try {
@@ -485,7 +504,8 @@ function patchMatrixClientForRetry() {
           });
         // This is our final result.
         // Pass result, whether success or error.
-        return cb(...result);
+        cb(...result);
+        return;
       } catch (err) {
         // Need to retry.
         const retryAfterMs = (() => {
@@ -539,8 +559,8 @@ function patchMatrixClientForPrototypePollution() {
   if (isMatrixClientPatchedForPrototypePollution) {
     return;
   }
-  const originalRequestFn = getRequestFn();
-  setRequestFn((params: RequestOptions, cb: typeof originalRequestFn) => {
+  const originalRequestFn = getRequestFn() as unknown as RequestFunction;
+  setRequestFn((params: RequestOptions, cb: RequestCallback) => {
     originalRequestFn(
       params,
       function conciseExceptionRequestFn(
@@ -553,7 +573,7 @@ function patchMatrixClientForPrototypePollution() {
         if (typeof resBody === "string") {
           try {
             resBody = JSON.parse(resBody, jsonReviver);
-          } catch (e) {
+          } catch (_) {
             // we don't care if we fail to parse the JSON as it probably isn't JSON.
           }
         }
@@ -561,11 +581,12 @@ function patchMatrixClientForPrototypePollution() {
         if (typeof response?.body === "string") {
           try {
             response.body = JSON.parse(response.body, jsonReviver);
-          } catch (e) {
+          } catch (_) {
             // we don't care if we fail to parse the JSON as it probably isn't JSON.
           }
         }
-        return cb(error, response, resBody);
+        cb(error, response, resBody);
+        return;
       }
     );
   });
