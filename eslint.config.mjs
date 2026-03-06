@@ -45,7 +45,13 @@ export default tseslint.config(
     ],
     languageOptions: {
       parserOptions: {
-        project: "tsconfig.eslint.json"
+        project: [
+          "./apps/*/tsconfig.test.json",
+          "./apps/*/tsconfig.json",
+          "./packages/*/tsconfig.test.json",
+          "./packages/*/tsconfig.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     // This is needed in order to specify the desired behavior for its rules
