@@ -15,6 +15,7 @@ import { htmlEscape } from "../utils";
 import { JSDOM } from "jsdom";
 import { Draupnir } from "../Draupnir";
 import {
+  Logger,
   ReactionContent,
   RoomEvent,
   RoomMessage,
@@ -30,6 +31,8 @@ import {
   MatrixRoomReference,
   userServerName,
 } from "@the-draupnir-project/matrix-basic-types";
+
+const log = new Logger("ReportManager");
 
 /// Regexp, used to extract the action label from an action reaction
 /// such as `⚽ Kick user @foobar:localhost from room [kick-user]`.
@@ -223,10 +226,10 @@ export class StandardReportManager {
     let initialNoticeReport: IReport | undefined,
       confirmationReport: IReportWithAction | undefined;
     try {
-      const originalEvent = await this.draupnir.client.getEvent(
+      const originalEvent = (await this.draupnir.client.getEvent(
         roomID,
         relation.event_id
-      );
+      )) as RoomEvent;
       if (originalEvent.sender !== this.draupnir.clientUserID) {
         // Let's not handle reactions to events we didn't send as
         // some setups have two or more Draupnir's in the same management room.
@@ -237,11 +240,14 @@ export class StandardReportManager {
       }
       const content = originalEvent["content"];
       if (ABUSE_REPORT_KEY in content) {
-        initialNoticeReport = content[ABUSE_REPORT_KEY];
+        initialNoticeReport = content[ABUSE_REPORT_KEY] as IReport | undefined;
       } else if (ABUSE_ACTION_CONFIRMATION_KEY in content) {
-        confirmationReport = content[ABUSE_ACTION_CONFIRMATION_KEY];
+        confirmationReport = content[ABUSE_ACTION_CONFIRMATION_KEY] as
+          | IReportWithAction
+          | undefined;
       }
-    } catch (ex) {
+    } catch (e) {
+      log.error("Failure to handle report event reaction", e);
       return;
     }
     if (!initialNoticeReport && !confirmationReport) {
@@ -512,7 +518,7 @@ export class StandardReportManager {
           }
         );
       } else {
-        throw new TypeError(`Something is throwing absoloute garbage ${ex}`);
+        throw new TypeError(`Something is throwing absoloute garbage`);
       }
     }
   }
@@ -699,6 +705,11 @@ class RedactMessage implements IUIAction {
         PowerLevelAction.RedactEvents
       );
     } catch (ex) {
+      log.error(
+        "Failed to fetch power levels for draupnir user",
+        report.room_id,
+        ex
+      );
       return false;
     }
   }
@@ -742,6 +753,11 @@ class KickAccused implements IUIAction {
         PowerLevelAction.Kick
       );
     } catch (ex) {
+      log.error(
+        "Failed to fetch power levels for draupnir user",
+        report.room_id,
+        ex
+      );
       return false;
     }
   }
@@ -785,6 +801,11 @@ class MuteAccused implements IUIAction {
         true
       );
     } catch (ex) {
+      log.error(
+        "Failed to fetch power levels for draupnir user",
+        report.room_id,
+        ex
+      );
       return false;
     }
   }
@@ -831,6 +852,11 @@ class BanAccused implements IUIAction {
         PowerLevelAction.Ban
       );
     } catch (ex) {
+      log.error(
+        "Failed to fetch power levels for draupnir user",
+        report.room_id,
+        ex
+      );
       return false;
     }
   }
@@ -928,7 +954,7 @@ class EscalateToServerModerationRoom implements IUIAction {
     }
     try {
       await manager.draupnir.client.getEvent(report.room_id, report.event_id);
-    } catch (ex) {
+    } catch (_) {
       // We can't fetch the event.
       return false;
     }
@@ -952,10 +978,10 @@ class EscalateToServerModerationRoom implements IUIAction {
     _moderationroomID: string,
     displayManager: DisplayManager
   ): Promise<string | undefined> {
-    const event = await manager.draupnir.client.getEvent(
+    const event = (await manager.draupnir.client.getEvent(
       report.room_id,
       report.event_id
-    );
+    )) as RoomEvent;
 
     // Display the report and UI directly in the management room, as if it had been
     // received from /report.
@@ -1053,7 +1079,7 @@ class DisplayManager {
       } else {
         eventContent = unknownEvent();
       }
-    } catch (ex) {
+    } catch (_) {
       eventContent = {
         msg: `<Cannot extract event. Please verify that Draupnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`,
       };
@@ -1061,29 +1087,31 @@ class DisplayManager {
 
     const accusedId = event["sender"];
 
-    let reporterDisplayName: string, accusedDisplayName: string;
-    try {
-      reporterDisplayName =
-        (await this.owner.draupnir.client.getUserProfile(reporterId))[
-          "displayname"
-        ] || reporterId;
-    } catch (ex) {
-      reporterDisplayName = "<Error: Cannot extract reporter display name>";
-    }
-    try {
-      accusedDisplayName =
-        (await this.owner.draupnir.client.getUserProfile(accusedId))[
-          "displayname"
-        ] || accusedId;
-    } catch (ex) {
-      accusedDisplayName = "<Error: Cannot extract accused display name>";
-    }
+    const getDisplayName = async (userId: string): Promise<string> => {
+      try {
+        const profile: unknown =
+          await this.owner.draupnir.client.getUserProfile(userId);
+        if (
+          typeof profile === "object" &&
+          profile !== null &&
+          "displayname" in profile &&
+          typeof profile.displayname === "string"
+        ) {
+          return profile.displayname;
+        }
+        return userId;
+      } catch (_) {
+        return `<Error: Cannot extract display name>`;
+      }
+    };
+    const reporterDisplayName = await getDisplayName(reporterId);
+    const accusedDisplayName = await getDisplayName(accusedId);
     const eventShortcut = `https://matrix.to/#/${encodeURIComponent(roomID)}/${encodeURIComponent(eventId)}`;
 
     let eventTimestamp;
     try {
       eventTimestamp = new Date(event["origin_server_ts"]).toUTCString();
-    } catch (ex) {
+    } catch (_) {
       eventTimestamp = `<Cannot extract event. Please verify that Draupnir has been invited to room ${room.toPermalink()} and made room moderator or administrator>.`;
     }
 
