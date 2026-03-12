@@ -20,7 +20,7 @@ describe("Test: The make admin command", function () {
   ) {
     this.timeout(90000);
     if (!this.config.admin?.enableMakeRoomAdminCommand) {
-      this.done();
+      return;
     }
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
