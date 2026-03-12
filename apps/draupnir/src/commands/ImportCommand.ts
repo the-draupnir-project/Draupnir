@@ -10,10 +10,14 @@
 
 import {
   ActionResult,
+  MembershipEventContent,
   MultipleErrors,
   PolicyRuleType,
   RoomActionError,
   RoomUpdateError,
+  ServerACLContent,
+  StateEvent,
+  Value,
   isError,
 } from "matrix-protection-suite";
 import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -65,17 +69,20 @@ export const DraupnirImportCommand = describeCommand({
     if (isError(policyRoomEditor)) {
       return policyRoomEditor;
     }
-    const state = await draupnir.client.getRoomState(
+    const state = (await draupnir.client.getRoomState(
       importFromRoom.ok.toRoomIDOrAlias()
-    );
+    )) as StateEvent[];
     const errors: RoomUpdateError[] = [];
     for (const stateEvent of state) {
-      const content = stateEvent["content"] || {};
-      if (!content || Object.keys(content).length === 0) continue;
-
+      const content = stateEvent["content"];
+      if (Object.keys(content).length === 0) {
+        // redacted event.
+        continue;
+      }
       if (
         stateEvent["type"] === "m.room.member" &&
-        stateEvent["state_key"] !== ""
+        stateEvent["state_key"] !== "" &&
+        Value.Check(MembershipEventContent, content)
       ) {
         // Member event - check for ban
         if (content["membership"] === "ban") {
@@ -93,7 +100,8 @@ export const DraupnirImportCommand = describeCommand({
         }
       } else if (
         stateEvent["type"] === "m.room.server_acl" &&
-        stateEvent["state_key"] === ""
+        stateEvent["state_key"] === "" &&
+        Value.Check(ServerACLContent, content)
       ) {
         // ACL event - ban denied servers
         if (!content["deny"]) continue;
