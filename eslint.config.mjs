@@ -80,6 +80,10 @@ export default tseslint.config(
       // but other than using namespaces, we don't have granular enough modules
       // to be able to depend on their behaviour. This should be revisited.
       "@typescript-eslint/no-extraneous-class": "off",
+      "@typescript-eslint/unbound-method": [
+        "error",
+        { ignoreStatic: true }
+      ],
       // We want to be able to create infinite loops.
       "@typescript-eslint/no-unnecessary-condition": [
         "error",

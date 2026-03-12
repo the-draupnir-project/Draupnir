@@ -21,6 +21,7 @@ import {
   ActionException,
   ActionExceptionKind,
   Ok,
+  RoomEvent,
   Task,
   isError,
 } from "matrix-protection-suite";
@@ -78,10 +79,9 @@ export class ReportPoller {
        * hangs for longer thank the interval, it could cause a stampede
        * of requests when networking problems resolve
        */
-      this.timeout = setTimeout(
-        this.tryGetAbuseReports.bind(this),
-        this.pollPeriod
-      );
+      this.timeout = setTimeout(() => {
+        void this.tryGetAbuseReports.call(this);
+      }, this.pollPeriod);
     } else {
       throw new InvalidStateError("poll already scheduled");
     }
@@ -93,6 +93,13 @@ export class ReportPoller {
       from: this.from,
     });
     if (isError(response)) {
+      // FIXME: There's something wrong with what is happening here.
+      // We are trying to let the user know the thing is broken. Fine,
+      // but this shouldn't be happening via the logMesasage utility
+      // but we also just can't stop and break the thing in case the reason
+      // is just an intermittent issue.
+      // And that they wouldn't notice that it has stopped.
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.ERROR,
         "getAbuseReports",
@@ -111,7 +118,7 @@ export class ReportPoller {
         )
         .then(
           (value) => Ok(value),
-          (exception) =>
+          (exception: unknown) =>
             ActionException.Result(
               `Failed to retrieve the context for an event ${report.event_id}`,
               { exception, exceptionKind: ActionExceptionKind.Unknown }
@@ -119,6 +126,7 @@ export class ReportPoller {
         );
       if (isError(eventContext)) {
         void Task(
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           this.draupnir.managementRoomOutput.logMessage(
             LogLevel.ERROR,
             "getAbuseReports",
@@ -127,7 +135,7 @@ export class ReportPoller {
         );
         continue;
       }
-      const event = eventContext.ok.event;
+      const event = (eventContext.ok as Record<"event", RoomEvent>).event;
 
       await this.manager.handleServerAbuseReport({
         roomID: report.room_id,
@@ -150,11 +158,17 @@ export class ReportPoller {
         await this.draupnir.client.setAccountData(REPORT_POLL_EVENT_TYPE, {
           from: nextToken,
         });
-      } catch (ex) {
+      } catch (e) {
+        const error = new ActionException(
+          ActionExceptionKind.Unknown,
+          e,
+          "Unable to set account data for report poller token"
+        );
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.ERROR,
           "getAbuseReports",
-          `failed to update progress: ${ex}`
+          `failed to update progress, provide the administrator with this reference for details: ${error.uuid}`
         );
       }
     }
@@ -165,11 +179,17 @@ export class ReportPoller {
 
     try {
       await this.getAbuseReports();
-    } catch (ex) {
+    } catch (e) {
+      const error = new ActionException(
+        ActionExceptionKind.Unknown,
+        e,
+        "failed to get abuse reports"
+      );
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.ERROR,
         "tryGetAbuseReports",
-        `failed to get abuse reports: ${ex}`
+        `failed to get abuse reports: ${error.uuid}`
       );
     }
 
@@ -177,7 +197,7 @@ export class ReportPoller {
   }
   public static async getReportPollSetting(
     client: MatrixSendClient,
-    managementRoomOutput: ManagementRoomOutput
+    _managementRoomOutput: ManagementRoomOutput
   ): Promise<ReportPollSetting> {
     const reportPollAccountData = (
       await client

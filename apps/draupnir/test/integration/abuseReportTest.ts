@@ -11,12 +11,13 @@
 import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
 import { ABUSE_REPORT_KEY, IReport } from "../../src/report/ReportManager";
-import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
+import { DraupnirTestContext, draupnirSafeEmitter } from "./mjolnirSetupUtils";
 import {
   NoticeMessageContent,
   Ok,
   ReactionContent,
   ReactionEvent,
+  RoomEvent,
   RoomMessage,
   Value,
 } from "matrix-protection-suite";
@@ -65,24 +66,28 @@ describe("Test: Reporting abuse", () => {
           throw new TypeError("setup must have failed.");
         }
         const draupnir = this.draupnir;
-        const draupnirSyncClient = draupnirClient();
-        if (draupnirSyncClient === null) {
-          throw new TypeError("setup must have failed.");
-        }
+        const draupnirSyncClient = draupnirSafeEmitter();
         // Listen for any notices that show up.
-        const notices: (Omit<RoomMessage, "content"> & {
+        type NoticeEvent = Omit<RoomMessage, "content"> & {
           content: NoticeMessageContent;
-        })[] = [];
+        };
+        const notices: NoticeEvent[] = [];
         draupnirSyncClient.on("room.event", (roomId, event) => {
-          if (roomId === draupnir.managementRoomID) {
-            notices.push(event);
+          if (
+            roomId === draupnir.managementRoomID &&
+            event.type === "m.room.message"
+          ) {
+            notices.push(event as NoticeEvent);
           }
         });
         const reactions: UnredactedReaction[] = [];
         draupnirSyncClient.on("room.event", (roomId, event) => {
-          if (roomId === draupnir.managementRoomID) {
+          if (
+            roomId === draupnir.managementRoomID &&
+            event.type === "m.reaction"
+          ) {
             if (Value.Check(ReactionContent, event.content)) {
-              reactions.push(event);
+              reactions.push(event as UnredactedReaction);
             }
           }
         });
@@ -108,10 +113,10 @@ describe("Test: Reporting abuse", () => {
         const badText = `BAD: ${Math.random()}`; // Will be reported as abuse.
         const badText2 = `BAD: ${Math.random()}`; // Will be reported as abuse.
         const badText3 = `<b>BAD</b>: ${Math.random()}`; // Will be reported as abuse.
-        const badText4 = [...Array(1024)]
+        const badText4 = [...Array<unknown>(1024)]
           .map((_) => `${Math.random()}`)
           .join(""); // Text is too long.
-        const badText5 = [...Array(1024)].map((_) => "ABC").join("\n"); // Text has too many lines.
+        const badText5 = [...Array<unknown>(1024)].map((_) => "ABC").join("\n"); // Text has too many lines.
         const badEventId = await badUser.sendText(roomId, badText);
         const badEventId2 = await badUser.sendText(roomId, badText2);
         const badEventId3 = await badUser.sendText(roomId, badText3);
@@ -363,27 +368,31 @@ describe("Test: Reporting abuse", () => {
   it("The redact action works", async function (this: DraupnirTestContext) {
     this.timeout(60000);
     const draupnir = this.draupnir;
-    const draupnirSyncClient = draupnirClient();
-    if (draupnir === undefined || draupnirSyncClient === null) {
-      throw new TypeError("setup code didn't work");
+    if (draupnir === undefined) {
+      throw new TypeError("setup must have failed.");
     }
+    const draupnirSyncClient = draupnirSafeEmitter();
 
-    // Listen for any notices that show up.
-    const notices: (Omit<RoomMessage, "content"> & {
+    type NoticeEvent = Omit<RoomMessage, "content"> & {
       content: NoticeMessageContent;
-    })[] = [];
+    };
+    // Listen for any notices that show up.
+    const notices: NoticeEvent[] = [];
     draupnirSyncClient.on("room.event", (roomId, event) => {
-      if (roomId === draupnir.managementRoomID) {
+      if (
+        roomId === draupnir.managementRoomID &&
+        event.type === "m.room.message"
+      ) {
         if (Value.Check(NoticeMessageContent, event.content)) {
-          notices.push(event);
+          notices.push(event as NoticeEvent);
         }
       }
     });
     const reactions: UnredactedReaction[] = [];
     draupnirSyncClient.on("room.event", (roomId, event) => {
-      if (roomId === draupnir.managementRoomID) {
+      if (roomId === draupnir.managementRoomID && event.type === "m.reaction") {
         if (Value.Check(ReactionContent, event.content)) {
-          reactions.push(event);
+          reactions.push(event as UnredactedReaction);
         }
       }
     });
@@ -524,7 +533,10 @@ describe("Test: Reporting abuse", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // This should have redacted the message.
-    const newBadEvent = await draupnir.client.getEvent(roomId, badEventId);
+    const newBadEvent = (await draupnir.client.getEvent(
+      roomId,
+      badEventId
+    )) as RoomEvent;
     assert.deepEqual(
       Object.keys(newBadEvent.content),
       [],
