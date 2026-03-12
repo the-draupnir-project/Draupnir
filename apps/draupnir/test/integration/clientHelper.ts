@@ -22,6 +22,7 @@ import {
   RoomMessage,
   Value,
 } from "matrix-protection-suite";
+import { RequestFunction } from "../../src/utils";
 
 const REGISTRATION_ATTEMPTS = 10;
 const REGISTRATION_RETRY_BASE_DELAY_MS = 100;
@@ -46,7 +47,7 @@ export async function registerUser(
 ): Promise<void> {
   const registerUrl = `${homeserver}/_synapse/admin/v1/register`;
   const nonce: string = await new Promise((resolve, reject) => {
-    getRequestFn()(
+    (getRequestFn() as RequestFunction)(
       { uri: registerUrl, method: "GET", timeout: 60000 },
       (error: unknown, _response: unknown, resBody: unknown) => {
         if (error) {
@@ -93,15 +94,16 @@ export async function registerUser(
         timeout: 60000,
       };
       await new Promise((resolve, reject) => {
-        getRequestFn()(params, (error: unknown) => {
-          error !== undefined
-            ? error instanceof Error
-              ? reject(error)
-              : resolve(new TypeError(`something is throwing garbage`))
-            : resolve(undefined);
+        (getRequestFn() as RequestFunction)(params, (error: unknown) => {
+          if (error === undefined) {
+            resolve(undefined);
+          } else if (error instanceof Error) {
+            reject(error);
+          } else {
+            reject(new TypeError(`something is throwing garbage`));
+          }
         });
       });
-      return;
     } catch (e) {
       // In case of timeout or throttling, backoff and retry.
       if (
@@ -197,7 +199,7 @@ async function registerNewTestUser(
           );
         }
       } else {
-        console.error(`failed to register user ${e}`);
+        console.error(`failed to register user`, e);
         throw e;
       }
     }

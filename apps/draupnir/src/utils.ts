@@ -316,7 +316,10 @@ type RequestCallback = (
   resBody: unknown
 ) => void;
 
-type RequestFunction = (params: RequestOptions, cb: RequestCallback) => void;
+export type RequestFunction = (
+  params: RequestOptions,
+  cb: RequestCallback
+) => void;
 
 /**
  * Patch `MatrixClient` into something that throws concise exceptions.
