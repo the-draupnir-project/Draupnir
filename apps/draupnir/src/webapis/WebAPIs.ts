@@ -19,7 +19,7 @@ import {
   isStringRoomID,
   isStringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Logger, Task } from "matrix-protection-suite";
+import { Logger, RoomEvent, Task } from "matrix-protection-suite";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
 import { jsonReviver } from "../utils";
 
@@ -260,9 +260,11 @@ export class WebAPIs {
         //
         // By doing this with the reporterClient, we ensure that this feature of Draupnir can work
         // with all Matrix homeservers, rather than just Synapse.
-        event = await reporterClient.getEvent(roomID, eventID);
+        event = (await reporterClient.getEvent(roomID, eventID)) as RoomEvent;
       }
-      const reason = request.body["reason"];
+      const reason = (request.body as Record<string, unknown>)[
+        "reason"
+      ] as string;
       await this.reportManager.handleServerAbuseReport({
         roomID,
         reporterId,
