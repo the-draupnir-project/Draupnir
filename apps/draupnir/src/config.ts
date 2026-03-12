@@ -24,32 +24,36 @@ setGlobalLoggerProvider(new RichConsoleLogger());
 const log = new Logger("Draupnir config");
 
 /**
+ * Ideally we'd just have a schema for the config.
+ */
+function isConfigRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/**
  * The version of the configuration that has been explicitly provided,
  * and does not contain default values. Secrets are marked with "REDACTED".
  */
 export function getNonDefaultConfigProperties(
   config: IConfig
 ): Record<string, unknown> {
-  const nonDefault = Config.util.diffDeep(defaultConfig, config);
+  const nonDefault = Config.util.diffDeep(defaultConfig, config) as Record<
+    string,
+    unknown
+  >;
   if ("accessToken" in nonDefault) {
     nonDefault.accessToken = "REDACTED";
   }
-  if (
-    "pantalaimon" in nonDefault &&
-    typeof nonDefault.pantalaimon === "object"
-  ) {
+  if ("pantalaimon" in nonDefault && isConfigRecord(nonDefault.pantalaimon)) {
     nonDefault.pantalaimon.password = "REDACTED";
   }
   if (
     "web" in nonDefault &&
-    typeof nonDefault["web"] === "object" &&
-    nonDefault["web"] !== null &&
+    isConfigRecord(nonDefault.web) &&
     "synapseHTTPAntispam" in nonDefault["web"] &&
-    typeof nonDefault["web"]["synapseHTTPAntispam"] === "object"
+    isConfigRecord(nonDefault["web"]["synapseHTTPAntispam"])
   ) {
-    if (nonDefault["web"]["synapseHTTPAntispam"] !== null) {
-      nonDefault["web"]["synapseHTTPAntispam"].authorization = "REDACTED";
-    }
+    nonDefault["web"]["synapseHTTPAntispam"].authorization = "REDACTED";
   }
   return nonDefault;
 }
@@ -271,7 +275,7 @@ const defaultConfig: IConfig = {
 };
 
 export function getDefaultConfig(): IConfig {
-  return Config.util.cloneDeep(defaultConfig);
+  return Config.util.cloneDeep(defaultConfig) as IConfig;
 }
 
 function logNonDefaultConfiguration(config: IConfig): void {
@@ -435,7 +439,7 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     allowedKeys.reduce((existingConfig, key) => {
       return { ...existingConfig, [key]: configTemplate[key as keyof IConfig] };
     }, {})
-  );
+  ) as IConfig;
 
   config.managementRoom = managementRoomId;
   return config;
@@ -445,7 +449,7 @@ export const PACKAGE_JSON = (() => {
   try {
     return JSON.parse(
       fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8")
-    );
+    ) as Record<string, unknown>;
   } catch (e) {
     LogService.error("config", "Could not read Draupnir package.json", e);
     return {};
@@ -455,7 +459,7 @@ export const PACKAGE_JSON = (() => {
 export const SOFTWARE_VERSION = (() => {
   let versionFile;
   const defaultText =
-    PACKAGE_JSON.version ??
+    (PACKAGE_JSON.version as string | undefined) ??
     "A version was either not provided when building Draupnir or could not be read.";
   try {
     versionFile = fs.readFileSync(
