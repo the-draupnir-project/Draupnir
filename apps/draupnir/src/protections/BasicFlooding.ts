@@ -118,7 +118,7 @@ function lastEventsRoomEntry(
   if (roomEntry) {
     return roomEntry;
   } else {
-    const nextEntry = new Map();
+    const nextEntry = new Map<StringUserID, LastEvents>();
     lastEvents.set(roomID, nextEntry);
     return nextEntry;
   }
@@ -214,6 +214,7 @@ export class BasicFloodingProtection
     }
 
     if (messageCount >= this.maxPerMinute) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.WARN,
         "BasicFlooding",
@@ -227,6 +228,7 @@ export class BasicFloodingProtection
           "spam"
         );
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "BasicFlooding",
@@ -251,6 +253,7 @@ export class BasicFloodingProtection
           );
         }
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "BasicFlooding",
