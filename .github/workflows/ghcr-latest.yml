@@ -50,7 +50,7 @@ jobs:
 
       - name: Build and push image to GHCR
         id: push_ghcr
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
