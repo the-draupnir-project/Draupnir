@@ -134,7 +134,6 @@ export async function redactUserMessagesIn(
                   );
                 });
             } else {
-              // eslint-disable-next-line @typescript-eslint/no-deprecated
               await managementRoom.logMessage(
                 LogLevel.WARN,
                 "utils#redactUserMessagesIn",
@@ -149,7 +148,6 @@ export async function redactUserMessagesIn(
       if (!(error instanceof Error)) {
         throw new TypeError("Throwing random shit");
       }
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await managementRoom.logMessage(
         LogLevel.ERROR,
         "utils#redactUserMessagesIn",
