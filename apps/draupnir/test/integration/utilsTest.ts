@@ -10,7 +10,11 @@
 
 import { strict as assert } from "assert";
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
-import { DraupnirTestContext, draupnirClient } from "./mjolnirSetupUtils";
+import {
+  DraupnirTestContext,
+  draupnirClient,
+  draupnirSafeEmitter,
+} from "./mjolnirSetupUtils";
 import {
   NoticeMessageContent,
   RoomEvent,
@@ -23,8 +27,8 @@ describe("Test: utils", function () {
     async function (this: DraupnirTestContext) {
       const managementRoomAlias = this.config.managementRoom;
       const draupnir = this.draupnir;
-      const draupnirMatrixClient = draupnirClient();
-      if (draupnir === undefined || draupnirMatrixClient === null) {
+      const draupnirMatrixClient = draupnirSafeEmitter();
+      if (draupnir === undefined) {
         throw new TypeError(`Setup code is broken`);
       }
       const managementRoomOutput = draupnir.managementRoomOutput;
@@ -37,12 +41,16 @@ describe("Test: utils", function () {
 
       const message: RoomEvent = await new Promise((resolve) => {
         draupnirMatrixClient.on("room.message", (roomId, event) => {
-          if (roomId === draupnir.managementRoomID) {
-            if (event.content?.body?.startsWith("it's")) {
+          if (
+            roomId === draupnir.managementRoomID &&
+            Value.Check(NoticeMessageContent, event.content)
+          ) {
+            if (event.content.body.startsWith("it's")) {
               resolve(event);
             }
           }
         });
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         void managementRoomOutput.logMessage(
           LogLevel.INFO,
           "replaceRoomIdsWithPills test",

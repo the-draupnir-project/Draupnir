@@ -12,6 +12,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction } from "./commandUtils";
 import { DraupnirTestContext, draupnirSafeEmitter } from "../mjolnirSetupUtils";
+import { PowerLevelsEventContent } from "matrix-protection-suite";
 
 // Breaks with this test.
 describe("Test: The make admin command", function () {
@@ -44,13 +45,13 @@ describe("Test: The make admin command", function () {
       body: `!draupnir rooms add ${targetRoom}`,
     });
     await userA.joinRoom(targetRoom);
-    const powerLevelsBefore = await moderator.getRoomStateEvent(
+    const powerLevelsBefore = (await moderator.getRoomStateEvent(
       targetRoom,
       "m.room.power_levels",
       ""
-    );
+    )) as PowerLevelsEventContent;
     assert.notEqual(
-      powerLevelsBefore["users"][draupnir.clientUserID],
+      powerLevelsBefore["users"]?.[draupnir.clientUserID],
       100,
       `Bot should not yet be an admin of ${targetRoom}`
     );
@@ -66,13 +67,13 @@ describe("Test: The make admin command", function () {
       }
     );
 
-    const powerLevelsAfter = await moderator.getRoomStateEvent(
+    const powerLevelsAfter = (await moderator.getRoomStateEvent(
       targetRoom,
       "m.room.power_levels",
       ""
-    );
+    )) as PowerLevelsEventContent;
     assert.equal(
-      powerLevelsAfter["users"][draupnir.clientUserID],
+      powerLevelsAfter["users"]?.[draupnir.clientUserID],
       100,
       "Bot should be a room admin."
     );

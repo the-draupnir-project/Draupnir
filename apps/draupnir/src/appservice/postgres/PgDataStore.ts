@@ -2,22 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { PostgresStore, SchemaUpdateFunction } from "matrix-appservice-bridge";
+import { PostgresStore } from "matrix-appservice-bridge";
 import { DataStore, MjolnirRecord } from "../datastore";
 
-function getSchema(): SchemaUpdateFunction[] {
-  const nSchema = 2;
-  const schema = [];
-  for (let schemaID = 1; schemaID < nSchema + 1; schemaID++) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    schema.push(require(`./schema/v${schemaID}`).runSchema);
-  }
-  return schema;
-}
+import { runSchema as v1 } from "./schema/v1";
+import { runSchema as v2 } from "./schema/v2";
+
+const Schema = [v1, v2];
 
 export class PgDataStore extends PostgresStore implements DataStore {
   constructor(connectionString: string) {
-    super(getSchema(), { url: connectionString });
+    super(Schema, { url: connectionString });
   }
 
   public async init(): Promise<void> {
