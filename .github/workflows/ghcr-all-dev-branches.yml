@@ -1,23 +1,25 @@
 # SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
 # SPDX-License-Identifier: CC0-1.0
+# This file is derived from the docker-hub-develop.yml workflow, but instead of pushing to Docker Hub, it pushes to GHCR. It also runs on all non excluded branches to allow easier access to development builds.
 
-name: "GHCR - Develop"
+name: "GHCR - Development Branches"
 
 on:
   push:
-    branches:
-      - main
+    branches-ignore:
+      - "dependabot/**"
+      - "renovate/**"
+      - "github-actions/**"
 
 env:
+  IMAGE_NAME: draupnir
   PLATFORMS: linux/amd64,linux/arm64
-  PUSH: ${{ github.ref == 'refs/heads/main' }}
   IMG_SOURCE: https://github.com/${{ github.repository }}
 
 jobs:
-  ghcr-develop:
+  ghcr-publish:
     runs-on: ubuntu-latest
-    if: github.ref_name == 'main'
     permissions:
       id-token: write
       packages: write
@@ -47,19 +49,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image to GHCR
-        id: push_ghcr
+      - name: Derive image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+
+      - name: Build image
+        id: push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
-          push: ${{ env.PUSH }}
+          push: true
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
-          tags: |
-            ghcr.io/${{ env.IMAGE_OWNER }}/draupnir:develop
+          tags: ${{ steps.meta.outputs.tags }}
