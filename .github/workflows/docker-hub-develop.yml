@@ -16,6 +16,7 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
   # Only push if this is main, otherwise we just want to build
   PUSH: ${{ github.ref == 'refs/heads/main' }}
+  IMG_SOURCE: https://github.com/${{ github.repository }}
 
 jobs:
   docker-latest:
@@ -54,5 +55,11 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUSH }}
+          labels: |
+            org.opencontainers.image.source=${{ env.IMG_SOURCE }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.licenses=AFL-3.0
+          sbom: true
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
