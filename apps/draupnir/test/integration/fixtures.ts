@@ -106,7 +106,7 @@ export const mochaHooks = {
   afterEach: [
     async function (this: DraupnirTestContext) {
       this.timeout(10000);
-      await this.toggle?.stopEverything();
+      await this.toggle?.[Symbol.asyncDispose]();
       draupnirClient()?.stop();
       this.stores?.dispose();
       await this.lifetime[Symbol.asyncDispose]();
