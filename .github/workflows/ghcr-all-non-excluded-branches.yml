@@ -1,24 +1,25 @@
-# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 # SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
 # SPDX-License-Identifier: CC0-1.0
+# This file is derived from the docker-hub-develop.yml workflow, but instead of pushing to Docker Hub, it pushes to GHCR. It also runs on all non excluded branches to allow easier access to development builds.
 
-# Copied from https://github.com/matrix-org/matrix-bifrost/blob/develop/.github/workflows/docker-hub-release.yml
-# This is duplicated with docker-hub-release.yml the only difference is the tag and hook
-
-name: "Docker Hub - Latest"
+name: "GHCR - All Non Excluded Branches"
 
 on:
-  release:
-    types: [released]
+  push:
+    branches-ignore:
+      - "main"
+      - "dependabot/**"
+      - "renovate/**"
+      - "github-actions/**"
 
 env:
-  DOCKER_NAMESPACE: gnuxie
+  IMAGE_NAME: draupnir
   PLATFORMS: linux/amd64,linux/arm64
   IMG_SOURCE: https://github.com/${{ github.repository }}
 
 jobs:
-  docker-release:
+  ghcr-publish:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -28,10 +29,9 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v4
-      - name: Get release tag
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Unshallow for git describe so we can create version.txt
         run: git fetch --prune --unshallow --tags --all --force
+
       # Needed for multi platform builds
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -41,11 +41,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
 
       - name: Build image
         id: push
@@ -58,8 +68,8 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
-          tags: |
-            ${{ env.DOCKER_NAMESPACE }}/draupnir:latest
+          tags: ${{ steps.meta.outputs.tags }}
