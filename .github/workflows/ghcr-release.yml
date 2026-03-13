@@ -23,7 +23,7 @@ jobs:
       artifact-metadata: write
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Get release tag
         id: release_version
         run: echo "release_version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
