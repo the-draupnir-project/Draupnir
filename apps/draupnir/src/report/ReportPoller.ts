@@ -99,7 +99,6 @@ export class ReportPoller {
       // but we also just can't stop and break the thing in case the reason
       // is just an intermittent issue.
       // And that they wouldn't notice that it has stopped.
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.ERROR,
         "getAbuseReports",
@@ -126,7 +125,6 @@ export class ReportPoller {
         );
       if (isError(eventContext)) {
         void Task(
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           this.draupnir.managementRoomOutput.logMessage(
             LogLevel.ERROR,
             "getAbuseReports",
@@ -164,7 +162,6 @@ export class ReportPoller {
           e,
           "Unable to set account data for report poller token"
         );
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.ERROR,
           "getAbuseReports",
@@ -185,7 +182,6 @@ export class ReportPoller {
         e,
         "failed to get abuse reports"
       );
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       await this.draupnir.managementRoomOutput.logMessage(
         LogLevel.ERROR,
         "tryGetAbuseReports",

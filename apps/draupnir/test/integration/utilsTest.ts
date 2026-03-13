@@ -50,7 +50,6 @@ describe("Test: utils", function () {
             }
           }
         });
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
         void managementRoomOutput.logMessage(
           LogLevel.INFO,
           "replaceRoomIdsWithPills test",

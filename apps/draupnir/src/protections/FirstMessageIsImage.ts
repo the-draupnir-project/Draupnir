@@ -134,7 +134,6 @@ export class FirstMessageIsImageProtection
         msgtype === "m.video" ||
         formattedBody.toLowerCase().includes("<img");
       if (isMedia && this.justJoined[roomID].includes(event["sender"])) {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await this.draupnir.managementRoomOutput.logMessage(
           LogLevel.WARN,
           "FirstMessageIsImage",
@@ -147,7 +146,6 @@ export class FirstMessageIsImageProtection
             "spam"
           );
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           await this.draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "FirstMessageIsImage",
@@ -170,7 +168,6 @@ export class FirstMessageIsImageProtection
             "spam"
           );
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           await this.draupnir.managementRoomOutput.logMessage(
             LogLevel.WARN,
             "FirstMessageIsImage",

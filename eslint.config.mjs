@@ -102,5 +102,17 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-enum-comparison": "off",
     },
     ignores,
+  },
+  {
+    files: ["apps/draupnir/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-deprecated": [
+        "error",
+        {
+          allow: [{ from: "file", name: "logMessage" }],
+        },
+      ],
+    },
+    ignores,
   }
 );
