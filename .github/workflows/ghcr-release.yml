@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
-# SPDX-FileCopyrightText: 2025-2026 Catalan Lover <catalanlover@protonmail.com>
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -11,7 +10,7 @@ on:
 
 env:
   PLATFORMS: linux/amd64,linux/arm64
-  IMG_SOURCE: ${{ github.repository }}${{ github.ref_name }}
+  IMG_SOURCE: https://github.com/${{ github.repository }}
 
 jobs:
   ghcr-release:
@@ -29,6 +28,7 @@ jobs:
       - name: Unshallow for git describe so we can create version.txt
         run: git fetch --prune --unshallow --tags --all --force
 
+      # Needed for multi platform builds
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -54,6 +54,8 @@ jobs:
           push: true
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
           tags: |
