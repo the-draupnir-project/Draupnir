@@ -15,8 +15,6 @@ export interface RoomMessagesOptions extends PaginationOptions {
   filter?: RoomEventFilter;
 }
 
-// We're specialising a type parameter.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface RoomMessagesPaginator<
   TEvent extends RoomEvent = RoomEvent,
 > extends MatrixPaginator<TEvent, RoomMessagesOptions> {}

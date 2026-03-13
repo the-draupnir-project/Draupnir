@@ -59,13 +59,12 @@ describe("RoomStateBackingStore", function () {
     const store = makeStore();
     const roomStateRevisionIssuer = (
       await roomStateManager.getRoomStateRevisionIssuer(exampleRoom)
-    ).expect(
-      "should be able to get this revision issuer mare"
-    ) as FakeRoomStateRevisionIssuer;
+    ).expect("should be able to get this revision issuer mare");
+    const fakeMirror = roomStateRevisionIssuer as FakeRoomStateRevisionIssuer;
     roomStateRevisionIssuer.on("revision", (revision, changes) => {
       store.handleRevision(revision, changes);
     });
-    roomStateRevisionIssuer.appendState([
+    fakeMirror.appendState([
       describeRoomMember({
         sender: DraupnirUserID,
         room_id: exampleRoom.toRoomIDOrAlias(),

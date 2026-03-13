@@ -24,5 +24,5 @@ export function isSenderJoinedInRevision(
   membership: RoomMembershipRevision
 ): boolean {
   const senderMembership = membership.membershipForUser(senderUserID);
-  return Boolean(senderMembership?.content.membership === Membership.Join);
+  return senderMembership?.content.membership === Membership.Join;
 }

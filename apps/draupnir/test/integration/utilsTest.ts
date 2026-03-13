@@ -10,11 +10,7 @@
 
 import { strict as assert } from "assert";
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
-import {
-  DraupnirTestContext,
-  draupnirClient,
-  draupnirSafeEmitter,
-} from "./mjolnirSetupUtils";
+import { DraupnirTestContext, draupnirSafeEmitter } from "./mjolnirSetupUtils";
 import {
   NoticeMessageContent,
   RoomEvent,

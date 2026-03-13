@@ -91,6 +91,10 @@ export default tseslint.config(
       ],
       // This rule is unstable as hell and tries to apply itself to interfaces.
       "@typescript-eslint/no-unnecessary-type-parameters": "off",
+      "@typescript-eslint/no-empty-object-type": [
+        "error",
+        { allowInterfaces: "with-single-extends" },
+      ],
       // We intentionally use enums to compare against non enum values, but no doubt this one will bite us in the ass later
     },
     ignores,
@@ -109,9 +113,11 @@ export default tseslint.config(
       "@typescript-eslint/no-deprecated": [
         "error",
         {
-          allow: [{ from: "file", name: "logMessage" }],
+          allow: [{ from: "file", name: "logMessage" }, { from: "file", name: "allocateProtection"}],
         },
       ],
+      // We intentionally compare enums to non enum values but no doubt it will bite us in the ass later
+      "@typescript-eslint/no-unsafe-enum-comparison": "off",
     },
     ignores,
   }

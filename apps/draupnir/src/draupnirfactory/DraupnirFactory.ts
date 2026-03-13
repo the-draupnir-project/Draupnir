@@ -43,7 +43,7 @@ async function safelyFetchProfile(
 ): Promise<{ displayname?: string } | undefined> {
   const clientProfileResult = await client.getUserProfile(clientUserID).then(
     (value) => Ok(value),
-    (error) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
+    (error: unknown) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
   );
   // We opt to report to the log rather than fail outright. Because this is on the critical startup path
   // and when we did crash, we had unexplained server behaviour https://github.com/the-draupnir-project/Draupnir/issues/703
@@ -54,7 +54,7 @@ async function safelyFetchProfile(
     );
     return undefined;
   } else {
-    return clientProfileResult.ok;
+    return clientProfileResult.ok as { displayname?: string };
   }
 }
 

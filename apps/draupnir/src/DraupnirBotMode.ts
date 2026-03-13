@@ -276,7 +276,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
 
   public async maybeRecoverWithSafeMode(
     error: ResultError,
-    options?: SafeModeToggleOptions | undefined
+    options?: SafeModeToggleOptions
   ): Promise<Result<SafeModeDraupnir>> {
     switch (this.config.safeMode?.bootOption) {
       case SafeModeBootOption.Never:

@@ -200,7 +200,7 @@ export class SqliteRoomStateBackingStore
         .prepare(`SELECT json(event) FROM room_state_event WHERE room_id = ?`)
         .pluck()
         .iterate(roomID) as IterableIterator<string>) {
-        const rawJson = JSON.parse(event, jsonReviver);
+        const rawJson: unknown = JSON.parse(event, jsonReviver);
         // We can't trust what's in the store, because our event decoders might have gotten
         // stricter in more recent versions. Meaning the store could have invalid events
         // that we don't want to blindly intern.

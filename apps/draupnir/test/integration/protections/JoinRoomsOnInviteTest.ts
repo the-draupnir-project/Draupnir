@@ -19,7 +19,7 @@ async function setupProtectedRooms(
 ): Promise<StringRoomID[]> {
   await moderator.joinRoom(draupnir.managementRoomID);
   return await Promise.all(
-    [...Array(numberOfRooms)].map(async (_) => {
+    [...Array<unknown>(numberOfRooms)].map(async (_) => {
       const room = await moderator.createRoom({
         invite: [draupnir.clientUserID],
       });
