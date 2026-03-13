@@ -27,6 +27,8 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Unshallow for git describe so we can create version.txt
         run: git fetch --prune --unshallow --tags --all --force
+      - name: Set lowercase image owner
+        run: echo "IMAGE_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -59,4 +61,4 @@ jobs:
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/draupnir:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/draupnir:latest
