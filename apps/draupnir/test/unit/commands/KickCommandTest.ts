@@ -30,7 +30,7 @@ async function createProtectedRooms() {
   return await describeProtectedRoomsSet({
     rooms: [
       {
-        membershipDescriptions: [...Array(50)].map((_, index) => ({
+        membershipDescriptions: [...Array<unknown>(50)].map((_, index) => ({
           membership: Membership.Join,
           sender: `@${index}:testserver.example.com` as StringUserID,
         })),

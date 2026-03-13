@@ -63,7 +63,7 @@ describe("Ban propagation test", function () {
       const spamUserID = (await spammer.getUserId()) as StringUserID;
       await moderator.joinRoom(draupnir.managementRoomID);
       const protectedRooms = await Promise.all(
-        [...Array(5)].map(async (_) => {
+        [...Array<unknown>(5)].map(async (_) => {
           const room = await moderator.createRoom({
             invite: [draupnir.clientUserID, spamUserID],
           });

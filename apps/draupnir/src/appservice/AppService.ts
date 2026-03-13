@@ -275,7 +275,8 @@ export class MjolnirAppService {
         );
     } catch (e: unknown) {
       log.error(
-        `Failed to join the room by ${mxEvent.sender} to display the welcome flow`
+        `Failed to join the room by ${mxEvent.sender} to display the welcome flow`,
+        e
       );
     }
     try {

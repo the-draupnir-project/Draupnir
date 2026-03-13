@@ -37,7 +37,7 @@ export class SynapseHTTPAntispamRoomExplorer implements RoomExplorer {
     );
     this.batcher = new StandardBatcher(
       () =>
-        new ConstantPeriodItemBatch<StringRoomID, void>(
+        new ConstantPeriodItemBatch<StringRoomID, undefined>(
           this.forwardDiscoveredBatch,
           { waitPeriodMS: this.batchWaitPeriodMS }
         )
@@ -46,7 +46,7 @@ export class SynapseHTTPAntispamRoomExplorer implements RoomExplorer {
 
   private readonly forwardDiscoveredBatch = async function (
     this: SynapseHTTPAntispamRoomExplorer,
-    rawEntries: [StringRoomID, void][]
+    rawEntries: [StringRoomID, undefined][]
   ): Promise<void> {
     const discoveryResult = await this.discoveredRoomStore.checkRoomsDiscovered(
       rawEntries.map(([roomID]) => ({ roomID }))

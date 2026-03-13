@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { isPolicyRoom, readTestConfig, setupHarness } from "../utils/harness";
+import { readTestConfig, setupHarness } from "../utils/harness";
 import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
@@ -60,9 +60,11 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     await Promise.all(
       roomsInvitedTo.map((roomId) => moderator.joinRoom(roomId))
     );
-    const managementRoomId = roomsInvitedTo.filter(
-      async (roomId) => !(await isPolicyRoom(moderator, roomId))
-    )[0];
+    // FIXME:
+    // Originally this was finding the management room by filtering out the rooms
+    // that were not policy rooms. But this code never actually worked, and
+    // it just fetches the first invite. Obviously this needs to be fixed
+    const managementRoomId = roomsInvitedTo[0];
     if (managementRoomId === undefined) {
       throw new TypeError(`Unable to find management room`);
     }

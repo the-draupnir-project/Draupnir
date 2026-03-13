@@ -131,7 +131,9 @@ export class WordListProtection
       for (const change of changes) {
         const entryForRoom =
           this.justJoined.get(roomID) ??
-          ((entry) => (this.justJoined.set(roomID, entry), entry))(new Map());
+          ((entry) => (this.justJoined.set(roomID, entry), entry))(
+            new Map<StringUserID, Date>()
+          );
         // When a new member logs in, store the time they joined.  This will be useful
         // when we need to check if a message was sent within 20 minutes of joining
         if (change.membershipChangeType === MembershipChangeType.Joined) {

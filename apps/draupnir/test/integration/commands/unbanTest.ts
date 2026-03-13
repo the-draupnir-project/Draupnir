@@ -41,7 +41,7 @@ async function createProtectedRoomsSetWithBan(
   { numberOfRooms }: { numberOfRooms: number }
 ): Promise<StringRoomID[]> {
   return await Promise.all(
-    [...Array(numberOfRooms)].map(async (_) => {
+    [...Array<unknown>(numberOfRooms)].map(async (_) => {
       const roomID = (await draupnir.client.createRoom()) as StringRoomID;
       const room = MatrixRoomReference.fromRoomID(roomID, []);
       (
