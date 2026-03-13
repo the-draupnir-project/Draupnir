@@ -68,9 +68,8 @@ export function constructWebAPIs(draupnir: Draupnir): WebAPIs {
  * The appservice also implements `SafeModeToggle` but has different requirements.
  * This interface is exlusively used by the entrypoints to draupnir's bot mode.
  */
-interface BotModeTogle extends SafeModeToggle {
+interface BotModeTogle extends SafeModeToggle, AsyncDisposable {
   encryptionInitialized(): Promise<void>;
-  stopEverything(): void;
   startFromScratch(
     options?: SafeModeToggleOptions
   ): Promise<Result<Draupnir | SafeModeDraupnir>>;
@@ -303,14 +302,9 @@ export class DraupnirBotModeToggle implements BotModeTogle {
 
   public async encryptionInitialized(): Promise<void> {
     if (this.draupnir !== null) {
-      try {
-        this.webAPIs = constructWebAPIs(this.draupnir);
-        await this.webAPIs.start();
-        await this.draupnir.startupComplete();
-      } catch (e) {
-        await this.stopEverything();
-        throw e;
-      }
+      this.webAPIs = constructWebAPIs(this.draupnir);
+      await this.webAPIs.start();
+      await this.draupnir.startupComplete();
     } else if (this.safeModeDraupnir !== null) {
       this.safeModeDraupnir.startupComplete();
     }
@@ -328,7 +322,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     this.safeModeDraupnir = null;
   }
 
-  public async stopEverything(): Promise<void> {
+  public async [Symbol.asyncDispose](): Promise<void> {
     await this.stopDraupnir();
     this.stopSafeModeDraupnir();
   }

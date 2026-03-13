@@ -102,7 +102,7 @@ void (async function () {
       `Failed to setup draupnir from the config ${config.dataPath}`,
       err
     );
-    await bot?.stopEverything();
+    await bot?.[Symbol.asyncDispose]();
     throw err;
   }
   try {
@@ -111,7 +111,7 @@ void (async function () {
     healthz.isHealthy = true;
   } catch (err) {
     console.error(`Draupnir failed to start:`, err);
-    await bot.stopEverything();
+    await bot[Symbol.asyncDispose]();
     throw err;
   }
 })();
