@@ -20,15 +20,18 @@ jobs:
       packages: write
       contents: read
       attestations: write
+      artifact-metadata: write
     steps:
       - name: Check out
         uses: actions/checkout@v4
       - name: Get release tag
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        id: release_version
+        run: echo "release_version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Unshallow for git describe so we can create version.txt
         run: git fetch --prune --unshallow --tags --all --force
       - name: Set lowercase image owner
-        run: echo "IMAGE_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        id: image_owner
+        run: echo "image_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -48,7 +51,7 @@ jobs:
 
       - name: Build and push image to GHCR
         id: push_ghcr
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -61,4 +64,12 @@ jobs:
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
           tags: |
-            ghcr.io/${{ env.IMAGE_OWNER }}/draupnir:${{ env.RELEASE_VERSION }}
+            ghcr.io/${{ steps.image_owner.outputs.image_owner }}/draupnir:${{ steps.release_version.outputs.release_version }}
+
+      - name: Attest pushed image
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/draupnir
+          subject-digest: ${{ steps.push_ghcr.outputs.digest }}
+          push-to-registry: true
