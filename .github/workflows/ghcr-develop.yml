@@ -17,6 +17,7 @@ env:
 jobs:
   ghcr-develop:
     runs-on: ubuntu-latest
+    if: github.ref_name == 'main'
     permissions:
       id-token: write
       packages: write
