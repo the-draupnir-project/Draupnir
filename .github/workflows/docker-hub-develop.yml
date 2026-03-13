@@ -59,7 +59,8 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
             org.opencontainers.image.licenses=AFL-3.0
           sbom: true
           tags: |
