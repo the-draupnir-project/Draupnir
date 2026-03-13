@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      packages: write
       contents: read
       attestations: write
+      artifact-metadata: write
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
 
       - name: Build image
         id: push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -65,3 +65,12 @@ jobs:
           sbom: true
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
+
+      - name: Attest pushed image
+        id: attest
+        if: ${{ env.PUSH == 'true' }}
+        uses: actions/attest@v4
+        with:
+          subject-name: docker.io/${{ env.DOCKER_NAMESPACE }}/draupnir
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
