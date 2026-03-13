@@ -127,7 +127,7 @@ export function safeModeStatusInfo(
     configStatus,
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
-    repository: PACKAGE_JSON["repository"] ?? "Unknown",
+    repository: (PACKAGE_JSON["repository"] as string | undefined) ?? "Unknown",
   };
 }
 
