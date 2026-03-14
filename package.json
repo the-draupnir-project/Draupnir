@@ -24,7 +24,7 @@
     "test:manual": "NODE_ENV=harness ts-node test/integration/manualLaunchScript.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.7.0",
+    "@eslint/js": "^10.0.0",
     "@types/better-sqlite3": "^7.6.9",
     "@types/config": "^3.3.1",
     "@types/crypto-js": "^4.2.2",
@@ -39,14 +39,14 @@
     "@types/pg": "^8.6.5",
     "@types/request": "^2.48.12",
     "crypto-js": "^4.2.0",
-    "eslint": "^9.7.0",
-    "expect": "^29.7.0",
-    "mocha": "^10.7.0",
+    "eslint": "^10.0.0",
+    "expect": "^30.0.0",
+    "mocha": "^11.0.0",
     "prettier": "^3.3.3",
     "ts-auto-mock": "^3.7.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^7.16.1"
+    "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
