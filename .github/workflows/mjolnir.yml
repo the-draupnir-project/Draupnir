@@ -55,10 +55,10 @@ jobs:
         with:
           crate: mx-tester
           version: "0.3.3"
-      - name: Setup image
-        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Setup dependencies
         run: corepack npm install && corepack npm run build:all
+      - name: Setup image
+        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Run tests
         run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester run
       - name: Cleanup
@@ -77,10 +77,10 @@ jobs:
         with:
           crate: mx-tester
           version: "0.3.3"
-      - name: Setup image
-        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Setup dependencies
         run: corepack npm install && corepack npm run build:all
+      - name: Setup image
+        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Run tests
         run: corepack npm run -w apps/draupnir test:appservice:integration
       - name: Cleanup
