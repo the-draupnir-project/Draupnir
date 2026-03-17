@@ -13,11 +13,11 @@
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
-    "test:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\"",
-    "test:integration:single": "NODE_ENV=harness mocha --require test/tsnode.cjs --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json",
-    "test:appservice:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --timeout 300000 --project ./tsconfig.json \"test/appservice/integration/**/*Test.ts\"",
-    "test:appservice:integration:single": "NODE_ENV=harness mocha --require test/tsnode.cjs --timeout 300000 --project ./tsconfig.json",
-    "test:manual": "NODE_ENV=harness ts-node test/integration/manualLaunchScript.ts"
+    "test:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\" -- --draupnir-config ../../config/harness.yaml",
+    "test:integration:single": "NODE_ENV=harness mocha --require test/tsnode.cjs --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json -- --draupnir-config ../../config/harness.yaml",
+    "test:appservice:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --timeout 300000 --project ./tsconfig.json \"test/appservice/integration/**/*Test.ts\" -- --draupnir-config ../../config/harness.yaml",
+    "test:appservice:integration:single": "NODE_ENV=harness mocha --require test/tsnode.cjs --timeout 300000 --project ./tsconfig.json -- --draupnir-config ../../config/harness.yaml",
+    "test:manual": "NODE_ENV=harness ts-node test/integration/manualLaunchScript.ts -- --draupnir-config ../../config/harness.yaml"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",

@@ -26,9 +26,9 @@ jobs:
         with:
           node-version: "20"
       - run: corepack enable
-      - run: corepack yarn install
-      - run: corepack yarn build
-      - run: corepack yarn lint
+      - run: corepack npm install
+      - run: corepack npm run build:all
+      - run: corepack npm run lint
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -38,8 +38,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "20"
-      - run: corepack yarn install
-      - run: corepack yarn test:unit
+      - run: corepack npm install
+      - run: corepack npm run -ws test --if-present
+      - run: corepack npm run -w apps/draupnir test:unit
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
@@ -57,7 +58,7 @@ jobs:
       - name: Setup image
         run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Setup dependencies
-        run: corepack yarn install
+        run: corepack npm install && corepack npm run build:all
       - name: Run tests
         run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester run
       - name: Cleanup
@@ -79,8 +80,8 @@ jobs:
       - name: Setup image
         run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
       - name: Setup dependencies
-        run: corepack yarn install
+        run: corepack npm install && corepack npm run build:all
       - name: Run tests
-        run: corepack yarn test:appservice:integration
+        run: corepack npm run -w apps/draupnir test:appservice:integration
       - name: Cleanup
         run: mx-tester down

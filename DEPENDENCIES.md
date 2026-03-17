@@ -20,3 +20,11 @@ also matrix-appservice-bridge.
 https://github.com/porsager/postgres/issues/1143
 
 This is pinned specifically as a work around for this issue.
+
+## Workspace dependencies
+
+Workspace dependencies should be kept at their same version and changesets
+should be used for any changes. Package release should only be made from the
+main branch once changesets have been merged and the associated package versions
+bumped. This allows for the workspace state to always be used to build Draupnir
+reproducibly on any branch of PR.
