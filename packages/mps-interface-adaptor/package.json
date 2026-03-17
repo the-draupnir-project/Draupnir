@@ -9,8 +9,7 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
-    "lint": "eslint --cache src",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint --cache src"
   },
   "author": {
     "name": "Gnuxie",
