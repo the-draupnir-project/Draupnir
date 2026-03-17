@@ -21,8 +21,7 @@
     "lint": "eslint src && prettier src --check",
     "make:docs": "typedoc",
     "test": "jest --coverage",
-    "test:ci": "cross-env CI=1 jest",
-    "prepare": "npm run build"
+    "test:ci": "cross-env CI=1 jest"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
