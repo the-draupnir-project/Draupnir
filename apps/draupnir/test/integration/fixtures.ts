@@ -122,6 +122,7 @@ export const mochaHooks = {
           ),
         ]);
         const client = draupnirClient();
+        // FIXME: I don't believe this EVER runs lmao.
         // remove alias from management room and leave it.
         if (client !== null && this.managementRoomAlias !== undefined) {
           await teardownManagementRoom(

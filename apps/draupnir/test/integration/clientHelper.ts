@@ -95,7 +95,7 @@ export async function registerUser(
       };
       await new Promise((resolve, reject) => {
         (getRequestFn() as RequestFunction)(params, (error: unknown) => {
-          if (error === undefined) {
+          if (error === undefined || error === null) {
             resolve(undefined);
           } else if (error instanceof Error) {
             reject(error);
@@ -104,6 +104,7 @@ export async function registerUser(
           }
         });
       });
+      return;
     } catch (e) {
       // In case of timeout or throttling, backoff and retry.
       if (

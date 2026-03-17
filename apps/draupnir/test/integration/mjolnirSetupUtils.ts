@@ -173,6 +173,10 @@ export async function makeBotModeToggle(
     config.homeserverUrl,
     await client.getUserId()
   );
+
+  await client
+    .deleteRoomAlias(config.managementRoom)
+    .catch((_: unknown) => undefined);
   await ensureAliasedRoomExists(client, config.managementRoom);
   const toggle = await DraupnirBotModeToggle.create(
     client,
