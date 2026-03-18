@@ -39,8 +39,7 @@ jobs:
         with:
           node-version: "20"
       - run: corepack npm install
-      - run: corepack npm run -ws test --if-present
-      - run: corepack npm run -w apps/draupnir test:unit
+      - run: corepack npm run test
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
