@@ -11,6 +11,7 @@
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
     "build:assets": "cp src/protections/DraupnirNews/news.json dist/protections/DraupnirNews/news.json && npm run describe-version",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
+    "harness-registration": "node dist/appservice/cli.js -r -u \"http://host.docker.internal:9000\" --enable-source-maps",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
     "test:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\" -- --draupnir-config ../../config/harness.yaml",

@@ -20,9 +20,8 @@ up:
       $MX_TEST_CWD/apps/draupnir/test/nginx.conf:/etc/nginx/nginx.conf:ro -v
       $MX_TEST_CWD/apps/draupnir/test/draupnir_news.json:/var/www/test/draupnir_news.json:ro
       -d nginx
-    - node apps/draupnir/dist/appservice/cli.js -r -u
-      "http://host.docker.internal:9000" --enable-source-maps
-    - cp draupnir-registration.yaml $MX_TEST_SYNAPSE_DIR/data/
+    - corepack npm run -w apps/draupnir harness-registration
+    - cp apps/draupnir/draupnir-registration.yaml $MX_TEST_SYNAPSE_DIR/data/
   after:
     # Wait until Synapse is ready
     - until curl localhost:9999 --stderr /dev/null > /dev/null; do echo "Waiting
