@@ -39,6 +39,7 @@ jobs:
         with:
           node-version: "20"
       - run: corepack npm install
+      - run: corepack npm run build:all
       - run: corepack npm run test
   integration:
     name: Integration tests
