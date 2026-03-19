@@ -1,0 +1,138 @@
+// SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import {
+  describeCapabilityRenderer,
+  DescriptionMeta,
+  RoomBasicDetails,
+} from "matrix-protection-suite";
+import { RoomTakedownCapability } from "./RoomTakedownCapability";
+import { RendererMessageCollector } from "./RendererMessageCollector";
+import {
+  MatrixRoomReference,
+  StringRoomID,
+} from "@the-draupnir-project/matrix-basic-types";
+import { isError, Result } from "@gnuxie/typescript-result";
+import {
+  DeadDocumentJSX,
+  DocumentNode,
+} from "@the-draupnir-project/interface-manager";
+import { Draupnir } from "../Draupnir";
+import {
+  renderFailedSingularConsequence,
+  renderRoomPill,
+} from "@the-draupnir-project/mps-interface-adaptor";
+
+function renderCodeOrDefault(
+  item: string | undefined,
+  defaultText: string
+): DocumentNode {
+  return item === undefined ? (
+    <fragment>{defaultText}</fragment>
+  ) : (
+    <code>{item}</code>
+  );
+}
+
+function renderTakedown(
+  roomID: StringRoomID,
+  details: RoomBasicDetails
+): DocumentNode {
+  return (
+    // DO NOT render a room pill because it could show the avatar of the room,
+    // which is not good.
+    <details>
+      <summary>
+        Successfully takendown the room <code>{roomID}</code>
+      </summary>
+      <ul>
+        <li>name: {renderCodeOrDefault(details.name, "no name available")}</li>
+        <li>
+          creator:{" "}
+          {renderCodeOrDefault(
+            details.creator,
+            "creator information unavailable"
+          )}
+        </li>
+        <li>
+          topic: {renderCodeOrDefault(details.topic, "topic unavailable")}
+        </li>
+      </ul>
+    </details>
+  );
+}
+
+class StandardRoomTakedownCapabilityRenderer implements RoomTakedownCapability {
+  constructor(
+    private readonly description: DescriptionMeta,
+    private readonly messageCollector: RendererMessageCollector,
+    private readonly capability: RoomTakedownCapability
+  ) {
+    // nothing to do.
+  }
+
+  public get requiredEventPermissions() {
+    return this.capability.requiredEventPermissions;
+  }
+
+  public get requiredPermissions() {
+    return this.capability.requiredPermissions;
+  }
+
+  public get requiredStatePermissions() {
+    return this.capability.requiredStatePermissions;
+  }
+
+  public async isRoomTakendown(roomID: StringRoomID): Promise<Result<boolean>> {
+    // pass this one through without rendering because it doesn't really have a consequence
+    return await this.capability.isRoomTakendown(roomID);
+  }
+
+  public async takedownRoom(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    const capabilityResult = await this.capability.takedownRoom(roomID);
+    if (isError(capabilityResult)) {
+      this.messageCollector.addOneliner(
+        this.description,
+        this.capability,
+        renderFailedSingularConsequence(
+          this.description,
+          <span>
+            Failed to takedown room{" "}
+            {renderRoomPill(MatrixRoomReference.fromRoomID(roomID))}
+          </span>,
+          capabilityResult.error
+        )
+      );
+      return capabilityResult;
+    }
+    this.messageCollector.addOneliner(
+      this.description,
+      this.capability,
+      renderTakedown(roomID, capabilityResult.ok)
+    );
+    return capabilityResult;
+  }
+
+  public async getRoomDetails(
+    roomID: StringRoomID
+  ): Promise<Result<RoomBasicDetails>> {
+    return await this.capability.getRoomDetails(roomID);
+  }
+}
+
+describeCapabilityRenderer<RoomTakedownCapability, Draupnir>({
+  name: "StandardRoomTakedownCapabilityRenderer",
+  description: "Renders the standard room takedown capability result",
+  interface: "RoomTakedownCapability",
+  isDefaultForInterface: true,
+  factory(description, draupnir, capability) {
+    return new StandardRoomTakedownCapabilityRenderer(
+      description,
+      draupnir.capabilityMessageRenderer,
+      capability
+    );
+  },
+});

@@ -1,0 +1,19 @@
+{
+  "name": "@the-draupnir-project/tsconfig",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Gnuxie",
+    "email": "Gnuxie@protonmail.com"
+  },
+  "description": "Templates for new packages",
+  "repository": {
+    "url": "https://github.com/the-draupnir-project/Draupnir.git",
+    "type": "git"
+  },
+  "files": [
+    "src/*"
+  ]
+}

@@ -1,18 +1,17 @@
-# SPDX-FileCopyrightText: 2024 Aminda Suomalainen <suomalainen+git@mikaela.info>
+# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 #
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: 0BSD
 
 root = true
 
 [*]
-end_of_line = lf
-trim_trailing_whitespace = true
-insert_final_newline = true
 charset = utf-8
 indent_style = space
-indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-[{LICENSE,NOTICE,*.{md,yml,yaml,json,txt}}]
+[LICENSES/**.txt]
 trim_trailing_whitespace = false
 indent_style = space
 indent_size = unset

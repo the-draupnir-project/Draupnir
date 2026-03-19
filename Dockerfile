@@ -10,16 +10,15 @@ COPY . /tmp/src
 RUN cd /tmp/src && git describe > version.txt.tmp && mv version.txt.tmp version.txt
 # build and install
 RUN cd /tmp/src \
-    && yarn install --frozen-lockfile --network-timeout 100000 \
-    && yarn build \
-    && yarn install --frozen-lockfile --production --network-timeout 100000
+    && npm ci \
+    && npm run build \
+    && npm prune --production
 
 FROM node:20-slim as final-stage
-COPY --from=build-stage /tmp/src/version.txt version.txt
-COPY --from=build-stage /tmp/src/lib/ /draupnir/
+COPY --from=build-stage /tmp/src/apps/draupnir /apps/draupnir
+COPY --from=build-stage /tmp/src/packages /packages
 COPY --from=build-stage /tmp/src/node_modules /node_modules
 COPY --from=build-stage /tmp/src/draupnir-entrypoint.sh /
-COPY --from=build-stage /tmp/src/package.json /
 
 ENV NODE_ENV=production
 ENV NODE_CONFIG_DIR=/data/config

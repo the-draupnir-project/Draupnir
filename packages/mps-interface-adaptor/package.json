@@ -1,0 +1,34 @@
+{
+  "name": "@the-draupnir-project/mps-interface-adaptor",
+  "version": "0.5.3",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --cache src"
+  },
+  "author": {
+    "name": "Gnuxie",
+    "email": "Gnuxie@protonmail.com"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "url": "https://github.com/the-draupnir-project/mps-interface-adaptor.git",
+    "type": "git"
+  },
+  "private": false,
+  "devDependencies": {
+    "@types/node": "^20.17.57",
+    "matrix-protection-suite": "file:../matrix-protection-suite"
+  },
+  "peerDependencies": {
+    "@gnuxie/typescript-result": "^1.0.0",
+    "@sinclair/typebox": "^0.34.13",
+    "@the-draupnir-project/interface-manager": "^4.2.3",
+    "matrix-protection-suite": "file:../matrix-protection-suite"
+  }
+}

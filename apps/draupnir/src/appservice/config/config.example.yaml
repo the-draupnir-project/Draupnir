@@ -1,0 +1,20 @@
+homeserver:
+  # The Matrix server name, this will be the name of the server in your matrix id.
+  domain: "localhost:9999"
+  # The url for the appservice to call the client server API from.
+  url: http://localhost:8081
+
+# Database configuration for storing which Draupnirs have been provisioned.
+db:
+  engine: "postgres"
+  connectionString: "postgres://mjolnir-tester:mjolnir-test@localhost:8083/mjolnir-test-db"
+
+# A room you have created that scopes who can access the appservice.
+# See docs/access_control.md
+adminRoom: "#draupnir-admin:localhost:9999"
+
+# The directory the bot should store various bits of information in
+dataPath: "/data/storage"
+
+roomStateBackingStore:
+  enabled: false

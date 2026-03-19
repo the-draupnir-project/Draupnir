@@ -1,0 +1,15 @@
+homeserver:
+  domain: "localhost:9999"
+  url: http://localhost:8081
+
+db:
+  engine: "postgres"
+  connectionString: "postgres://mjolnir-tester:mjolnir-test@127.0.0.1:8083/mjolnir-test-db"
+
+adminRoom: "#draupnir-admin:localhost:9999"
+
+# The directory the bot should store various bits of information in
+dataPath: "./test/harness/mjolnir-data/"
+
+roomStateBackingStore:
+  enabled: false

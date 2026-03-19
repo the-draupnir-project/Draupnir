@@ -1,0 +1,52 @@
+version = 1
+SPDX-PackageName = "@gnuxie/tsconfig"
+SPDX-PackageSupplier = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/Gnuxie/tsconfig"
+
+[[annotations]]
+path = "REUSE.toml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "tsconfig.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "tsconfig.test.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "package-lock.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "yarn.lock"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "package.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "NOTICE"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = "typedoc.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"

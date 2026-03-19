@@ -1,0 +1,79 @@
+// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 The Matrix.org Foundation C.I.C.
+//
+// SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
+//
+// SPDX-FileAttributionText: <text>
+// This modified file incorporates work from mjolnir
+// https://github.com/matrix-org/mjolnir
+// </text>
+
+import { readTestConfig, setupHarness } from "../utils/harness";
+import { newTestUser } from "../../integration/clientHelper";
+import { getFirstReply } from "../../integration/commands/commandUtils";
+import { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import { MjolnirAppService } from "../../../src/appservice/AppService";
+
+interface Context extends Mocha.Context {
+  moderator?: MatrixClient;
+  appservice?: MjolnirAppService | undefined;
+}
+
+describe("Test that the app service can provision a draupnir on invite of the appservice bot", function () {
+  afterEach(function (this: Context) {
+    this.moderator?.stop();
+    if (this.appservice) {
+      return this.appservice.close();
+    } else {
+      console.warn("Missing Appservice in this context, so cannot stop it.");
+      return Promise.resolve(); // TS7030: Not all code paths return a value.
+    }
+  });
+  it("A moderator that requests a draupnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
+    const config = readTestConfig();
+    this.appservice = await setupHarness();
+    const appservice = this.appservice;
+    // create a user to act as the moderator
+    const moderator = await newTestUser(config.homeserver.url, {
+      name: { contains: "test" },
+    });
+    const roomWeWantProtecting = await moderator.createRoom();
+    // have the moderator invite the appservice bot in order to request a new draupnir
+    this.moderator = moderator;
+    const roomsInvitedTo: string[] = [];
+    await new Promise((resolve) => {
+      void (async () => {
+        moderator.on("room.invite", (roomId: string) => {
+          roomsInvitedTo.push(roomId);
+          // the appservice should invite the moderator to a policy room and a management room.
+          if (roomsInvitedTo.length === 2) {
+            resolve(null);
+          }
+        });
+        await moderator.start();
+        await moderator.inviteUser(
+          appservice.bridge.getBot().getUserId(),
+          roomWeWantProtecting
+        );
+      })();
+    });
+    await Promise.all(
+      roomsInvitedTo.map((roomId) => moderator.joinRoom(roomId))
+    );
+    // FIXME:
+    // Originally this was finding the management room by filtering out the rooms
+    // that were not policy rooms. But this code never actually worked, and
+    // it just fetches the first invite. Obviously this needs to be fixed
+    const managementRoomId = roomsInvitedTo[0];
+    if (managementRoomId === undefined) {
+      throw new TypeError(`Unable to find management room`);
+    }
+    // Check that the newly provisioned draupnir is actually responsive.
+    await getFirstReply(moderator, managementRoomId, () => {
+      return moderator.sendMessage(managementRoomId, {
+        body: `!draupnir status`,
+        msgtype: "m.text",
+      });
+    });
+  });
+});

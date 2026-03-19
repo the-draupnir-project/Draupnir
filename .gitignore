@@ -8,7 +8,12 @@ config/*
 
 # Draupnir test data
 draupnir-registration.yaml
-test/harness/mjolnir-data/*
+
+# Monorepo
+**/node_modules/
+**/dist/
+**/lib/
+*.tsbuildinfo
 
 # Misc
 

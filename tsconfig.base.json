@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "node16",
+    "lib": [
+      "es2024"
+    ],
+    "declaration": true,
+    "declarationMap": true,
+    "exactOptionalPropertyTypes": true,
+    "sourceMap": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": false,
+    "moduleResolution": "node16",
+    "resolveJsonModule": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true,
+  }
+}

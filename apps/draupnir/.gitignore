@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Gnuxie <Gnuxie@protonmail.com>
+#
+# SPDX-License-Identifier: 0BSD
+
+test/harness/mjolnir-data/*

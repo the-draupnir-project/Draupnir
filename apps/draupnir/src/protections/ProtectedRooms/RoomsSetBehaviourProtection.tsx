@@ -1,0 +1,150 @@
+// SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
+//
+// SPDX-License-Identifier: AFL-3.0
+
+import {
+  AbstractProtection,
+  allocateProtection,
+  describeProtection,
+  MembershipChange,
+  MembershipEvent,
+  OwnLifetime,
+  ProtectedRoomsSet,
+  Protection,
+  ProtectionDescription,
+  RoomMembershipRevision,
+  RoomStateRevision,
+  StateChange,
+  UnknownConfig,
+} from "matrix-protection-suite";
+import { DraupnirProtection } from "../Protection";
+import { Draupnir } from "../../Draupnir";
+import { Ok, Result } from "@gnuxie/typescript-result";
+import { ProtectedJoinedRooms } from "./ProtectJoinedRooms";
+import { UnprotectPartedRooms } from "./UnprotectPartedRooms";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
+import { ProtectReplacementRooms } from "./ProtectReplacementRooms";
+import { WatchReplacementPolicyRooms } from "./WatchReplacementPolicyRooms";
+
+export type RoomsSetBehaviourCapabailities = Record<string, never>;
+export type RoomsSetBehaviourSettings = UnknownConfig;
+
+export type RoomsSetBehaviourDescription = ProtectionDescription<
+  Draupnir,
+  RoomsSetBehaviourSettings,
+  RoomsSetBehaviourCapabailities
+>;
+
+export class RoomsSetBehaviour
+  extends AbstractProtection<RoomsSetBehaviourDescription>
+  implements DraupnirProtection<RoomsSetBehaviourDescription>
+{
+  private readonly protectJoinedRooms: ProtectedJoinedRooms;
+  private readonly unprotectedPartedRooms: UnprotectPartedRooms;
+  private readonly protectReplacementRooms: ProtectReplacementRooms;
+  private readonly watchReplacementPolicyRooms: WatchReplacementPolicyRooms;
+  public constructor(
+    description: RoomsSetBehaviourDescription,
+    lifetime: OwnLifetime<Protection<RoomsSetBehaviourDescription>>,
+    capabilities: RoomsSetBehaviourCapabailities,
+    protectedRoomsSet: ProtectedRoomsSet,
+    private readonly draupnir: Draupnir
+  ) {
+    super(description, lifetime, capabilities, protectedRoomsSet, {});
+    this.protectJoinedRooms = new ProtectedJoinedRooms(
+      this.draupnir.clientUserID,
+      this.draupnir.managementRoomID,
+      this.protectedRoomsSet,
+      this.draupnir.clientRooms,
+      this.draupnir.clientPlatform.toRoomMessageSender()
+    );
+    this.unprotectedPartedRooms = new UnprotectPartedRooms(
+      this.draupnir.clientUserID,
+      this.draupnir.managementRoomID,
+      this.protectedRoomsSet.protectedRoomsManager,
+      this.draupnir.clientPlatform.toRoomMessageSender()
+    );
+    this.protectReplacementRooms = new ProtectReplacementRooms(
+      this.draupnir.managementRoomID,
+      this.draupnir.clientPlatform.toRoomJoiner(),
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.protectedRoomsSet.protectedRoomsManager
+    );
+    this.watchReplacementPolicyRooms = new WatchReplacementPolicyRooms(
+      this.draupnir.managementRoomID,
+      this.draupnir.clientPlatform.toRoomJoiner(),
+      this.draupnir.clientPlatform.toRoomMessageSender(),
+      this.draupnir.clientPlatform.toRoomReactionSender(),
+      this.draupnir.protectedRoomsSet.watchedPolicyRooms,
+      this.draupnir.roomStateManager,
+      this.draupnir.policyRoomManager,
+      this.draupnir.reactionHandler
+    );
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      void this.protectJoinedRooms.syncProtectedRooms();
+    }
+    void this.watchReplacementPolicyRooms.syncTombstonedPolicyRooms();
+  }
+
+  public handleMembershipChange(
+    _revision: RoomMembershipRevision,
+    changes: MembershipChange[]
+  ): Promise<Result<void>> {
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      this.protectJoinedRooms.handleMembershipChange(changes);
+    }
+    for (const change of changes) {
+      this.unprotectedPartedRooms.handleMembershipChange(change);
+    }
+    return Promise.resolve(Ok(undefined));
+  }
+
+  public handleExternalMembership(
+    roomID: StringRoomID,
+    event: MembershipEvent
+  ): void {
+    if (this.draupnir.config.protectAllJoinedRooms) {
+      this.protectJoinedRooms.handleExternalMembership(roomID, event);
+    }
+  }
+
+  public handleStateChange(
+    _revision: RoomStateRevision,
+    changes: StateChange[]
+  ): Promise<Result<void>> {
+    this.protectReplacementRooms.handleRoomStateChange(changes);
+    this.watchReplacementPolicyRooms.handleRoomStateChange(changes);
+    return Promise.resolve(Ok(undefined));
+  }
+
+  public handleProtectionDisable(): void {
+    this.watchReplacementPolicyRooms.unregisterListeners();
+  }
+}
+
+describeProtection<RoomsSetBehaviourCapabailities, Draupnir>({
+  name: RoomsSetBehaviour.name,
+  description:
+    "Unprotects parted rooms and update the list of protected rooms.",
+  capabilityInterfaces: {},
+  defaultCapabilities: {},
+  async factory(
+    description,
+    lifetime,
+    protectedRoomsSet,
+    draupnir,
+    capabilities,
+    _settings
+  ) {
+    return allocateProtection(
+      lifetime,
+      new RoomsSetBehaviour(
+        description,
+        lifetime,
+        capabilities,
+        protectedRoomsSet,
+        draupnir
+      )
+    );
+  },
+});

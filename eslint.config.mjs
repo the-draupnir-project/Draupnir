@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: CC0-1.0
+// SPDX-License-Identifier: 0BSD
 
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
@@ -17,69 +17,108 @@ const ignores = [
   "**/coverage/**",
   "**/dist/**",
   "**/lib/**",
+  "**/node_modules/**",
+  "**/*.js",
+  "**/*.jsx"
 ];
 
-const rulesFromMPS = {
-  "@typescript-eslint/explicit-function-return-type": "off",
-  "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-  // we implement a lot of interfaces that return promises with synchronous functions.
-  "require-await": "off",
-  "@typescript-eslint/require-await": "off",
-  // we need never because our code can be wrong!
-  "@typescript-eslint/restrict-template-expressions": [
-    "error",
-    { allowNever: true },
-  ],
-  // stylistic recommendation that doesn't play well with event emitter interfaces.
-  "@typescript-eslint/unified-signatures": "off",
-  // There are some compelling arguments for including this rule,
-  // but other than using namespaces, we don't have granular enough modules
-  // to be able to depend on their behaviour. This should be revisited.
-  "@typescript-eslint/no-extraneous-class": "off",
-  // We want to be able to create infinite loops.
-  "@typescript-eslint/no-unnecessary-condition": [
-    "error",
-    { allowConstantLoopConditions: true },
-  ],
-};
-
-export default tseslint.config({
-  // This is a typescript-eslint configurartion for typescript files.
-  // This will not work against js files.
-  files: ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx"],
-  extends: [eslint.configs.recommended, ...tseslint.configs.strictTypeChecked],
-  languageOptions: {
-    parserOptions: {
-      project: ["./tsconfig.json", "./test/tsconfig.json"],
+export default tseslint.config(
+  {
+    ignores
+  },
+  {
+    // This is a typescript-eslint configurartion for typescript files.
+    // This will not work against js files.
+    files: [
+      "packages/**/src/**/*.ts",
+      "packages/**/src/**/*.tsx",
+      "packages/**/test/**/*.ts",
+      "packages/**/test/**/*.tsx",
+      "apps/**/src/**/*.ts",
+      "apps/**/src/**/*.tsx",
+      "apps/**/test/**/*.ts",
+      "apps/**/test/**/*.tsx",
+    ],
+    extends: [
+      eslint.configs.recommended,
+      ...tseslint.configs.strictTypeChecked,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          "./apps/*/tsconfig.test.json",
+          "./apps/*/tsconfig.json",
+          "./packages/*/tsconfig.test.json",
+          "./packages/*/tsconfig.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
+    // This is needed in order to specify the desired behavior for its rules
+    plugins: {
+      "@typescript-eslint": tsplugin,
+    },
+    rules: {
+      // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
+      // e.g. "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+      // we implement a lot of interfaces that return promises with synchronous functions.
+      "require-await": "off",
+      "@typescript-eslint/require-await": "off",
+      // we need never because our code can be wrong!
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNever: true },
+      ],
+      // stylistic recommendation that doesn't play well with event emitter interfaces.
+      "@typescript-eslint/unified-signatures": "off",
+      // There are some compelling arguments for including this rule,
+      // but other than using namespaces, we don't have granular enough modules
+      // to be able to depend on their behaviour. This should be revisited.
+      "@typescript-eslint/no-extraneous-class": "off",
+      "@typescript-eslint/unbound-method": [
+        "error",
+        { ignoreStatic: true }
+      ],
+      // We want to be able to create infinite loops.
+      "@typescript-eslint/no-unnecessary-condition": [
+        "error",
+        { allowConstantLoopConditions: true },
+      ],
+      // This rule is unstable as hell and tries to apply itself to interfaces.
+      "@typescript-eslint/no-unnecessary-type-parameters": "off",
+      "@typescript-eslint/no-empty-object-type": [
+        "error",
+        { allowInterfaces: "with-single-extends" },
+      ],
+      // We intentionally use enums to compare against non enum values, but no doubt this one will bite us in the ass later
+    },
+    ignores,
   },
-  // This is needed in order to specify the desired behavior for its rules
-  plugins: {
-    "@typescript-eslint": tsplugin,
+  {
+    files: ["packages/matrix-protection-suite/**/*.{ts,tsx}"],
+    rules: {
+      // We intentionally compare enums to non enum values but no doubt it will bite us in the ass later
+      "@typescript-eslint/no-unsafe-enum-comparison": "off",
+    },
+    ignores,
   },
-  rules: {
-    // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
-    // e.g. "@typescript-eslint/explicit-function-return-type": "off",
-    ...rulesFromMPS,
-
-    // There is too much ambient `any` from the `matrix-bot-sdk` in our project to be able to use no-unsafe-*.
-    // We would really love to be able to set this to `error`.
-    "@typescript-eslint/no-unsafe-argument": "off",
-    "@typescript-eslint/no-unsafe-member-access": "off",
-    "@typescript-eslint/no-unsafe-assignment": "off",
-    "@typescript-eslint/no-unsafe-return": "off",
-    "@typescript-eslint/no-unsafe-call": "off",
-
-    // We make the mistake of using `unknown` for caught and wrapped exceptions
-    // in matrix-protection-suite...
-    // which causes problems when we unwrap them.
-    // We should probably change `Result` to throw when exception doesn't
-    // implement error.
-    "@typescript-eslint/only-throw-error": "off",
-
-    "@typescript-eslint/unbound-method": ["error", { ignoreStatic: true }],
-
-    "no-constant-condition": ["error", { checkLoops: "allExceptWhileTrue" }],
-  },
-  ignores: [...ignores, "**/*.js", "**/*.jsx"],
-});
+  {
+    files: ["apps/draupnir/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-deprecated": [
+        "error",
+        {
+          allow: [{ from: "file", name: "logMessage" }, { from: "file", name: "allocateProtection"}],
+        },
+      ],
+      // We intentionally compare enums to non enum values but no doubt it will bite us in the ass later
+      "@typescript-eslint/no-unsafe-enum-comparison": "off",
+    },
+    ignores,
+  }
+);

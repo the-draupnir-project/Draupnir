@@ -1,26 +1,11 @@
 {
-  "compilerOptions": {
-    "alwaysStrict": true,
-    "esModuleInterop": true,
-    "exactOptionalPropertyTypes": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "outDir": "./lib",
-    "sourceMap": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "target": "es2021",
-    "types": ["node", "mocha"],
-    "jsx": "react",
-    "jsxFactory": "DeadDocumentJSX.JSXFactory"
-  },
-  "include": ["./src/**/*"]
+  "files": [],
+  "references": [
+    { "path": "./packages/matrix-basic-types" },
+    { "path": "./packages/interface-manager" },
+    { "path": "./packages/matrix-protection-suite" },
+    { "path": "./packages/matrix-protection-suite-for-matrix-bot-sdk" },
+    { "path": "./packages/mps-interface-adaptor" },
+    { "path": "./apps/draupnir"}
+  ]
 }
