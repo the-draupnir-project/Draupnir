@@ -58,6 +58,13 @@ SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-License-Identifier = "0BSD"
 
 [[annotations]]
+path = ".changeset/**"
+precedence = "override"
+SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
+SPDX-License-Identifier = "0BSD"
+
+
+[[annotations]]
 path = "package.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
