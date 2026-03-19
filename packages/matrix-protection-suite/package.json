@@ -24,16 +24,9 @@
     "test:ci": "cross-env CI=1 jest"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@the-draupnir-project/tsconfig": "^0.1.0",
     "@types/crypto-js": "^4.2.2",
     "@types/glob-to-regexp": "^0.4.4",
-    "@types/jest": "^30.0.0",
     "@types/node": "^20.14.9",
-    "eslint": "^9.39.2",
-    "jest": "^30.2.0",
-    "ts-jest": "^29.4.5",
-    "ts-patch": "^3.2.1",
     "typedoc": "^0.28.16",
     "wait-for-expect": "^3.0.2"
   },

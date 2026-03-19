@@ -22,7 +22,6 @@
   },
   "private": false,
   "devDependencies": {
-    "@the-draupnir-project/tsconfig": "^0.1.0",
     "@types/node": "^20.17.57",
     "matrix-protection-suite": "file:../matrix-protection-suite"
   },

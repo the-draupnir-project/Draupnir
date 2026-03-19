@@ -23,17 +23,8 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@the-draupnir-project/tsconfig": "^0.1.0",
     "@types/glob-to-regexp": "^0.4.4",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^22.0.0",
-    "eslint": "^9.39.2",
-    "jest": "^29.7.0",
-    "prettier": "^3.3.3",
-    "ts-jest": "^29.2.3",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.0"
+    "@types/node": "^22.0.0"
   },
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",

@@ -28,3 +28,9 @@ should be used for any changes. Package release should only be made from the
 main branch once changesets have been merged and the associated package versions
 bumped. This allows for the workspace state to always be used to build Draupnir
 reproducibly on any branch of PR.
+
+## Developer tooling
+
+Developer tooling related `devDependencies` should be kept in the root package
+unless it is not common to most packages. This is to make sure the versioning
+remains consistent without relying on npm to do that.
