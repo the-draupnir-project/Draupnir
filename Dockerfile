@@ -13,8 +13,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /tmp/src
 COPY package.json package-lock.json ./
-COPY packages/*/package.json ./packages/*/
-COPY apps/*/package.json ./apps/*/
+COPY packages/interface-manager/package.json ./packages/interface-manager/package.json
+COPY packages/matrix-basic-types/package.json ./packages/matrix-basic-types/package.json
+COPY packages/matrix-protection-suite/package.json ./packages/matrix-protection-suite/package.json
+COPY packages/matrix-protection-suite-for-matrix-bot-sdk/package.json ./packages/matrix-protection-suite-for-matrix-bot-sdk/package.json
+COPY packages/mps-interface-adaptor/package.json ./packages/mps-interface-adaptor/package.json
+COPY packages/tsconfig/package.json ./packages/tsconfig/package.json
+COPY apps/draupnir/package.json ./apps/draupnir/package.json
 
 # Install dependencies first so source edits don't invalidate this layer.
 RUN --mount=type=cache,target=/root/.npm npm ci
