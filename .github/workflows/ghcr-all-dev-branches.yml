@@ -12,6 +12,10 @@ on:
       - "renovate/**"
       - "github-actions/**"
 
+concurrency:
+  group: ghcr-dev-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   IMAGE_NAME: draupnir
   PLATFORMS: linux/amd64,linux/arm64
@@ -28,10 +32,12 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v6
-      - name: Unshallow for git describe so we can create version.txt
-        run: git fetch --prune --unshallow --tags --all --force
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Set lowercase image owner
-        run: echo "IMAGE_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        id: image_owner
+        run: echo "image_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -53,7 +59,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=sha,prefix=sha-
@@ -66,6 +72,10 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: true
+          # Shared Buildx cache scope reused by all container image workflows.
+          # Keep the scope name aligned across workflows to maximize cache hits.
+          cache-from: type=gha,scope=draupnir-container-build
+          cache-to: type=gha,scope=draupnir-container-build,mode=max
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
