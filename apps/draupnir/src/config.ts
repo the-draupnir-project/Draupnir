@@ -301,13 +301,9 @@ function getConfigPath(): {
   if (mjolnirPath) {
     return { isDraupnirPath: false, path: mjolnirPath };
   }
-  const path = Config.util.getConfigSources().at(-1)?.name;
-  if (path === undefined) {
-    throw new TypeError(
-      "No configuration path has been found for Draupnir. Use the --draupnir-config option to provide a path to the config."
-    );
-  }
-  return { isDraupnirPath: false, path };
+  throw new TypeError(
+    "No configuration path has been found for Draupnir. Use the --draupnir-config option to provide a path to the config."
+  );
 }
 
 function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
