@@ -95,6 +95,15 @@ export default tseslint.config(
         "error",
         { allowInterfaces: "with-single-extends" },
       ],
+      "@typescript-eslint/no-deprecated": [
+        "error",
+        {
+          allow: [
+            // Idk why they did this but whatever https://github.com/element-hq/matrix-bot-sdk/pull/66/changes#r2965217095
+            { from: "package", name: "getRoomStateEvent", package: "@vector-im/matrix-bot-sdk" },
+          ],
+        },
+      ],
       // We intentionally use enums to compare against non enum values, but no doubt this one will bite us in the ass later
     },
     ignores,
@@ -113,7 +122,12 @@ export default tseslint.config(
       "@typescript-eslint/no-deprecated": [
         "error",
         {
-          allow: [{ from: "file", name: "logMessage" }, { from: "file", name: "allocateProtection"}],
+          allow: [
+            { from: "file", name: "logMessage" },
+            { from: "file", name: "allocateProtection" },
+            // Idk why they did this but whatever https://github.com/element-hq/matrix-bot-sdk/pull/66/changes#r2965217095
+            { from: "package", name: "getRoomStateEvent", package: "@vector-im/matrix-bot-sdk" },
+          ],
         },
       ],
       // We intentionally compare enums to non enum values but no doubt it will bite us in the ass later

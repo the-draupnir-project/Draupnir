@@ -20,6 +20,7 @@ import {
 } from "../mjolnirSetupUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { RoomEvent } from "matrix-protection-suite";
+import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 interface RedactionTestContext extends DraupnirTestContext {
   moderator?: MatrixClient;
@@ -286,10 +287,9 @@ describe("Test: The redaction command", function () {
       }
     );
 
-    const redactedEvent = (await moderator.getEvent(
-      targetRoom,
-      eventToRedact
-    )) as RoomEvent;
+    const redactedEvent = extractRawRoomEvent(
+      await moderator.getEvent(targetRoom, eventToRedact)
+    ) as RoomEvent;
     assert.equal(
       Object.keys(redactedEvent.content).length,
       0,

@@ -22,7 +22,10 @@ import {
   Value,
 } from "matrix-protection-suite";
 import { StringEventID } from "@the-draupnir-project/matrix-basic-types";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  extractRawRoomEvent,
+  resultifyBotSDKRequestError,
+} from "matrix-protection-suite-for-matrix-bot-sdk";
 
 /**
  * Test the ability to turn abuse reports into room messages.
@@ -533,10 +536,9 @@ describe("Test: Reporting abuse", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // This should have redacted the message.
-    const newBadEvent = (await draupnir.client.getEvent(
-      roomId,
-      badEventId
-    )) as RoomEvent;
+    const newBadEvent = extractRawRoomEvent(
+      await draupnir.client.getEvent(roomId, badEventId)
+    ) as RoomEvent;
     assert.deepEqual(
       Object.keys(newBadEvent.content),
       [],

@@ -8,9 +8,10 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { PowerLevelAction } from "@vector-im/matrix-bot-sdk/lib/models/PowerLevelAction";
+import { PowerLevelAction } from "@vector-im/matrix-bot-sdk";
 import { LogService, UserID } from "@vector-im/matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
+import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { htmlEscape } from "../utils";
 import { JSDOM } from "jsdom";
 import { Draupnir } from "../Draupnir";
@@ -226,10 +227,9 @@ export class StandardReportManager {
     let initialNoticeReport: IReport | undefined,
       confirmationReport: IReportWithAction | undefined;
     try {
-      const originalEvent = (await this.draupnir.client.getEvent(
-        roomID,
-        relation.event_id
-      )) as RoomEvent;
+      const originalEvent = extractRawRoomEvent(
+        await this.draupnir.client.getEvent(roomID, relation.event_id)
+      ) as RoomEvent;
       if (originalEvent.sender !== this.draupnir.clientUserID) {
         // Let's not handle reactions to events we didn't send as
         // some setups have two or more Draupnir's in the same management room.
@@ -978,10 +978,9 @@ class EscalateToServerModerationRoom implements IUIAction {
     _moderationroomID: string,
     displayManager: DisplayManager
   ): Promise<string | undefined> {
-    const event = (await manager.draupnir.client.getEvent(
-      report.room_id,
-      report.event_id
-    )) as RoomEvent;
+    const event = extractRawRoomEvent(
+      await manager.draupnir.client.getEvent(report.room_id, report.event_id)
+    ) as RoomEvent;
 
     // Display the report and UI directly in the management room, as if it had been
     // received from /report.

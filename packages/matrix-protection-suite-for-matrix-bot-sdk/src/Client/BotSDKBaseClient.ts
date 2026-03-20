@@ -113,6 +113,28 @@ function unknownError(error: unknown): never {
   );
 }
 
+/**
+ * This is a utility to extract the raw matrix event from a wrapper type
+ * that vector bot-sdk decided to use inappropriately.
+ * https://github.com/element-hq/matrix-bot-sdk/pull/68/changes#r2966217186
+ */
+export function extractRawRoomEvent(event: unknown): Record<string, unknown> {
+  if (
+    typeof event === "object" &&
+    event !== null &&
+    "event" in event &&
+    typeof event.event === "object" &&
+    event.event !== null
+  ) {
+    return event.event as Record<string, unknown>;
+  }
+  // vector bot-sdk decided to be really silly and wrap the events in some
+  // bad utility type, breaking compatibility with the turt2live upstream,
+  // and generally making a terrible change.
+  // https://github.com/element-hq/matrix-bot-sdk/pull/68/changes#r2966217186
+  throw new TypeError("Something has changed upstream in vector bot sdk");
+}
+
 export function is404(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -213,7 +235,9 @@ export class BotSDKBaseClient
       .getEvent(roomID, eventID)
       .then(
         (event) =>
-          this.eventDecoder.decodeEvent(event) as ActionResult<TRoomEvent>,
+          this.eventDecoder.decodeEvent(
+            extractRawRoomEvent(event)
+          ) as ActionResult<TRoomEvent>,
         resultifyBotSDKRequestError
       );
   }
@@ -225,7 +249,7 @@ export class BotSDKBaseClient
     return await this.client
       .getEvent(roomID, eventID)
       .then(
-        (event) => Ok(event as Record<string, unknown>),
+        (event) => Ok(extractRawRoomEvent(event)),
         resultifyBotSDKRequestError
       );
   }

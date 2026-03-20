@@ -20,6 +20,7 @@ import {
   isStringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { Logger, RoomEvent, Task } from "matrix-protection-suite";
+import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
 import { jsonReviver } from "../utils";
 
@@ -260,7 +261,9 @@ export class WebAPIs {
         //
         // By doing this with the reporterClient, we ensure that this feature of Draupnir can work
         // with all Matrix homeservers, rather than just Synapse.
-        event = (await reporterClient.getEvent(roomID, eventID)) as RoomEvent;
+        event = extractRawRoomEvent(
+          await reporterClient.getEvent(roomID, eventID)
+        ) as RoomEvent;
       }
       const reason = (request.body as Record<string, unknown>)[
         "reason"
