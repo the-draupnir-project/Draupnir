@@ -47,7 +47,7 @@ export async function registerUser(
 ): Promise<void> {
   const registerUrl = `${homeserver}/_synapse/admin/v1/register`;
   const nonce: string = await new Promise((resolve, reject) => {
-    (getRequestFn() as RequestFunction)(
+    (getRequestFn() as unknown as RequestFunction)(
       { uri: registerUrl, method: "GET", timeout: 60000 },
       (error: unknown, _response: unknown, resBody: unknown) => {
         if (error) {
@@ -94,15 +94,18 @@ export async function registerUser(
         timeout: 60000,
       };
       await new Promise((resolve, reject) => {
-        (getRequestFn() as RequestFunction)(params, (error: unknown) => {
-          if (error === undefined || error === null) {
-            resolve(undefined);
-          } else if (error instanceof Error) {
-            reject(error);
-          } else {
-            reject(new TypeError(`something is throwing garbage`));
+        (getRequestFn() as unknown as RequestFunction)(
+          params,
+          (error: unknown) => {
+            if (error === undefined || error === null) {
+              resolve(undefined);
+            } else if (error instanceof Error) {
+              reject(error);
+            } else {
+              reject(new TypeError(`something is throwing garbage`));
+            }
           }
-        });
+        );
       });
       return;
     } catch (e) {

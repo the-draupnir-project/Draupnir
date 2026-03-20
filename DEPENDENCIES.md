@@ -34,3 +34,9 @@ reproducibly on any branch of PR.
 Developer tooling related `devDependencies` should be kept in the root package
 unless it is not common to most packages. This is to make sure the versioning
 remains consistent without relying on npm to do that.
+
+## Node
+
+We try to follow the active LTS release to keep us more inline with the
+[matrix-appservice-bridge](https://github.com/matrix-org/matrix-appservice-bridge/blob/develop/docs/platforms.md)
+stack of libraries.

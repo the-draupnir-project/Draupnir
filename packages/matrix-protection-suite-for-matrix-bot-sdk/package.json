@@ -24,8 +24,8 @@
   "devDependencies": {
     "@types/crypto-js": "^4.1.2",
     "@types/glob-to-regexp": "^0.4.1",
-    "@types/node": "^20.14.9",
-    "@vector-im/matrix-bot-sdk": "0.7.1-element.6",
+    "@types/node": "^24.12.0",
+    "@vector-im/matrix-bot-sdk": "0.8.0-element.3",
     "matrix-protection-suite": "file:../matrix-protection-suite",
     "typedoc": "^0.26.3"
   },
@@ -36,7 +36,7 @@
   "peerDependencies": {
     "@sinclair/typebox": "0.34.13",
     "@the-draupnir-project/matrix-basic-types": "1.5.0",
-    "@vector-im/matrix-bot-sdk": "0.7.1-element.6",
+    "@vector-im/matrix-bot-sdk": "^0.8.0-element.3",
     "matrix-protection-suite": "file:../matrix-protection-suite"
   },
   "publishConfig": {

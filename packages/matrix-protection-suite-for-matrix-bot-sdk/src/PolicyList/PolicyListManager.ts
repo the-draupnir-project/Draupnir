@@ -30,6 +30,7 @@ import {
   StandardPolicyRoomEditor,
   ClientPlatform,
   RoomVersionMirror,
+  RoomEvent,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { RoomStateManagerFactory } from "../ClientManagement/RoomStateManagerFactory";
@@ -180,7 +181,14 @@ export class BotSDKPolicyRoomManager implements PolicyRoomManager {
   getPolicyRuleEvents(
     room: MatrixRoomReference
   ): Promise<ActionResult<PolicyRuleEvent[]>> {
-    return this.client.getRoomState(room.toRoomIDOrAlias()).then(
+    return (
+      this.client.getRoomState(room.toRoomIDOrAlias()) as unknown as Promise<
+        RoomEvent[]
+      >
+    ).then(
+      // FIXME: I'm pretty sure this filter isn't doing anything, and also
+      // it's really bad that we're not using the event coder on the ingress here.
+      // And that this API exists at all in abscence of the rooms state manager.
       (events) => Ok(events.filter(isPolicyRuleEvent)),
       (exception: unknown) =>
         ActionError.Result(
