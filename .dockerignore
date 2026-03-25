@@ -9,3 +9,9 @@ logs
 storage
 db
 *.db
+coverage
+.idea
+.vscode
+.DS_Store
+npm-debug.log*
+yarn-error.log*

@@ -30,8 +30,9 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v6
-      - name: Unshallow for git describe so we can create version.txt
-        run: git fetch --prune --unshallow --tags --all --force
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -56,6 +57,10 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUSH }}
+          # Shared Buildx cache scope reused by all container image workflows.
+          # Keep the scope name aligned across workflows to maximize cache hits.
+          cache-from: type=gha,scope=draupnir-container-build
+          cache-to: type=gha,scope=draupnir-container-build,mode=max
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
