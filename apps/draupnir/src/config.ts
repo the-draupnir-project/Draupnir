@@ -473,7 +473,8 @@ export const SOFTWARE_VERSION = (() => {
 
 export const CURRENT_BRANCH = (() => {
   let branchFile;
-  const defaultText = "A branch name was either not provided when building Draupnir or could not be read.";
+  const defaultText =
+    "A branch name was either not provided when building Draupnir or could not be read.";
   try {
     branchFile = fs.readFileSync(
       path.join(__dirname, "../branch.txt"),
