@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
+import { CURRENT_BRANCH, DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
 import {
   ActionResult,
   Ok,
@@ -51,6 +51,7 @@ export type StatusInfo = {
   numberOfProtectedRooms: number;
   numberOfUniqueMembers: number;
   version: string;
+  branch: string;
   repository: string;
   documentationURL: string;
 } & DraupnirNotificationRoomsInfo &
@@ -135,6 +136,7 @@ export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
     subscribedButPartedLists: watchedListInfo.subscribedButPartedLists,
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
+    branch: CURRENT_BRANCH,
     repository: (PACKAGE_JSON["repository"] as string | undefined) ?? "Unknown",
     ...extractProtectionNotificationRooms(draupnir),
   };
@@ -230,6 +232,9 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
       {renderNotificationRooms(info)}
       <b>Version: </b>
       <code>{info.version}</code>
+      <br />
+      <b>Branch: </b>
+      <code>{info.branch}</code>
       <br />
       <b>Repository: </b>
       <code>{info.repository}</code>
