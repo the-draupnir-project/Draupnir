@@ -9,8 +9,9 @@
   "private": true,
   "scripts": {
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
-    "build:assets": "cp src/protections/DraupnirNews/news.json dist/protections/DraupnirNews/news.json && npm run describe-version",
+    "build:assets": "cp src/protections/DraupnirNews/news.json dist/protections/DraupnirNews/news.json && npm run describe-version && npm run describe-branch",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
+    "describe-branch": "(git rev-parse --abbrev-ref HEAD > branch.txt.tmp && mv branch.txt.tmp branch.txt) || true && rm -f branch.txt.tmp",
     "harness-registration": "node dist/appservice/cli.js -r -u \"http://host.docker.internal:9000\" --enable-source-maps",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",

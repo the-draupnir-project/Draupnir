@@ -25,8 +25,11 @@ venv/
 
 /db
 
-# version file generated from yarn build
+# version file generated from npm build
 version.txt
+# branch file generated from npm build
+branch.txt
+
 # Logs
 logs
 *.log

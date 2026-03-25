@@ -471,6 +471,24 @@ export const SOFTWARE_VERSION = (() => {
   return /^(.*)$/m.exec(versionFile)?.at(0) ?? defaultText;
 })();
 
+export const CURRENT_BRANCH = (() => {
+  let branchFile;
+  const defaultText =
+    "A branch name was either not provided when building Draupnir or could not be read.";
+  try {
+    branchFile = fs.readFileSync(
+      path.join(__dirname, "../branch.txt"),
+      "utf-8"
+    );
+  } catch (e) {
+    LogService.error("config", "Could not read Draupnir branch", e);
+    branchFile = defaultText;
+  }
+  // it's important to ignore the newline if the branch is going to be put
+  // into <pre> or <code> where it will create an unnecessary newline.
+  return /^(.*)$/m.exec(branchFile)?.at(0) ?? defaultText;
+})();
+
 export const DOCUMENTATION_URL =
   "https://the-draupnir-project.github.io/draupnir-documentation/";
 
