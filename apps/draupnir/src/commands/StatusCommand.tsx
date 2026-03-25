@@ -8,7 +8,12 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { CURRENT_BRANCH, DOCUMENTATION_URL, PACKAGE_JSON, SOFTWARE_VERSION } from "../config";
+import {
+  CURRENT_BRANCH,
+  DOCUMENTATION_URL,
+  PACKAGE_JSON,
+  SOFTWARE_VERSION,
+} from "../config";
 import {
   ActionResult,
   Ok,
