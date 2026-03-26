@@ -13,6 +13,8 @@ import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
+import { isError } from "matrix-protection-suite";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {
   moderator?: MatrixClient;
@@ -37,6 +39,11 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     const moderator = await newTestUser(config.homeserver.url, {
       name: { contains: "test" },
     });
+    const moderatorUserID = await moderator.getUserId();
+    const allowResult = await appservice.accessControl.allow(moderatorUserID);
+    if (isError(allowResult)) {
+      throw allowResult.error;
+    }
     const roomWeWantProtecting = await moderator.createRoom();
     // have the moderator invite the appservice bot in order to request a new draupnir
     this.moderator = moderator;
@@ -75,5 +82,40 @@ describe("Test that the app service can provision a draupnir on invite of the ap
         msgtype: "m.text",
       });
     });
+  });
+
+  it("Only users on the appservice allow list can self-provision", async function (this: Context) {
+    const config = readTestConfig();
+    this.appservice = await setupHarness();
+    const appservice = this.appservice;
+    const allowedUser = await newTestUser(config.homeserver.url, {
+      name: { contains: "allowed" },
+    });
+    const blockedUser = await newTestUser(config.homeserver.url, {
+      name: { contains: "blocked" },
+    });
+    const allowedUserID = (await allowedUser.getUserId()) as StringUserID;
+    const blockedUserID = (await blockedUser.getUserId()) as StringUserID;
+    const allowResult = await appservice.accessControl.allow(allowedUserID);
+    if (isError(allowResult)) {
+      throw allowResult.error;
+    }
+
+    const blockedProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(blockedUserID);
+    if (!isError(blockedProvisionResult)) {
+      throw new TypeError(
+        `Expected provisioning to fail for non-allow-listed user ${blockedUserID}`
+      );
+    }
+
+    const allowedProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(allowedUserID);
+    if (isError(allowedProvisionResult)) {
+      throw allowedProvisionResult.error;
+    }
+
+    allowedUser.stop();
+    blockedUser.stop();
   });
 });

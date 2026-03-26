@@ -74,7 +74,8 @@ export class AccessControl {
     return MPSAccess.getAccessForUser(
       this.accessControlRevisionIssuer.currentRevision,
       mxid,
-      "CHECK_SERVER"
+      // Appservice provisioning should be gated by explicit user allow rules.
+      "IGNORE_SERVER"
     );
   }
 

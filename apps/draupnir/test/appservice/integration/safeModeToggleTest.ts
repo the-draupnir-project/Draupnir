@@ -8,6 +8,7 @@ import { newTestUser } from "../../integration/clientHelper";
 import { StandardProvisionHelper } from "../utils/ProvisionHelper";
 import { setupHarness } from "../utils/harness";
 import { SafeModeDraupnir } from "../../../src/safemode/DraupnirSafeMode";
+import { isError } from "matrix-protection-suite";
 
 interface Context extends Mocha.Context {
   appservice?: MjolnirAppService;
@@ -35,6 +36,10 @@ describe("Test safe mode commands on a provisioned Draupnir", function () {
       name: { contains: "moderator" },
     });
     const moderatorUserID = (await moderator.getUserId()) as StringUserID;
+    const allowResult = await appservice.accessControl.allow(moderatorUserID);
+    if (isError(allowResult)) {
+      throw allowResult.error;
+    }
     const initialDraupnir = (
       await provisionHelper.provisionDraupnir(moderatorUserID)
     ).expect("Failed to provision a draupnir for the test");
