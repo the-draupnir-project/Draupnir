@@ -33,6 +33,7 @@ import {
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
+import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 
@@ -67,9 +68,9 @@ export interface DraupnirTestContext extends SafeMochaContext {
 export async function ensureAliasedRoomExists(
   client: MatrixClient,
   alias: string
-): Promise<string> {
+): Promise<StringRoomID> {
   try {
-    return await client.resolveRoom(alias);
+    return (await client.resolveRoom(alias)) as StringRoomID;
   } catch (e) {
     if (typeof e !== "object" || e === null) {
       throw new TypeError("Something is throwing garbage");
@@ -81,11 +82,11 @@ export async function ensureAliasedRoomExists(
       throw e;
     }
     console.info(`${alias} hasn't been created yet, so we're making it now.`);
-    const roomId = await client.createRoom({
+    const roomID = await client.createRoom({
       visibility: "public",
     });
-    await client.createRoomAlias(alias, roomId);
-    return roomId;
+    await client.createRoomAlias(alias, roomID);
+    return roomID as StringRoomID;
   }
 }
 

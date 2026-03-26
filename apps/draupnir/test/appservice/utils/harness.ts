@@ -37,6 +37,7 @@ export async function setupHarnessWithConfig(
 ): Promise<MjolnirAppService> {
   const utilityUser = await newTestUser(config.homeserver.url, {
     name: { contains: "utility" },
+    isAdmin: true,
   });
   if (
     typeof config.adminRoom !== "string" ||
@@ -46,7 +47,19 @@ export async function setupHarnessWithConfig(
       "This test expects the harness config to have a room alias."
     );
   }
-  await ensureAliasedRoomExists(utilityUser, config.adminRoom);
+  await utilityUser
+    .deleteRoomAlias(config.adminRoom)
+    // we ignore errors here because the admin room alias may not exist. Ex wont exist when at clean state.
+    .catch((_: unknown) => undefined);
+  const adminRoomID = await ensureAliasedRoomExists(
+    utilityUser,
+    config.adminRoom
+  );
+  await utilityUser.setUserPowerLevel(
+    "@draupnir-moderation:localhost:9999",
+    adminRoomID,
+    100
+  );
   return await MjolnirAppService.run(
     9000,
     config,
