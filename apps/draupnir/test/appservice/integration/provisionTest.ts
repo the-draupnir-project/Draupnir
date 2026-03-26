@@ -1,5 +1,6 @@
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
 //
@@ -8,7 +9,11 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { readTestConfig, setupHarness } from "../utils/harness";
+import {
+  readTestConfig,
+  setupHarness,
+  setupHarnessWithConfig,
+} from "../utils/harness";
 import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
@@ -117,5 +122,73 @@ describe("Test that the app service can provision a draupnir on invite of the ap
 
     allowedUser.stop();
     blockedUser.stop();
+  });
+
+  it("Allows provisioning multiple bots per user up to maxDraupnirsPerUser", async function (this: Context) {
+    const config = readTestConfig();
+    config.maxDraupnirsPerUser = 2;
+    this.appservice = await setupHarnessWithConfig(config);
+    const appservice = this.appservice;
+    const allowedUser = await newTestUser(config.homeserver.url, {
+      name: { contains: "multi-allowed" },
+    });
+    const allowedUserID = (await allowedUser.getUserId()) as StringUserID;
+    const allowResult = await appservice.accessControl.allow(allowedUserID);
+    if (isError(allowResult)) {
+      throw allowResult.error;
+    }
+
+    const firstProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(allowedUserID);
+    if (isError(firstProvisionResult)) {
+      throw firstProvisionResult.error;
+    }
+
+    const secondProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(allowedUserID);
+    if (isError(secondProvisionResult)) {
+      throw secondProvisionResult.error;
+    }
+
+    const thirdProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(allowedUserID);
+    if (!isError(thirdProvisionResult)) {
+      throw new TypeError(
+        `Expected provisioning to fail after reaching limit for user ${allowedUserID}`
+      );
+    }
+
+    allowedUser.stop();
+  });
+
+  it("Admin provisioning path can bypass per-user allocation limit", async function (this: Context) {
+    const config = readTestConfig();
+    config.maxDraupnirsPerUser = 1;
+    this.appservice = await setupHarnessWithConfig(config);
+    const appservice = this.appservice;
+    const allowedUser = await newTestUser(config.homeserver.url, {
+      name: { contains: "admin-bypass-allowed" },
+    });
+    const allowedUserID = (await allowedUser.getUserId()) as StringUserID;
+    const allowResult = await appservice.accessControl.allow(allowedUserID);
+    if (isError(allowResult)) {
+      throw allowResult.error;
+    }
+
+    const firstProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnir(allowedUserID);
+    if (isError(firstProvisionResult)) {
+      throw firstProvisionResult.error;
+    }
+
+    const secondProvisionResult =
+      await appservice.draupnirManager.provisionNewDraupnirBypassingUserLimit(
+        allowedUserID
+      );
+    if (isError(secondProvisionResult)) {
+      throw secondProvisionResult.error;
+    }
+
+    allowedUser.stop();
   });
 });

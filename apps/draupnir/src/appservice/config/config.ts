@@ -1,5 +1,6 @@
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
 //
@@ -100,5 +101,13 @@ export const AppserviceConfig = Type.Object({
       "A directory where the appservice can storestore persistent data.",
     default: "/data/storage",
   }),
+  maxDraupnirsPerUser: Type.Optional(
+    Type.Integer({
+      description:
+        "Maximum number of Draupnir instances a single user may provision.",
+      minimum: 1,
+      default: 1,
+    })
+  ),
   logging: Type.Optional(LoggingOptsSchema),
 });

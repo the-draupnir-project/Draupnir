@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+
 homeserver:
   # The Matrix server name, this will be the name of the server in your matrix id.
   domain: "localhost:9999"
@@ -15,6 +17,10 @@ adminRoom: "#draupnir-admin:localhost:9999"
 
 # The directory the bot should store various bits of information in
 dataPath: "/data/storage"
+
+# Maximum number of bots each user can provision.
+# Defaults to 1 when omitted.
+maxDraupnirsPerUser: 1
 
 roomStateBackingStore:
   enabled: false
