@@ -15,7 +15,8 @@ export const AppserviceProvisionForUserCommand = describeCommand({
   parameters: tuple({
     name: "user",
     acceptor: MatrixUserIDPresentationType,
-    description: "The user to provision a bot for, bypassing user allocation limit",
+    description:
+      "The user to provision a bot for, bypassing user allocation limit",
   }),
   summary:
     "Provision a new Draupnir for a user while bypassing the per-user allocation limit.",
@@ -37,6 +38,9 @@ export const AppserviceProvisionForUserCommand = describeCommand({
   },
 });
 
-AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceProvisionForUserCommand, {
-  isAlwaysSupposedToUseDefaultRenderer: true,
-});
+AppserviceBotInterfaceAdaptor.describeRenderer(
+  AppserviceProvisionForUserCommand,
+  {
+    isAlwaysSupposedToUseDefaultRenderer: true,
+  }
+);
