@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
 
