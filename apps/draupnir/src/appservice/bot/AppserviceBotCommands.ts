@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,10 +18,12 @@ import {
   AppserviceListUnstartedCommand,
   AppserviceRestartDraupnirCommand,
 } from "./ListCommand";
+import { AppserviceVersionCommand } from "./VersionCommand";
 
 AppserviceBotCommands.internCommand(AppserviceBotHelpCommand, ["admin", "help"])
   .internCommand(AppserviceAllowCommand, ["admin", "allow"])
   .internCommand(AppserviceRemoveCommand, ["admin", "remove"])
+  .internCommand(AppserviceVersionCommand, ["admin", "version"])
   .internCommand(AppserviceRestartDraupnirCommand, ["admin", "restart"])
   .internCommand(AppserviceListUnstartedCommand, [
     "admin",
