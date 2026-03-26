@@ -290,6 +290,14 @@ export class MjolnirAppService {
           `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`,
           result.error
         );
+        await this.bridge
+          .getBot()
+          .getClient()
+          .sendText(
+            mxEvent.room_id,
+            "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
+          );
+        return;
       }
       // Send a notice that the invite must be accepted
       await this.bridge

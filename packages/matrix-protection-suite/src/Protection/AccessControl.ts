@@ -34,6 +34,10 @@ export interface EntityAccess {
   readonly rule?: PolicyRule;
 }
 
+export type AllowRulesPolicy =
+  | "ALLOW_IF_NO_EXPLICIT_ALLOW_RULE"
+  | "REQUIRE_EXPLICIT_ALLOW_RULE";
+
 /**
  * This allows us to work out the access an entity has to some thing based on a set of watched/unwatched lists.
  */
@@ -65,12 +69,17 @@ export class AccessControl {
     userID: StringUserID,
     policy: "CHECK_SERVER" | "IGNORE_SERVER"
   ): EntityAccess {
+    const allowRulesPolicy: AllowRulesPolicy =
+      policy === "IGNORE_SERVER"
+        ? "REQUIRE_EXPLICIT_ALLOW_RULE"
+        : "ALLOW_IF_NO_EXPLICIT_ALLOW_RULE";
     const userAccess = AccessControl.getAccessForEntity(
       revision,
       userID,
-      PolicyRuleType.User
+      PolicyRuleType.User,
+      allowRulesPolicy
     );
-    if (policy === "IGNORE_SERVER" || userAccess.outcome === Access.Banned) {
+    if (policy === "IGNORE_SERVER" || userAccess.outcome !== Access.Allowed) {
       return userAccess;
     } else {
       const serverAccess = AccessControl.getAccessForEntity(
@@ -78,21 +87,17 @@ export class AccessControl {
         userServerName(userID),
         PolicyRuleType.Server
       );
-      if (
-        userAccess.outcome === Access.Allowed &&
-        serverAccess.outcome === Access.NotAllowed
-      ) {
-        return userAccess;
-      } else {
-        return serverAccess;
-      }
+      // CHECK_SERVER applies server bans while keeping explicit user allow as
+      // the source of truth for who is allowed to provision.
+      return serverAccess.outcome === Access.Banned ? serverAccess : userAccess;
     }
   }
 
   public static getAccessForEntity(
     revision: PolicyListRevision,
     entity: string,
-    entityType: PolicyRuleType
+    entityType: PolicyRuleType,
+    allowRulesPolicy: AllowRulesPolicy = "ALLOW_IF_NO_EXPLICIT_ALLOW_RULE"
   ): EntityAccess {
     // Check if the entity is explicitly allowed.
     // We have to infer that a rule exists for '*' if the allowCache is empty, otherwise you brick the ACL.
@@ -101,10 +106,11 @@ export class AccessControl {
       recommendation: Recommendation.Allow,
       searchHashedRules: false,
     });
+    const hasAllowRules =
+      revision.allRulesOfType(entityType, Recommendation.Allow).length !== 0;
     if (
       allowRule === undefined &&
-      // this is gonna be a pita resource wise.
-      !(revision.allRulesOfType(entityType, Recommendation.Allow).length === 0)
+      (hasAllowRules || allowRulesPolicy === "REQUIRE_EXPLICIT_ALLOW_RULE")
     ) {
       return { outcome: Access.NotAllowed };
     }
