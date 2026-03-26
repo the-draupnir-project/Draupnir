@@ -76,7 +76,7 @@ export class AccessControl {
       this.accessControlRevisionIssuer.currentRevision,
       mxid,
       // Appservice provisioning should be gated by explicit user allow rules.
-      "IGNORE_SERVER"
+      "CHECK_SERVER"
     );
   }
 

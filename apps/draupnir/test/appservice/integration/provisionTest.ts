@@ -18,7 +18,7 @@ import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
-import { isError, isOk } from "matrix-protection-suite";
+import { isOk } from "matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {
@@ -107,7 +107,7 @@ describe("Test that the app service can provision a draupnir on invite of the ap
 
     const blockedProvisionResult =
       await appservice.draupnirManager.provisionNewDraupnir(blockedUserID);
-    if (!isError(blockedProvisionResult)) {
+    if (isOk(blockedProvisionResult)) {
       throw new TypeError(
         `Expected provisioning to fail for non-allow-listed user ${blockedUserID}`
       );
