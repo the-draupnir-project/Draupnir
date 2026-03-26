@@ -44,7 +44,7 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     const moderator = await newTestUser(config.homeserver.url, {
       name: { contains: "test" },
     });
-    const moderatorUserID = await moderator.getUserId();
+    const moderatorUserID = (await moderator.getUserId()) as StringUserID;
     const allowResult = await appservice.accessControl.allow(moderatorUserID);
     if (isError(allowResult)) {
       throw allowResult.error;
