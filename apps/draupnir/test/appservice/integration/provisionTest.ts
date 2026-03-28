@@ -8,11 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import {
-  readTestConfig,
-  setupHarness,
-  setupHarnessWithConfig,
-} from "../utils/harness";
+import { readTestConfig, setupHarnessWithConfig } from "../utils/harness";
 import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
@@ -37,7 +33,8 @@ describe("Test that the app service can provision a draupnir on invite of the ap
   });
   it("A moderator that requests a draupnir via a matrix invitation will be invited to a new policy and management room", async function (this: Context) {
     const config = readTestConfig();
-    this.appservice = await setupHarness();
+    config.allowSelfServiceProvisioning = true;
+    this.appservice = await setupHarnessWithConfig(config);
     const appservice = this.appservice;
     // create a user to act as the moderator
     const moderator = await newTestUser(config.homeserver.url, {
@@ -81,6 +78,38 @@ describe("Test that the app service can provision a draupnir on invite of the ap
         msgtype: "m.text",
       });
     });
+  });
+
+  it("Users cannot self-service provision when allowSelfServiceProvisioning is false", async function (this: Context) {
+    const config = readTestConfig();
+    config.allowSelfServiceProvisioning = false;
+    this.appservice = await setupHarnessWithConfig(config);
+    const appservice = this.appservice;
+    const moderator = await newTestUser(config.homeserver.url, {
+      name: { contains: "self-service-disabled" },
+    });
+    this.moderator = moderator;
+    const roomWeWantProtecting = await moderator.createRoom();
+    const roomsInvitedTo: string[] = [];
+
+    moderator.on("room.invite", (roomId: string) => {
+      roomsInvitedTo.push(roomId);
+    });
+
+    await moderator.start();
+    await moderator.inviteUser(
+      appservice.bridge.getBot().getUserId(),
+      roomWeWantProtecting
+    );
+
+    // Give the appservice time to process the invite and ensure no management/policy rooms were created.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    if (roomsInvitedTo.length !== 0) {
+      throw new TypeError(
+        `Expected no self-service provisioning invites when disabled, got ${roomsInvitedTo.length}`
+      );
+    }
   });
 
   it("Allows provisioning multiple bots per user up to maxDraupnirsPerUser", async function (this: Context) {

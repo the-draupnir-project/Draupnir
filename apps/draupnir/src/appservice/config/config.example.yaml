@@ -20,5 +20,10 @@ dataPath: "/data/storage"
 # Defaults to 1 when omitted.
 maxDraupnirsPerUser: 1
 
+# Allow users to self-provision by inviting the appservice bot.
+# When false, provisioning must be done through admin commands.
+# Defaults to false when omitted.
+allowSelfServiceProvisioning: false
+
 roomStateBackingStore:
   enabled: false

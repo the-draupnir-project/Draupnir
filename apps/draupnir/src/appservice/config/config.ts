@@ -108,5 +108,12 @@ export const AppserviceConfig = Type.Object({
       default: 1,
     })
   ),
+  allowSelfServiceProvisioning: Type.Optional(
+    Type.Boolean({
+      description:
+        "Allow users to self-provision by inviting the appservice bot. When false, provisioning must be done through admin commands.",
+      default: false,
+    })
+  ),
   logging: Type.Optional(LoggingOptsSchema),
 });

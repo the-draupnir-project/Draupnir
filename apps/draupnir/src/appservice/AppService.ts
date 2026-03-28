@@ -264,54 +264,77 @@ export class MjolnirAppService {
     log.info(
       `${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a draupnir`
     );
-    // Join the room and try to send the welcome flow
+    // Join the room so we can notify the requester and then reject the invite.
     try {
       await this.bridge.getBot().getClient().joinRoom(mxEvent.room_id);
+    } catch (e: unknown) {
+      log.error(
+        `Failed to join the room by ${mxEvent.sender} to process provisioning invite`,
+        e
+      );
+    }
+
+    if (!this.config.allowSelfServiceProvisioning) {
+      await this.bridge
+        .getBot()
+        .getClient()
+        .sendText(
+          mxEvent.room_id,
+          "Self-service provisioning is disabled. Please ask an admin to provision a Draupnir for you."
+        )
+        .catch((e: unknown) => {
+          log.error(
+            `Failed to notify ${mxEvent.sender} that self-service provisioning is disabled`,
+            e
+          );
+        });
+    } else {
       await this.bridge
         .getBot()
         .getClient()
         .sendText(
           mxEvent.room_id,
           "Your Draupnir is currently being provisioned. Please wait while we set up the rooms."
+        )
+        .catch((e: unknown) => {
+          log.error(
+            `Failed to send provisioning welcome flow to ${mxEvent.sender}`,
+            e
+          );
+        });
+      try {
+        const result = await this.draupnirManager.provisionNewDraupnir(
+          mxEvent.sender as StringUserID
         );
-    } catch (e: unknown) {
-      log.error(
-        `Failed to join the room by ${mxEvent.sender} to display the welcome flow`,
-        e
-      );
-    }
-    try {
-      const result = await this.draupnirManager.provisionNewDraupnir(
-        mxEvent.sender as StringUserID
-      );
-      if (isError(result)) {
+        if (isError(result)) {
+          log.error(
+            `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`,
+            result.error
+          );
+        }
+        // Send a notice that the invite must be accepted
+        await this.bridge
+          .getBot()
+          .getClient()
+          .sendText(
+            mxEvent.room_id,
+            "Please accept the inviations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
+          );
+      } catch (e: unknown) {
         log.error(
-          `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`,
-          result.error
+          `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`,
+          e
         );
+        // continue, we still want to reject this invitation.
+        // Send a notice that the provisioning failed
+        await this.bridge
+          .getBot()
+          .getClient()
+          .sendText(
+            mxEvent.room_id,
+            "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
+          );
       }
-      // Send a notice that the invite must be accepted
-      await this.bridge
-        .getBot()
-        .getClient()
-        .sendText(
-          mxEvent.room_id,
-          "Please accept the inviations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
-        );
-    } catch (e: unknown) {
-      log.error(
-        `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`,
-        e
-      );
-      // continue, we still want to reject this invitation.
-      // Send a notice that the provisioning failed
-      await this.bridge
-        .getBot()
-        .getClient()
-        .sendText(
-          mxEvent.room_id,
-          "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
-        );
     }
     try {
       // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their draupnir.
