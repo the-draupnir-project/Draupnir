@@ -100,5 +100,13 @@ export const AppserviceConfig = Type.Object({
       "A directory where the appservice can storestore persistent data.",
     default: "/data/storage",
   }),
+  maxDraupnirsPerUser: Type.Optional(
+    Type.Integer({
+      description:
+        "Maximum number of Draupnir instances a single user may provision.",
+      minimum: 1,
+      default: 1,
+    })
+  ),
   logging: Type.Optional(LoggingOptsSchema),
 });

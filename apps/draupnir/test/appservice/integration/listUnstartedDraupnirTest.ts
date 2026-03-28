@@ -38,4 +38,20 @@ describe("Just test some commands innit", function () {
     }
     expect(result.ok).toBeInstanceOf(Array);
   });
+
+  it("Can return version and branch from the appservice admin room", async function (this: Context) {
+    const appservice = this.appservice;
+    if (appservice === undefined) {
+      throw new TypeError(`Test setup failed`);
+    }
+    const result = await appservice.commands.sendTextCommand(
+      "@test:localhost:9999" as StringUserID,
+      "!admin version"
+    );
+    if (isError(result)) {
+      throw new TypeError(`Command should have succeeded`);
+    }
+    expect(result.ok).toHaveProperty("version");
+    expect(result.ok).toHaveProperty("branch");
+  });
 });

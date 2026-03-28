@@ -185,6 +185,7 @@ export class MjolnirAppService {
     const serverName = config.homeserver.domain;
     const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(
       serverName,
+      config.maxDraupnirsPerUser ?? 1,
       dataStore,
       bridge,
       accessControl,

@@ -66,6 +66,7 @@ export class AppServiceDraupnirManager {
 
   private constructor(
     private readonly serverName: string,
+    private readonly maxDraupnirsPerUser: number,
     private readonly dataStore: DataStore,
     private readonly bridge: Bridge,
     private readonly accessControl: AccessControl,
@@ -103,6 +104,7 @@ export class AppServiceDraupnirManager {
    */
   public static async makeDraupnirManager(
     serverName: string,
+    maxDraupnirsPerUser: number,
     dataStore: DataStore,
     bridge: Bridge,
     accessControl: AccessControl,
@@ -115,6 +117,7 @@ export class AppServiceDraupnirManager {
   ): Promise<AppServiceDraupnirManager> {
     const draupnirManager = new AppServiceDraupnirManager(
       serverName,
+      maxDraupnirsPerUser,
       dataStore,
       bridge,
       accessControl,
@@ -200,6 +203,19 @@ export class AppServiceDraupnirManager {
   public async provisionNewDraupnir(
     requestingUserID: StringUserID
   ): Promise<ActionResult<MjolnirRecord>> {
+    return await this.provisionNewDraupnirInternal(requestingUserID, false);
+  }
+
+  public async provisionNewDraupnirBypassingUserLimit(
+    requestingUserID: StringUserID
+  ): Promise<ActionResult<MjolnirRecord>> {
+    return await this.provisionNewDraupnirInternal(requestingUserID, true);
+  }
+
+  private async provisionNewDraupnirInternal(
+    requestingUserID: StringUserID,
+    bypassUserLimit: boolean
+  ): Promise<ActionResult<MjolnirRecord>> {
     const access = this.accessControl.getUserAccess(requestingUserID);
     if (access.outcome !== Access.Allowed) {
       return ActionError.Result(
@@ -208,7 +224,10 @@ export class AppServiceDraupnirManager {
     }
     const provisionedMjolnirs =
       await this.dataStore.lookupByOwner(requestingUserID);
-    if (provisionedMjolnirs.length === 0) {
+    if (
+      bypassUserLimit ||
+      provisionedMjolnirs.length < this.maxDraupnirsPerUser
+    ) {
       const mjolnirLocalPart = `draupnir_${randomUUID()}`;
       const mjIntent = await this.makeMatrixIntent(mjolnirLocalPart);
       const draupnirUserID = StringUserID(mjIntent.userId);
@@ -263,7 +282,7 @@ export class AppServiceDraupnirManager {
       return Ok(record);
     } else {
       return ActionError.Result(
-        `User: ${requestingUserID} has already provisioned ${provisionedMjolnirs.length} draupnirs.`
+        `User: ${requestingUserID} has already provisioned ${provisionedMjolnirs.length} draupnirs, which meets the configured limit of ${this.maxDraupnirsPerUser}.`
       );
     }
   }
