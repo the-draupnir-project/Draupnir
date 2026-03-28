@@ -1,4 +1,3 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
@@ -13,7 +12,7 @@ interface Context extends Mocha.Context {
   appservice?: MjolnirAppService;
 }
 
-describe("Just test some commands innit", function () {
+describe("Test appservice version command", function () {
   beforeEach(async function (this: Context) {
     this.appservice = await setupHarness();
   });
@@ -25,18 +24,20 @@ describe("Just test some commands innit", function () {
       return Promise.resolve(); // TS7030: Not all code paths return a value.
     }
   });
-  it("Can list any unstarted draupnir", async function (this: Context) {
+
+  it("Can return version and branch from the appservice admin room", async function (this: Context) {
     const appservice = this.appservice;
     if (appservice === undefined) {
       throw new TypeError(`Test setup failed`);
     }
     const result = await appservice.commands.sendTextCommand(
       "@test:localhost:9999" as StringUserID,
-      "!admin list unstarted"
+      "!admin version"
     );
     if (isError(result)) {
       throw new TypeError(`Command should have succeeded`);
     }
-    expect(result.ok).toBeInstanceOf(Array);
+    expect(result.ok).toHaveProperty("version");
+    expect(result.ok).toHaveProperty("branch");
   });
 });
