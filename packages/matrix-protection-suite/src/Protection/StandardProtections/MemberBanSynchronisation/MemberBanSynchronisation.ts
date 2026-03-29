@@ -27,7 +27,7 @@ import {
 import { RoomMembershipRevision } from "../../../Membership/MembershipRevision";
 import { ProtectedRoomsSet } from "../../ProtectedRoomsSet";
 import { PolicyRuleType } from "../../../MatrixTypes/PolicyEvents";
-import { Recommendation } from "../../../PolicyList/PolicyRule";
+import { PolicyRule, Recommendation } from "../../../PolicyList/PolicyRule";
 import { MultipleErrors } from "../../../Interface/MultipleErrors";
 import { UserConsequences } from "../../Capability/StandardCapability/UserConsequences";
 import "../../Capability/StandardCapability/UserConsequences"; // need this to load the interface.
@@ -45,14 +45,26 @@ import {
   StandardMemberBanIntentProjection,
 } from "./MemberBanIntentProjection";
 
-function revisionMatchesWithUserRules(
+function isRecommendationWorthBanning(policyRule: PolicyRule) {
+  return (
+    policyRule.recommendation === Recommendation.Ban ||
+    policyRule.recommendation === Recommendation.Takedown
+  );
+}
+
+function revisionMatchesWithUserBans(
   revision: SetMembershipPolicyRevision
 ): MemberPolicyMatches[] {
-  return revision
-    .allMembersWithRules()
-    .filter((match) =>
-      match.policies.some((policy) => policy.kind === PolicyRuleType.User)
-    );
+  return revision.allMembersWithRules().filter((match) =>
+    match.policies.some(
+      (policy) =>
+        // We only ban for user policies and not server ones at the time being,
+        // As this keeps ACL non-disruptive when it is necessary to temporarily
+        // ban a server.
+        policy.kind === PolicyRuleType.User &&
+        isRecommendationWorthBanning(policy)
+    )
+  );
 }
 
 export type MemberBanSynchronisationProtectionDescription =
@@ -148,7 +160,7 @@ export class MemberBanSynchronisationProtection
     revision: SetMembershipPolicyRevision
   ): Promise<ActionResult<void>> {
     const result = await this.userConsequences.consequenceForUsersInRoomSet(
-      revisionMatchesWithUserRules(revision)
+      revisionMatchesWithUserBans(revision)
     );
     if (isError(result)) {
       return result;
@@ -162,7 +174,7 @@ export class MemberBanSynchronisationProtection
       (async () => {
         await this.userConsequences.consequenceForUsersInRoom(
           room.toRoomIDOrAlias(),
-          revisionMatchesWithUserRules(
+          revisionMatchesWithUserBans(
             this.protectedRoomsSet.setPoliciesMatchingMembership.currentRevision
           )
         );
