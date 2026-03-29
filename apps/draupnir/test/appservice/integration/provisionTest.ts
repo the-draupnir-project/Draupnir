@@ -81,7 +81,7 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     });
   });
 
-  it("Users cannot self-service provision when allowSelfServiceProvisioning is false", async function (this: Context) {
+  it("Users cannot self-service provision when self service provisioning is disabled", async function (this: Context) {
     const config = readTestConfig();
     config.allowSelfServiceProvisioning = false;
     this.appservice = await setupHarnessWithConfig(config);
