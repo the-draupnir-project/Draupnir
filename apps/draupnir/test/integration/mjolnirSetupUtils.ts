@@ -143,10 +143,12 @@ export async function makeBotModeToggle(
     stores,
     eraseAccountData,
     allowSafeMode,
+    deleteManagementRoomAliasOnStart: deleteAlias,
   }: {
     stores: TopLevelStores;
     eraseAccountData?: boolean;
     allowSafeMode?: boolean;
+    deleteManagementRoomAliasOnStart?: boolean;
   } = { stores: { dispose() {} } }
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
@@ -173,10 +175,12 @@ export async function makeBotModeToggle(
     config.homeserverUrl,
     await client.getUserId()
   );
-
-  await client
-    .deleteRoomAlias(config.managementRoom)
-    .catch((_: unknown) => undefined);
+  // defaults to true
+  if (deleteAlias === undefined || deleteAlias) {
+    await client
+      .deleteRoomAlias(config.managementRoom)
+      .catch((_: unknown) => undefined);
+  }
   await ensureAliasedRoomExists(client, config.managementRoom);
   const toggle = await DraupnirBotModeToggle.create(
     client,

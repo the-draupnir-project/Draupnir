@@ -26,6 +26,7 @@ void (async () => {
         config.roomStateBackingStore.enabled ?? false,
     }),
     allowSafeMode: true,
+    deleteManagementRoomAliasOnStart: false,
   });
   await draupnirClient()?.start();
   await toggle.encryptionInitialized();
