@@ -70,7 +70,7 @@ export const PowerLevelsMirror = Object.freeze({
   ): boolean {
     return (
       this.getUserPowerLevel(who, content) >=
-      this.getStatePowerLevel(eventType, content)
+      this.getEventPowerLevel(eventType, content)
     );
   },
   missingPermissions(
