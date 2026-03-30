@@ -11,6 +11,8 @@ export enum PowerLevelPermission {
   Invite = "invite",
   Kick = "kick",
   Redact = "redact",
+  EventsDefault = "events_default",
+  StateDefault = "state_default",
 }
 
 export type MissingPermissionsChange = {
@@ -56,9 +58,9 @@ export const PowerLevelsMirror = Object.freeze({
     content?: PowerLevelsEventContent
   ): boolean {
     const userLevel = this.getUserPowerLevel(who, content);
-    const defaultPowerLevel =
+    const defaultPermissionLevel =
       permission === PowerLevelPermission.Invite ? 0 : 50;
-    const permissionLevel = content?.[permission] ?? defaultPowerLevel;
+    const permissionLevel = content?.[permission] ?? defaultPermissionLevel;
     return userLevel >= permissionLevel;
   },
   isUserAbleToSendEvent(
