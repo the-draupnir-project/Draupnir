@@ -330,9 +330,16 @@ export class Draupnir implements Client, MatrixAdaptorContext {
     // room. Which is important because Draupnir users state events to persist
     // protection settings, including the draupnir news feed position.
     if (!managementRoomDetail.isDraupnirUserPowered(clientUserID)) {
-      return ResultError.Result(
-        `${clientUserID} doesn't have the power level required to send state events in the management room. Please make the Draupnir user an administrator`
+      const errorText = `${clientUserID} doesn't have the power level required to send state events in the management room. Please make the Draupnir user an administrator.`;
+      await Task(
+        clientPlatform
+          .toRoomMessageSender()
+          .sendMessage(managementRoomDetail.managementRoomID, {
+            body: errorText,
+            msgtype: "m.notice",
+          })
       );
+      return ResultError.Result(errorText);
     }
     return Ok(draupnir);
   }
