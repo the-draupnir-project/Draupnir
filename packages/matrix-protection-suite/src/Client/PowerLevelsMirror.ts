@@ -168,7 +168,7 @@ export const PowerLevelsMirror = Object.freeze({
       isNewlyAddedRoom?: boolean;
     }
   ): MissingPermissionsChange {
-    if (RoomVersionMirror.isUserAPrivilidgedCreator(userID, createEvent)) {
+    if (RoomVersionMirror.isUserAPrivilegedCreator(userID, createEvent)) {
       return {
         missingStatePermissions: [],
         missingPermissions: [],

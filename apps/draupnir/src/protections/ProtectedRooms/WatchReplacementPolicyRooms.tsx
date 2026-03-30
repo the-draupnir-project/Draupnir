@@ -89,7 +89,7 @@ function renderPrivilegedUsers(revision: RoomStateRevision): DocumentNode {
   if (createEvent === undefined) {
     throw new TypeError("Mate can't find create event in the room");
   }
-  const privilegedCreators = RoomVersionMirror.priviligedCreators(createEvent);
+  const privilegedCreators = RoomVersionMirror.privilegedCreators(createEvent);
   return (
     <fragment>
       <details>

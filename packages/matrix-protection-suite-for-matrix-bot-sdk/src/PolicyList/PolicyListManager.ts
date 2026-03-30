@@ -111,7 +111,7 @@ export class BotSDKPolicyRoomManager implements PolicyRoomManager {
       );
     }
     const isRoomVersionWithPrivilidgedCreators =
-      RoomVersionMirror.isVersionWithPrivilidgedCreators(
+      RoomVersionMirror.isVersionWithPrivilegedCreators(
         clientCapabilities.ok.capabilities["m.room_versions"].default
       );
     const powerLevels: RoomCreateOptions["power_level_content_override"] = {

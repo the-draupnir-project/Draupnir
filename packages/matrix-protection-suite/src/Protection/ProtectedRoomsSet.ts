@@ -228,7 +228,7 @@ export class StandardProtectedRoomsSet implements ProtectedRoomsSet {
     previousPowerLevels: PowerLevelsEventContent | undefined
   ): void {
     // prividliged creators never change and always have permission.
-    if (RoomVersionMirror.isUserAPrivilidgedCreator(this.userID, createEvent)) {
+    if (RoomVersionMirror.isUserAPrivilegedCreator(this.userID, createEvent)) {
       return;
     }
     const missingPermissionsInfo: ProtectionPermissionsChange[] = [];

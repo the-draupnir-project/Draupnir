@@ -458,7 +458,7 @@ export async function makeManagementRoom(
     );
   }
   const isRoomVersionWithPrivilidgedCreators =
-    RoomVersionMirror.isVersionWithPrivilidgedCreators(
+    RoomVersionMirror.isVersionWithPrivilegedCreators(
       capabilities.ok.capabilities["m.room_versions"].default
     );
   return await roomCreator.createRoom({

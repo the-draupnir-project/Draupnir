@@ -172,11 +172,11 @@ export const RoomCreateEvent = Type.Intersect([
   }),
 ]);
 
-// FIXME: SHouldn't the prividliged creators function return a result error?
+// FIXME: SHouldn't the privileged creators function return a result error?
 // i think so, but it just depends how the permission calculation system
 // uses it and whether it supports feeding errors back.
 export const RoomVersionMirror = Object.freeze({
-  isVersionWithPrivilidgedCreators(versionSpecifier: string): boolean {
+  isVersionWithPrivilegedCreators(versionSpecifier: string): boolean {
     const integerResult = (() => {
       try {
         return Ok(parseInt(versionSpecifier, 10));
@@ -191,11 +191,11 @@ export const RoomVersionMirror = Object.freeze({
       return false; // unknown room version.
     }
     if (integerResult.ok >= 12) {
-      return true; // versions below 12 and abovehave privilidged creators.
+      return true; // versions 12 and above have privileged creators.
     }
     return false;
   },
-  isUserAPrivilidgedCreator(
+  isUserAPrivilegedCreator(
     userID: StringUserID,
     creationEvent: RoomCreateEvent
   ): boolean {
@@ -203,7 +203,7 @@ export const RoomVersionMirror = Object.freeze({
       return false;
     }
     if (
-      !this.isVersionWithPrivilidgedCreators(creationEvent.content.room_version)
+      !this.isVersionWithPrivilegedCreators(creationEvent.content.room_version)
     ) {
       return false;
     }
@@ -215,10 +215,10 @@ export const RoomVersionMirror = Object.freeze({
     }
     return false;
   },
-  priviligedCreators(creationEvent: RoomCreateEvent): StringUserID[] {
+  privilegedCreators(creationEvent: RoomCreateEvent): StringUserID[] {
     if (
       creationEvent.content.room_version === undefined ||
-      !this.isVersionWithPrivilidgedCreators(creationEvent.content.room_version)
+      !this.isVersionWithPrivilegedCreators(creationEvent.content.room_version)
     ) {
       return [creationEvent.sender];
     }

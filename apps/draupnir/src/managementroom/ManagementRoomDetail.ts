@@ -80,7 +80,7 @@ export class StandardManagementRoomDetail implements ManagementRoomDetail {
         PowerLevelPermission.StateDefault,
         powerLevelEvent.content
       ) ||
-      RoomVersionMirror.isUserAPrivilidgedCreator(draupnirUserID, createEvent)
+      RoomVersionMirror.isUserAPrivilegedCreator(draupnirUserID, createEvent)
     ) {
       return true;
     }
