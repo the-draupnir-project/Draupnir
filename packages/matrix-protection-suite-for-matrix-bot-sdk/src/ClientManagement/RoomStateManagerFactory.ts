@@ -259,7 +259,7 @@ export class RoomStateManagerFactory {
         if (createEvent === undefined) {
           return false;
         }
-        return RoomVersionMirror.isUserAPrivilidgedCreator(editor, createEvent);
+        return RoomVersionMirror.isUserAPrivilegedCreator(editor, createEvent);
       })
       .map((issuer) => issuer.room.toRoomIDOrAlias());
     const editableRoomIDs = this.policyRoomIssuers

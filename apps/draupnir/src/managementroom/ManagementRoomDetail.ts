@@ -10,13 +10,19 @@ import {
 import {
   JoinRulesEvent,
   Membership,
+  PowerLevelPermission,
+  PowerLevelsEvent,
+  PowerLevelsMirror,
+  RoomCreateEvent,
   RoomMembershipRevisionIssuer,
   RoomStateRevisionIssuer,
+  RoomVersionMirror,
 } from "matrix-protection-suite";
 
 export interface ManagementRoomDetail {
   isRoomPublic(): boolean;
   isModerator(userID: StringUserID): boolean;
+  isDraupnirUserPowered(draupnirUserID: StringUserID): boolean;
   managementRoom: MatrixRoomID;
   managementRoomID: StringRoomID;
 }
@@ -51,5 +57,33 @@ export class StandardManagementRoomDetail implements ManagementRoomDetail {
 
   public get managementRoomID(): StringRoomID {
     return this.managementRoom.toRoomIDOrAlias();
+  }
+
+  public isDraupnirUserPowered(draupnirUserID: StringUserID): boolean {
+    const powerLevelEvent =
+      this.stateIssuer.currentRevision.getStateEvent<PowerLevelsEvent>(
+        "m.room.power_levels",
+        ""
+      );
+
+    const createEvent =
+      this.stateIssuer.currentRevision.getStateEvent<RoomCreateEvent>(
+        "m.room.create",
+        ""
+      );
+    if (powerLevelEvent === undefined || createEvent === undefined) {
+      throw new TypeError("Unable to fetch management room state");
+    }
+    if (
+      PowerLevelsMirror.isUserAbleToUse(
+        draupnirUserID,
+        PowerLevelPermission.StateDefault,
+        powerLevelEvent.content
+      ) ||
+      RoomVersionMirror.isUserAPrivilegedCreator(draupnirUserID, createEvent)
+    ) {
+      return true;
+    }
+    return false;
   }
 }

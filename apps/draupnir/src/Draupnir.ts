@@ -81,6 +81,7 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { TimelineRedactionQueue } from "./queues/TimelineRedactionQueue";
+import { ResultError } from "@gnuxie/typescript-result";
 
 const log = new Logger("Draupnir");
 
@@ -324,6 +325,21 @@ export class Draupnir implements Client, MatrixAdaptorContext {
       );
     if (isError(managementRoomProtectResult)) {
       return managementRoomProtectResult;
+    }
+    // Check that Draupnir has the ability to send state events to the management
+    // room. Which is important because Draupnir users state events to persist
+    // protection settings, including the draupnir news feed position.
+    if (!managementRoomDetail.isDraupnirUserPowered(clientUserID)) {
+      const errorText = `${clientUserID} doesn't have the power level required to send state events in the management room. Please make the Draupnir user an administrator.`;
+      await Task(
+        clientPlatform
+          .toRoomMessageSender()
+          .sendMessage(managementRoomDetail.managementRoomID, {
+            body: errorText,
+            msgtype: "m.notice",
+          })
+      );
+      return ResultError.Result(errorText);
     }
     return Ok(draupnir);
   }
