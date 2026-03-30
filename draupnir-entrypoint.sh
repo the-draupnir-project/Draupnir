@@ -5,13 +5,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# This is used as the entrypoint in the draupnir Dockerfile.
-# We want to transition away form people running the image without specifying `bot` or `appservice`.
-# So if eventually cli arguments are provided for the bot version, we want this to be the opportunity to move to `bot`.
-# Therefore using arguments without specifying `bot` (or appservice) is unsupported.
+# This is used as the entrypoint in the draupnir Dockerfile and convenience for from-source installations.
+# This allows us to set default options for node and to switch between the appservice and bot.
+
+# Help us normalise paths to make sure they are relative to where the script is.
+draupnir_path="${0%/*}";
+test x"$draupnir_path" = x"$0" && draupnir_path='.';
+case "$draupnir_path" in
+    [!/.]*) draupnir_path="./$draupnir_path";;
+esac
+
 case "$1" in
-    bot) shift; set -- node --enable-source-maps /apps/draupnir/dist/index.js "$@";;
-    appservice) shift; set -- node --enable-source-maps /apps/draupnir/dist/appservice/cli.js "$@";;
+    bot) shift; set -- node --enable-source-maps "${draupnir_path}/apps/draupnir/dist/index.js" "$@";;
+    appservice) shift; set -- node --enable-source-maps "${draupnir_path}/apps/draupnir/dist/appservice/cli.js" "$@";;
 esac
 
 # If it looks like someone is providing an executable to `docker run`, then we will execute that instead.
