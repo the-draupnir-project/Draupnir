@@ -270,7 +270,7 @@ const defaultConfig: IConfig = {
   },
   experimentalRustCrypto: false,
   draupnirNewsURL:
-    "https://raw.githubusercontent.com/the-draupnir-project/Draupnir/refs/heads/main/src/protections/DraupnirNews/news.json",
+    "https://raw.githubusercontent.com/the-draupnir-project/Draupnir/refs/heads/main/apps/draupnir/src/protections/DraupnirNews/news.json",
   configMeta: undefined,
 };
 
