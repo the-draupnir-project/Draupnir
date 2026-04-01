@@ -18,13 +18,17 @@ import { isOk } from "matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {
+  // FIXME: Ideally the matrix client interface would implement [Symbol.dispose]
+  // to call stop and then we could use await using in the tests.
   moderator?: MatrixClient;
+  allowedUser?: MatrixClient;
   appservice?: MjolnirAppService | undefined;
 }
 
 describe("Test that the app service can provision a draupnir on invite of the appservice bot", function () {
   afterEach(function (this: Context) {
     this.moderator?.stop();
+    this.allowedUser?.stop();
     if (this.appservice) {
       return this.appservice.close();
     } else {
@@ -121,6 +125,7 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     const allowedUser = await newTestUser(config.homeserver.url, {
       name: { contains: "multi-allowed" },
     });
+    this.allowedUser = allowedUser;
     const allowedUserID = (await allowedUser.getUserId()) as StringUserID;
 
     (await appservice.accessControl.allow(allowedUserID)).expect(
@@ -154,6 +159,7 @@ describe("Test that the app service can provision a draupnir on invite of the ap
     const allowedUser = await newTestUser(config.homeserver.url, {
       name: { contains: "admin-bypass-allowed" },
     });
+    this.allowedUser = allowedUser;
     const allowedUserID = (await allowedUser.getUserId()) as StringUserID;
 
     (await appservice.accessControl.allow(allowedUserID)).expect(
