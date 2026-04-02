@@ -32,7 +32,9 @@ jobs:
         run: echo "release_version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Set lowercase image owner
         id: image_owner
-        run: echo "image_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run:
+          echo "image_owner=$(echo '${{ github.repository_owner }}' | tr
+          '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -75,6 +77,7 @@ jobs:
         id: attest
         uses: actions/attest@v4
         with:
-          subject-name: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/draupnir
+          subject-name:
+            ghcr.io/${{ steps.image_owner.outputs.image_owner }}/draupnir
           subject-digest: ${{ steps.push_ghcr.outputs.digest }}
           push-to-registry: true

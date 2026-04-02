@@ -19,12 +19,12 @@ const ignores = [
   "**/lib/**",
   "**/node_modules/**",
   "**/*.js",
-  "**/*.jsx"
+  "**/*.jsx",
 ];
 
 export default tseslint.config(
   {
-    ignores
+    ignores,
   },
   {
     // This is a typescript-eslint configurartion for typescript files.
@@ -80,10 +80,7 @@ export default tseslint.config(
       // but other than using namespaces, we don't have granular enough modules
       // to be able to depend on their behaviour. This should be revisited.
       "@typescript-eslint/no-extraneous-class": "off",
-      "@typescript-eslint/unbound-method": [
-        "error",
-        { ignoreStatic: true }
-      ],
+      "@typescript-eslint/unbound-method": ["error", { ignoreStatic: true }],
       // We want to be able to create infinite loops.
       "@typescript-eslint/no-unnecessary-condition": [
         "error",
@@ -100,7 +97,11 @@ export default tseslint.config(
         {
           allow: [
             // Idk why they did this but whatever https://github.com/element-hq/matrix-bot-sdk/pull/66/changes#r2965217095
-            { from: "package", name: "getRoomStateEvent", package: "@vector-im/matrix-bot-sdk" },
+            {
+              from: "package",
+              name: "getRoomStateEvent",
+              package: "@vector-im/matrix-bot-sdk",
+            },
           ],
         },
       ],
@@ -126,7 +127,11 @@ export default tseslint.config(
             { from: "file", name: "logMessage" },
             { from: "file", name: "allocateProtection" },
             // Idk why they did this but whatever https://github.com/element-hq/matrix-bot-sdk/pull/66/changes#r2965217095
-            { from: "package", name: "getRoomStateEvent", package: "@vector-im/matrix-bot-sdk" },
+            {
+              from: "package",
+              name: "getRoomStateEvent",
+              package: "@vector-im/matrix-bot-sdk",
+            },
           ],
         },
       ],
