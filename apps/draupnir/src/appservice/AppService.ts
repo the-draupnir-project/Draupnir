@@ -1,5 +1,6 @@
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
 //
@@ -185,6 +186,7 @@ export class MjolnirAppService {
     const serverName = config.homeserver.domain;
     const mjolnirManager = await AppServiceDraupnirManager.makeDraupnirManager(
       serverName,
+      config.maxDraupnirsPerUser ?? 1,
       dataStore,
       bridge,
       accessControl,
@@ -263,60 +265,101 @@ export class MjolnirAppService {
     log.info(
       `${mxEvent.sender} has sent an invitation to the appservice bot ${this.bridge.botUserId}, attempting to provision them a draupnir`
     );
-    // Join the room and try to send the welcome flow
+    const client = this.bridge.getBot().getClient();
     try {
-      await this.bridge.getBot().getClient().joinRoom(mxEvent.room_id);
-      await this.bridge
-        .getBot()
-        .getClient()
-        .sendText(
+      // Join the room so we can notify the requester and then reject the invite.
+      try {
+        await client.joinRoom(mxEvent.room_id);
+      } catch (e: unknown) {
+        log.error(
+          `Failed to join the room by ${mxEvent.sender} to process provisioning invite`,
+          e
+        );
+        return;
+      }
+
+      if (!this.config.allowSelfServiceProvisioning) {
+        await client
+          .sendText(
+            mxEvent.room_id,
+            "Self-service provisioning is disabled. Please ask an admin to provision a Draupnir for you."
+          )
+          .catch((e: unknown) => {
+            log.error(
+              `Failed to notify ${mxEvent.sender} that self-service provisioning is disabled`,
+              e
+            );
+          });
+        return;
+      }
+
+      try {
+        await client.sendText(
           mxEvent.room_id,
           "Your Draupnir is currently being provisioned. Please wait while we set up the rooms."
         );
-    } catch (e: unknown) {
-      log.error(
-        `Failed to join the room by ${mxEvent.sender} to display the welcome flow`,
-        e
-      );
-    }
-    try {
-      const result = await this.draupnirManager.provisionNewDraupnir(
-        mxEvent.sender as StringUserID
-      );
-      if (isError(result)) {
+      } catch (e: unknown) {
+        log.error(
+          `Failed to send provisioning welcome flow to ${mxEvent.sender}; aborting provisioning`,
+          e
+        );
+        // We don´t want to continue with provisioning because we don´t have a working communications channel with the user.
+        return;
+      }
+      // Ideallly we need to rework provisionNewDraupnir because its current state does not catch all expected errors.
+      let provisioningFailed = false;
+      try {
+        const provisionResult = await this.draupnirManager.provisionNewDraupnir(
+          mxEvent.sender as StringUserID
+        );
+        if (isError(provisionResult)) {
+          log.error(
+            `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`,
+            provisionResult.error
+          );
+          provisioningFailed = true;
+        }
+      } catch (e: unknown) {
         log.error(
           `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}`,
-          result.error
+          e
+        );
+        provisioningFailed = true;
+      }
+
+      if (provisioningFailed) {
+        try {
+          await client.sendText(
+            mxEvent.room_id,
+            "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
+          );
+        } catch (e: unknown) {
+          log.error(
+            `Failed to send provisioning failure flow to ${mxEvent.sender}`,
+            e
+          );
+        }
+        return;
+      }
+      // Send a notice that the invite must be accepted.
+      try {
+        await client.sendText(
+          mxEvent.room_id,
+          "Please accept the invitations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
+        );
+      } catch (e: unknown) {
+        log.error(
+          `Failed to send provisioning success flow to ${mxEvent.sender}`,
+          e
         );
       }
-      // Send a notice that the invite must be accepted
-      await this.bridge
-        .getBot()
-        .getClient()
-        .sendText(
-          mxEvent.room_id,
-          "Please accept the inviations to the newly provisioned rooms. These will be the home of your Draupnir Instance. This room will not be used in the future."
-        );
-    } catch (e: unknown) {
-      log.error(
-        `Failed to provision a draupnir for ${mxEvent.sender} after they invited ${this.bridge.botUserId}:`,
-        e
-      );
-      // continue, we still want to reject this invitation.
-      // Send a notice that the provisioning failed
-      await this.bridge
-        .getBot()
-        .getClient()
-        .sendText(
-          mxEvent.room_id,
-          "Please make sure you are allowed to provision a bot. Otherwise please notify the admin. The provisioning request was rejected."
-        );
-    }
-    try {
-      // reject the invite to keep the room clean and make sure the invetee doesn't get confused and think this is their draupnir.
-      await this.bridge.getBot().getClient().leaveRoom(mxEvent.room_id);
-    } catch (e: unknown) {
-      log.warn("Unable to reject an invite to a room", e);
+    } finally {
+      try {
+        // Reject the invite to keep the room clean and make sure the invitee doesn't get confused and think this is their draupnir.
+        await client.leaveRoom(mxEvent.room_id);
+      } catch (e: unknown) {
+        log.warn("Unable to reject an invite to a room", e);
+      }
     }
   }
 

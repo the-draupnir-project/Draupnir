@@ -1,5 +1,6 @@
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
 //
@@ -28,8 +29,15 @@ export function readTestConfig(): AppserviceConfig {
 
 export async function setupHarness(): Promise<MjolnirAppService> {
   const config = readTestConfig();
+  return await setupHarnessWithConfig(config);
+}
+
+export async function setupHarnessWithConfig(
+  config: AppserviceConfig
+): Promise<MjolnirAppService> {
   const utilityUser = await newTestUser(config.homeserver.url, {
     name: { contains: "utility" },
+    isAdmin: true,
   });
   if (
     typeof config.adminRoom !== "string" ||
@@ -39,7 +47,19 @@ export async function setupHarness(): Promise<MjolnirAppService> {
       "This test expects the harness config to have a room alias."
     );
   }
-  await ensureAliasedRoomExists(utilityUser, config.adminRoom);
+  await utilityUser
+    .deleteRoomAlias(config.adminRoom)
+    // Ignore if alias doesn't exist yet.
+    .catch((_: unknown) => undefined);
+  const adminRoomID = await ensureAliasedRoomExists(
+    utilityUser,
+    config.adminRoom
+  );
+  await utilityUser.setUserPowerLevel(
+    "@draupnir-moderation:localhost:9999",
+    adminRoomID,
+    100
+  );
   return await MjolnirAppService.run(
     9000,
     config,

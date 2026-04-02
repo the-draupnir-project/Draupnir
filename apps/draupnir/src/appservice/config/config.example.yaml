@@ -16,5 +16,14 @@ adminRoom: "#draupnir-admin:localhost:9999"
 # The directory the bot should store various bits of information in
 dataPath: "/data/storage"
 
+# Maximum number of bots each user can provision.
+# Defaults to 1 when omitted.
+maxDraupnirsPerUser: 1
+
+# Allow users to self-provision by inviting the appservice bot.
+# When false, provisioning must be done through admin commands.
+# Defaults to false when omitted.
+allowSelfServiceProvisioning: false
+
 roomStateBackingStore:
   enabled: false
