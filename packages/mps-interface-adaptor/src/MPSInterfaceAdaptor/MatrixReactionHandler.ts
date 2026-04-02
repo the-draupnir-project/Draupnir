@@ -36,10 +36,10 @@ type ItemByReactionKey = Map<
   string /*reaction key*/,
   string /*serialized presentation*/
 >;
-export type ReactionListener = (
+export type ReactionListener<Context = unknown> = (
   key: string,
   item: string,
-  additionalContext: unknown,
+  additionalContext: Context,
   reactionMap: ItemByReactionKey,
   annotatedEvent: RoomEvent
 ) => void;

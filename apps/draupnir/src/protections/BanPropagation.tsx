@@ -211,8 +211,13 @@ export class BanPropagationProtection
   extends AbstractProtection<BanPropagationProtectionCapabilitiesDescription>
   implements DraupnirProtection<BanPropagationProtectionCapabilitiesDescription>
 {
-  private readonly banPropagationPromptListener =
-    this.banReactionListener.bind(this);
+  private readonly banPropagationPromptListener = (
+    key: string,
+    item: unknown,
+    context: BanPropagationMessageContext
+  ) => {
+    void Task(this.banReactionListener(key, item, context), { log });
+  };
   constructor(
     description: BanPropagationProtectionCapabilitiesDescription,
     lifetime: OwnLifetime<

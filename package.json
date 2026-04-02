@@ -21,7 +21,7 @@
     "build:all": "tsc -b tsconfig.all.json && npm run -ws build:assets --if-present",
     "build:clean": "tsc -b --clean",
     "test": "npm run -ws test --if-present && npm run -w apps/draupnir test:unit",
-    "lint": "eslint --cache 'packages/**/*{ts, tsx}' 'apps/**/*{ts, tsx}' && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md DEPENDENCIES.md"
+    "lint": "eslint --cache 'packages/**/*.{ts,tsx}' 'apps/**/*.{ts,tsx}' && prettier --cache --ignore-unknown --check apps packages README.md CHANGELOG.md DEPENDENCIES.md"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

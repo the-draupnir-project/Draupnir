@@ -40,6 +40,7 @@ import {
   renderMentionPill,
   sendMatrixEventsFromDeadDocument,
   renderErrorDetails,
+  ReactionListener,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 
@@ -195,8 +196,13 @@ async function sendPromptForReplacementRoom(
  * - `syncTombstonedPolicyRooms` must be called if you want it to detect stale tombstones at startup.
  */
 export class WatchReplacementPolicyRooms {
-  private readonly watchReplacementPolicyRoomsPromptListener =
-    this.handlePromptReaction.bind(this);
+  private readonly watchReplacementPolicyRoomsPromptListener = (
+    ...args: Parameters<ReactionListener<WatchPolicyRoomPromptContext>>
+  ) => {
+    void Task(this.handlePromptReaction(...args), {
+      log,
+    });
+  };
   public constructor(
     private readonly managementRoomID: StringRoomID,
     private readonly roomJoiner: RoomJoiner,
