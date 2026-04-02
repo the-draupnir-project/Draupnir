@@ -8,9 +8,60 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 All notable changes to Draupnir will be kept in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to
+This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased] - 2026-04-02
+
+### Major Changes
+
+- 🚨 All uncontainerised installations from source will need to change how they
+  install, build, and start Draupnir. If you installed Draupnir by following our
+  debian instructions, you will need to check that your systemd unit file
+  `ExecStart`
+  [matches our documentation](https://the-draupnir-project.github.io/draupnir-documentation/bot/setup_debian#example-systemd-service),
+  and follow our
+  [upgrade steps](https://the-draupnir-project.github.io/draupnir-documentation/bot/setup_debian#updating-the-bot).
+  For custom source installations you can see the basics of the steps
+  [here](https://the-draupnir-project.github.io/draupnir-documentation/bot/bot/setup_selfbuild),
+  and note that the way Draupnir is started has changed. Any installation using
+  images from docker do not need to change the way Draupnir is started.
+- 🚨 The minimum supported node.js version has changed from 20 to **24**. This
+  is simply a result of node 20 approaching EOL and 24 being the active LTS.
+- 🚨 Draupnir now must be started with the --draupnir-config option to provide a
+  path to the config file. Depending on legacy `config` package behaviour was
+  deprecated in
+  https://github.com/the-draupnir-project/Draupnir/releases/tag/v2.0.0-beta.8.
+  Most setups will have already made the change as this has been the documented
+  way to provide a config file since the beginning of the project.
+- For appservice deployments, self service provisioning (via invitations) has to
+  be to be manually enabled in the appservice config file. Contributed by
+  @FSG-Cat.
+
+### Minor Changes
+
+- Draupnir will crash at startup if it does not have the ability to send state
+  events to the mangement room. Most installs will already have this permission,
+  but in any case the error logging for this is self explanatory. Reported by
+  @nono-lqdn.
+- 30611aa: Add appservice provision limits and add appservice force provision
+  command. Contributed by @FSG-Cat.
+
+### Patch Changes
+
+- 5870c02: Fixed a bug where User policies of any recommendation would result in
+  the MemberBanSynchronisationProtection banning users. This is was a
+  particularly important issue for compatibility with Meowlnir. Contributed by
+  @nexy7574.
+- 30611aa: Add version command to the appservice admin bot. Contributed by
+  @FSG-Cat.
+- b4d105f: Add branch information to status command output. Contributed by
+  @FSG-Cat.
+
+### Special thanks
+
+Special thanks to our wonderful support community in
+[#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org).
 
 ## [v2.8.0] - 2025-12-18
 
