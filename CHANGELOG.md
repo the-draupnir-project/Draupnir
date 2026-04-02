@@ -11,7 +11,18 @@ All notable changes to Draupnir will be kept in this file.
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-04-02
+## [v3.0.0] - 2026-04-02
+
+Draupnir [v3.0.0] is focussed on changes to improve maintenance of the project,
+including incorporating all of the Draupnir stack into a monorepo to improve
+contribution workflow. There are a number of **breaking** changes to consider
+that are listed in the major changes below.
+
+If for some reason you do encounter an issue with upgrading Draupnir, it is safe
+to downgrade back to v2.9.0 without changes, and receive support either in our
+our support room
+[#draupnir:matrix.org](https://matrix.to/#/#draupnir:matrix.org) or
+[issue tracker](https://github.com/the-draupnir-project/Draupnir/issues).
 
 ### Major Changes
 

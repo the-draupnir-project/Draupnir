@@ -23,7 +23,7 @@ Matrix.
 
 ## Status
 
-We have recently passed a huge milestone: Draupnir's 2.0.0 release 🎉
+We have recently passed a huge milestone: Draupnir's 3.0.0 release 🎉
 
 See
 [governance reports](https://the-draupnir-project.github.io/draupnir-documentation/category/reports)
@@ -134,15 +134,15 @@ Mjolnir** that provides significant technical improvements:
 - A huge effort has been spent refactoring the code base, paving the way for
   future feature development of Draupnir and adjacent projects. This includes
   the rewrite of the core of Draupnir into the
-  [matrix-protection-suite](https://github.com/Gnuxie/matrix-protection-suite),
+  [matrix-protection-suite](https://github.com/the-draupnir-project/Draupnir/packages/matrix-protection-suite),
   providing all the Matrix client code required to operate a protection
   platform. The matrix-protection-suite also covers severall shortfalls in the
   available SDK's, providing event parsing and types that keep code secure and
   sound. The
-  [interface-manager](https://github.com/the-draupnir-project/interface-manager)
+  [interface-manager](https://github.com/the-draupnir-project/Draupnir/packages/interface-manager)
   providing an advanced command-oriented interface (note, this does not mean
   command-line interface). The
-  [matrix-basic-types](https://github.com/the-draupnir-project/matrix-basic-types)
+  [matrix-basic-types](https://github.com/the-draupnir-project/Draupnir/packages/matrix-basic-types)
   library for dealing with Matrix's various string types. And finally the
   introduction of [prettier](https://prettier.io/),
   [eslint](https://eslint.org/) and
