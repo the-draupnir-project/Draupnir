@@ -127,7 +127,7 @@ export class DraupnirNewsLifecycle {
 const FSNews = (() => {
   const content = JSON.parse(
     readFileSync(path.join(__dirname, "./news.json"), "utf8")
-  );
+  ) as unknown;
   return Value.Decode(DraupnirNewsBlob, content).expect(
     "File system news should match the schema"
   );
@@ -144,7 +144,7 @@ async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
     .then((response) => response.json())
     .then(
       (json) => Value.Decode(DraupnirNewsBlob, json),
-      (error) =>
+      (error: unknown) =>
         ActionException.Result("unable to fetch news", {
           exception: error,
           exceptionKind: ActionExceptionKind.Unknown,

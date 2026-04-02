@@ -78,8 +78,10 @@ function renderConfigPropertyValue(value: unknown): DocumentNode {
       return <ul>{value.map((value) => renderConfigPropertyValue(value))}</ul>;
     } else {
       return (
+        // FIXME: We should probably try walk this but ya.
+        // We don't have time for that and no one uses objects here yet.
         <fragment>
-          <code>{String(value)}</code>{" "}
+          <code>{"[object Object]"}</code>{" "}
           <span data-mx-color="#D2691E">(object)</span>
         </fragment>
       );

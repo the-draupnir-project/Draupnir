@@ -400,7 +400,7 @@ async function findSettingDetailsForCommand(
   if (isError(protectionDescription)) {
     return protectionDescription;
   }
-  const settingsDescription = protectionDescription.ok.protectionSettings;
+  type SettingsDescription = typeof protectionDescription.ok.protectionSettings;
   const previousSettings = await protectionsManager.getProtectionSettings(
     protectionDescription.ok
   );
@@ -410,7 +410,7 @@ async function findSettingDetailsForCommand(
   return Ok({
     protectionDescription: protectionDescription.ok,
     propertyKey:
-      settingName as keyof typeof settingsDescription.schema.properties,
+      settingName as keyof SettingsDescription["schema"]["properties"],
     description: protectionDescription.ok.protectionSettings,
     previousSettings: previousSettings.ok,
   });

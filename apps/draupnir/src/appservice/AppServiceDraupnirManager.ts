@@ -477,7 +477,7 @@ export async function makeManagementRoom(
       "Failed to fetch room versions from client capabilities"
     );
   }
-  const isRoomVersionWithPrivilidgedCreators =
+  const isRoomVersionWithPriviligedCreators =
     RoomVersionMirror.isVersionWithPrivilegedCreators(
       capabilities.ok.capabilities["m.room_versions"].default
     );
@@ -485,7 +485,7 @@ export async function makeManagementRoom(
     preset: "private_chat",
     invite: [requestingUserID],
     name: `${requestingUserID}'s Draupnir`,
-    power_level_content_override: isRoomVersionWithPrivilidgedCreators
+    power_level_content_override: isRoomVersionWithPriviligedCreators
       ? {
           users: {
             [requestingUserID]: 150,
