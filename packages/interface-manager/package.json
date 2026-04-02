@@ -12,7 +12,7 @@
   },
   "license": "Apache-2.0",
   "repository": {
-    "url": "https://github.com/the-draupnir-project/interface-manager.git",
+    "url": "https://github.com/the-draupnir-project/Draupnir.git",
     "type": "git"
   },
   "private": false,
