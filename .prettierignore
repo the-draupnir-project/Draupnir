@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 #
-# SPDX-License-Identifier: AFL-3.0
+# SPDX-License-Identifier: 0BSD
 
 dist
 packages/matrix-protection-suite/docs
+node_modules
+package-lock.json

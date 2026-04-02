@@ -6,6 +6,6 @@
     { "path": "./packages/matrix-protection-suite" },
     { "path": "./packages/matrix-protection-suite-for-matrix-bot-sdk" },
     { "path": "./packages/mps-interface-adaptor" },
-    { "path": "./apps/draupnir"}
+    { "path": "./apps/draupnir" }
   ]
 }

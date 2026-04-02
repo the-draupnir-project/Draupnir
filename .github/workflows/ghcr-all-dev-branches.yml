@@ -37,7 +37,9 @@ jobs:
           fetch-tags: true
       - name: Set lowercase image owner
         id: image_owner
-        run: echo "image_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run:
+          echo "image_owner=$(echo '${{ github.repository_owner }}' | tr
+          '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       # Needed for multi platform builds
       - name: Set up QEMU
@@ -59,7 +61,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/${{ env.IMAGE_NAME }}
+          images:
+            ghcr.io/${{ steps.image_owner.outputs.image_owner }}/${{
+            env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=sha,prefix=sha-
