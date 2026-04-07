@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
 //
@@ -194,7 +195,7 @@ export class TrustedReporters
 
     if (met.length > 0) {
       await this.draupnir.client.sendMessage(
-        this.draupnir.config.managementRoom,
+        this.draupnir.managementRoomID,
         {
           msgtype: "m.notice",
           body:

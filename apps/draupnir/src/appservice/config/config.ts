@@ -14,6 +14,7 @@ import * as fs from "fs";
 import { load } from "js-yaml";
 import { Value } from "@sinclair/typebox/value";
 import { EDStatic } from "matrix-protection-suite";
+import { StringUserIDSchema } from "matrix-protection-suite";
 
 export function read(configPath: string): AppserviceConfig {
   const content = fs.readFileSync(configPath, "utf8");
@@ -81,10 +82,16 @@ export const AppserviceConfig = Type.Object({
     },
     { description: "Details for the database backend" }
   ),
-  adminRoom: Type.String({
-    description:
-      "The admin room for the appservice bot. Not called managementRoom like draupnir on purpose, so they're not mixed in code somehow.",
+  managedAdminRoom: Type.Boolean({
+    default: false,
   }),
+  initialManager: Type.Optional(StringUserIDSchema),
+  adminRoom: Type.Optional(
+    Type.String({
+      description:
+        "The admin room for the appservice bot. Not called managementRoom like draupnir on purpose, so they're not mixed in code somehow.",
+    })
+  ),
   roomStateBackingStore: Type.Optional(
     Type.Object(
       {

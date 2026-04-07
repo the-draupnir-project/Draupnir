@@ -48,7 +48,10 @@ import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { TopLevelStores } from "./backingstore/DraupnirStores";
+import { MANAGEMENT_ROOM_ACCOUNT_DATA_EVENT_TYPE } from "./managedRoomAccountData";
+import { makeManagementRoom } from "./appservice/AppServiceDraupnirManager";
 import { patchMatrixClient } from "./utils";
+import { resolveManagedRoom } from "./managedRoomBootstrap";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -116,17 +119,6 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     if (!isStringUserID(clientUserID)) {
       throw new TypeError(`${clientUserID} is not a valid mxid`);
     }
-    if (
-      !isStringRoomAlias(config.managementRoom) &&
-      !isStringRoomID(config.managementRoom)
-    ) {
-      throw new TypeError(
-        `${config.managementRoom} is not a valid room id or alias`
-      );
-    }
-    const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(
-      config.managementRoom
-    );
     const clientsInRoomMap = new StandardClientsInRoomMap();
     const clientCapabilityFactory = new ClientCapabilityFactory(
       clientsInRoomMap,
@@ -142,14 +134,37 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientUserID,
       client
     );
-    const managementRoom = (
-      await clientPlatform
-        .toRoomResolver()
-        .resolveRoom(configManagementRoomReference)
-    ).expect("Unable to resolve Draupnir's management room");
-    (await clientPlatform.toRoomJoiner().joinRoom(managementRoom)).expect(
-      "Unable to join Draupnir's management room"
-    );
+    const managementRoom = await resolveManagedRoom({
+      managedRoomEnabled: config.managedManagementRoom,
+      configuredRoom: config.managementRoom,
+      initialManager: config.initialManager,
+      clientUserID,
+      client,
+      clientPlatform,
+      accountDataEventType: MANAGEMENT_ROOM_ACCOUNT_DATA_EVENT_TYPE,
+      roomKindDescription: "management room",
+      parseConfiguredRoom(configuredRoom: string): MatrixRoomReference {
+        if (
+          !isStringRoomAlias(configuredRoom) &&
+          !isStringRoomID(configuredRoom)
+        ) {
+          throw new TypeError(
+            `${configuredRoom} is not a valid room id or alias`
+          );
+        }
+        return MatrixRoomReference.fromRoomIDOrAlias(configuredRoom);
+      },
+      async createManagedRoom(initialManager, resolvedClientUserID) {
+        return (
+          await makeManagementRoom(
+            clientPlatform.toRoomCreator(),
+            clientPlatform.toClientCapabilitiesNegotiation(),
+            initialManager,
+            resolvedClientUserID
+          )
+        ).expect("Unable to create managed management room");
+      },
+    });
     const clientProvider = async (userID: StringUserID) => {
       if (userID !== clientUserID) {
         throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);

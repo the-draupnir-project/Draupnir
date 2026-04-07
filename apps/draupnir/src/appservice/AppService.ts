@@ -55,6 +55,9 @@ import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/Sqli
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
 import { Result } from "@gnuxie/typescript-result";
+import { ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE } from "../managedRoomAccountData";
+import { makeManagementRoom } from "./AppServiceDraupnirManager";
+import { resolveManagedRoom } from "../managedRoomBootstrap";
 
 const log = new Logger("AppService");
 /**
@@ -198,27 +201,51 @@ export class MjolnirAppService {
         joinedRoomsSafe(bridge.getBot().getClient())
       )
     ).expect("Unable to initialize client rooms for the appservice bot user");
-    const botRoomJoiner = clientCapabilityFactory
-      .makeClientPlatform(botUserID, bridge.getBot().getClient())
-      .toRoomJoiner();
-    const adminRoom = (() => {
-      if (isStringRoomID(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomID(config.adminRoom);
-      } else if (isStringRoomAlias(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
-      } else {
-        const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
+    const botClient = bridge.getBot().getClient();
+    const botClientPlatform = clientCapabilityFactory.makeClientPlatform(
+      botUserID,
+      botClient
+    );
+    const botRoomJoiner = botClientPlatform.toRoomJoiner();
+    const accessControlRoom = await resolveManagedRoom({
+      managedRoomEnabled: config.managedAdminRoom,
+      configuredRoom: config.adminRoom,
+      initialManager: config.initialManager,
+      clientUserID: botUserID,
+      client: botClient,
+      clientPlatform: botClientPlatform,
+      accountDataEventType: ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE,
+      roomKindDescription: "admin room",
+      parseConfiguredRoom(configuredRoom: string): MatrixRoomReference {
+        if (isStringRoomID(configuredRoom)) {
+          return MatrixRoomReference.fromRoomID(configuredRoom);
+        }
+        if (isStringRoomAlias(configuredRoom)) {
+          return MatrixRoomReference.fromRoomIDOrAlias(configuredRoom);
+        }
+        const parseResult = MatrixRoomReference.fromPermalink(configuredRoom);
         if (isError(parseResult)) {
           throw new TypeError(
-            `${config.adminRoom} needs to be a room id, alias or permalink`
+            `${configuredRoom} needs to be a room id, alias or permalink`
           );
         }
         return parseResult.ok;
-      }
-    })();
-    const accessControlRoom = (
-      await botRoomJoiner.resolveRoom(adminRoom)
-    ).expect("Unable to resolve the admin room");
+      },
+      async createManagedRoom(initialManager, resolvedClientUserID) {
+        return (
+          await makeManagementRoom(
+            botClientPlatform.toRoomCreator(),
+            botClientPlatform.toClientCapabilitiesNegotiation(),
+            initialManager,
+            resolvedClientUserID,
+            {
+              invitees: [initialManager],
+              roomName: `${initialManager}'s Draupnir Appservice Admin room`,
+            }
+          )
+        ).expect("Unable to create managed admin room");
+      },
+    });
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
     const accessControl = (

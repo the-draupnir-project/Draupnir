@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019, 2021 The Matrix.org Foundation C.I.C.
 //
@@ -18,6 +19,7 @@ import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
 setGlobalLoggerProvider(new RichConsoleLogger());
@@ -84,7 +86,9 @@ export interface IConfig {
   /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
-  managementRoom: string;
+  managedManagementRoom: boolean;
+  initialManager: StringUserID | undefined;
+  managementRoom: string | undefined;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
   logMutedModules: string[];
   verifyPermissionsOnStartup: boolean;
@@ -205,6 +209,8 @@ const defaultConfig: IConfig = {
   acceptInvitesFromSpace: "!noop:example.org",
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
+  managedManagementRoom: false,
+  initialManager: undefined,
   managementRoom: "!noop:example.org",
   logLevel: "INFO",
   logMutedModules: ["MatrixHttpClient", "MatrixClientLite"],
