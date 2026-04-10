@@ -198,6 +198,19 @@ Please see or
 but do not worry too much about following the guidance to the letter. And keep
 that in mind throughout.
 
+## License
+
+This distribution contains components under multiple licenses, including
+Apache-2.0 and AFL-3.0. See [LICENSE](./LICENSE) and LICENSES/ for details.
+
+This project is primarily developed under the Academic Free License 3.0
+(AFL-3.0), with some components under Apache-2.0, and others under more
+permissive licenses such as MIT or 0BSD.
+
+When redistributing Draupnir, you must comply with the terms of each applicable
+license. In practice, this primarily involves preserving license texts and any
+required NOTICE files for Apache-2.0 components.
+
 ## Supported by
 
 ### NLnet

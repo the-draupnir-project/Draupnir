@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": "https://github.com/the-draupnir-project/Draupnir.git",
   "author": "Gnuxie",
-  "license": "AFL-3.0",
+  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "scripts": {
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
