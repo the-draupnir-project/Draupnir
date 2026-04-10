@@ -198,6 +198,18 @@ Please see or
 but do not worry too much about following the guidance to the letter. And keep
 that in mind throughout.
 
+## License
+
+This distribution contains components under multiple licenses, including
+Apache-2.0 and AFL-3.0. See [LICENSE](./LICENSE) and LICENSES/ for details.
+
+This project is primarily developed under the Academic Free License 3.0
+(AFL-3.0), but includes components under other permissive licenses.
+
+When redistributing, you must comply with the terms of each applicable license.
+For Apache-2.0 components, this includes preserving copyright notices and any
+required NOTICE files, and including a copy of the Apache License 2.0.
+
 ## Supported by
 
 ### NLnet

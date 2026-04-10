@@ -1,0 +1,22 @@
+# Licensing
+
+This file provides an overview of licensing in this repository.
+Individual license texts in the `LICENSES/` directory are authoritative.
+
+This repository contains software distributed under multiple open source licenses.
+
+The license for each file is indicated by its SPDX-License-Identifier where present,
+or otherwise a SPDX-License-Identifier within a REUSE.toml in the same filesystem
+directory. Packages also declare their license in their respective `package.json`
+files. The full license texts are available in the `LICENSES/` directory.
+
+No single license applies to all files in this repository.
+
+## Additional note
+
+This project is primarily developed under the Academic Free License 3.0 (AFL-3.0),
+but includes components under other permissive licenses, including Apache License 2.0.
+
+When redistributing this project, you must comply with the terms of each applicable
+license. For Apache-2.0 components, this includes preserving copyright notices and
+any required NOTICE files, and including a copy of the Apache License 2.0.
