@@ -204,11 +204,12 @@ This distribution contains components under multiple licenses, including
 Apache-2.0 and AFL-3.0. See [LICENSE](./LICENSE) and LICENSES/ for details.
 
 This project is primarily developed under the Academic Free License 3.0
-(AFL-3.0), but includes components under other permissive licenses.
+(AFL-3.0), with some components under Apache-2.0, and others under more
+permissive licenses such as MIT or 0BSD.
 
-When redistributing, you must comply with the terms of each applicable license.
-For Apache-2.0 components, this includes preserving copyright notices and any
-required NOTICE files, and including a copy of the Apache License 2.0.
+When redistributing Draupnir, you must comply with the terms of each applicable
+license. In practice, this primarily involves preserving license texts and any
+required NOTICE files for Apache-2.0 components.
 
 ## Supported by
 
