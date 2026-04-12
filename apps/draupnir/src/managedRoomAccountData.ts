@@ -10,8 +10,8 @@ import {
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 
 export const MANAGEMENT_ROOM_ACCOUNT_DATA_EVENT_TYPE =
-  "space.draupnir.management.room";
-export const ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE = "space.draupnir.admin.room";
+  "space.draupnir.management_room";
+export const ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE = "space.draupnir.admin_room";
 
 export const ManagedRoomAccountDataRecordSchema = Type.Object({
   room_id: StringRoomIDSchema,
