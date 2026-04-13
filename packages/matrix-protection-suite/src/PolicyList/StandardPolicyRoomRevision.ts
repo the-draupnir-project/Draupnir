@@ -46,6 +46,7 @@ import {
 import { isError } from "@gnuxie/typescript-result";
 import { SHA256 } from "crypto-js";
 import Base64 from "crypto-js/enc-base64";
+import { RoomCreateEvent } from "../MatrixTypes/CreateRoom";
 
 const log = new Logger("StandardPolicyRoomRevision");
 
@@ -91,13 +92,17 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
      */
     private readonly policyRuleByEventId: PolicyRuleByEventIDMap,
     private readonly policyRuleBySHA256: PolicyRuleByHashMap,
+    private readonly createEvent: RoomCreateEvent,
     private readonly powerLevelsEvent: PowerLevelsEvent | undefined
   ) {}
 
   /**
    * @returns An empty revision.
    */
-  public static blankRevision(room: MatrixRoomID): StandardPolicyRoomRevision {
+  public static blankRevision(
+    room: MatrixRoomID,
+    createEvent: RoomCreateEvent
+  ): StandardPolicyRoomRevision {
     return new StandardPolicyRoomRevision(
       room,
       new Revision(),
@@ -105,6 +110,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
       PersistentMap(),
       PersistentMap(),
       PersistentMap(),
+      createEvent,
       undefined
     );
   }
@@ -338,6 +344,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
       nextPolicyRules,
       nextPolicyRulesByEventID,
       nextPolicyRulesBySHA256,
+      this.createEvent,
       this.powerLevelsEvent
     );
   }
@@ -506,6 +513,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
     return PowerLevelsMirror.isUserAbleToSendState(
       who,
       policy,
+      this.createEvent,
       powerLevelsContent
     );
   }
@@ -520,6 +528,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
       this.policyRules,
       this.policyRuleByEventId,
       this.policyRuleBySHA256,
+      this.createEvent,
       powerLevels
     );
   }
@@ -531,6 +540,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
       this.policyRules,
       this.policyRuleByEventId,
       this.policyRuleBySHA256,
+      this.createEvent,
       this.powerLevelsEvent
     );
   }

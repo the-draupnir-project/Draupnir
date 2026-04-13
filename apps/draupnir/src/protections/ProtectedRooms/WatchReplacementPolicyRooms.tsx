@@ -8,7 +8,7 @@ import {
   PolicyRoomManager,
   PolicyRuleType,
   PowerLevelsEvent,
-  PowerLevelsMirror,
+  PowerLevelsEventMirror,
   RoomCreateEvent,
   RoomEvent,
   RoomJoiner,
@@ -74,7 +74,7 @@ function renderPrivilegedUsers(revision: RoomStateRevision): DocumentNode {
   const poweredUsers = powerLevels.content.users
     ? Object.entries(powerLevels.content.users)
         .filter(([userID]) =>
-          PowerLevelsMirror.isUserAbleToSendEvent(
+          PowerLevelsEventMirror.isUserAbleToSendEvent(
             userID as StringUserID,
             PolicyRuleType.User,
             powerLevels.content

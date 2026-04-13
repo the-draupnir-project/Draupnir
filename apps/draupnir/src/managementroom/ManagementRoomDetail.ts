@@ -16,7 +16,6 @@ import {
   RoomCreateEvent,
   RoomMembershipRevisionIssuer,
   RoomStateRevisionIssuer,
-  RoomVersionMirror,
 } from "matrix-protection-suite";
 
 export interface ManagementRoomDetail {
@@ -78,9 +77,9 @@ export class StandardManagementRoomDetail implements ManagementRoomDetail {
       PowerLevelsMirror.isUserAbleToUse(
         draupnirUserID,
         PowerLevelPermission.StateDefault,
+        createEvent,
         powerLevelEvent.content
-      ) ||
-      RoomVersionMirror.isUserAPrivilegedCreator(draupnirUserID, createEvent)
+      )
     ) {
       return true;
     }

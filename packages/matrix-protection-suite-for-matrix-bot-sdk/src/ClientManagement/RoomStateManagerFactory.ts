@@ -119,9 +119,19 @@ export class RoomStateManagerFactory {
     if (isError(roomStateIssuer)) {
       return roomStateIssuer;
     }
+    const createEvent =
+      roomStateIssuer.ok.currentRevision.getStateEvent<RoomCreateEvent>(
+        "m.room.create",
+        ""
+      );
+    if (createEvent === undefined) {
+      return ActionError.Result(
+        `Unable to find create event for ${room.toRoomIDOrAlias()} while creating policy room revision issuer`
+      );
+    }
     const issuer = new RoomStatePolicyRoomRevisionIssuer(
       room,
-      StandardPolicyRoomRevision.blankRevision(room),
+      StandardPolicyRoomRevision.blankRevision(room, createEvent),
       roomStateIssuer.ok
     );
     this.sha256Reverser?.addPolicyRoomRevisionIssuer(issuer);

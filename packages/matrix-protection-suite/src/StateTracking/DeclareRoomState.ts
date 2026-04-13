@@ -42,6 +42,7 @@ import { MjolnirPolicyRoomsConfig } from "../Protection/PolicyListConfig/Mjolnir
 import { StandardWatchedPolicyRooms } from "../Protection/WatchedPolicyRooms/StandardWatchedPolicyRooms";
 import { DefaultEventDecoder } from "../MatrixTypes/DefaultEventDecoder";
 import { DefaultMixinExtractor } from "../SafeMatrixEvents/MatrixEventMixinDescriptions/DefaultMixinExtractor";
+import { RoomCreateEvent } from "../MatrixTypes/CreateRoom";
 
 const log = new Logger("DeclareRoomState");
 
@@ -219,16 +220,29 @@ export function describeRoom({
       membershipDescriptions,
       policyDescriptions,
     });
+  // if a create event isn't provided, make one.
+  const providedCreateEvent = stateEvents.find(
+    (event) => event.type === "m.room.create"
+  );
+  const createEvent =
+    (providedCreateEvent as RoomCreateEvent | undefined) ??
+    (describeStateEvent({
+      sender: randomUserID(),
+      room_id: room.toRoomIDOrAlias(),
+      type: "m.room.create",
+      state_key: "",
+      content: {},
+    }) as RoomCreateEvent);
   const stateRevision =
     StandardRoomStateRevision.blankRevision(room).reviseFromState(stateEvents);
   const membershipRevision =
     StandardRoomMembershipRevision.blankRevision(room).reviseFromMembership(
       membershipEvents
     );
-  const policyRevision =
-    StandardPolicyRoomRevision.blankRevision(room).reviseFromState(
-      policyEvents
-    );
+  const policyRevision = StandardPolicyRoomRevision.blankRevision(
+    room,
+    createEvent
+  ).reviseFromState(policyEvents);
   const stateRevisionIssuer = new FakeRoomStateRevisionIssuer(
     stateRevision,
     room
