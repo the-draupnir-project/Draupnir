@@ -30,11 +30,13 @@ import {
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
+  resultifyBotSDKRequestErrorWith404AsUndefined,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
+  Ok,
   StandardClientsInRoomMap,
   Task,
   isError,
@@ -46,6 +48,7 @@ import {
   MatrixRoomReference,
   StringRoomID,
   StringUserID,
+  userLocalpart,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
@@ -135,6 +138,34 @@ export class MjolnirAppService {
       eventDecoder
     );
     const botUserID = bridge.getBot().getUserId() as StringUserID;
+    const botIntent = bridge.getIntent(botUserID);
+    await botIntent.ensureRegistered();
+    const botProfileResult = await botIntent.matrixClient
+      .getUserProfile(botUserID)
+      .then(
+        (value: unknown) => Ok(value),
+        (error: unknown) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
+      );
+    if (isError(botProfileResult)) {
+      log.error(
+        "Unable to fetch appservice bot profile information",
+        botProfileResult.error
+      );
+    }
+    const botProfile: unknown = isError(botProfileResult)
+      ? undefined
+      : botProfileResult.ok;
+    const botDisplayName =
+      typeof botProfile === "object" &&
+      botProfile !== null &&
+      "displayname" in botProfile &&
+      (typeof botProfile.displayname === "string" ||
+        botProfile.displayname === undefined)
+        ? botProfile.displayname
+        : undefined;
+    if (botDisplayName === undefined || botDisplayName === "") {
+      await botIntent.setDisplayName(userLocalpart(botUserID));
+    }
     (
       await clientsInRoomMap.makeClientRooms(botUserID, async () =>
         joinedRoomsSafe(bridge.getBot().getClient())
