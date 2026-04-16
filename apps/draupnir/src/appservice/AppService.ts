@@ -1,5 +1,5 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2023 - 2026 Gnuxie <Gnuxie@protonmail.com>
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -30,6 +30,7 @@ import {
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
+  resultifyBotSDKRequestError,
   resultifyBotSDKRequestErrorWith404AsUndefined,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
@@ -48,11 +49,11 @@ import {
   MatrixRoomReference,
   StringRoomID,
   StringUserID,
-  userLocalpart,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("AppService");
 /**
@@ -101,46 +102,49 @@ export class MjolnirAppService {
   private static async ensureAppserviceBotProfile(
     bridge: Bridge,
     botUserID: StringUserID
-  ): Promise<void> {
+  ): Promise<Result<void>> {
     const botIntent = bridge.getIntent(botUserID);
-    try {
-      await botIntent.ensureRegistered();
-      const botProfileResult = await botIntent.matrixClient
-        .getUserProfile(botUserID)
-        .then(
-          (value: unknown) => Ok(value),
-          (error: unknown) =>
-            resultifyBotSDKRequestErrorWith404AsUndefined(error)
-        );
-      if (isError(botProfileResult)) {
-        log.error(
-          "Unable to fetch appservice bot profile information",
-          botProfileResult.error
-        );
-        return;
-      }
-      const botProfile: unknown = botProfileResult.ok;
-      const botDisplayName =
-        typeof botProfile === "object" &&
-        botProfile !== null &&
-        "displayname" in botProfile &&
-        (typeof botProfile.displayname === "string" ||
-          botProfile.displayname === undefined)
-          ? botProfile.displayname
-          : undefined;
-      if (botDisplayName === undefined || botDisplayName === "") {
-        try {
-          await botIntent.setDisplayName(userLocalpart(botUserID));
-        } catch (error: unknown) {
-          log.warn(
-            "Unable to set appservice bot display name during startup",
-            error
-          );
-        }
-      }
-    } catch (error: unknown) {
-      log.warn("Unable to bootstrap appservice bot profile", error);
+    const registrationResult = await botIntent
+      .ensureRegistered()
+      .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+    if (isError(registrationResult)) {
+      return registrationResult.elaborate(
+        "Failed to register the main appservice bot user"
+      );
     }
+    const botProfileResult = await botIntent.matrixClient
+      .getUserProfile(botUserID)
+      .then(
+        (value) => Ok(value),
+        resultifyBotSDKRequestErrorWith404AsUndefined
+      );
+    if (isError(botProfileResult)) {
+      return botProfileResult.elaborate(
+        "Unable to fetch appservice bot profile information"
+      );
+    }
+    const extractDisplayName = (profile: unknown) => {
+      if (typeof profile !== "object" || profile === null) {
+        return undefined;
+      }
+      if ("displayname" in profile && typeof profile.displayname === "string") {
+        return profile.displayname;
+      }
+      return undefined;
+    };
+    const botDisplayName = extractDisplayName(botProfileResult.ok);
+    if (botDisplayName !== undefined && botDisplayName !== "") {
+      return Ok(undefined); // displayname is already set, nothing to do.
+    }
+    const setDisplaynameResult = await botIntent
+      .setDisplayName(botUserID)
+      .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+    if (isError(setDisplaynameResult)) {
+      return setDisplaynameResult.elaborate(
+        `Unable to set appservice bot displayname during startup`
+      );
+    }
+    return Ok(undefined);
   }
 
   /**
@@ -308,12 +312,13 @@ export class MjolnirAppService {
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);
-    void Task(
-      MjolnirAppService.ensureAppserviceBotProfile(
+    // Has to be called after the appservice starts or Synapse breaks.
+    (
+      await MjolnirAppService.ensureAppserviceBotProfile(
         service.bridge,
         service.botUserID
       )
-    );
+    ).expect("Failed to ensure the appservice bot's profile exists");
     return service;
   }
 
