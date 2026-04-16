@@ -49,6 +49,7 @@ import {
   MatrixRoomReference,
   StringRoomID,
   StringUserID,
+  userLocalpart,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
@@ -91,21 +92,15 @@ export class MjolnirAppService {
     );
   }
 
-  /**
-   * Best-effort bot profile bootstrap.
-   *
-   * This is intentionally kept out of the main initialization path that
-   * builds the bridge and access-control state, because doing the profile
-   * fetch/set earlier can hit an unready appservice endpoint and make the
-   * same Matrix request that is bringing the service up fail.
-   */
   private static async ensureAppserviceBotProfile(
     bridge: Bridge,
     botUserID: StringUserID
   ): Promise<Result<void>> {
     const botIntent = bridge.getIntent(botUserID);
     const registrationResult = await botIntent
-      .ensureRegistered()
+      // There seems to be a bug in the matrix-appservice-bridge does not create the profile.
+      // https://github.com/matrix-org/matrix-appservice-bridge/issues/525
+      .ensureRegistered(true)
       .then((_) => Ok(undefined), resultifyBotSDKRequestError);
     if (isError(registrationResult)) {
       return registrationResult.elaborate(
@@ -137,7 +132,7 @@ export class MjolnirAppService {
       return Ok(undefined); // displayname is already set, nothing to do.
     }
     const setDisplaynameResult = await botIntent
-      .setDisplayName(botUserID)
+      .setDisplayName(userLocalpart(botUserID))
       .then((_) => Ok(undefined), resultifyBotSDKRequestError);
     if (isError(setDisplaynameResult)) {
       return setDisplaynameResult.elaborate(
@@ -312,7 +307,6 @@ export class MjolnirAppService {
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);
-    // Has to be called after the appservice starts or Synapse breaks.
     (
       await MjolnirAppService.ensureAppserviceBotProfile(
         service.bridge,
