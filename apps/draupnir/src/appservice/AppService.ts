@@ -118,6 +118,9 @@ export class MjolnirAppService {
         "Unable to fetch appservice bot profile information"
       );
     }
+    // The code beyond this point is redundant in Synapse but we don't know
+    // if other implementations set the profile up when an appservice user is
+    // registered.
     const extractDisplayName = (profile: unknown) => {
       if (typeof profile !== "object" || profile === null) {
         return undefined;
