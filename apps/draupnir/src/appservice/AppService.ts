@@ -91,6 +91,59 @@ export class MjolnirAppService {
   }
 
   /**
+   * Best-effort bot profile bootstrap.
+   *
+   * This is intentionally kept out of the main initialization path that
+   * builds the bridge and access-control state, because doing the profile
+   * fetch/set earlier can hit an unready appservice endpoint and make the
+   * same Matrix request that is bringing the service up fail.
+   */
+  private static async ensureAppserviceBotProfile(
+    bridge: Bridge,
+    botUserID: StringUserID
+  ): Promise<void> {
+    const botIntent = bridge.getIntent(botUserID);
+    try {
+      await botIntent.ensureRegistered();
+      const botProfileResult = await botIntent.matrixClient
+        .getUserProfile(botUserID)
+        .then(
+          (value: unknown) => Ok(value),
+          (error: unknown) =>
+            resultifyBotSDKRequestErrorWith404AsUndefined(error)
+        );
+      if (isError(botProfileResult)) {
+        log.error(
+          "Unable to fetch appservice bot profile information",
+          botProfileResult.error
+        );
+        return;
+      }
+      const botProfile: unknown = botProfileResult.ok;
+      const botDisplayName =
+        typeof botProfile === "object" &&
+        botProfile !== null &&
+        "displayname" in botProfile &&
+        (typeof botProfile.displayname === "string" ||
+          botProfile.displayname === undefined)
+          ? botProfile.displayname
+          : undefined;
+      if (botDisplayName === undefined || botDisplayName === "") {
+        try {
+          await botIntent.setDisplayName(userLocalpart(botUserID));
+        } catch (error: unknown) {
+          log.warn(
+            "Unable to set appservice bot display name during startup",
+            error
+          );
+        }
+      }
+    } catch (error: unknown) {
+      log.warn("Unable to bootstrap appservice bot profile", error);
+    }
+  }
+
+  /**
    * Make and initialize the app service from the config, ready to be started.
    * @param config The appservice's config, not draupnirs's, see `src/appservice/config`.
    * @param dataStore A datastore to persist infomration about the draupnir to.
@@ -138,34 +191,6 @@ export class MjolnirAppService {
       eventDecoder
     );
     const botUserID = bridge.getBot().getUserId() as StringUserID;
-    const botIntent = bridge.getIntent(botUserID);
-    await botIntent.ensureRegistered();
-    const botProfileResult = await botIntent.matrixClient
-      .getUserProfile(botUserID)
-      .then(
-        (value: unknown) => Ok(value),
-        (error: unknown) => resultifyBotSDKRequestErrorWith404AsUndefined(error)
-      );
-    if (isError(botProfileResult)) {
-      log.error(
-        "Unable to fetch appservice bot profile information",
-        botProfileResult.error
-      );
-    }
-    const botProfile: unknown = isError(botProfileResult)
-      ? undefined
-      : botProfileResult.ok;
-    const botDisplayName =
-      typeof botProfile === "object" &&
-      botProfile !== null &&
-      "displayname" in botProfile &&
-      (typeof botProfile.displayname === "string" ||
-        botProfile.displayname === undefined)
-        ? botProfile.displayname
-        : undefined;
-    if (botDisplayName === undefined || botDisplayName === "") {
-      await botIntent.setDisplayName(userLocalpart(botUserID));
-    }
     (
       await clientsInRoomMap.makeClientRooms(botUserID, async () =>
         joinedRoomsSafe(bridge.getBot().getClient())
@@ -283,6 +308,12 @@ export class MjolnirAppService {
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);
+    void Task(
+      MjolnirAppService.ensureAppserviceBotProfile(
+        service.bridge,
+        service.botUserID
+      )
+    );
     return service;
   }
 
