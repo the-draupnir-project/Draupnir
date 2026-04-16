@@ -1,5 +1,5 @@
-// Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
+// SPDX-FileCopyrightText: 2023 - 2026 Gnuxie <Gnuxie@protonmail.com>
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -30,11 +30,14 @@ import {
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
+  resultifyBotSDKRequestError,
+  resultifyBotSDKRequestErrorWith404AsUndefined,
 } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ClientsInRoomMap,
   DefaultEventDecoder,
   EventDecoder,
+  Ok,
   StandardClientsInRoomMap,
   Task,
   isError,
@@ -46,10 +49,12 @@ import {
   MatrixRoomReference,
   StringRoomID,
   StringUserID,
+  userLocalpart,
 } from "@the-draupnir-project/matrix-basic-types";
 import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/SqliteRoomStateBackingStore";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
+import { Result } from "@gnuxie/typescript-result";
 
 const log = new Logger("AppService");
 /**
@@ -85,6 +90,59 @@ export class MjolnirAppService {
       this.clientCapabilityFactory.makeClientPlatform(botUserID, client),
       this
     );
+  }
+
+  private static async ensureAppserviceBotProfile(
+    bridge: Bridge,
+    botUserID: StringUserID
+  ): Promise<Result<void>> {
+    const botIntent = bridge.getIntent(botUserID);
+    const registrationResult = await botIntent
+      // There seems to be a bug in the matrix-appservice-bridge does not create the profile.
+      // https://github.com/matrix-org/matrix-appservice-bridge/issues/525
+      .ensureRegistered(true)
+      .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+    if (isError(registrationResult)) {
+      return registrationResult.elaborate(
+        "Failed to register the main appservice bot user"
+      );
+    }
+    const botProfileResult = await botIntent.matrixClient
+      .getUserProfile(botUserID)
+      .then(
+        (value) => Ok(value),
+        resultifyBotSDKRequestErrorWith404AsUndefined
+      );
+    if (isError(botProfileResult)) {
+      return botProfileResult.elaborate(
+        "Unable to fetch appservice bot profile information"
+      );
+    }
+    // The code beyond this point is redundant in Synapse but we don't know
+    // if other implementations set the profile up when an appservice user is
+    // registered.
+    const extractDisplayName = (profile: unknown) => {
+      if (typeof profile !== "object" || profile === null) {
+        return undefined;
+      }
+      if ("displayname" in profile && typeof profile.displayname === "string") {
+        return profile.displayname;
+      }
+      return undefined;
+    };
+    const botDisplayName = extractDisplayName(botProfileResult.ok);
+    if (botDisplayName !== undefined && botDisplayName !== "") {
+      return Ok(undefined); // displayname is already set, nothing to do.
+    }
+    const setDisplaynameResult = await botIntent
+      .setDisplayName(userLocalpart(botUserID))
+      .then((_) => Ok(undefined), resultifyBotSDKRequestError);
+    if (isError(setDisplaynameResult)) {
+      return setDisplaynameResult.elaborate(
+        `Unable to set appservice bot displayname during startup`
+      );
+    }
+    return Ok(undefined);
   }
 
   /**
@@ -252,6 +310,12 @@ export class MjolnirAppService {
     );
     // The call to `start` MUST happen last. As it needs the datastore, and the mjolnir manager to be initialized before it can process events from the homeserver.
     await service.start(port);
+    (
+      await MjolnirAppService.ensureAppserviceBotProfile(
+        service.bridge,
+        service.botUserID
+      )
+    ).expect("Failed to ensure the appservice bot's profile exists");
     return service;
   }
 
