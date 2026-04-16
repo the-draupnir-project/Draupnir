@@ -25,6 +25,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
       - run: corepack enable
       - run: corepack npm install
       - run: corepack npm run build:all
@@ -38,6 +40,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
       - run: corepack npm install
       - run: corepack npm run build:all
       - run: corepack npm run test
@@ -50,6 +54,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
       - name: Fetch and build mx-tester (cached across runs)
         uses: baptiste0928/cargo-install@v3
         with:
@@ -68,10 +74,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/setup-node@v6
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
       - name: Fetch and build mx-tester (cached across runs)
         uses: baptiste0928/cargo-install@v3
         with:
