@@ -1,9 +1,8 @@
-// SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { readFileSync } from "fs";
-import { isOk, Ok, Result } from "@gnuxie/typescript-result";
+import { Ok, Result } from "@gnuxie/typescript-result";
 import { Type } from "@sinclair/typebox";
 import {
   AbstractProtection,
@@ -25,13 +24,15 @@ import {
 } from "matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DraupnirProtection } from "../Protection";
-import path from "path";
 
 const log = new Logger("DraupnirNews");
 
 // TODO:
 // We should probably allow tagging these e.g. to assist making an automated system
 // for adding release news.
+// We can't use the news system directly for notifying about releases,
+// we'd have to use something that mutates a link to the changelog based
+// on the version provided in Draupnir, see https://github.com/the-draupnir-project/Draupnir/issues/1093.
 export type DraupnirNewsItem = EDStatic<typeof DraupnirNewsItem>;
 export const DraupnirNewsItem = Type.Object({
   news_id: Type.String({
@@ -79,7 +80,6 @@ export type NotifyNewsItem = (item: DraupnirNewsItem) => Promise<Result<void>>;
 export class DraupnirNewsLifecycle {
   public constructor(
     private readonly seenNewsIDs: Set<string>,
-    private readonly localNews: DraupnirNewsBlob,
     private readonly storeNews: StoreSeenNews,
     private readonly fetchRemoteNews: FetchRemoteNews,
     private readonly notifyNewsItem: NotifyNewsItem
@@ -91,12 +91,9 @@ export class DraupnirNewsLifecycle {
     const remoteNews = await this.fetchRemoteNews();
     if (isError(remoteNews)) {
       log.error("Unable to fetch news blob", remoteNews.error);
-      // fall through, we still want to be able to show filesystem news.
+      return;
     }
-    const allNews = DraupnirNewsHelper.mergeSources(
-      this.localNews,
-      isOk(remoteNews) ? remoteNews.ok : { news: [] }
-    );
+    const allNews = remoteNews.ok.news;
     const unseenNews = DraupnirNewsHelper.removeSeenNews(
       allNews,
       this.seenNewsIDs
@@ -116,6 +113,8 @@ export class DraupnirNewsLifecycle {
         notifiedNews.push(item);
       }
     }
+    // store only news that is known to have been seen before and the news
+    // which was just confirmed to be notified.
     const updateResult = await this.storeNews(notifiedNews);
     if (isError(updateResult)) {
       log.error("Unable to update stored news", updateResult.error);
@@ -123,15 +122,6 @@ export class DraupnirNewsLifecycle {
     }
   }
 }
-
-const FSNews = (() => {
-  const content = JSON.parse(
-    readFileSync(path.join(__dirname, "./news.json"), "utf8")
-  ) as unknown;
-  return Value.Decode(DraupnirNewsBlob, content).expect(
-    "File system news should match the schema"
-  );
-})();
 
 async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
   log.debug("Fetching remote news", newsURL);
@@ -190,8 +180,6 @@ export class DraupnirNewsReader {
   }
 }
 
-// Seen news gets cleaned up by storing the merged file system and remote
-// news items which have been notified.
 export const DraupnirNewsProtectionSettings = Type.Object(
   {
     seenNews: Type.Array(Type.String(), {
@@ -233,7 +221,6 @@ export class DraupnirNews
     this.newsReader = new DraupnirNewsReader(
       new DraupnirNewsLifecycle(
         new Set(this.settings.seenNews),
-        FSNews,
         this.updateNews.bind(this),
         () => fetchNews(this.draupnir.config.draupnirNewsURL),
         (item) =>
