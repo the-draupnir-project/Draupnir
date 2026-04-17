@@ -1,4 +1,4 @@
-// Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
+// Copyright 2022 - 2026 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2022 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
@@ -223,12 +223,6 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
   };
   return (
     <root>
-      <b>Protected Rooms: </b>
-      {info.numberOfProtectedRooms}
-      <br />
-      <b>Protected Users: </b>
-      {info.numberOfUniqueMembers}
-      <br />
       {renderPolicyLists("Subscribed policy rooms", info.subscribedLists)}
       {renderPolicyLists(
         "Subscribed and protected policy rooms",
@@ -247,6 +241,15 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
       <b>Documentation: </b>{" "}
       <a href={info.documentationURL}>{info.documentationURL}</a>
       <br />
+      <h4>Support Draupnir</h4>
+      <p>
+        This deployment protects {info.numberOfUniqueMembers} unique users
+        across {info.numberOfProtectedRooms} rooms.
+      </p>
+      <p>
+        If your community relies on Draupnir, consider supporting it on{" "}
+        <a href="https://opencollective.com/draupnir">Open Collective</a>
+      </p>
     </root>
   );
 }

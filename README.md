@@ -33,6 +33,12 @@ Draupnir is supported by [NLnet](https://nlnet.nl/project/Draupnir/) through the
 NGI Zero Core programme. The goals of this work are described
 [here](https://marewolf.me/posts/draupnir/24-nlnet-goals.html).
 
+Draupnir also accepts community support through
+[Open Collective](https://opencollective.com/draupnir), hosted by
+[Open Source Collective](https://opencollective.com/opensource). Contributions
+help sustain development, maintenance, and contributor expenses with public
+budget transparency.
+
 ## Quick start
 
 See
