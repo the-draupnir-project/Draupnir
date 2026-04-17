@@ -209,6 +209,9 @@ const defaultConfig: IConfig = {
   acceptInvitesFromSpace: "!noop:example.org",
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
+  // FIXME: We are deleting this because we will just use the lack of presence
+  // of the `managementRoom` property to determine whether to make a room or not
+  // and crash if neither the initialAdmin or the managementRoom properties are set.
   managedManagementRoom: false,
   initialManager: undefined,
   managementRoom: "!noop:example.org",
@@ -443,6 +446,9 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     }, {})
   ) as IConfig;
 
+  // DO NOT DELETE this unless you are sure that previously created appservice
+  // draupnir have set the zero touch deploy management room account data.
+  // Otherwise all the managed draupnir will create their management rooms.
   config.managementRoom = managementRoomId;
   return config;
 }

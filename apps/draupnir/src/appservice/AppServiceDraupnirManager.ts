@@ -23,16 +23,14 @@ import {
   ActionException,
   ActionExceptionKind,
   ActionResult,
-  ClientCapabilitiesNegotiation,
   ClientsInRoomMap,
   Ok,
-  RoomCreator,
-  RoomVersionMirror,
   Task,
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
+  BotSDKMatrixAccountData,
   ClientCapabilityFactory,
   ClientForUserID,
   joinedRoomsSafe,
@@ -49,10 +47,9 @@ import {
   StringRoomID,
   MatrixRoomReference,
   userLocalpart,
-  MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
-import { Result, ResultError } from "@gnuxie/typescript-result";
+import { loadOrCreateZeroTouchDeployRoom, ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE, ZeroTouchDeployRoomAccountDataSchema } from "../managedRoomAccountData";
 
 const log = new Logger("AppServiceDraupnirManager");
 
@@ -246,7 +243,12 @@ export class AppServiceDraupnirManager {
         draupnirUserID,
         mjIntent.matrixClient
       );
-      const managementRoom = await makeManagementRoom(
+      const managementRoom = await loadOrCreateZeroTouchDeployRoom(
+        new BotSDKMatrixAccountData(
+          ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+          ZeroTouchDeployRoomAccountDataSchema,
+          mjIntent.matrixClient
+        ),
         clientPlatform.toRoomCreator(),
         clientPlatform.toClientCapabilitiesNegotiation(),
         requestingUserID,
@@ -462,50 +464,4 @@ async function createFirstList(
   return await draupnir.protectedRoomsSet.watchedPolicyRooms.watchPolicyRoomDirectly(
     policyRoom.ok
   );
-}
-
-export async function makeManagementRoom(
-  roomCreator: RoomCreator,
-  clientCapabilitiesNegotiation: ClientCapabilitiesNegotiation,
-  requestingUserID: StringUserID,
-  draupnirUserID: StringUserID,
-  options?: {
-    invitees?: StringUserID[];
-    roomName?: string;
-  }
-): Promise<Result<MatrixRoomID>> {
-  const capabilities =
-    await clientCapabilitiesNegotiation.getClientCapabilities();
-  if (isError(capabilities)) {
-    return capabilities.elaborate(
-      "Failed to fetch room versions from client capabilities"
-    );
-  }
-  const defaultRoomVersion =
-    capabilities.ok.capabilities["m.room_versions"].default;
-  if (typeof defaultRoomVersion !== "string") {
-    return ResultError.Result(
-      "Client capabilities did not contain a valid default room version"
-    );
-  }
-  const isRoomVersionWithPrivilegedCreators =
-    RoomVersionMirror.isVersionWithPrivilegedCreators(defaultRoomVersion);
-  return await roomCreator.createRoom({
-    preset: "private_chat",
-    invite: options?.invitees ?? [requestingUserID],
-    name: options?.roomName ?? `${requestingUserID}'s Draupnir`,
-    power_level_content_override: isRoomVersionWithPrivilegedCreators
-      ? {
-          users: {
-            [requestingUserID]: 150,
-          },
-        }
-      : {
-          users: {
-            [requestingUserID]: 100,
-            // Give the draupnir a higher PL so that can avoid issues with managing the management room.
-            [draupnirUserID]: 101,
-          },
-        },
-  });
 }

@@ -19,6 +19,7 @@ import {
   ConfigRecoverableError,
 } from "matrix-protection-suite";
 import {
+  BotSDKMatrixAccountData,
   ClientCapabilityFactory,
   MatrixSendClient,
   RoomStateManagerFactory,
@@ -31,9 +32,6 @@ import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
 import { WebAPIs } from "./webapis/WebAPIs";
 import {
   isStringUserID,
-  isStringRoomAlias,
-  isStringRoomID,
-  MatrixRoomReference,
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
@@ -48,10 +46,12 @@ import { ResultError } from "@gnuxie/typescript-result";
 import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { TopLevelStores } from "./backingstore/DraupnirStores";
-import { MANAGEMENT_ROOM_ACCOUNT_DATA_EVENT_TYPE } from "./managedRoomAccountData";
-import { makeManagementRoom } from "./appservice/AppServiceDraupnirManager";
 import { patchMatrixClient } from "./utils";
-import { resolveManagedRoom } from "./managedRoomBootstrap";
+import {
+  loadZeroTouchDeployRoomFromConfig,
+  ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+  ZeroTouchDeployRoomAccountDataSchema,
+} from "./managedRoomAccountData";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -120,51 +120,39 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       throw new TypeError(`${clientUserID} is not a valid mxid`);
     }
     const clientsInRoomMap = new StandardClientsInRoomMap();
-    const clientCapabilityFactory = new ClientCapabilityFactory(
-      clientsInRoomMap,
-      DefaultEventDecoder
-    );
     // needed to have accurate join infomration.
     (
       await clientsInRoomMap.makeClientRooms(clientUserID, async () =>
         joinedRoomsSafe(client)
       )
     ).expect("Unable to create ClientRooms");
+    const clientCapabilityFactory = new ClientCapabilityFactory(
+      clientsInRoomMap,
+      DefaultEventDecoder
+    );
     const clientPlatform = clientCapabilityFactory.makeClientPlatform(
       clientUserID,
       client
     );
-    const managementRoom = await resolveManagedRoom({
-      managedRoomEnabled: config.managedManagementRoom,
-      configuredRoom: config.managementRoom,
-      initialManager: config.initialManager,
-      clientUserID,
-      client,
-      clientPlatform,
-      accountDataEventType: MANAGEMENT_ROOM_ACCOUNT_DATA_EVENT_TYPE,
-      roomKindDescription: "management room",
-      parseConfiguredRoom(configuredRoom: string): MatrixRoomReference {
-        if (
-          !isStringRoomAlias(configuredRoom) &&
-          !isStringRoomID(configuredRoom)
-        ) {
-          throw new TypeError(
-            `${configuredRoom} is not a valid room id or alias`
-          );
+    const managementRoom = (
+      await loadZeroTouchDeployRoomFromConfig(
+        config.managementRoom,
+        config.initialManager,
+        new BotSDKMatrixAccountData(
+          ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+          ZeroTouchDeployRoomAccountDataSchema,
+          client
+        ),
+        clientPlatform,
+        clientUserID,
+        {
+          // Draupnir doesn't allow permalinks for the config.managementRoom,
+          allowPermalinkForRoomConfig: false,
+          configuredRoomPropertyName: "config.managementRoom",
+          configuredInitialManagerPropertyName: "config.initialManager",
         }
-        return MatrixRoomReference.fromRoomIDOrAlias(configuredRoom);
-      },
-      async createManagedRoom(initialManager, resolvedClientUserID) {
-        return (
-          await makeManagementRoom(
-            clientPlatform.toRoomCreator(),
-            clientPlatform.toClientCapabilitiesNegotiation(),
-            initialManager,
-            resolvedClientUserID
-          )
-        ).expect("Unable to create managed management room");
-      },
-    });
+      )
+    ).expect("Failed to load or create the Draupnir management room");
     const clientProvider = async (userID: StringUserID) => {
       if (userID !== clientUserID) {
         throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);

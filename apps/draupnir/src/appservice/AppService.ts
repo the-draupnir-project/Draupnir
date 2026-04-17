@@ -27,6 +27,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { getStoragePath, SOFTWARE_VERSION } from "../config";
 import { Registry } from "prom-client";
 import {
+  BotSDKMatrixAccountData,
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
@@ -44,9 +45,6 @@ import {
 } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 import {
-  isStringRoomAlias,
-  isStringRoomID,
-  MatrixRoomReference,
   StringRoomID,
   StringUserID,
   userLocalpart,
@@ -55,9 +53,7 @@ import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/Sqli
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
 import { Result } from "@gnuxie/typescript-result";
-import { ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE } from "../managedRoomAccountData";
-import { makeManagementRoom } from "./AppServiceDraupnirManager";
-import { resolveManagedRoom } from "../managedRoomBootstrap";
+import { loadZeroTouchDeployRoomFromConfig, ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE, ZeroTouchDeployRoomAccountDataSchema } from "../managedRoomAccountData";
 
 const log = new Logger("AppService");
 /**
@@ -201,58 +197,34 @@ export class MjolnirAppService {
         joinedRoomsSafe(bridge.getBot().getClient())
       )
     ).expect("Unable to initialize client rooms for the appservice bot user");
-    const botClient = bridge.getBot().getClient();
-    const botClientPlatform = clientCapabilityFactory.makeClientPlatform(
+    const clientPlatform = clientCapabilityFactory.makeClientPlatform(
       botUserID,
-      botClient
+      bridge.getBot().getClient()
     );
-    const botRoomJoiner = botClientPlatform.toRoomJoiner();
-    const accessControlRoom = await resolveManagedRoom({
-      managedRoomEnabled: config.managedAdminRoom,
-      configuredRoom: config.adminRoom,
-      initialManager: config.initialManager,
-      clientUserID: botUserID,
-      client: botClient,
-      clientPlatform: botClientPlatform,
-      accountDataEventType: ADMIN_ROOM_ACCOUNT_DATA_EVENT_TYPE,
-      roomKindDescription: "admin room",
-      parseConfiguredRoom(configuredRoom: string): MatrixRoomReference {
-        if (isStringRoomID(configuredRoom)) {
-          return MatrixRoomReference.fromRoomID(configuredRoom);
-        }
-        if (isStringRoomAlias(configuredRoom)) {
-          return MatrixRoomReference.fromRoomIDOrAlias(configuredRoom);
-        }
-        const parseResult = MatrixRoomReference.fromPermalink(configuredRoom);
-        if (isError(parseResult)) {
-          throw new TypeError(
-            `${configuredRoom} needs to be a room id, alias or permalink`
-          );
-        }
-        return parseResult.ok;
-      },
-      async createManagedRoom(initialManager, resolvedClientUserID) {
-        return (
-          await makeManagementRoom(
-            botClientPlatform.toRoomCreator(),
-            botClientPlatform.toClientCapabilitiesNegotiation(),
-            initialManager,
-            resolvedClientUserID,
-            {
-              invitees: [initialManager],
-              roomName: `${initialManager}'s Draupnir Appservice Admin room`,
-            }
-          )
-        ).expect("Unable to create managed admin room");
-      },
-    });
+    const adminRoom = (await loadZeroTouchDeployRoomFromConfig(
+      config.adminRoom,
+      config.initialManager,
+      new BotSDKMatrixAccountData(
+          ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+          ZeroTouchDeployRoomAccountDataSchema,
+          bridge.getBot().getClient(),
+        ),
+      clientPlatform,
+      botUserID,
+      {
+        allowPermalinkForRoomConfig: true,
+        configuredRoomPropertyName: "config.adminRoom",
+        configuredInitialManagerPropertyName: "config.initialManager"
+      }
+    )).expect("unable to load the appservice admin room");
+    const accessControlRoom = adminRoom
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
     const accessControl = (
       await AccessControl.setupAccessControlForRoom(
         accessControlRoom,
         appserviceBotPolicyRoomManager,
-        botRoomJoiner
+        clientPlatform.toRoomJoiner()
       )
     ).expect("Unable to setup access control for the appservice");
     // Activate /metrics endpoint for Prometheus
