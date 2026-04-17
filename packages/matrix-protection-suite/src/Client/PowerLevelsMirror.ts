@@ -15,15 +15,31 @@ export enum PowerLevelPermission {
   StateDefault = "state_default",
 }
 
-export type MissingPermissionsChange = {
-  missingStatePermissions: string[];
-  missingPermissions: PowerLevelPermission[];
-  missingEventPermissions: string[];
-  isPrivilidgedInNextPowerLevels: boolean;
-  isPrivilidgedInPriorPowerLevels: boolean;
-};
+export function isPowerLevelPermission(
+  permission: string
+): permission is PowerLevelPermission {
+  switch (permission) {
+    case PowerLevelPermission.Ban:
+    case PowerLevelPermission.Invite:
+    case PowerLevelPermission.Kick:
+    case PowerLevelPermission.Redact:
+    case PowerLevelPermission.EventsDefault:
+    case PowerLevelPermission.StateDefault:
+      return true;
+    default:
+      return false;
+  }
+}
 
-export const PowerLevelsMirror = Object.freeze({
+/**
+ * Used for directly introspecting on the power levels event.
+ * Do not use to introspect on the room power levels because you need
+ * to also consider the room create event and room version.
+ *
+ * FIXME: Guh technically the default behaviours are specific to the room version
+ * too and the entire mirror.
+ */
+export const PowerLevelsEventMirror = Object.freeze({
   getUserPowerLevel(
     who: StringUserID,
     content?: PowerLevelsEventContent
@@ -42,6 +58,14 @@ export const PowerLevelsMirror = Object.freeze({
   ): number {
     return content?.events?.[eventType] ?? content?.events_default ?? 0;
   },
+  getPermissionPowerLevel(
+    permission: PowerLevelPermission,
+    content?: PowerLevelsEventContent
+  ): number {
+    const defaultPermissionLevel =
+      permission === PowerLevelPermission.Invite ? 0 : 50;
+    return content?.[permission] ?? defaultPermissionLevel;
+  },
   isUserAbleToSendState(
     who: StringUserID,
     eventType: string,
@@ -58,9 +82,7 @@ export const PowerLevelsMirror = Object.freeze({
     content?: PowerLevelsEventContent
   ): boolean {
     const userLevel = this.getUserPowerLevel(who, content);
-    const defaultPermissionLevel =
-      permission === PowerLevelPermission.Invite ? 0 : 50;
-    const permissionLevel = content?.[permission] ?? defaultPermissionLevel;
+    const permissionLevel = this.getPermissionPowerLevel(permission, content);
     return userLevel >= permissionLevel;
   },
   isUserAbleToSendEvent(
@@ -73,6 +95,59 @@ export const PowerLevelsMirror = Object.freeze({
       this.getEventPowerLevel(eventType, content)
     );
   },
+});
+
+export type MissingPermissionsChange = {
+  missingStatePermissions: string[];
+  missingPermissions: PowerLevelPermission[];
+  missingEventPermissions: string[];
+  isPrivilidgedInNextPowerLevels: boolean;
+  isPrivilidgedInPriorPowerLevels: boolean;
+};
+
+export const PowerLevelsMirror = Object.freeze({
+  isUserAbleToSendState(
+    who: StringUserID,
+    eventType: string,
+    createEvent: RoomCreateEvent,
+    powerLevelsContent?: PowerLevelsEventContent
+  ): boolean {
+    return (
+      PowerLevelsEventMirror.isUserAbleToSendState(
+        who,
+        eventType,
+        powerLevelsContent
+      ) || RoomVersionMirror.isUserAPrivilegedCreator(who, createEvent)
+    );
+  },
+  isUserAbleToUse(
+    who: StringUserID,
+    permission: PowerLevelPermission,
+    createEvent: RoomCreateEvent,
+    powerLevelsContent?: PowerLevelsEventContent
+  ): boolean {
+    return (
+      PowerLevelsEventMirror.isUserAbleToUse(
+        who,
+        permission,
+        powerLevelsContent
+      ) || RoomVersionMirror.isUserAPrivilegedCreator(who, createEvent)
+    );
+  },
+  isUserAbleToSendEvent(
+    who: StringUserID,
+    eventType: string,
+    createEvent: RoomCreateEvent,
+    powerLevelsContent?: PowerLevelsEventContent
+  ): boolean {
+    return (
+      PowerLevelsEventMirror.isUserAbleToSendEvent(
+        who,
+        eventType,
+        powerLevelsContent
+      ) || RoomVersionMirror.isUserAPrivilegedCreator(who, createEvent)
+    );
+  },
   missingPermissions(
     clientUserID: StringUserID,
     requiredPermissions: PowerLevelPermission[],
@@ -81,7 +156,7 @@ export const PowerLevelsMirror = Object.freeze({
     const missingPermissions: PowerLevelPermission[] = [];
     for (const permission of requiredPermissions) {
       if (
-        !PowerLevelsMirror.isUserAbleToUse(
+        !PowerLevelsEventMirror.isUserAbleToUse(
           clientUserID,
           permission,
           powerLevelsContent
@@ -100,7 +175,7 @@ export const PowerLevelsMirror = Object.freeze({
     const missingPermissions: string[] = [];
     for (const permission of requiredStatePermissions) {
       if (
-        !PowerLevelsMirror.isUserAbleToSendState(
+        !PowerLevelsEventMirror.isUserAbleToSendState(
           clientUserID,
           permission,
           powerLevelsContent
@@ -119,7 +194,7 @@ export const PowerLevelsMirror = Object.freeze({
     const missingPermissions: string[] = [];
     for (const permission of requiredEventPermissions) {
       if (
-        !PowerLevelsMirror.isUserAbleToSendEvent(
+        !PowerLevelsEventMirror.isUserAbleToSendEvent(
           clientUserID,
           permission,
           powerLevelsContent
