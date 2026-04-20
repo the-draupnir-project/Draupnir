@@ -25,75 +25,70 @@ export type ExtractInputProjectionNodes<
   TProjectionNode extends ProjectionNode,
 > = TProjectionNode extends ProjectionNode<infer TInputs> ? TInputs : never;
 
-export type ProjectionNodeDelta<
-  TDownstreamDeltaShape = unknown,
-  TNodeStateDeltaShape = unknown,
+export type ProjectionReduction<
+  TNextProjectionNode extends ProjectionNode = ProjectionNode,
+  TDownstreamDeltaShape = ExtractDeltaShape<TNextProjectionNode>,
 > = {
-  /**
-   * The externally visible delta produced by this node. This is the only
-   * delta that should be propagated to downstream projection inputs and
-   * projection listeners.
-   */
+  readonly nextNode: TNextProjectionNode;
   readonly downstreamDelta: TDownstreamDeltaShape;
-  /**
-   * The authoritative state transition for this node. This delta must contain
-   * all information needed by `reduceDelta` to update the node's internal
-   * state, even when the externally visible downstream delta is empty.
-   */
-  readonly nodeStateDelta: TNodeStateDeltaShape;
 };
 
 export type ProjectionNode<
   TInputs extends ProjectionNode[] | unknown[] = unknown[],
   TDownstreamDeltaShape = unknown,
-  TNodeStateDeltaShape = unknown,
   TAccessMixin = Record<never, never>,
 > = {
   readonly ulid: ULID;
   // Whether the projection has no state at all.
   isEmpty(): boolean;
   /**
-   * Reduces an input delta into a full projection-node delta.
+   * Produces the externally visible delta with the difference between two
+   * nodes. This delta is for downstream projections to consume, not the
+   * projection itself. To replay and reproduce the projection node
+   * from deltas you have to use the input deltas.
+   */
+  diff(
+    nextNode: ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>
+  ): TDownstreamDeltaShape;
+  /**
+   * Reduces an input delta into the next projection node and the externally
+   * visible delta that should be propagated to downstream projections.
    *
-   * The downstream delta is the published effect for downstream projections.
-   * The node-state delta is the complete internal state transition for this
-   * node. These must be derived from the same input and previous node state so
-   * that persisted nodes can be rebuilt by replaying or recomputing node-state
-   * deltas while still producing corrective downstream deltas.
+   * The downstream delta should describe the public effect of moving from this
+   * node to `nextNode`.
    */
   reduceInput(
     input: ExtractInputDeltaShapes<TInputs>
-  ): ProjectionNodeDelta<TDownstreamDeltaShape, TNodeStateDeltaShape>;
-  /**
-   * Applies a full projection-node delta to produce the next node.
-   *
-   * Implementations must update internal state from `nodeStateDelta`, not from
-   * `downstreamDelta`. The downstream delta can omit internal transitions that
-   * do not cross a downstream-visible boundary, so using it as the source of
-   * truth can make the node inconsistent with its persisted/rebuilt state.
-   */
-  reduceDelta(
-    projectionNodeDelta: ProjectionNodeDelta<
-      TDownstreamDeltaShape,
-      TNodeStateDeltaShape
-    >
-  ): ProjectionNode<
-    TInputs,
-    TDownstreamDeltaShape,
-    TNodeStateDeltaShape,
-    TAccessMixin
+  ): ProjectionReduction<
+    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
+    TDownstreamDeltaShape
   >;
   /**
-   * Produces the initial delta, can only be used when the revision is empty.
-   * Otherwise you must use reduceRebuild.
+   * Produces the initial node and downstream delta from the current input
+   * projection nodes. This can only be used when the node is empty. Otherwise
+   * use reduceRebuild.
    */
   reduceInitialInputs(
     input: TInputs
-  ): ProjectionNodeDelta<TDownstreamDeltaShape, TNodeStateDeltaShape>;
-  // only needed for persistent storage
+  ): ProjectionReduction<
+    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
+    TDownstreamDeltaShape
+  >;
+  /**
+   * Reconciles this node against the current input projection nodes. This is
+   * intended for persistence/rebuild flows and for producing corrective
+   * downstream deltas after reducer bugs are fixed.
+   *
+   * Implementations should compute the corrected node from `inputs`, then
+   * produce the downstream delta by diffing this node against that corrected
+   * node.
+   */
   reduceRebuild?(
     inputs: TInputs
-  ): ProjectionNodeDelta<TDownstreamDeltaShape, TNodeStateDeltaShape>;
+  ): ProjectionReduction<
+    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
+    TDownstreamDeltaShape
+  >;
 } & TAccessMixin;
 
 export type AnyProjectionNode = ProjectionNode<never>;

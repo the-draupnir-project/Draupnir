@@ -67,15 +67,15 @@ export class ProjectionOutputHelper<
     input: ExtractInputDeltaShapes<ExtractInputProjectionNodes<TProjectionNode>>
   ): void {
     const previousNode = this.currentNode;
-    const delta = previousNode.reduceInput(input);
-    this.currentNode = previousNode.reduceDelta(delta) as TProjectionNode;
+    const reduction = previousNode.reduceInput(input);
+    this.currentNode = reduction.nextNode as TProjectionNode;
     for (const output of this.outputs) {
-      output.applyInput(delta.downstreamDelta);
+      output.applyInput(reduction.downstreamDelta);
     }
     this.emitter.emit(
       "projection",
       this.currentNode,
-      delta.downstreamDelta,
+      reduction.downstreamDelta,
       previousNode
     );
   }

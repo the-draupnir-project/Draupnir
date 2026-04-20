@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -11,10 +11,9 @@ import { ULID, ULIDFactory } from "ulidx";
 import {
   ExtractInputDeltaShapes,
   ProjectionNode,
-  ProjectionNodeDelta,
+  ProjectionReduction,
 } from "../../../Projection/ProjectionNode";
 import {
-  MemberPolicyMatch,
   MemberPolicyMatches,
   MembershipPolicyRevision,
   MembershipPolicyRevisionDelta,
@@ -34,8 +33,7 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
  */
 export type MemberBanInputProjectionNode = ProjectionNode<
   never[],
-  MembershipPolicyRevisionDelta,
-  undefined
+  MembershipPolicyRevisionDelta
 > &
   MembershipPolicyRevision;
 
@@ -44,13 +42,10 @@ export interface MemberBanIntentProjectionDelta {
   recall: StringUserID[];
 }
 
-// use add/remove for steady state intents
-// When the intent becomes effectual, matches will be removed
-// upstream and so this model will remain consistent
-export interface MemberBanIntentProjectionStateDelta {
-  add: MemberPolicyMatch[];
-  remove: MemberPolicyMatch[];
-}
+type MemberBanIntentMap = PersistentMap<
+  StringUserID,
+  List<LiteralPolicyRule | GlobPolicyRule>
+>;
 
 function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   return (
@@ -62,54 +57,14 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
 export type MemberBanIntentProjectionNode = ProjectionNode<
   [MemberBanInputProjectionNode],
   MemberBanIntentProjectionDelta,
-  MemberBanIntentProjectionStateDelta,
   {
     allMembersWithRules(): MemberPolicyMatches[];
+    isMemberBanned(member: StringUserID): boolean;
     allRulesMatchingMember(
       member: StringUserID
     ): (LiteralPolicyRule | GlobPolicyRule)[];
   }
 >;
-
-export const MemberBanIntentProjectionNodeHelper = Object.freeze({
-  reduceMembershipPolicyDelta(
-    input: MembershipPolicyRevisionDelta
-  ): MemberBanIntentProjectionStateDelta {
-    const output: MemberBanIntentProjectionStateDelta = {
-      add: [],
-      remove: [],
-    };
-    for (const added of input.addedMemberMatches) {
-      if (isPolicyRelevant(added.policy)) {
-        output.add.push(added);
-      }
-    }
-    for (const removed of input.removedMemberMatches) {
-      if (isPolicyRelevant(removed.policy)) {
-        output.remove.push(removed);
-      }
-    }
-    return output;
-  },
-  reduceIntentDelta(
-    input: MemberBanIntentProjectionStateDelta,
-    policies: PersistentMap<
-      StringUserID,
-      List<LiteralPolicyRule | GlobPolicyRule>
-    >
-  ): MemberBanIntentProjectionDelta {
-    const intents = ListMultiMap.deriveIntents(
-      policies,
-      input.add.map((match) => match.policy),
-      input.remove.map((match) => match.policy),
-      (rule) => rule.entity as StringUserID
-    );
-    return {
-      ban: intents.intend,
-      recall: intents.recall,
-    };
-  },
-});
 
 // Upstream inputs are not yet converted to projections, so have to be never[]
 // for now.
@@ -117,10 +72,7 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
   public readonly ulid: ULID;
   constructor(
     private readonly ulidFactory: ULIDFactory,
-    private readonly intents: PersistentMap<
-      StringUserID,
-      List<LiteralPolicyRule | GlobPolicyRule>
-    >
+    private readonly intents: MemberBanIntentMap
   ) {
     this.ulid = ulidFactory();
   }
@@ -138,52 +90,60 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
     return this.intents.isEmpty();
   }
 
-  reduceInput(
-    input: ExtractInputDeltaShapes<[MemberBanInputProjectionNode]>
-  ): ProjectionNodeDelta<
-    MemberBanIntentProjectionDelta,
-    MemberBanIntentProjectionStateDelta
-  > {
-    const nodeStateDelta =
-      MemberBanIntentProjectionNodeHelper.reduceMembershipPolicyDelta(input);
-    return {
-      downstreamDelta: MemberBanIntentProjectionNodeHelper.reduceIntentDelta(
-        nodeStateDelta,
-        this.intents
-      ),
-      nodeStateDelta,
-    };
+  public diff(
+    nextNode: MemberBanIntentProjectionNode
+  ): MemberBanIntentProjectionDelta {
+    const ban: StringUserID[] = [];
+    const recall: StringUserID[] = [];
+    for (const member of nextNode.allMembersWithRules()) {
+      if (!this.isMemberBanned(member.userID)) {
+        ban.push(member.userID);
+      }
+    }
+    for (const userID of this.intents.keys()) {
+      if (!nextNode.isMemberBanned(userID)) {
+        recall.push(userID);
+      }
+    }
+    return { ban, recall };
   }
 
-  reduceDelta(
-    projectionNodeDelta: ProjectionNodeDelta<
-      MemberBanIntentProjectionDelta,
-      MemberBanIntentProjectionStateDelta
-    >
-  ): MemberBanIntentProjectionNode {
-    const input = projectionNodeDelta.nodeStateDelta;
+  reduceInput(
+    input: ExtractInputDeltaShapes<[MemberBanInputProjectionNode]>
+  ): ProjectionReduction<
+    MemberBanIntentProjectionNode,
+    MemberBanIntentProjectionDelta
+  > {
     let nextIntents = this.intents;
-    nextIntents = ListMultiMap.addValues(
-      nextIntents,
-      input.add.map((match) => match.policy),
-      (rule) => rule.entity as StringUserID
-    );
-    nextIntents = ListMultiMap.removeValues(
-      nextIntents,
-      input.remove.map((match) => match.policy),
-      (rule) => rule.entity as StringUserID
-    );
-    return new StandardMemberBanIntentProjectionNode(
+    for (const added of input.addedMemberMatches) {
+      if (isPolicyRelevant(added.policy)) {
+        nextIntents = ListMultiMap.add(nextIntents, added.userID, added.policy);
+      }
+    }
+    for (const removed of input.removedMemberMatches) {
+      if (isPolicyRelevant(removed.policy)) {
+        nextIntents = ListMultiMap.remove(
+          nextIntents,
+          removed.userID,
+          removed.policy
+        );
+      }
+    }
+    const nextNode = new StandardMemberBanIntentProjectionNode(
       this.ulidFactory,
       nextIntents
     );
+    return {
+      downstreamDelta: this.diff(nextNode),
+      nextNode,
+    };
   }
 
   reduceInitialInputs([membershipPolicyRevision]: [
     MemberBanInputProjectionNode,
-  ]): ProjectionNodeDelta<
-    MemberBanIntentProjectionDelta,
-    MemberBanIntentProjectionStateDelta
+  ]): ProjectionReduction<
+    MemberBanIntentProjectionNode,
+    MemberBanIntentProjectionDelta
   > {
     if (!this.isEmpty()) {
       throw new TypeError(
@@ -198,16 +158,20 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
           .map((policy) => ({ userID: member.userID, policy }))
       )
       .flat();
-    const nodeStateDelta = {
-      add: matches,
-      remove: [],
-    };
+    let nextIntents = PersistentMap<
+      StringUserID,
+      List<LiteralPolicyRule | GlobPolicyRule>
+    >();
+    for (const match of matches) {
+      nextIntents = ListMultiMap.add(nextIntents, match.userID, match.policy);
+    }
+    const nextNode = new StandardMemberBanIntentProjectionNode(
+      this.ulidFactory,
+      nextIntents
+    );
     return {
-      downstreamDelta: {
-        ban: [...new Set(matches.map((match) => match.userID))],
-        recall: [],
-      },
-      nodeStateDelta,
+      downstreamDelta: this.diff(nextNode),
+      nextNode,
     };
   }
 
@@ -222,6 +186,10 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
       },
       []
     );
+  }
+
+  isMemberBanned(member: StringUserID): boolean {
+    return this.intents.has(member);
   }
 
   allRulesMatchingMember(

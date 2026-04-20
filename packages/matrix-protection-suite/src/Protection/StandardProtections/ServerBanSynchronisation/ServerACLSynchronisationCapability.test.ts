@@ -47,16 +47,14 @@ test("ACL compilation works and does not ban our server", async function () {
       content: UnredactedPolicyContent;
     }
   ).expect("Should be able to parse the policy rule");
-  const nodeWithBans = emptyNode.reduceDelta(
-    emptyNode.reduceInput(
-      [banPolicyRule, ourBanPolicyRule].map((policy) => ({
-        rule: policy,
-        sender: policy.sourceEvent.sender,
-        event: policy.sourceEvent,
-        changeType: PolicyRuleChangeType.Added,
-      }))
-    )
-  );
+  const nodeWithBans = emptyNode.reduceInput(
+    [banPolicyRule, ourBanPolicyRule].map((policy) => ({
+      rule: policy,
+      sender: policy.sourceEvent.sender,
+      event: policy.sourceEvent,
+      changeType: PolicyRuleChangeType.Added,
+    }))
+  ).nextNode;
   const acl = compileServerACL(ourServerName, nodeWithBans).safeAclContent();
   expect(acl.deny?.at(0)).toBe(badServer);
   expect(acl.deny?.length).toBe(1);
