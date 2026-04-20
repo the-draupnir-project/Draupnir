@@ -31,6 +31,9 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
 export type ServerBanIntentProjectionDelta = {
   deny: StringServerName[];
   recall: StringServerName[];
+};
+
+export type ServerBanIntentProjectionStateDelta = {
   add: (LiteralPolicyRule | GlobPolicyRule)[];
   remove: (LiteralPolicyRule | GlobPolicyRule)[];
 };
@@ -41,7 +44,7 @@ export type ServerBanIntentProjectionDelta = {
 export type ServerBanIntentProjectionNode = ProjectionNode<
   [PolicyListBridgeProjectionNode],
   ServerBanIntentProjectionDelta,
-  undefined,
+  ServerBanIntentProjectionStateDelta,
   {
     deny: StringServerName[];
   }
@@ -50,11 +53,11 @@ export type ServerBanIntentProjectionNode = ProjectionNode<
 export const ServerBanIntentProjectionHelper = Object.freeze({
   reducePolicyDelta(
     input: PolicyRuleChange[]
-  ): Pick<ServerBanIntentProjectionDelta, "add" | "remove"> {
-    const output: Pick<ServerBanIntentProjectionDelta, "add" | "remove"> = {
+  ): ServerBanIntentProjectionStateDelta {
+    const output: ServerBanIntentProjectionStateDelta = {
       add: [],
       remove: [],
-    } satisfies Pick<ServerBanIntentProjectionDelta, "add" | "remove">;
+    };
     for (const change of input) {
       if (change.rule.kind !== PolicyRuleType.Server) {
         continue;
@@ -85,7 +88,7 @@ export const ServerBanIntentProjectionHelper = Object.freeze({
   },
 
   reduceIntentDelta(
-    input: Pick<ServerBanIntentProjectionDelta, "add" | "remove">,
+    input: ServerBanIntentProjectionStateDelta,
     policies: PersistentMap<
       StringServerName,
       List<GlobPolicyRule | LiteralPolicyRule>
@@ -98,7 +101,6 @@ export const ServerBanIntentProjectionHelper = Object.freeze({
       (rule) => rule.entity as StringServerName
     );
     return {
-      ...input,
       deny: intents.intend,
       recall: intents.recall,
     };
@@ -128,19 +130,27 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
 
   reduceInput(
     input: PolicyRuleChange[]
-  ): ProjectionNodeDelta<ServerBanIntentProjectionDelta, undefined> {
+  ): ProjectionNodeDelta<
+    ServerBanIntentProjectionDelta,
+    ServerBanIntentProjectionStateDelta
+  > {
+    const nodeStateDelta =
+      ServerBanIntentProjectionHelper.reducePolicyDelta(input);
     return {
       downstreamDelta: ServerBanIntentProjectionHelper.reduceIntentDelta(
-        ServerBanIntentProjectionHelper.reducePolicyDelta(input),
+        nodeStateDelta,
         this.policies
       ),
-      nodeStateDelta: undefined,
+      nodeStateDelta,
     };
   }
 
   reduceInitialInputs([policyListRevision]: [
     PolicyListBridgeProjectionNode,
-  ]): ProjectionNodeDelta<ServerBanIntentProjectionDelta, undefined> {
+  ]): ProjectionNodeDelta<
+    ServerBanIntentProjectionDelta,
+    ServerBanIntentProjectionStateDelta
+  > {
     if (!this.isEmpty()) {
       throw new TypeError("Cannot reduce initial inputs when inialised");
     }
@@ -156,14 +166,16 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
     ].filter((rule) => rule.matchType !== PolicyRuleMatchType.HashedLiteral);
     const names = new Set(serverPolicies.map((policy) => policy.entity));
     const downstreamDelta = {
-      add: serverPolicies,
       deny: [...names] as StringServerName[],
-      remove: [],
       recall: [],
+    };
+    const nodeStateDelta = {
+      add: serverPolicies,
+      remove: [],
     };
     return {
       downstreamDelta,
-      nodeStateDelta: undefined,
+      nodeStateDelta,
     };
   }
 
@@ -172,10 +184,10 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
   }
 
   reduceDelta({
-    downstreamDelta: input,
+    nodeStateDelta: input,
   }: ProjectionNodeDelta<
     ServerBanIntentProjectionDelta,
-    undefined
+    ServerBanIntentProjectionStateDelta
   >): ServerBanIntentProjectionNode {
     let nextPolicies = this.policies;
     nextPolicies = ListMultiMap.addValues(

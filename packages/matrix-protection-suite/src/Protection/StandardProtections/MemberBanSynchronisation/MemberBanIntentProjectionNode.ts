@@ -39,14 +39,17 @@ export type MemberBanInputProjectionNode = ProjectionNode<
 > &
   MembershipPolicyRevision;
 
+export interface MemberBanIntentProjectionDelta {
+  ban: StringUserID[];
+  recall: StringUserID[];
+}
+
 // use add/remove for steady state intents
 // When the intent becomes effectual, matches will be removed
 // upstream and so this model will remain consistent
-export interface MemberBanIntentProjectionDelta {
+export interface MemberBanIntentProjectionStateDelta {
   add: MemberPolicyMatch[];
   remove: MemberPolicyMatch[];
-  ban: StringUserID[];
-  recall: StringUserID[];
 }
 
 function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
@@ -59,7 +62,7 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
 export type MemberBanIntentProjectionNode = ProjectionNode<
   [MemberBanInputProjectionNode],
   MemberBanIntentProjectionDelta,
-  undefined,
+  MemberBanIntentProjectionStateDelta,
   {
     allMembersWithRules(): MemberPolicyMatches[];
     allRulesMatchingMember(
@@ -71,8 +74,8 @@ export type MemberBanIntentProjectionNode = ProjectionNode<
 export const MemberBanIntentProjectionNodeHelper = Object.freeze({
   reduceMembershipPolicyDelta(
     input: MembershipPolicyRevisionDelta
-  ): Pick<MemberBanIntentProjectionDelta, "add" | "remove"> {
-    const output: Pick<MemberBanIntentProjectionDelta, "add" | "remove"> = {
+  ): MemberBanIntentProjectionStateDelta {
+    const output: MemberBanIntentProjectionStateDelta = {
       add: [],
       remove: [],
     };
@@ -89,7 +92,7 @@ export const MemberBanIntentProjectionNodeHelper = Object.freeze({
     return output;
   },
   reduceIntentDelta(
-    input: Pick<MemberBanIntentProjectionDelta, "add" | "remove">,
+    input: MemberBanIntentProjectionStateDelta,
     policies: PersistentMap<
       StringUserID,
       List<LiteralPolicyRule | GlobPolicyRule>
@@ -102,7 +105,6 @@ export const MemberBanIntentProjectionNodeHelper = Object.freeze({
       (rule) => rule.entity as StringUserID
     );
     return {
-      ...input,
       ban: intents.intend,
       recall: intents.recall,
     };
@@ -138,23 +140,28 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
 
   reduceInput(
     input: ExtractInputDeltaShapes<[MemberBanInputProjectionNode]>
-  ): ProjectionNodeDelta<MemberBanIntentProjectionDelta, undefined> {
+  ): ProjectionNodeDelta<
+    MemberBanIntentProjectionDelta,
+    MemberBanIntentProjectionStateDelta
+  > {
+    const nodeStateDelta =
+      MemberBanIntentProjectionNodeHelper.reduceMembershipPolicyDelta(input);
     return {
       downstreamDelta: MemberBanIntentProjectionNodeHelper.reduceIntentDelta(
-        MemberBanIntentProjectionNodeHelper.reduceMembershipPolicyDelta(input),
+        nodeStateDelta,
         this.intents
       ),
-      nodeStateDelta: undefined,
+      nodeStateDelta,
     };
   }
 
   reduceDelta(
     projectionNodeDelta: ProjectionNodeDelta<
       MemberBanIntentProjectionDelta,
-      undefined
+      MemberBanIntentProjectionStateDelta
     >
   ): MemberBanIntentProjectionNode {
-    const input = projectionNodeDelta.downstreamDelta;
+    const input = projectionNodeDelta.nodeStateDelta;
     let nextIntents = this.intents;
     nextIntents = ListMultiMap.addValues(
       nextIntents,
@@ -174,7 +181,10 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
 
   reduceInitialInputs([membershipPolicyRevision]: [
     MemberBanInputProjectionNode,
-  ]): ProjectionNodeDelta<MemberBanIntentProjectionDelta, undefined> {
+  ]): ProjectionNodeDelta<
+    MemberBanIntentProjectionDelta,
+    MemberBanIntentProjectionStateDelta
+  > {
     if (!this.isEmpty()) {
       throw new TypeError(
         "This can only be called on an empty projection node"
@@ -183,17 +193,21 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
     const matches = membershipPolicyRevision
       .allMembersWithRules()
       .map((member) =>
-        member.policies.map((policy) => ({ userID: member.userID, policy }))
+        member.policies
+          .filter(isPolicyRelevant)
+          .map((policy) => ({ userID: member.userID, policy }))
       )
       .flat();
+    const nodeStateDelta = {
+      add: matches,
+      remove: [],
+    };
     return {
       downstreamDelta: {
-        add: matches,
-        ban: matches.map((match) => match.userID),
-        remove: [],
+        ban: [...new Set(matches.map((match) => match.userID))],
         recall: [],
       },
-      nodeStateDelta: undefined,
+      nodeStateDelta,
     };
   }
 
