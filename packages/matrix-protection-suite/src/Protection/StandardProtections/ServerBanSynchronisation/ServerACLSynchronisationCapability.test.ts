@@ -54,7 +54,7 @@ test("ACL compilation works and does not ban our server", async function () {
       event: policy.sourceEvent,
       changeType: PolicyRuleChangeType.Added,
     }))
-  ).nextNode;
+  );
   const acl = compileServerACL(ourServerName, nodeWithBans).safeAclContent();
   expect(acl.deny?.at(0)).toBe(badServer);
   expect(acl.deny?.length).toBe(1);

@@ -34,10 +34,10 @@ export class StandardMemberBanIntentProjection
   ) {
     const node =
       StandardMemberBanIntentProjectionNode.create(monotonicFactory());
-    const reduction = node.reduceInitialInputs([
+    const initialNode = node.reduceInitialInputs([
       membershipPolicyRevisionIssuer.currentRevision as unknown as MemberBanInputProjectionNode,
     ]);
-    super(reduction.nextNode);
+    super(initialNode);
     this.membershipPolicyRevisionIssuer.on(
       "revision",
       this.handleUpstreamRevision

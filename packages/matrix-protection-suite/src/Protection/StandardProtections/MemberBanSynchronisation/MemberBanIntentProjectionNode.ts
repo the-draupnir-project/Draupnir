@@ -11,7 +11,6 @@ import { ULID, ULIDFactory } from "ulidx";
 import {
   ExtractInputDeltaShapes,
   ProjectionNode,
-  ProjectionReduction,
 } from "../../../Projection/ProjectionNode";
 import {
   MemberPolicyMatches,
@@ -110,10 +109,7 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
 
   reduceInput(
     input: ExtractInputDeltaShapes<[MemberBanInputProjectionNode]>
-  ): ProjectionReduction<
-    MemberBanIntentProjectionNode,
-    MemberBanIntentProjectionDelta
-  > {
+  ): MemberBanIntentProjectionNode {
     let nextIntents = this.intents;
     for (const added of input.addedMemberMatches) {
       if (isPolicyRelevant(added.policy)) {
@@ -129,22 +125,15 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
         );
       }
     }
-    const nextNode = new StandardMemberBanIntentProjectionNode(
+    return new StandardMemberBanIntentProjectionNode(
       this.ulidFactory,
       nextIntents
     );
-    return {
-      downstreamDelta: this.diff(nextNode),
-      nextNode,
-    };
   }
 
   reduceInitialInputs([membershipPolicyRevision]: [
     MemberBanInputProjectionNode,
-  ]): ProjectionReduction<
-    MemberBanIntentProjectionNode,
-    MemberBanIntentProjectionDelta
-  > {
+  ]): MemberBanIntentProjectionNode {
     if (!this.isEmpty()) {
       throw new TypeError(
         "This can only be called on an empty projection node"
@@ -165,14 +154,10 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
     for (const match of matches) {
       nextIntents = ListMultiMap.add(nextIntents, match.userID, match.policy);
     }
-    const nextNode = new StandardMemberBanIntentProjectionNode(
+    return new StandardMemberBanIntentProjectionNode(
       this.ulidFactory,
       nextIntents
     );
-    return {
-      downstreamDelta: this.diff(nextNode),
-      nextNode,
-    };
   }
 
   allMembersWithRules(): MemberPolicyMatches[] {

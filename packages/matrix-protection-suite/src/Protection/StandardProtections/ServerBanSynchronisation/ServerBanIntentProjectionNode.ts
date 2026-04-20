@@ -8,10 +8,7 @@
 // </text>
 
 import { StringServerName } from "@the-draupnir-project/matrix-basic-types";
-import {
-  ProjectionNode,
-  ProjectionReduction,
-} from "../../../Projection/ProjectionNode";
+import { ProjectionNode } from "../../../Projection/ProjectionNode";
 import { PolicyListBridgeProjectionNode } from "./PolicyListBridgeProjection";
 import {
   PolicyRuleChange,
@@ -86,12 +83,7 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
     return { deny, recall };
   }
 
-  reduceInput(
-    input: PolicyRuleChange[]
-  ): ProjectionReduction<
-    ServerBanIntentProjectionNode,
-    ServerBanIntentProjectionDelta
-  > {
+  reduceInput(input: PolicyRuleChange[]): ServerBanIntentProjectionNode {
     let nextPolicies = this.policies;
     for (const change of input) {
       if (
@@ -142,22 +134,15 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
         }
       }
     }
-    const nextNode = new StandardServerBanIntentProjectionNode(
+    return new StandardServerBanIntentProjectionNode(
       this.ulidFactory,
       nextPolicies
     );
-    return {
-      downstreamDelta: this.diff(nextNode),
-      nextNode,
-    };
   }
 
   reduceInitialInputs([policyListRevision]: [
     PolicyListBridgeProjectionNode,
-  ]): ProjectionReduction<
-    ServerBanIntentProjectionNode,
-    ServerBanIntentProjectionDelta
-  > {
+  ]): ServerBanIntentProjectionNode {
     if (!this.isEmpty()) {
       throw new TypeError("Cannot reduce initial inputs when inialised");
     }
@@ -182,14 +167,10 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
         policy
       );
     }
-    const nextNode = new StandardServerBanIntentProjectionNode(
+    return new StandardServerBanIntentProjectionNode(
       this.ulidFactory,
       nextPolicies
     );
-    return {
-      downstreamDelta: this.diff(nextNode),
-      nextNode,
-    };
   }
 
   isEmpty(): boolean {

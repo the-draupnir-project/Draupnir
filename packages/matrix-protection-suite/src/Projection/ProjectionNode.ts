@@ -25,14 +25,6 @@ export type ExtractInputProjectionNodes<
   TProjectionNode extends ProjectionNode,
 > = TProjectionNode extends ProjectionNode<infer TInputs> ? TInputs : never;
 
-export type ProjectionReduction<
-  TNextProjectionNode extends ProjectionNode = ProjectionNode,
-  TDownstreamDeltaShape = ExtractDeltaShape<TNextProjectionNode>,
-> = {
-  readonly nextNode: TNextProjectionNode;
-  readonly downstreamDelta: TDownstreamDeltaShape;
-};
-
 export type ProjectionNode<
   TInputs extends ProjectionNode[] | unknown[] = unknown[],
   TDownstreamDeltaShape = unknown,
@@ -51,44 +43,28 @@ export type ProjectionNode<
     nextNode: ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>
   ): TDownstreamDeltaShape;
   /**
-   * Reduces an input delta into the next projection node and the externally
-   * visible delta that should be propagated to downstream projections.
-   *
-   * The downstream delta should describe the public effect of moving from this
-   * node to `nextNode`.
+   * Reduces an input delta into the next projection node.
    */
   reduceInput(
     input: ExtractInputDeltaShapes<TInputs>
-  ): ProjectionReduction<
-    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
-    TDownstreamDeltaShape
-  >;
+  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
   /**
-   * Produces the initial node and downstream delta from the current input
-   * projection nodes. This can only be used when the node is empty. Otherwise
-   * use reduceRebuild.
+   * Produces the initial node from the current input projection nodes. This can
+   * only be used when the node is empty. Otherwise use reduceRebuild.
    */
   reduceInitialInputs(
     input: TInputs
-  ): ProjectionReduction<
-    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
-    TDownstreamDeltaShape
-  >;
+  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
   /**
    * Reconciles this node against the current input projection nodes. This is
-   * intended for persistence/rebuild flows and for producing corrective
-   * downstream deltas after reducer bugs are fixed.
+   * intended for persistence/rebuild flows after reducer bugs are fixed.
    *
-   * Implementations should compute the corrected node from `inputs`, then
-   * produce the downstream delta by diffing this node against that corrected
-   * node.
+   * The projection or orchestration layer is responsible for publishing the
+   * corrective downstream delta by diffing this node against the corrected node.
    */
   reduceRebuild?(
     inputs: TInputs
-  ): ProjectionReduction<
-    ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>,
-    TDownstreamDeltaShape
-  >;
+  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
 } & TAccessMixin;
 
 export type AnyProjectionNode = ProjectionNode<never>;
