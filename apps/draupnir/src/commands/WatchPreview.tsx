@@ -36,16 +36,19 @@ function watchDeltaForMemberBanIntents(
       watchedPoliciesDelta,
       setMembershipRevision
     );
-  return memberBanIntentProjectionNode.reduceInput(
+  const nextNode = memberBanIntentProjectionNode.reduceInput(
     setMembershipPoliciesRevisionDelta
   );
+  return memberBanIntentProjectionNode.diff(nextNode);
 }
 
 function watchDeltaForServerBanIntents(
   watchedPoliciesDelta: PolicyRuleChange[],
   serverBanIntentProjectionNode: ServerBanIntentProjectionNode
 ) {
-  return serverBanIntentProjectionNode.reduceInput(watchedPoliciesDelta);
+  const nextNode =
+    serverBanIntentProjectionNode.reduceInput(watchedPoliciesDelta);
+  return serverBanIntentProjectionNode.diff(nextNode);
 }
 
 export type WatchPolicyRoomPreview = {

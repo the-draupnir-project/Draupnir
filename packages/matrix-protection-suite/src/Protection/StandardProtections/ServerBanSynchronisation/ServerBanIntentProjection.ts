@@ -34,10 +34,10 @@ export class StandardServerBanIntentProjection
   ) {
     const node =
       StandardServerBanIntentProjectionNode.create(monotonicFactory());
-    const delta = node.reduceInitialInputs([
+    const initialNode = node.reduceInitialInputs([
       policyListRevisionIssuer.currentRevision as unknown as PolicyListBridgeProjectionNode,
     ]);
-    super(node.reduceDelta(delta));
+    super(initialNode);
     this.policyListRevisionIssuer.on("revision", this.handleUpstreamRevision);
   }
 

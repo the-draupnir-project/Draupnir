@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,9 +28,12 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
 export type ServerBanIntentProjectionDelta = {
   deny: StringServerName[];
   recall: StringServerName[];
-  add: (LiteralPolicyRule | GlobPolicyRule)[];
-  remove: (LiteralPolicyRule | GlobPolicyRule)[];
 };
+
+type ServerBanIntentMap = PersistentMap<
+  StringServerName,
+  List<LiteralPolicyRule | GlobPolicyRule>
+>;
 
 // is there a way that we can adapt this so that it can possibly be swapped
 // to a lazy ban style protection if acls become exhausted.
@@ -40,75 +43,15 @@ export type ServerBanIntentProjectionNode = ProjectionNode<
   ServerBanIntentProjectionDelta,
   {
     deny: StringServerName[];
+    isServerDenied(serverName: StringServerName): boolean;
   }
 >;
-
-export const ServerBanIntentProjectionHelper = Object.freeze({
-  reducePolicyDelta(
-    input: PolicyRuleChange[]
-  ): Pick<ServerBanIntentProjectionDelta, "add" | "remove"> {
-    const output: Pick<ServerBanIntentProjectionDelta, "add" | "remove"> = {
-      add: [],
-      remove: [],
-    } satisfies Pick<ServerBanIntentProjectionDelta, "add" | "remove">;
-    for (const change of input) {
-      if (change.rule.kind !== PolicyRuleType.Server) {
-        continue;
-      } else if (change.rule.matchType === PolicyRuleMatchType.HashedLiteral) {
-        continue;
-      }
-      switch (change.changeType) {
-        case PolicyRuleChangeType.Added:
-        case PolicyRuleChangeType.RevealedLiteral: {
-          output.add.push(change.rule);
-          break;
-        }
-        case PolicyRuleChangeType.Modified: {
-          output.add.push(change.rule);
-          if (change.previousRule === undefined) {
-            throw new TypeError("Things are very wrong");
-          }
-          output.remove.push(change.previousRule as LiteralPolicyRule);
-          break;
-        }
-        case PolicyRuleChangeType.Removed: {
-          output.remove.push(change.rule);
-          break;
-        }
-      }
-    }
-    return output;
-  },
-
-  reduceIntentDelta(
-    input: Pick<ServerBanIntentProjectionDelta, "add" | "remove">,
-    policies: PersistentMap<
-      StringServerName,
-      List<GlobPolicyRule | LiteralPolicyRule>
-    >
-  ): ServerBanIntentProjectionDelta {
-    const intents = ListMultiMap.deriveIntents(
-      policies,
-      input.add,
-      input.remove,
-      (rule) => rule.entity as StringServerName
-    );
-    return {
-      ...input,
-      deny: intents.intend,
-      recall: intents.recall,
-    };
-  },
-});
 
 export class StandardServerBanIntentProjectionNode implements ServerBanIntentProjectionNode {
   public readonly ulid: ULID;
   constructor(
     private readonly ulidFactory: ULIDFactory,
-    private readonly policies: PersistentMap<
-      StringServerName,
-      List<LiteralPolicyRule | GlobPolicyRule>
-    >
+    private readonly policies: ServerBanIntentMap
   ) {
     this.ulid = ulidFactory();
   }
@@ -122,15 +65,84 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
     );
   }
 
-  reduceInput(input: PolicyRuleChange[]): ServerBanIntentProjectionDelta {
-    return ServerBanIntentProjectionHelper.reduceIntentDelta(
-      ServerBanIntentProjectionHelper.reducePolicyDelta(input),
-      this.policies
+  diff(
+    nextNode: ServerBanIntentProjectionNode
+  ): ServerBanIntentProjectionDelta {
+    const deny: StringServerName[] = [];
+    const recall: StringServerName[] = [];
+    for (const serverName of nextNode.deny) {
+      if (!this.isServerDenied(serverName)) {
+        deny.push(serverName);
+      }
+    }
+    for (const serverName of this.policies.keys()) {
+      if (!nextNode.isServerDenied(serverName)) {
+        recall.push(serverName);
+      }
+    }
+    return { deny, recall };
+  }
+
+  reduceInput(input: PolicyRuleChange[]): ServerBanIntentProjectionNode {
+    let nextPolicies = this.policies;
+    for (const change of input) {
+      if (
+        change.rule.kind !== PolicyRuleType.Server ||
+        change.rule.matchType === PolicyRuleMatchType.HashedLiteral
+      ) {
+        continue;
+      }
+      switch (change.changeType) {
+        case PolicyRuleChangeType.Added:
+        case PolicyRuleChangeType.RevealedLiteral: {
+          nextPolicies = ListMultiMap.add(
+            nextPolicies,
+            change.rule.entity as StringServerName,
+            change.rule
+          );
+          break;
+        }
+        case PolicyRuleChangeType.Modified: {
+          if (change.previousRule === undefined) {
+            throw new TypeError("Things are very wrong");
+          }
+          nextPolicies = ListMultiMap.add(
+            nextPolicies,
+            change.rule.entity as StringServerName,
+            change.rule
+          );
+          if (
+            change.previousRule.kind !== PolicyRuleType.Server ||
+            change.previousRule.matchType === PolicyRuleMatchType.HashedLiteral
+          ) {
+            break;
+          }
+          nextPolicies = ListMultiMap.remove(
+            nextPolicies,
+            change.previousRule.entity as StringServerName,
+            change.previousRule
+          );
+          break;
+        }
+        case PolicyRuleChangeType.Removed: {
+          nextPolicies = ListMultiMap.remove(
+            nextPolicies,
+            change.rule.entity as StringServerName,
+            change.rule
+          );
+          break;
+        }
+      }
+    }
+    return new StandardServerBanIntentProjectionNode(
+      this.ulidFactory,
+      nextPolicies
     );
   }
+
   reduceInitialInputs([policyListRevision]: [
     PolicyListBridgeProjectionNode,
-  ]): ServerBanIntentProjectionDelta {
+  ]): ServerBanIntentProjectionNode {
     if (!this.isEmpty()) {
       throw new TypeError("Cannot reduce initial inputs when inialised");
     }
@@ -144,40 +156,32 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
         Recommendation.Takedown
       ),
     ].filter((rule) => rule.matchType !== PolicyRuleMatchType.HashedLiteral);
-    const names = new Set(serverPolicies.map((policy) => policy.entity));
-    return {
-      add: serverPolicies,
-      deny: [...names] as StringServerName[],
-      remove: [],
-      recall: [],
-    };
-  }
-
-  isEmpty(): boolean {
-    return this.policies.size === 0;
-  }
-
-  reduceDelta(
-    input: ServerBanIntentProjectionDelta
-  ): ServerBanIntentProjectionNode {
-    let nextPolicies = this.policies;
-    nextPolicies = ListMultiMap.addValues(
-      nextPolicies,
-      input.add,
-      (rule) => rule.entity as StringServerName
-    );
-    nextPolicies = ListMultiMap.removeValues(
-      nextPolicies,
-      input.remove,
-      (rule) => rule.entity as StringServerName
-    );
+    let nextPolicies = PersistentMap<
+      StringServerName,
+      List<LiteralPolicyRule | GlobPolicyRule>
+    >();
+    for (const policy of serverPolicies) {
+      nextPolicies = ListMultiMap.add(
+        nextPolicies,
+        policy.entity as StringServerName,
+        policy
+      );
+    }
     return new StandardServerBanIntentProjectionNode(
       this.ulidFactory,
       nextPolicies
     );
   }
 
+  isEmpty(): boolean {
+    return this.policies.size === 0;
+  }
+
   get deny(): StringServerName[] {
     return [...this.policies.keys()];
+  }
+
+  isServerDenied(serverName: StringServerName): boolean {
+    return this.policies.has(serverName);
   }
 }
