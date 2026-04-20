@@ -38,14 +38,15 @@ function watchDeltaForMemberBanIntents(
     );
   return memberBanIntentProjectionNode.reduceInput(
     setMembershipPoliciesRevisionDelta
-  );
+  ).downstreamDelta;
 }
 
 function watchDeltaForServerBanIntents(
   watchedPoliciesDelta: PolicyRuleChange[],
   serverBanIntentProjectionNode: ServerBanIntentProjectionNode
 ) {
-  return serverBanIntentProjectionNode.reduceInput(watchedPoliciesDelta);
+  return serverBanIntentProjectionNode.reduceInput(watchedPoliciesDelta)
+    .downstreamDelta;
 }
 
 export type WatchPolicyRoomPreview = {

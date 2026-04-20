@@ -70,9 +70,14 @@ export class ProjectionOutputHelper<
     const delta = previousNode.reduceInput(input);
     this.currentNode = previousNode.reduceDelta(delta) as TProjectionNode;
     for (const output of this.outputs) {
-      output.applyInput(delta);
+      output.applyInput(delta.downstreamDelta);
     }
-    this.emitter.emit("projection", this.currentNode, delta, previousNode);
+    this.emitter.emit(
+      "projection",
+      this.currentNode,
+      delta.downstreamDelta,
+      previousNode
+    );
   }
 
   addOutput(projection: Projection): this {

@@ -8,7 +8,10 @@
 // </text>
 
 import { StringServerName } from "@the-draupnir-project/matrix-basic-types";
-import { ProjectionNode } from "../../../Projection/ProjectionNode";
+import {
+  ProjectionNode,
+  ProjectionNodeDelta,
+} from "../../../Projection/ProjectionNode";
 import { PolicyListBridgeProjectionNode } from "./PolicyListBridgeProjection";
 import {
   PolicyRuleChange,
@@ -38,6 +41,7 @@ export type ServerBanIntentProjectionDelta = {
 export type ServerBanIntentProjectionNode = ProjectionNode<
   [PolicyListBridgeProjectionNode],
   ServerBanIntentProjectionDelta,
+  undefined,
   {
     deny: StringServerName[];
   }
@@ -122,15 +126,21 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
     );
   }
 
-  reduceInput(input: PolicyRuleChange[]): ServerBanIntentProjectionDelta {
-    return ServerBanIntentProjectionHelper.reduceIntentDelta(
-      ServerBanIntentProjectionHelper.reducePolicyDelta(input),
-      this.policies
-    );
+  reduceInput(
+    input: PolicyRuleChange[]
+  ): ProjectionNodeDelta<ServerBanIntentProjectionDelta, undefined> {
+    return {
+      downstreamDelta: ServerBanIntentProjectionHelper.reduceIntentDelta(
+        ServerBanIntentProjectionHelper.reducePolicyDelta(input),
+        this.policies
+      ),
+      nodeStateDelta: undefined,
+    };
   }
+
   reduceInitialInputs([policyListRevision]: [
     PolicyListBridgeProjectionNode,
-  ]): ServerBanIntentProjectionDelta {
+  ]): ProjectionNodeDelta<ServerBanIntentProjectionDelta, undefined> {
     if (!this.isEmpty()) {
       throw new TypeError("Cannot reduce initial inputs when inialised");
     }
@@ -145,11 +155,15 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
       ),
     ].filter((rule) => rule.matchType !== PolicyRuleMatchType.HashedLiteral);
     const names = new Set(serverPolicies.map((policy) => policy.entity));
-    return {
+    const downstreamDelta = {
       add: serverPolicies,
       deny: [...names] as StringServerName[],
       remove: [],
       recall: [],
+    };
+    return {
+      downstreamDelta,
+      nodeStateDelta: undefined,
     };
   }
 
@@ -157,9 +171,12 @@ export class StandardServerBanIntentProjectionNode implements ServerBanIntentPro
     return this.policies.size === 0;
   }
 
-  reduceDelta(
-    input: ServerBanIntentProjectionDelta
-  ): ServerBanIntentProjectionNode {
+  reduceDelta({
+    downstreamDelta: input,
+  }: ProjectionNodeDelta<
+    ServerBanIntentProjectionDelta,
+    undefined
+  >): ServerBanIntentProjectionNode {
     let nextPolicies = this.policies;
     nextPolicies = ListMultiMap.addValues(
       nextPolicies,

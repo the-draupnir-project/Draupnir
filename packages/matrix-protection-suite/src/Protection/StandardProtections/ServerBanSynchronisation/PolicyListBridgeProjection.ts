@@ -14,5 +14,6 @@ import { ProjectionNode } from "../../../Projection/ProjectionNode";
 export type PolicyListBridgeProjectionNode = ProjectionNode<
   [],
   PolicyRuleChange[],
+  undefined,
   PolicyListRevision
 >;

@@ -11,6 +11,7 @@ import { ULID, ULIDFactory } from "ulidx";
 import {
   ExtractInputDeltaShapes,
   ProjectionNode,
+  ProjectionNodeDelta,
 } from "../../../Projection/ProjectionNode";
 import {
   MemberPolicyMatch,
@@ -33,7 +34,8 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
  */
 export type MemberBanInputProjectionNode = ProjectionNode<
   never[],
-  MembershipPolicyRevisionDelta
+  MembershipPolicyRevisionDelta,
+  undefined
 > &
   MembershipPolicyRevision;
 
@@ -57,6 +59,7 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
 export type MemberBanIntentProjectionNode = ProjectionNode<
   [MemberBanInputProjectionNode],
   MemberBanIntentProjectionDelta,
+  undefined,
   {
     allMembersWithRules(): MemberPolicyMatches[];
     allRulesMatchingMember(
@@ -135,16 +138,23 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
 
   reduceInput(
     input: ExtractInputDeltaShapes<[MemberBanInputProjectionNode]>
-  ): MemberBanIntentProjectionDelta {
-    return MemberBanIntentProjectionNodeHelper.reduceIntentDelta(
-      MemberBanIntentProjectionNodeHelper.reduceMembershipPolicyDelta(input),
-      this.intents
-    );
+  ): ProjectionNodeDelta<MemberBanIntentProjectionDelta, undefined> {
+    return {
+      downstreamDelta: MemberBanIntentProjectionNodeHelper.reduceIntentDelta(
+        MemberBanIntentProjectionNodeHelper.reduceMembershipPolicyDelta(input),
+        this.intents
+      ),
+      nodeStateDelta: undefined,
+    };
   }
 
   reduceDelta(
-    input: MemberBanIntentProjectionDelta
-  ): StandardMemberBanIntentProjectionNode {
+    projectionNodeDelta: ProjectionNodeDelta<
+      MemberBanIntentProjectionDelta,
+      undefined
+    >
+  ): MemberBanIntentProjectionNode {
+    const input = projectionNodeDelta.downstreamDelta;
     let nextIntents = this.intents;
     nextIntents = ListMultiMap.addValues(
       nextIntents,
@@ -164,7 +174,7 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
 
   reduceInitialInputs([membershipPolicyRevision]: [
     MemberBanInputProjectionNode,
-  ]): MemberBanIntentProjectionDelta {
+  ]): ProjectionNodeDelta<MemberBanIntentProjectionDelta, undefined> {
     if (!this.isEmpty()) {
       throw new TypeError(
         "This can only be called on an empty projection node"
@@ -177,10 +187,13 @@ export class StandardMemberBanIntentProjectionNode implements MemberBanIntentPro
       )
       .flat();
     return {
-      add: matches,
-      ban: matches.map((match) => match.userID),
-      remove: [],
-      recall: [],
+      downstreamDelta: {
+        add: matches,
+        ban: matches.map((match) => match.userID),
+        remove: [],
+        recall: [],
+      },
+      nodeStateDelta: undefined,
     };
   }
 
