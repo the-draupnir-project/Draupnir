@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2023 - 2026 Gnuxie <Gnuxie@protonmail.com>
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileAttributionText: <text>
 // This modified file incorporates work from mjolnir

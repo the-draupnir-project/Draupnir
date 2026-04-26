@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
 import { ActionResult, Ok, isError } from "matrix-protection-suite";

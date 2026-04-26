@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 # SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: Apache-2.0
 
 # Copied from https://github.com/matrix-org/matrix-bifrost/blob/develop/.github/workflows/docker-hub-latest.yml
 
@@ -66,7 +66,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
-            org.opencontainers.image.licenses=AFL-3.0
+            org.opencontainers.image.licenses=Apache-2.0
           sbom: true
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop

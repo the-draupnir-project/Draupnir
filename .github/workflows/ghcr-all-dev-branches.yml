@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: Apache-2.0
 # This file is derived from the docker-hub-develop.yml workflow, but instead of pushing to Docker Hub, it pushes to GHCR. It also runs on all non excluded branches to allow easier access to development builds.
 
 name: "GHCR - Development Branches"
@@ -85,6 +85,6 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
-            org.opencontainers.image.licenses=AFL-3.0
+            org.opencontainers.image.licenses=Apache-2.0
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}

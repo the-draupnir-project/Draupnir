@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { Ok, Result } from "@gnuxie/typescript-result";
 import {
