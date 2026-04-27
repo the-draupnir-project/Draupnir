@@ -35,12 +35,35 @@ export interface HandleRegistry<
 
 export const HandleRegistrySemantics = SemanticType<HandleRegistryDescription>(
   "HandleRegistry"
-).Law({
-  establishHandles: {
-    what: "When registerPluginHandles is called, plugins will later receive calls for their handles",
-    why: "Provides the hook point for plugins to register with handles",
-    law: "For plugin P and handle H, registering plugin will result in handle H being called on plugin when invoked",
-    async check(makeSubject) {
+)
+  .declare({
+    establishHandles: {
+      what: "When registerPluginHandles is called, plugins will later receive calls for their handles",
+      why: "Provides the hook point for plugins to register with handles",
+      when: "After a plugin has been registered and before it is removed or the registry is disposed",
+      law: "For plugin P and handle H, registering plugin will result in handle H being called on plugin when invoked",
+    },
+    pluginRemoval: {
+      what: "Handles will no longer be called on plugins that are unregistered",
+      why: "Make sure that plugins can be cleanly removed from the system",
+      when: "After removePluginHandles has been called for a plugin",
+      law: "For plugin P and handle H, after unregistering P, H will no longer be called on P",
+    },
+    unaryHandleRegistration: {
+      what: "Plugin registration is unary, handles will not be called multiple times as a result of multiple registration",
+      why: "Prevents bugs from multiple registration",
+      when: "When the same plugin is registered more than once",
+      law: "For a plugin P, and handle H, calling registerHandles(P) twice will result in H of P being called exactly once only",
+    },
+    disposable: {
+      what: "HandleRegistry un-registers all plugins on disposal",
+      why: "Prevents resource leaks from HandleRegistry instances",
+      when: "After disposing the HandleRegistry",
+      law: "For plugin P and handle H, after disposing the HandleRegistry, H will no longer be called on P",
+    },
+  })
+  .verify({
+    async establishHandles(makeSubject) {
       const description = (await makeSubject()).expect(
         "Should be able to make the subject"
       );
@@ -85,12 +108,7 @@ export const HandleRegistrySemantics = SemanticType<HandleRegistryDescription>(
         throw new TypeError("Registered handle was not invoked after publish");
       }
     },
-  },
-  pluginRemoval: {
-    what: "Handles will no longer be called on plugins that are unregistered",
-    why: "Make sure that plugins can be cleanly removed from the system",
-    law: "For plugin P and handle H, after unregistering P, H will no longer be called on P",
-    async check(makeSubject) {
+    async pluginRemoval(makeSubject) {
       const description = (await makeSubject()).expect(
         "Should be able to make the subject"
       );
@@ -138,12 +156,7 @@ export const HandleRegistrySemantics = SemanticType<HandleRegistryDescription>(
         );
       }
     },
-  },
-  unaryHandleRegistration: {
-    what: "Plugin registration is unary, handles will not be called multiple times as a result of multiple registration",
-    why: "Prevents bugs from multiple registration",
-    law: "For a plugin P, and handle H, calling registerHandles(P) twice will result in H of P being called exactly once only",
-    async check(makeSubject) {
+    async unaryHandleRegistration(makeSubject) {
       const description = (await makeSubject()).expect(
         "Should be able to make the subject"
       );
@@ -190,12 +203,7 @@ export const HandleRegistrySemantics = SemanticType<HandleRegistryDescription>(
         throw new TypeError("Plugin handle should have been called once");
       }
     },
-  },
-  disposable: {
-    what: "HandleRegistry un-registers all plugins on disposal",
-    why: "Prevents resource leaks from HandleRegistry instances",
-    law: "For plugin P and handle H, after disposing the HandleRegistry, H will no longer be called on P",
-    async check(makeSubject) {
+    async disposable(makeSubject) {
       const description = (await makeSubject()).expect(
         "Should be able to make the subject"
       );
@@ -248,5 +256,4 @@ export const HandleRegistrySemantics = SemanticType<HandleRegistryDescription>(
         );
       }
     },
-  },
-});
+  });
