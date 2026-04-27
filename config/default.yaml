@@ -52,10 +52,8 @@ acceptInvitesFromSpace: "!example:example.org"
 # Whether Draupnir should report ignored invites to the management room (if autojoinOnlyIfManager is true).
 recordIgnoredInvites: false
 
-# Enable automatic management-room recovery/creation on first boot.
-managedManagementRoom: false
-
 # The initial manager to invite if the management room has to be created.
+# Leave this commented out when using a pre-existing management room.
 # initialManager: "@admin:example.org"
 
 # The room ID (or room alias) of the management room, anyone in this room can issue commands to Draupnir.

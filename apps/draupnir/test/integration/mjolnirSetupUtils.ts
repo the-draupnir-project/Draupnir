@@ -34,6 +34,7 @@ import {
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
+import { isStringUserID, userLocalpart } from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 
@@ -178,20 +179,18 @@ export async function makeBotModeToggle(
     config.homeserverUrl,
     await client.getUserId()
   );
-  if (config.managedManagementRoom && config.initialManager !== undefined) {
-    const managerMatch = /^@([^:]+):/.exec(config.initialManager);
-    if (managerMatch === null || managerMatch[1] === undefined) {
+  if (config.initialManager !== undefined) {
+    if (!isStringUserID(config.initialManager)) {
       throw new TypeError(
         `${config.initialManager} is not a valid initial manager mxid`
       );
     }
-    const managerLocalpart = managerMatch[1];
     try {
       await registerUser(
         config.homeserverUrl,
-        managerLocalpart,
-        managerLocalpart,
-        managerLocalpart,
+        userLocalpart(config.initialManager),
+        userLocalpart(config.initialManager),
+        userLocalpart(config.initialManager),
         true
       );
     } catch (e) {

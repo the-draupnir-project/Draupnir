@@ -18,7 +18,7 @@ process.env.SUPPRESS_NO_CONFIG_WARNING = "y";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+import { hasOwn, Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
@@ -86,7 +86,6 @@ export interface IConfig {
   /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
-  managedManagementRoom: boolean;
   initialManager: StringUserID | undefined;
   managementRoom: string | undefined;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
@@ -209,10 +208,6 @@ const defaultConfig: IConfig = {
   acceptInvitesFromSpace: "!noop:example.org",
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
-  // FIXME: We are deleting this because we will just use the lack of presence
-  // of the `managementRoom` property to determine whether to make a room or not
-  // and crash if neither the initialAdmin or the managementRoom properties are set.
-  managedManagementRoom: false,
   initialManager: undefined,
   managementRoom: "!noop:example.org",
   logLevel: "INFO",
@@ -377,6 +372,11 @@ function readConfigSource(): IConfig {
     );
   }
   registerConfigExitHook(config);
+  if (hasOwn(config, 'managementRoom') && hasOwn(config, 'initialManager')) {
+    throw new TypeError(
+      "Draupnir config must use either one of managementRoom or initialManager, but not both."
+    );
+  }
   return config;
 }
 
