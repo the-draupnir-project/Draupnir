@@ -18,7 +18,11 @@ process.env.SUPPRESS_NO_CONFIG_WARNING = "y";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import { hasOwn, Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+import {
+  hasOwn,
+  Logger,
+  setGlobalLoggerProvider,
+} from "matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
@@ -372,7 +376,7 @@ function readConfigSource(): IConfig {
     );
   }
   registerConfigExitHook(config);
-  if (hasOwn(config, 'managementRoom') && hasOwn(config, 'initialManager')) {
+  if (hasOwn(config, "managementRoom") && hasOwn(config, "initialManager")) {
     throw new TypeError(
       "Draupnir config must use either one of managementRoom or initialManager, but not both."
     );

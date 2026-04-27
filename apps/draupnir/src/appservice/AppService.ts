@@ -53,7 +53,11 @@ import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/Sqli
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
 import { Result } from "@gnuxie/typescript-result";
-import { loadZeroTouchDeployRoomFromConfig, ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE, ZeroTouchDeployRoomAccountDataSchema } from "../managedRoomAccountData";
+import {
+  loadZeroTouchDeployRoomFromConfig,
+  ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+  ZeroTouchDeployRoomAccountDataSchema,
+} from "../managedRoomAccountData";
 
 const log = new Logger("AppService");
 /**
@@ -201,23 +205,25 @@ export class MjolnirAppService {
       botUserID,
       bridge.getBot().getClient()
     );
-    const adminRoom = (await loadZeroTouchDeployRoomFromConfig(
-      config.adminRoom,
-      config.initialManager,
-      new BotSDKMatrixAccountData(
+    const adminRoom = (
+      await loadZeroTouchDeployRoomFromConfig(
+        config.adminRoom,
+        config.initialManager,
+        new BotSDKMatrixAccountData(
           ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
           ZeroTouchDeployRoomAccountDataSchema,
-          bridge.getBot().getClient(),
+          bridge.getBot().getClient()
         ),
-      clientPlatform,
-      botUserID,
-      {
-        allowPermalinkForRoomConfig: true,
-        configuredRoomPropertyName: "config.adminRoom",
-        configuredInitialManagerPropertyName: "config.initialManager"
-      }
-    )).expect("unable to load the appservice admin room");
-    const accessControlRoom = adminRoom
+        clientPlatform,
+        botUserID,
+        {
+          allowPermalinkForRoomConfig: true,
+          configuredRoomPropertyName: "config.adminRoom",
+          configuredInitialManagerPropertyName: "config.initialManager",
+        }
+      )
+    ).expect("unable to load the appservice admin room");
+    const accessControlRoom = adminRoom;
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
     const accessControl = (
