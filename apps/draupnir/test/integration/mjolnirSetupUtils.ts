@@ -34,7 +34,10 @@ import {
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
-import { isStringUserID, userLocalpart } from "@the-draupnir-project/matrix-basic-types";
+import {
+  isStringUserID,
+  userLocalpart,
+} from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 

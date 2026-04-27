@@ -194,15 +194,12 @@ export class TrustedReporters
     }
 
     if (met.length > 0) {
-      await this.draupnir.client.sendMessage(
-        this.draupnir.managementRoomID,
-        {
-          msgtype: "m.notice",
-          body:
-            `message ${report.event_id} reported by ${[...reporters].join(", ")}. ` +
-            `actions: ${met.join(", ")}`,
-        }
-      );
+      await this.draupnir.client.sendMessage(this.draupnir.managementRoomID, {
+        msgtype: "m.notice",
+        body:
+          `message ${report.event_id} reported by ${[...reporters].join(", ")}. ` +
+          `actions: ${met.join(", ")}`,
+      });
     }
     return Ok(undefined);
   }

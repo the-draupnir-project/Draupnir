@@ -14,13 +14,18 @@ describe("Managed room bootstrap startup integration", function (this: Mocha.Sui
     const initialManager = await newTestUser(config.homeserver.url, {
       name: { contains: "managed-admin" },
     });
-    config.managedAdminRoom = true;
-    config.adminRoom = undefined;
-    config.initialManager = (await initialManager.getUserId()) as StringUserID;
+    const testConfigRecord = {
+      ...(config as unknown as Record<string, unknown>),
+    };
+    testConfigRecord.managedAdminRoom = true;
+    testConfigRecord.adminRoom = undefined;
+    testConfigRecord.initialManager =
+      (await initialManager.getUserId()) as StringUserID;
+    const testConfig = testConfigRecord as typeof config;
 
     let appservice: MjolnirAppService | undefined;
     try {
-      appservice = await setupHarnessWithConfig(config, {
+      appservice = await setupHarnessWithConfig(testConfig, {
         ensureAdminRoomAlias: false,
       });
       if (appservice.accessControlRoomID.length === 0) {

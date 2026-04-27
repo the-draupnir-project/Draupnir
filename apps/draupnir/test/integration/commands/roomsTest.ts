@@ -36,6 +36,9 @@ describe("Test: The rooms commands", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
+      if (this.config.managementRoom === undefined) {
+        throw new TypeError("managementRoom is required for this test");
+      }
       await moderator.joinRoom(this.config.managementRoom);
       const targetRoom = await moderator.createRoom({
         invite: [draupnir.clientUserID],

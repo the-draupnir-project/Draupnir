@@ -38,6 +38,9 @@ describe("Test: !help command", function (this: Mocha.Suite) {
     if (draupnir === undefined) {
       throw new TypeError(`setup code is wrong`);
     }
+    if (this.config.managementRoom === undefined) {
+      throw new TypeError("managementRoom is required for this test");
+    }
     await client.joinRoom(this.config.managementRoom);
     // listener for getting the event reply
     const reply = new Promise((resolve) => {

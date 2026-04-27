@@ -49,7 +49,11 @@ import {
   userLocalpart,
 } from "@the-draupnir-project/matrix-basic-types";
 import { TopLevelStores } from "../backingstore/DraupnirStores";
-import { loadOrCreateZeroTouchDeployRoom, ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE, ZeroTouchDeployRoomAccountDataSchema } from "../managedRoomAccountData";
+import {
+  loadOrCreateZeroTouchDeployRoom,
+  ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+  ZeroTouchDeployRoomAccountDataSchema,
+} from "../managedRoomAccountData";
 
 const log = new Logger("AppServiceDraupnirManager");
 
