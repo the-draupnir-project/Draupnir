@@ -37,12 +37,23 @@ export interface HandleRegistryDescription<
 }
 
 export const HandleRegistryDescriptionSemantics =
-  SemanticType<HandleRegistryDescription>("HandleRegistryDescription").Law({
-    descriptionBuilding: {
-      what: "When a handle is registered and a new registry is returned, the original registry is not modified.",
-      why: "Keeps the builder pattern clean and prevents bugs in downstream consumers",
-      law: "For empty RegistryDescription R and HandleDescription H, calling R.registerHandleDescription(H) => R' results in R.handleDescriptions = [] and R'.handleDescriptions = [H]",
-      async check(makeSubject) {
+  SemanticType<HandleRegistryDescription>("HandleRegistryDescription")
+    .declare({
+      descriptionBuilding: {
+        what: "When a handle is registered and a new registry is returned, the original registry is not modified.",
+        why: "Keeps the builder pattern clean and prevents bugs in downstream consumers",
+        when: "When registerHandleDescription returns a new HandleRegistryDescription",
+        law: "For empty RegistryDescription R and HandleDescription H, calling R.registerHandleDescription(H) => R' results in R.handleDescriptions = [] and R'.handleDescriptions = [H]",
+      },
+      registryFactory: {
+        what: "A HandleRegistryDescription can produce HandleRegistry instances for a given context.",
+        why: "Keeps the HandleRegistry abstraction clean by binding the context in construction rather than later on",
+        when: "When registryForContext is called with a lifetime and context",
+        law: "For RegistryDescription R with handle union H, calling R.registryForContext(L, C) produces a HandleRegistry<R,C>",
+      },
+    })
+    .verify({
+      async descriptionBuilding(makeSubject) {
         const registry = (await makeSubject()).expect(
           "Should be able to make the subject"
         );
@@ -56,12 +67,7 @@ export const HandleRegistryDescriptionSemantics =
         expect(newRegistry.handleDescriptions).toHaveLength(1);
         expect(newRegistry.handleDescriptions[0]).toBe(handle);
       },
-    },
-    registryFactory: {
-      what: "A HandleRegistryDescription can produce HandleRegistry instances for a given context.",
-      why: "Keeps the HandleRegistry abstraction clean by binding the context in construction rather than later on",
-      law: "For RegistryDescription R with handle union H, calling R.registryForContext(L, C) produces a HandleRegistry<R,C>",
-      async check(makeSubject) {
+      async registryFactory(makeSubject) {
         let establishCount = 0;
         const contextHandle = {
           handleName: "handle",
@@ -84,5 +90,4 @@ export const HandleRegistryDescriptionSemantics =
           .expect("Should be able to construct a registry for the context");
         expect(establishCount).toBe(1);
       },
-    },
-  });
+    });
