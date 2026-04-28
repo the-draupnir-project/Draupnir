@@ -31,9 +31,7 @@ test("isStringMediaURI rejects invalid MXC URIs", function () {
 });
 
 test("StringMediaURI accessors", function () {
-  const uri = StringMediaURI(
-    "mxc://[1234:5678::abcd]:5678/abc123"
-  ) as StringMediaURI;
+  const uri = StringMediaURI("mxc://[1234:5678::abcd]:5678/abc123");
 
   expect(MediaURIServerName(uri)).toBe("[1234:5678::abcd]:5678");
   expect(MediaURIMediaID(uri)).toBe("abc123");

@@ -8,7 +8,7 @@ import {
 } from "./StringServerName";
 
 export const StringMediaURIRegex = new RegExp(
-  `^mxc://(?<serverName>${StringServerNameRegexPart.source})/(?<mediaId>[A-Za-z0-9_-]+)$`
+  `^mxc://(?<serverName>${StringServerNameRegexPart.source})/(?<mediaID>[A-Za-z0-9_-]+)$`
 );
 
 export type StringMediaURIBrand = {
@@ -23,7 +23,7 @@ export function isStringMediaURI(string: string): string is StringMediaURI {
 
 export function StringMediaURI(string: unknown): StringMediaURI {
   if (typeof string === "string" && isStringMediaURI(string)) {
-    return string as StringMediaURI;
+    return string;
   }
   throw new TypeError("Not a valid StringMediaURI");
 }
