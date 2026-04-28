@@ -38,8 +38,8 @@ export function mxcURIServerName(uri: StringMXCURI): StringServerName {
   return StringServerName(match);
 }
 
-export function mxcURIMediaId(uri: StringMXCURI): string {
-  const match = StringMXCURIRegex.exec(uri)?.groups?.mediaId;
+export function mxcURIMediaID(uri: StringMXCURI): string {
+  const match = StringMXCURIRegex.exec(uri)?.groups?.mediaID;
   if (match === undefined) {
     throw new TypeError("Somehow a StringMXCURI was created that is invalid.");
   }
