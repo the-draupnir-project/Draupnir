@@ -9,7 +9,7 @@
 // </text>
 
 export * from "./StringEventID";
-export * from "./StringMXCURI";
+export * from "./StringMediaURI";
 export * from "./StringRoomAlias";
 export * from "./StringRoomID";
 export * from "./StringServerName";

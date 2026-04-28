@@ -7,7 +7,7 @@ import {
   StringPresentationType,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
-import { isStringMXCURI } from "@the-draupnir-project/matrix-basic-types";
+import { isStringMediaURI } from "@the-draupnir-project/matrix-basic-types";
 import { Draupnir } from "../Draupnir";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
@@ -31,7 +31,7 @@ export const DraupnirAvatarCommand = describeCommand({
     if (!avatarUrl) {
       return ActionError.Result("Avatar URL cannot be empty");
     }
-    if (!isStringMXCURI(avatarUrl)) {
+    if (!isStringMediaURI(avatarUrl)) {
       return ActionError.Result(
         `Invalid MXC URI format. Expected format: mxc://server/media-id, got: ${avatarUrl}`
       );
