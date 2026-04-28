@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 - 2025 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -8,6 +9,7 @@
 // </text>
 
 export * from "./StringEventID";
+export * from "./StringMXCURI";
 export * from "./StringRoomAlias";
 export * from "./StringRoomID";
 export * from "./StringServerName";

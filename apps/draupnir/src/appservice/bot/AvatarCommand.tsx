@@ -13,14 +13,9 @@ import {
   StringPresentationType,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
+import { isStringMXCURI } from "@the-draupnir-project/matrix-basic-types";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
 import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
-
-function isValidMXCURI(uri: string): boolean {
-  // Validate MXC URI format: mxc://server/media-id
-  const mxcPattern = /^mxc:\/\/[a-zA-Z0-9._:-]+\/[a-zA-Z0-9._-]+$/;
-  return mxcPattern.test(uri);
-}
 
 export const AppserviceAvatarCommand = describeCommand({
   summary: "Sets the avatar of the main appservice admin bot.",
@@ -39,7 +34,7 @@ export const AppserviceAvatarCommand = describeCommand({
     if (!avatarUrl) {
       return ActionError.Result("Avatar URL cannot be empty");
     }
-    if (!isValidMXCURI(avatarUrl)) {
+    if (!isStringMXCURI(avatarUrl)) {
       return ActionError.Result(
         `Invalid MXC URI format. Expected format: mxc://server/media-id, got: ${avatarUrl}`
       );
