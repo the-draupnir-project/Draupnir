@@ -20,12 +20,14 @@ import {
 } from "./ListCommand";
 import { AppserviceProvisionForUserCommand } from "./ProvisionCommand";
 import { AppserviceVersionCommand } from "./VersionCommand";
+import { AppserviceDisplaynameCommand } from "./DisplaynameCommand";
 
 AppserviceBotCommands.internCommand(AppserviceBotHelpCommand, ["admin", "help"])
   .internCommand(AppserviceAllowCommand, ["admin", "allow"])
   .internCommand(AppserviceRemoveCommand, ["admin", "remove"])
   .internCommand(AppserviceProvisionForUserCommand, ["admin", "provision"])
   .internCommand(AppserviceVersionCommand, ["admin", "version"])
+  .internCommand(AppserviceDisplaynameCommand, ["admin", "displayname"])
   .internCommand(AppserviceRestartDraupnirCommand, ["admin", "restart"])
   .internCommand(AppserviceListUnstartedCommand, [
     "admin",
