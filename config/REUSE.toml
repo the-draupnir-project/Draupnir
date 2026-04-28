@@ -4,10 +4,10 @@ version = 1
 path = "*.yaml"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
-SPDX-License-Identifier = "CC0-1.0"
+SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = "REUSE.toml"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
-SPDX-License-Identifier = "CC0-1.0"
+SPDX-License-Identifier = "Apache-2.0"

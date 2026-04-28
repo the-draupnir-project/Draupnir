@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 // So the purpose of this is just to remove all policies related to an entity.
 // Prompt which policies will be removed, and then remove them if it's accepted.

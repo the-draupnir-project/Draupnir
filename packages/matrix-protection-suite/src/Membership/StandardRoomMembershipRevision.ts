@@ -1,6 +1,6 @@
 // Copyright (C) 2023 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { StaticDecode } from "@sinclair/typebox";
 import { MembershipEvent } from "../MatrixTypes/MembershipEvent";

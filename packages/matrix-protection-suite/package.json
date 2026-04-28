@@ -10,7 +10,7 @@
     "name": "Gnuxie",
     "email": "Gnuxie@protonmail.com"
   },
-  "license": "AFL-3.0",
+  "license": "Apache-2.0",
   "repository": {
     "url": "https://github.com/the-draupnir-project/Draupnir.git",
     "type": "git"

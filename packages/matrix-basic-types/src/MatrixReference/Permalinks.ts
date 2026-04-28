@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Gnuxie <Gnuxie@protonmail.com>
 // SPDX-FileCopyrightText: 2018 - 2022 Travis Ralston
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileAttributionText: <text>
 // This modified file incorporates work from matrix-bot-sdk
