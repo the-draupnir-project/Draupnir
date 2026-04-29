@@ -376,7 +376,10 @@ function readConfigSource(): IConfig {
     );
   }
   registerConfigExitHook(config);
-  if (hasOwn(config, "managementRoom") && hasOwn(config, "initialManager")) {
+  if (
+    config.initialManager !== undefined &&
+    config.managementRoom !== undefined
+  ) {
     throw new TypeError(
       "Draupnir config must use either one of managementRoom or initialManager, but not both."
     );
