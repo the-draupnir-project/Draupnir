@@ -43,7 +43,7 @@
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
     "@sentry/node": "^7.17.2",
-    "@sinclair/typebox": "0.34.13",
+    "@sinclair/typebox": "0.34.49",
     "@the-draupnir-project/interface-manager": "4.2.6",
     "@the-draupnir-project/matrix-basic-types": "1.5.0",
     "@the-draupnir-project/mps-interface-adaptor": "0.6.0",
