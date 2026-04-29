@@ -25,6 +25,9 @@ venv/
 
 /db
 
+# temporary version file generated from npm build
+# Only the tmp file for version is ignored because the branch variant doesnt get created by this part of the build failing on windows.
+version.txt.tmp
 # version file generated from npm build
 version.txt
 # branch file generated from npm build
