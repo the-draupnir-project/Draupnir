@@ -213,7 +213,7 @@ const defaultConfig: IConfig = {
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
   initialManager: undefined,
-  managementRoom: "!noop:example.org",
+  managementRoom: undefined,
   logLevel: "INFO",
   logMutedModules: ["MatrixHttpClient", "MatrixClientLite"],
   verifyPermissionsOnStartup: true,
