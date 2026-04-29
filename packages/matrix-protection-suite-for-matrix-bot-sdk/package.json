@@ -27,7 +27,7 @@
     "@types/node": "^24.12.0",
     "@vector-im/matrix-bot-sdk": "0.8.0-element.3",
     "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.0.0",
-    "typedoc": "^0.26.3"
+    "typedoc": "^0.28.0"
   },
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
