@@ -21,6 +21,7 @@ import {
 import { AppserviceProvisionForUserCommand } from "./ProvisionCommand";
 import { AppserviceVersionCommand } from "./VersionCommand";
 import { AppserviceDisplaynameCommand } from "./DisplaynameCommand";
+import { AppserviceAvatarCommand } from "./AvatarCommand";
 
 AppserviceBotCommands.internCommand(AppserviceBotHelpCommand, ["admin", "help"])
   .internCommand(AppserviceAllowCommand, ["admin", "allow"])
@@ -28,6 +29,7 @@ AppserviceBotCommands.internCommand(AppserviceBotHelpCommand, ["admin", "help"])
   .internCommand(AppserviceProvisionForUserCommand, ["admin", "provision"])
   .internCommand(AppserviceVersionCommand, ["admin", "version"])
   .internCommand(AppserviceDisplaynameCommand, ["admin", "displayname"])
+  .internCommand(AppserviceAvatarCommand, ["admin", "avatar"])
   .internCommand(AppserviceRestartDraupnirCommand, ["admin", "restart"])
   .internCommand(AppserviceListUnstartedCommand, [
     "admin",
