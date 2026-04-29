@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 - 2024 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2021 - 2022 The Matrix.org Foundation C.I.C.
 //
@@ -33,6 +34,10 @@ import {
 } from "matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
+import {
+  isStringUserID,
+  userLocalpart,
+} from "@the-draupnir-project/matrix-basic-types";
 
 patchMatrixClient();
 
@@ -144,11 +149,13 @@ export async function makeBotModeToggle(
     eraseAccountData,
     allowSafeMode,
     deleteManagementRoomAliasOnStart: deleteAlias,
+    ensureManagementRoomAlias,
   }: {
     stores: TopLevelStores;
     eraseAccountData?: boolean;
     allowSafeMode?: boolean;
     deleteManagementRoomAliasOnStart?: boolean;
+    ensureManagementRoomAlias?: boolean;
   } = { stores: { dispose() {} } }
 ): Promise<DraupnirBotModeToggle> {
   await configureMjolnir(config);
@@ -175,13 +182,46 @@ export async function makeBotModeToggle(
     config.homeserverUrl,
     await client.getUserId()
   );
-  // defaults to true
-  if (deleteAlias === undefined || deleteAlias) {
-    await client
-      .deleteRoomAlias(config.managementRoom)
-      .catch((_: unknown) => undefined);
+  if (config.initialManager !== undefined) {
+    if (!isStringUserID(config.initialManager)) {
+      throw new TypeError(
+        `${config.initialManager} is not a valid initial manager mxid`
+      );
+    }
+    try {
+      await registerUser(
+        config.homeserverUrl,
+        userLocalpart(config.initialManager),
+        userLocalpart(config.initialManager),
+        userLocalpart(config.initialManager),
+        true
+      );
+    } catch (e) {
+      if (
+        typeof e !== "object" ||
+        e === null ||
+        !("body" in e) ||
+        typeof e.body !== "object" ||
+        e.body === null ||
+        !("errcode" in e.body) ||
+        e.body.errcode !== "M_USER_IN_USE"
+      ) {
+        throw e;
+      }
+    }
   }
-  await ensureAliasedRoomExists(client, config.managementRoom);
+  // defaults to true
+  if (ensureManagementRoomAlias ?? true) {
+    if (config.managementRoom === undefined) {
+      throw new TypeError("managementRoom is required when ensuring alias");
+    }
+    if (deleteAlias === undefined || deleteAlias) {
+      await client
+        .deleteRoomAlias(config.managementRoom)
+        .catch((_: unknown) => undefined);
+    }
+    await ensureAliasedRoomExists(client, config.managementRoom);
+  }
   const toggle = await DraupnirBotModeToggle.create(
     client,
     new SafeMatrixEmitterWrapper(client, DefaultEventDecoder),

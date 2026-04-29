@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019, 2021 The Matrix.org Foundation C.I.C.
 //
@@ -18,6 +19,7 @@ import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
+import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
 setGlobalLoggerProvider(new RichConsoleLogger());
@@ -84,7 +86,8 @@ export interface IConfig {
   /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
-  managementRoom: string;
+  initialManager: StringUserID | undefined;
+  managementRoom: string | undefined;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
   logMutedModules: string[];
   verifyPermissionsOnStartup: boolean;
@@ -205,7 +208,8 @@ const defaultConfig: IConfig = {
   acceptInvitesFromSpace: "!noop:example.org",
   autojoinOnlyIfManager: true,
   recordIgnoredInvites: false,
-  managementRoom: "!noop:example.org",
+  initialManager: undefined,
+  managementRoom: undefined,
   logLevel: "INFO",
   logMutedModules: ["MatrixHttpClient", "MatrixClientLite"],
   verifyPermissionsOnStartup: true,
@@ -368,6 +372,14 @@ function readConfigSource(): IConfig {
     );
   }
   registerConfigExitHook(config);
+  if (
+    config.initialManager !== undefined &&
+    config.managementRoom !== undefined
+  ) {
+    throw new TypeError(
+      "Draupnir config must use either one of managementRoom or initialManager, but not both."
+    );
+  }
   return config;
 }
 
@@ -437,6 +449,9 @@ export function getProvisionedMjolnirConfig(managementRoomId: string): IConfig {
     }, {})
   ) as IConfig;
 
+  // DO NOT DELETE this unless you are sure that previously created appservice
+  // draupnir have set the zero touch deploy management room account data.
+  // Otherwise all the managed draupnir will create their management rooms.
   config.managementRoom = managementRoomId;
   return config;
 }

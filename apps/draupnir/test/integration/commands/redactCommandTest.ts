@@ -51,6 +51,9 @@ describe("Test: The redaction command", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
+      if (this.config.managementRoom === undefined) {
+        throw new TypeError("managementRoom is required for this test");
+      }
       await moderator.joinRoom(this.config.managementRoom);
       const targetRoom = await moderator.createRoom({
         invite: [await badUser.getUserId(), mjolnirUserId],
@@ -158,6 +161,9 @@ describe("Test: The redaction command", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
+      if (this.config.managementRoom === undefined) {
+        throw new TypeError("managementRoom is required for this test");
+      }
       await moderator.joinRoom(this.config.managementRoom);
       const targetRooms: string[] = [];
       for (let i = 0; i < 5; i++) {
@@ -260,6 +266,9 @@ describe("Test: The redaction command", function () {
       name: { contains: "moderator" },
     });
     this.moderator = moderator;
+    if (this.config.managementRoom === undefined) {
+      throw new TypeError("managementRoom is required for this test");
+    }
     await moderator.joinRoom(this.config.managementRoom);
     const targetRoom = await moderator.createRoom({
       invite: [await badUser.getUserId(), draupnir.clientUserID],

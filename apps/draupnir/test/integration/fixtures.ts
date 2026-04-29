@@ -81,7 +81,9 @@ export const mochaHooks = {
       this.timeout(30000);
       this.lifetime = new StandardLifetime();
       const config = (this.config = configRead());
-      this.managementRoomAlias = config.managementRoom;
+      if (config.managementRoom !== undefined) {
+        this.managementRoomAlias = config.managementRoom;
+      }
       const storagePath = getStoragePath(config.dataPath);
       await cleanUpTopLevelStores(storagePath);
       this.stores = makeTopLevelStores(storagePath, DefaultEventDecoder, {

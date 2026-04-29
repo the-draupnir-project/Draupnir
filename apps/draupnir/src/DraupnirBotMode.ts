@@ -19,6 +19,7 @@ import {
   ConfigRecoverableError,
 } from "matrix-protection-suite";
 import {
+  BotSDKMatrixAccountData,
   ClientCapabilityFactory,
   MatrixSendClient,
   RoomStateManagerFactory,
@@ -31,9 +32,6 @@ import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";
 import { WebAPIs } from "./webapis/WebAPIs";
 import {
   isStringUserID,
-  isStringRoomAlias,
-  isStringRoomID,
-  MatrixRoomReference,
   StringUserID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
@@ -49,6 +47,11 @@ import { SafeModeCause, SafeModeReason } from "./safemode/SafeModeCause";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { TopLevelStores } from "./backingstore/DraupnirStores";
 import { patchMatrixClient } from "./utils";
+import {
+  loadZeroTouchDeployRoomFromConfig,
+  ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+  ZeroTouchDeployRoomAccountDataSchema,
+} from "./managedRoomAccountData";
 
 const log = new Logger("DraupnirBotMode");
 
@@ -116,40 +119,40 @@ export class DraupnirBotModeToggle implements BotModeTogle {
     if (!isStringUserID(clientUserID)) {
       throw new TypeError(`${clientUserID} is not a valid mxid`);
     }
-    if (
-      !isStringRoomAlias(config.managementRoom) &&
-      !isStringRoomID(config.managementRoom)
-    ) {
-      throw new TypeError(
-        `${config.managementRoom} is not a valid room id or alias`
-      );
-    }
-    const configManagementRoomReference = MatrixRoomReference.fromRoomIDOrAlias(
-      config.managementRoom
-    );
     const clientsInRoomMap = new StandardClientsInRoomMap();
-    const clientCapabilityFactory = new ClientCapabilityFactory(
-      clientsInRoomMap,
-      DefaultEventDecoder
-    );
     // needed to have accurate join infomration.
     (
       await clientsInRoomMap.makeClientRooms(clientUserID, async () =>
         joinedRoomsSafe(client)
       )
     ).expect("Unable to create ClientRooms");
+    const clientCapabilityFactory = new ClientCapabilityFactory(
+      clientsInRoomMap,
+      DefaultEventDecoder
+    );
     const clientPlatform = clientCapabilityFactory.makeClientPlatform(
       clientUserID,
       client
     );
     const managementRoom = (
-      await clientPlatform
-        .toRoomResolver()
-        .resolveRoom(configManagementRoomReference)
-    ).expect("Unable to resolve Draupnir's management room");
-    (await clientPlatform.toRoomJoiner().joinRoom(managementRoom)).expect(
-      "Unable to join Draupnir's management room"
-    );
+      await loadZeroTouchDeployRoomFromConfig(
+        config.managementRoom,
+        config.initialManager,
+        new BotSDKMatrixAccountData(
+          ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+          ZeroTouchDeployRoomAccountDataSchema,
+          client
+        ),
+        clientPlatform,
+        clientUserID,
+        {
+          // Draupnir doesn't allow permalinks for the config.managementRoom,
+          allowPermalinkForRoomConfig: false,
+          configuredRoomPropertyName: "config.managementRoom",
+          configuredInitialManagerPropertyName: "config.initialManager",
+        }
+      )
+    ).expect("Failed to load or create the Draupnir management room");
     const clientProvider = async (userID: StringUserID) => {
       if (userID !== clientUserID) {
         throw new TypeError(`Bot mode shouldn't be requesting any other mxids`);

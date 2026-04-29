@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2022 The Matrix.org Foundation C.I.C.
 // SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
@@ -33,33 +34,38 @@ export async function setupHarness(): Promise<MjolnirAppService> {
 }
 
 export async function setupHarnessWithConfig(
-  config: AppserviceConfig
+  config: AppserviceConfig,
+  options: {
+    ensureAdminRoomAlias?: boolean;
+  } = {}
 ): Promise<MjolnirAppService> {
-  const utilityUser = await newTestUser(config.homeserver.url, {
-    name: { contains: "utility" },
-    isAdmin: true,
-  });
-  if (
-    typeof config.adminRoom !== "string" ||
-    !isStringRoomAlias(config.adminRoom)
-  ) {
-    throw new TypeError(
-      "This test expects the harness config to have a room alias."
+  if (options.ensureAdminRoomAlias ?? true) {
+    const utilityUser = await newTestUser(config.homeserver.url, {
+      name: { contains: "utility" },
+      isAdmin: true,
+    });
+    if (
+      typeof config.adminRoom !== "string" ||
+      !isStringRoomAlias(config.adminRoom)
+    ) {
+      throw new TypeError(
+        "This test expects the harness config to have a room alias."
+      );
+    }
+    await utilityUser
+      .deleteRoomAlias(config.adminRoom)
+      // Ignore if alias doesn't exist yet.
+      .catch((_: unknown) => undefined);
+    const adminRoomID = await ensureAliasedRoomExists(
+      utilityUser,
+      config.adminRoom
+    );
+    await utilityUser.setUserPowerLevel(
+      "@draupnir-moderation:localhost:9999",
+      adminRoomID,
+      100
     );
   }
-  await utilityUser
-    .deleteRoomAlias(config.adminRoom)
-    // Ignore if alias doesn't exist yet.
-    .catch((_: unknown) => undefined);
-  const adminRoomID = await ensureAliasedRoomExists(
-    utilityUser,
-    config.adminRoom
-  );
-  await utilityUser.setUserPowerLevel(
-    "@draupnir-moderation:localhost:9999",
-    adminRoomID,
-    100
-  );
   return await MjolnirAppService.run(
     9000,
     config,

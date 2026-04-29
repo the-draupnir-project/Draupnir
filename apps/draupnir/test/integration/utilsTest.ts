@@ -21,6 +21,9 @@ describe("Test: utils", function () {
   it(
     "replaceRoomIdsWithPills correctly turns a room ID in to a pill",
     async function (this: DraupnirTestContext) {
+      if (this.config.managementRoom === undefined) {
+        throw new TypeError("managementRoom is required for this test");
+      }
       const managementRoomAlias = this.config.managementRoom;
       const draupnir = this.draupnir;
       const draupnirMatrixClient = draupnirSafeEmitter();
