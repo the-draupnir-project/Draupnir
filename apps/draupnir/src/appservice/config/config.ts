@@ -82,9 +82,6 @@ export const AppserviceConfig = Type.Object({
     },
     { description: "Details for the database backend" }
   ),
-  managedAdminRoom: Type.Boolean({
-    default: false,
-  }),
   initialManager: Type.Optional(StringUserIDSchema),
   adminRoom: Type.Optional(
     Type.String({

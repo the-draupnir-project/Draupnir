@@ -8,10 +8,6 @@ db:
 
 adminRoom: "#draupnir-admin:localhost:9999"
 
-managedAdminRoom: false
-
-# initialManager: "@admin:example.org"
-
 # The directory the bot should store various bits of information in
 dataPath: "./test/harness/mjolnir-data/"
 

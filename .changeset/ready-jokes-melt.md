@@ -8,9 +8,9 @@ Add managed management/admin room support to bot mode / appservice mode.
 
 - Add new config options for zero touch provisioning of managed rooms:
 
-\- managedManagementRoom and initialManager for bot mode
+\- initialManager for bot mode
 
-\- managedAdminRoom and initialManager for appservice mode
+\- initialManager for appservice mode
 
 \- If managed modes are enabled while unmanaged rooms are defined the bot will
 crash.

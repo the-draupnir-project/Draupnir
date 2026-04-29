@@ -13,9 +13,6 @@ db:
 # See docs/access_control.md
 adminRoom: "#draupnir-admin:localhost:9999"
 
-# Enable automatic admin-room recovery/creation on first boot.
-managedAdminRoom: false
-
 # The initial manager to invite if the admin room has to be created.
 # initialManager: "@admin:example.org"
 
