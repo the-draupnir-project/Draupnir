@@ -18,11 +18,7 @@ process.env.SUPPRESS_NO_CONFIG_WARNING = "y";
 import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
-import {
-  hasOwn,
-  Logger,
-  setGlobalLoggerProvider,
-} from "matrix-protection-suite";
+import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
