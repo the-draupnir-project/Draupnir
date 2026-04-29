@@ -35,7 +35,7 @@ export function MediaURIServerName(uri: StringMediaURI): StringServerName {
       "Somehow a StringMediaURI was created that is invalid."
     );
   }
-  return StringServerName(match);
+  return match as StringServerName;
 }
 
 export function MediaURIMediaID(uri: StringMediaURI): string {

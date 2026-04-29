@@ -21,7 +21,7 @@ export const AppserviceAvatarCommand = describeCommand({
   summary: "Sets the avatar of the main appservice admin bot.",
   parameters: [],
   rest: {
-    name: "avatar_url",
+    name: "avatar url",
     acceptor: StringPresentationType,
   },
   async executor(

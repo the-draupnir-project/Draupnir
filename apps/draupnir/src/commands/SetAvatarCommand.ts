@@ -18,7 +18,7 @@ export const DraupnirAvatarCommand = describeCommand({
     "Sets the avatar of the draupnir instance to the specified MXC URI in all rooms.",
   parameters: [],
   rest: {
-    name: "avatar_url",
+    name: "avatar url",
     acceptor: StringPresentationType,
   },
   async executor(
