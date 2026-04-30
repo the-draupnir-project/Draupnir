@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
-    "await-lock": "^2.2.2"
+    "await-lock": "^3.0.0"
   },
   "peerDependencies": {
     "@sinclair/typebox": "0.34.13",
