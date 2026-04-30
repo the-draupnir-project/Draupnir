@@ -5,7 +5,11 @@
 import { ResultError } from "@gnuxie/typescript-result";
 import { Logger } from "../Logging/Logger";
 import { ActionError } from "./Action";
-import { ActionException, ActionExceptionKind } from "./ActionException";
+import {
+  ActionException,
+  ActionExceptionKind,
+  assertThrowableIsError,
+} from "./ActionException";
 
 const log = new Logger("Task");
 
@@ -67,7 +71,7 @@ export async function Task(
   } catch (exception) {
     const actionException = new ActionException(
       ActionExceptionKind.Unknown,
-      exception,
+      assertThrowableIsError(exception),
       "A Task failed with an unknown exception"
     );
     globalTaskReporter(actionException, options);

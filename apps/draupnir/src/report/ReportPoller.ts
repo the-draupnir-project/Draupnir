@@ -23,6 +23,7 @@ import {
   Ok,
   RoomEvent,
   Task,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 
@@ -120,7 +121,10 @@ export class ReportPoller {
           (exception: unknown) =>
             ActionException.Result(
               `Failed to retrieve the context for an event ${report.event_id}`,
-              { exception, exceptionKind: ActionExceptionKind.Unknown }
+              {
+                exception: assertThrowableIsError(exception),
+                exceptionKind: ActionExceptionKind.Unknown,
+              }
             )
         );
       if (isError(eventContext)) {
@@ -159,7 +163,7 @@ export class ReportPoller {
       } catch (e) {
         const error = new ActionException(
           ActionExceptionKind.Unknown,
-          e,
+          assertThrowableIsError(e),
           "Unable to set account data for report poller token"
         );
         await this.draupnir.managementRoomOutput.logMessage(
@@ -179,7 +183,7 @@ export class ReportPoller {
     } catch (e) {
       const error = new ActionException(
         ActionExceptionKind.Unknown,
-        e,
+        assertThrowableIsError(e),
         "failed to get abuse reports"
       );
       await this.draupnir.managementRoomOutput.logMessage(

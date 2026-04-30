@@ -26,6 +26,41 @@ export enum ActionExceptionKind {
   Unknown = "Unknown",
 }
 
+function describeThrowable(throwable: unknown): string {
+  if (typeof throwable === "string") {
+    return throwable;
+  }
+  if (
+    typeof throwable === "number" ||
+    typeof throwable === "boolean" ||
+    typeof throwable === "bigint" ||
+    typeof throwable === "symbol" ||
+    throwable === null ||
+    throwable === undefined
+  ) {
+    return String(throwable);
+  }
+  if (Array.isArray(throwable)) {
+    return `array(length=${throwable.length})`;
+  }
+  if (typeof throwable === "object") {
+    const keys = Object.keys(throwable);
+    return keys.length === 0
+      ? "object with no enumerable keys"
+      : `object with keys: ${keys.join(",")}`;
+  }
+  return typeof throwable;
+}
+
+export function assertThrowableIsError(throwable: unknown): Error {
+  if (throwable instanceof Error) {
+    return throwable;
+  }
+  throw new TypeError(
+    `Expected a thrown Error instance but received ${describeThrowable(throwable)}`
+  );
+}
+
 // TODO: I wonder if we could allow message to be JSX?
 /**
  * `ActionExceptions` are used to convert throwables into `ActionError`s.
@@ -39,8 +74,7 @@ export class ActionException extends ActionError {
 
   constructor(
     public readonly exceptionKind: ActionExceptionKind,
-    // make a call to only allow Error in a moment.
-    public readonly exception: unknown,
+    public readonly exception: Error,
     message: string,
     {
       uuid = randomUUID(),
@@ -69,7 +103,7 @@ export class ActionException extends ActionError {
    */
   public static Result(
     message: string,
-    options: { exception: unknown; exceptionKind: ActionExceptionKind }
+    options: { exception: Error; exceptionKind: ActionExceptionKind }
   ): ActionResult<never, ActionException> {
     return ResultError(
       new ActionException(options.exceptionKind, options.exception, message)
@@ -93,11 +127,6 @@ export class ActionException extends ActionError {
 
   public toReadableString(): string {
     const mainDetail = `ActionException: ${this.uuid}\n${super.toReadableString()}`;
-    if (this.exception instanceof Error) {
-      return `${mainDetail}\nfrom error: ${this.exception.name}: ${this.exception.message}\n${this.exception.stack}`;
-    }
-    // @typescript-eslint/restrict-template-expressions
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    return `${mainDetail}\nfrom unknown: ${this.exception}`;
+    return `${mainDetail}\nfrom error: ${this.exception.name}: ${this.exception.message}\n${this.exception.stack}`;
   }
 }

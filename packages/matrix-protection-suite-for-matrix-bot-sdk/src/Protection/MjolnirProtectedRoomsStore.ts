@@ -12,6 +12,7 @@ import {
   Value,
   isError,
   Ok,
+  assertThrowableIsError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 
@@ -29,7 +30,10 @@ export class BotSDKMjolnirProtectedRoomsStore implements PersistentMatrixData<
       (exception: unknown) =>
         ActionException.Result(
           `Unable to load the account data for mjolnir protected_rooms`,
-          { exception, exceptionKind: ActionExceptionKind.Unknown }
+          {
+            exception: assertThrowableIsError(exception),
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
         )
     );
   }
@@ -47,7 +51,10 @@ export class BotSDKMjolnirProtectedRoomsStore implements PersistentMatrixData<
         (exception: unknown) =>
           ActionException.Result(
             `Unable to set account data for mjolnir protected_rooms event`,
-            { exception, exceptionKind: ActionExceptionKind.Unknown }
+            {
+              exception: assertThrowableIsError(exception),
+              exceptionKind: ActionExceptionKind.Unknown,
+            }
           )
       );
   }
