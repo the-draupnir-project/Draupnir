@@ -12,6 +12,7 @@ import {
   Ok,
   MjolnirWatchedPolicyRoomsEvent,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
+  assertThrowableIsError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 
@@ -31,7 +32,10 @@ export class BotSDKMjolnirWatchedPolicyRoomsStore implements PersistentMatrixDat
         (exception: unknown) =>
           ActionException.Result(
             `Unable to load the account data for mjolnir watched_lists`,
-            { exception, exceptionKind: ActionExceptionKind.Unknown }
+            {
+              exception: assertThrowableIsError(exception),
+              exceptionKind: ActionExceptionKind.Unknown,
+            }
           )
       );
   }
@@ -49,7 +53,10 @@ export class BotSDKMjolnirWatchedPolicyRoomsStore implements PersistentMatrixDat
         (exception: unknown) =>
           ActionException.Result(
             `Unable to set account data for mjolnir watched_lists`,
-            { exception, exceptionKind: ActionExceptionKind.Unknown }
+            {
+              exception: assertThrowableIsError(exception),
+              exceptionKind: ActionExceptionKind.Unknown,
+            }
           )
       );
   }

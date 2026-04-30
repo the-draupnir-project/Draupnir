@@ -19,6 +19,7 @@ import {
   SynapseAdminPostUserDeactivateRequest,
   SynapseReport,
   Value,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
@@ -76,7 +77,10 @@ export class SynapseAdminClient {
       (exception: unknown) =>
         ActionException.Result(
           `Unable to query whether the user ${this.clientUserID} is a Synapse Admin`,
-          { exception, exceptionKind: ActionExceptionKind.Unknown }
+          {
+            exception: assertThrowableIsError(exception),
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
         )
     );
     if (isError(response)) {
@@ -107,7 +111,10 @@ export class SynapseAdminClient {
         (exception: unknown) =>
           ActionException.Result(
             `Unable to deactivate the user ${targetUserID}`,
-            { exception, exceptionKind: ActionExceptionKind.Unknown }
+            {
+              exception: assertThrowableIsError(exception),
+              exceptionKind: ActionExceptionKind.Unknown,
+            }
           )
       );
   }
@@ -127,7 +134,7 @@ export class SynapseAdminClient {
         (_) => Ok(undefined),
         (exception: unknown) =>
           ActionException.Result(`Unable to delete the room ${roomID}`, {
-            exception,
+            exception: assertThrowableIsError(exception),
             exceptionKind: ActionExceptionKind.Unknown,
           })
       );
@@ -155,7 +162,7 @@ export class SynapseAdminClient {
           ActionException.Result(
             `Unable to make the user ${userID} admin in room ${roomID}`,
             {
-              exception,
+              exception: assertThrowableIsError(exception),
               exceptionKind: ActionExceptionKind.Unknown,
             }
           )

@@ -1,8 +1,7 @@
-// SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { StaticDecode, Type } from "@sinclair/typebox";
 import { MatrixError } from "@vector-im/matrix-bot-sdk";
 import {
   ActionException,
@@ -54,16 +53,11 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { resolveRoomReferenceSafe } from "../SafeMatrixClient";
 import { ResultError } from "@gnuxie/typescript-result";
-import util from "util";
 import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 import { RoomEventGetter } from "matrix-protection-suite/dist/Client/RoomEventGetter";
+import { BotSDKJunkError, toMatrixJunkError } from "./BotSDKJunkErrors";
 
 const log = new Logger("BotSDKBaseClient");
-
-const WeakError = Type.Object({
-  message: Type.String(),
-  name: Type.String(),
-});
 
 function toRoomID(room: MatrixRoomID | StringRoomID): StringRoomID {
   return typeof room === "string" ? room : room.toRoomIDOrAlias();
@@ -80,37 +74,15 @@ function matrixExceptionFromMatrixError(
   });
 }
 
-function actionExceptionFromWeakError(
-  error: StaticDecode<typeof WeakError>
-): ActionResult<never, ActionException> {
-  return ActionException.Result(error.message, {
+function matrixExceptionFromMatrixJunkError(
+  error: BotSDKJunkError
+): ActionResult<never, MatrixException> {
+  return MatrixException.R({
     exception: error,
-    exceptionKind: ActionExceptionKind.Unknown,
+    matrixErrorCode: error.matrixErrorCode,
+    matrixErrorMessage: error.matrixErrorMessage,
+    message: error.message,
   });
-}
-
-function unknownError(error: unknown): never {
-  const printedError = (() => {
-    if (typeof error === "object" && error !== null) {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const toString = error.toString();
-      if (toString !== "[object Object]") {
-        return toString;
-      }
-    }
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return util.inspect(error, {
-        depth: 2,
-        maxArrayLength: 10,
-        breakLength: 80,
-      });
-    }
-  })();
-  throw new TypeError(
-    `What on earth are you throwing exactly? because it isn't an error: ${printedError}`
-  );
 }
 
 /**
@@ -154,25 +126,31 @@ export function resultifyBotSDKRequestErrorWith404AsUndefined(
   if (is404(error)) {
     return Ok(undefined);
   }
-  if (error instanceof MatrixError) {
-    return matrixExceptionFromMatrixError(error);
-  } else if (Value.Check(WeakError, error)) {
-    return actionExceptionFromWeakError(error);
-  } else {
-    unknownError(error);
+  const coercedError = toMatrixJunkError(error);
+  if (coercedError instanceof MatrixError) {
+    return matrixExceptionFromMatrixError(coercedError);
+  } else if (coercedError instanceof BotSDKJunkError) {
+    return matrixExceptionFromMatrixJunkError(coercedError);
   }
+  return ActionException.Result(coercedError.message, {
+    exception: coercedError,
+    exceptionKind: ActionExceptionKind.Unknown,
+  });
 }
 
 export function resultifyBotSDKRequestError(
   error: unknown
 ): ActionResult<never, ActionException> {
-  if (error instanceof MatrixError) {
-    return matrixExceptionFromMatrixError(error);
-  } else if (Value.Check(WeakError, error)) {
-    return actionExceptionFromWeakError(error);
-  } else {
-    unknownError(error);
+  const coercedError = toMatrixJunkError(error);
+  if (coercedError instanceof MatrixError) {
+    return matrixExceptionFromMatrixError(coercedError);
+  } else if (coercedError instanceof BotSDKJunkError) {
+    return matrixExceptionFromMatrixJunkError(coercedError);
   }
+  return ActionException.Result(coercedError.message, {
+    exception: coercedError,
+    exceptionKind: ActionExceptionKind.Unknown,
+  });
 }
 
 export class BotSDKBaseClient

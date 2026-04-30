@@ -7,7 +7,7 @@ import { ActionException, ActionExceptionKind } from "./ActionException";
 
 export class MatrixException extends ActionException implements ActionError {
   public constructor(
-    exception: unknown,
+    exception: Error,
     public readonly matrixErrorCode: string,
     public readonly matrixErrorMessage: string,
     message: string = matrixErrorMessage,
@@ -30,7 +30,7 @@ export class MatrixException extends ActionException implements ActionError {
   }): ActionResult<never, MatrixException> {
     return ResultError(
       new MatrixException(
-        options.exceptionKind,
+        options.exception,
         options.matrixErrorCode,
         options.matrixErrorMessage,
         options.message,

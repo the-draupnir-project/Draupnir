@@ -19,6 +19,7 @@ import {
   ActionException,
   ActionExceptionKind,
   Ok,
+  assertThrowableIsError,
   isError,
   PolicyRuleEvent,
   isPolicyRuleEvent,
@@ -96,7 +97,10 @@ export class BotSDKPolicyRoomManager implements PolicyRoomManager {
       (exception: unknown) =>
         ActionException.Result(
           "Could not create a list because we could not find the mxid of the list creator.",
-          { exception, exceptionKind: ActionExceptionKind.Unknown }
+          {
+            exception: assertThrowableIsError(exception),
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
         )
     );
     if (isError(creator)) {
@@ -173,7 +177,10 @@ export class BotSDKPolicyRoomManager implements PolicyRoomManager {
       (exception: unknown) =>
         ActionException.Result(
           "Could not create a matrix room to serve as the new policy list.",
-          { exception, exceptionKind: ActionExceptionKind.Unknown }
+          {
+            exception: assertThrowableIsError(exception),
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
         )
     );
   }

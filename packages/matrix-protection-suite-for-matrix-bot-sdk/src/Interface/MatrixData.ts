@@ -12,6 +12,7 @@ import {
   PersistentConfigBackend,
   RoomStateRevisionIssuer,
   Value,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
@@ -74,7 +75,10 @@ export class BotSDKMatrixAccountData<T> implements MatrixAccountData<T> {
           ? Ok(undefined)
           : ActionException.Result(
               `Encountered an error when requesting matrix account data ${this.eventType}`,
-              { exception: error, exceptionKind: ActionExceptionKind.Unknown }
+              {
+                exception: assertThrowableIsError(error),
+                exceptionKind: ActionExceptionKind.Unknown,
+              }
             )
     );
   }
@@ -91,7 +95,7 @@ export class BotSDKMatrixAccountData<T> implements MatrixAccountData<T> {
           ActionException.Result(
             `Unable to store matrix account data ${this.eventType}`,
             {
-              exception,
+              exception: assertThrowableIsError(exception),
               exceptionKind: ActionExceptionKind.Unknown,
             }
           )
@@ -162,7 +166,7 @@ export class BotSDKMatrixStateData<T> implements MatrixStateData<T> {
           ActionException.Result(
             `Unable to store the matrix state data ${this.eventType}`,
             {
-              exception,
+              exception: assertThrowableIsError(exception),
               exceptionKind: ActionExceptionKind.Known,
             }
           )

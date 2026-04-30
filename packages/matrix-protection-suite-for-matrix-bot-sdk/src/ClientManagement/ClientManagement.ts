@@ -9,6 +9,7 @@ import {
   ClientRooms,
   ClientsInRoomMap,
   Ok,
+  assertThrowableIsError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import {
@@ -34,7 +35,7 @@ export async function joinedRoomsSafe(
     (rooms) => Ok(rooms as StringRoomID[]),
     (exception: unknown) =>
       ActionException.Result(`Unable to get joined rooms`, {
-        exception,
+        exception: assertThrowableIsError(exception),
         exceptionKind: ActionExceptionKind.Unknown,
       })
   );

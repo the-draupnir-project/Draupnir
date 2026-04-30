@@ -15,6 +15,7 @@ import {
   Ok,
   Revision,
   WatchedPolicyRoom,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -244,7 +245,10 @@ export const DraupnirRoomsRemoveCommand = describeCommand({
     } catch (exception) {
       return ActionException.Result(
         `Failed to leave ${roomRef.toPermalink()} - the room is no longer being protected, but the bot could not leave.`,
-        { exceptionKind: ActionExceptionKind.Unknown, exception }
+        {
+          exceptionKind: ActionExceptionKind.Unknown,
+          exception: assertThrowableIsError(exception),
+        }
       );
     }
     return Ok(undefined);

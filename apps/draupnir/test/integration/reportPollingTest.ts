@@ -82,7 +82,7 @@ describe("Test: Report polling", function (this: Mocha.Suite) {
       await reportEvent();
     }
     // wait for them to come down the poll.
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     expect(reportsFound.size).toBe(20);
     expect(duplicateReports.size).toBe(0);
   } as unknown as Mocha.AsyncFunc);

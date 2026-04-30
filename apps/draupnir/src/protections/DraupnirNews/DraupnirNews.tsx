@@ -9,6 +9,7 @@ import {
   ActionException,
   ActionExceptionKind,
   allocateProtection,
+  assertThrowableIsError,
   ConstantPeriodBatch,
   describeProtection,
   EDStatic,
@@ -136,7 +137,7 @@ async function fetchNews(newsURL: string): Promise<Result<DraupnirNewsBlob>> {
       (json) => Value.Decode(DraupnirNewsBlob, json),
       (error: unknown) =>
         ActionException.Result("unable to fetch news", {
-          exception: error,
+          exception: assertThrowableIsError(error),
           exceptionKind: ActionExceptionKind.Unknown,
         })
     );

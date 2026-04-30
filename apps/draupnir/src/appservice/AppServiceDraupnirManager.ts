@@ -29,6 +29,7 @@ import {
   RoomCreator,
   RoomVersionMirror,
   Task,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
@@ -388,7 +389,7 @@ export class AppServiceDraupnirManager {
         return ActionException.Result(
           `Could not start draupnir ${clientUserID} for owner ${mjolnirRecord.owner}`,
           {
-            exception: e,
+            exception: assertThrowableIsError(e),
             exceptionKind: ActionExceptionKind.Unknown,
           }
         );

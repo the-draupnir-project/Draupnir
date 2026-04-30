@@ -13,6 +13,7 @@ import {
   RoomStateRevision,
   StateChange,
   StateEvent,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import {
@@ -232,7 +233,7 @@ export class SqliteRoomStateBackingStore
     } catch (e) {
       return Promise.resolve(
         ActionException.Result(`Unable to forget the room ${roomID}`, {
-          exception: e,
+          exception: assertThrowableIsError(e),
           exceptionKind: ActionExceptionKind.Unknown,
         })
       );

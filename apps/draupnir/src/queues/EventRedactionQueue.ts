@@ -14,6 +14,7 @@ import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
 import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ActionExceptionKind,
+  assertThrowableIsError,
   RoomUpdateError,
   RoomUpdateException,
 } from "matrix-protection-suite";
@@ -157,7 +158,7 @@ export class EventRedactionQueue {
           const error = new RoomUpdateException(
             MatrixRoomReference.fromRoomID(redaction.roomID),
             ActionExceptionKind.Unknown,
-            e,
+            assertThrowableIsError(e),
             message
           );
           errors.push(error);
