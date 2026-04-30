@@ -7,6 +7,7 @@ import {
   ActionExceptionKind,
   JoinedRoomsSafe,
   Ok,
+  assertThrowableIsError,
 } from "matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
@@ -22,7 +23,7 @@ export function makeJoinedRoomsSafe(
         ActionException.Result(
           `Unable to fetch the joined rooms for ${clientUserID}`,
           {
-            exception,
+            exception: assertThrowableIsError(exception),
             exceptionKind: ActionExceptionKind.Unknown,
           }
         )

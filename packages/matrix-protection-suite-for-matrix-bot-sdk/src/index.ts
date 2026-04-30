@@ -5,6 +5,7 @@
 export * from "./Client/BotSDKAllClient";
 export * from "./Client/BotSDKBaseClient";
 export * from "./Client/BotSDKClientPlatform";
+export * from "./Client/BotSDKJunkErrors";
 
 export * from "./ClientManagement/ClientCapabilityFactory";
 export * from "./ClientManagement/ClientManagement";

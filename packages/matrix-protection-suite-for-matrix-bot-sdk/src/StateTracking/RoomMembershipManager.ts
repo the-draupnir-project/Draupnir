@@ -12,6 +12,7 @@ import {
   RoomMembershipManager,
   RoomMembershipRevisionIssuer,
   Value,
+  assertThrowableIsError,
   isError,
 } from "matrix-protection-suite";
 import { MembershipEvent } from "matrix-protection-suite";
@@ -40,7 +41,10 @@ async function getRoomMembershipEvents(
       (exception: unknown) =>
         ActionException.Result(
           `Unable to query room members from ${room.toPermalink()}`,
-          { exception, exceptionKind: ActionExceptionKind.Unknown }
+          {
+            exception: assertThrowableIsError(exception),
+            exceptionKind: ActionExceptionKind.Unknown,
+          }
         )
     );
   if (isError(rawMembersResult)) {

@@ -16,14 +16,18 @@ import {
   ValueErrorIterator,
 } from "@sinclair/typebox/compiler";
 import { ActionResult, Ok, ResultError } from "./Action";
-import { ActionException, ActionExceptionKind } from "./ActionException";
+import {
+  ActionException,
+  ActionExceptionKind,
+  assertThrowableIsError,
+} from "./ActionException";
 import { Logger } from "../Logging/Logger";
 
 export class DecodeException extends ActionException {
   private static log = new Logger("DecodeException");
   constructor(
     message: string,
-    exception: unknown,
+    exception: Error,
     public readonly errors: ValueError[],
     suppressLog?: boolean
   ) {
@@ -108,7 +112,7 @@ export class Value {
         throw e;
       } else {
         return ActionException.Result(`Unable to decode schema from value`, {
-          exception: e,
+          exception: assertThrowableIsError(e),
           exceptionKind: ActionExceptionKind.Unknown,
         });
       }
