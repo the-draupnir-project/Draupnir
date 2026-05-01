@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,6 +44,7 @@ import {
   DraupnirRulesMatchingMembersCommand,
 } from "./Rules";
 import { DraupnirDisplaynameCommand } from "./SetDisplayNameCommand";
+import { DraupnirAvatarCommand } from "./SetAvatarCommand";
 import { DraupnirSetPowerLevelCommand } from "./SetPowerLevelCommand";
 import { SynapseAdminShutdownRoomCommand } from "./server-admin/ShutdownRoomCommand";
 import { DraupnirStatusCommand } from "./StatusCommand";
@@ -127,6 +129,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
   ])
   .internCommand(DraupnirSafeModeCommand, ["safe", "mode"])
   .internCommand(DraupnirDisplaynameCommand, ["displayname"])
+  .internCommand(DraupnirAvatarCommand, ["avatar"])
   .internCommand(DraupnirSetPowerLevelCommand, ["powerlevel"])
   .internCommand(DraupnirStatusCommand, ["status"])
   .internCommand(DraupnirTakedownCommand, ["takedown"])

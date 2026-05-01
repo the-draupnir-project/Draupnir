@@ -8,6 +8,7 @@
 // </text>
 
 export * from "./StringEventID";
+export * from "./StringMediaURI";
 export * from "./StringRoomAlias";
 export * from "./StringRoomID";
 export * from "./StringServerName";
