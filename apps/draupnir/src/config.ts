@@ -86,7 +86,7 @@ export interface IConfig {
   /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
-  initialManager: string | undefined;
+  initialManager: StringUserID | undefined;
   managementRoom: string | undefined;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
   logMutedModules: string[];
