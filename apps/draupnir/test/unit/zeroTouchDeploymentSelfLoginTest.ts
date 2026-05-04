@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import expect from "expect";
-import { describe, it } from "mocha";
 import type { IStorageProvider } from "@vector-im/matrix-bot-sdk";
 import type { IConfig } from "../../src/config";
 import { getZeroTouchDeploymentAccessToken } from "../../src/zeroTouchDeploymentSelfLogin";
