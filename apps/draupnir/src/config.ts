@@ -47,7 +47,10 @@ export function getNonDefaultConfigProperties(
   if ("pantalaimon" in nonDefault && isConfigRecord(nonDefault.pantalaimon)) {
     nonDefault.pantalaimon.password = "REDACTED";
   }
-  if ("zeroTouchDeploymentSelfLogin" in nonDefault && isConfigRecord(nonDefault.zeroTouchDeploymentSelfLogin)) {
+  if (
+    "zeroTouchDeploymentSelfLogin" in nonDefault &&
+    isConfigRecord(nonDefault.zeroTouchDeploymentSelfLogin)
+  ) {
     nonDefault.zeroTouchDeploymentSelfLogin.password = "REDACTED";
   }
   if (
@@ -333,10 +336,11 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
       process.argv,
       "--pantalaimon-password-path"
     ),
-    isZeroTouchDeploymentSelfLoginPasswordOptionUsed: isCommandLineOptionPresent(
-      process.argv,
-      "--zero-touch-deployment-self-login-password-path"
-    ),
+    isZeroTouchDeploymentSelfLoginPasswordOptionUsed:
+      isCommandLineOptionPresent(
+        process.argv,
+        "--zero-touch-deployment-self-login-password-path"
+      ),
     isHttpAntispamAuthorizationPathOptionUsed: isCommandLineOptionPresent(
       process.argv,
       "--http-antispam-authorization-path"

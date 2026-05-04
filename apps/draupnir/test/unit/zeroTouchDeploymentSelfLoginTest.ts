@@ -18,10 +18,7 @@ describe("zeroTouchDeploymentSelfLogin", function () {
         username: "bot-user",
         password: "bot-password",
       },
-    } satisfies Pick<
-      IConfig,
-      "homeserverUrl" | "zeroTouchDeploymentSelfLogin"
-    >;
+    } satisfies Pick<IConfig, "homeserverUrl" | "zeroTouchDeploymentSelfLogin">;
     const storage: IStorageProvider = {
       setSyncToken() {},
       getSyncToken() {
