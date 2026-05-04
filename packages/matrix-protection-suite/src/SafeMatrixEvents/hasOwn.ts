@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Bea <20361868+enbea@users.noreply.github.com>
 //
-// SPDX-License-Identifier: 0BSD
+// SPDX-License-Identifier: Apache-2.0
 
 type CoalesceNever<T1, T2> = [T1] extends [never] ? T2 : T1;
 

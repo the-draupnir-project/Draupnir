@@ -1,6 +1,6 @@
 // Copyright 2024 Haydn Paterson (sinclair) <haydn.developer@gmail.com>
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 import { Evaluate, StaticDecode, TSchema } from "@sinclair/typebox";
 

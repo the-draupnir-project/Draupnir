@@ -14,9 +14,9 @@ No single license applies to all files in this repository.
 
 ## Additional note
 
-This project is primarily developed under the Academic Free License 3.0
-(AFL-3.0), with some components under Apache-2.0, and others under more
-permissive licenses such as MIT or 0BSD.
+This project is primarily developed under the Apache License Version 2.0
+(Apache-2.0), with some components integrating code under more permissive
+licenses such as MIT or 0BSD.
 
 When redistributing Draupnir, you must comply with the terms of each applicable
 license. In practice, this primarily involves preserving license texts and any

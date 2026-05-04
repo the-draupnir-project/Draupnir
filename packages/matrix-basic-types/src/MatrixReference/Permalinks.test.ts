@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 import { isError } from "@gnuxie/typescript-result";
 import {

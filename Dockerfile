@@ -1,8 +1,7 @@
 # Copyright 2024 Gnuxie <Gnuxie@protonmail.com>
 # Copyright 2019 The Matrix.org Foundation C.I.C.
 #
-# SPDX-License-Identifier: Apache-2.0 AND AFL-3.0
-
+# SPDX-License-Identifier: Apache-2.0
 # syntax=docker/dockerfile:1.7
 
 FROM node:24-slim AS build-stage

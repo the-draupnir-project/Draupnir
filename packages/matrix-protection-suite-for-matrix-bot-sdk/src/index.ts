@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 export * from "./Client/BotSDKAllClient";
 export * from "./Client/BotSDKBaseClient";
