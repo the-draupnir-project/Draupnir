@@ -1,4 +1,5 @@
 // Copyright 2022 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -16,6 +17,7 @@ import {
   setRequestFn,
   MatrixError,
 } from "@vector-im/matrix-bot-sdk";
+import { StringUserID, userServerName } from "@the-draupnir-project/matrix-basic-types";
 import { ClientRequest, IncomingMessage } from "http";
 import * as Sentry from "@sentry/node";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
@@ -29,6 +31,28 @@ const log = new Logger("utils");
 export function htmlEscape(input: string): string {
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   return input.replace(/[<&"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+}
+
+/**
+ * Build a matrix.to permalink for a room id or alias using a single via server.
+ * Example: https://matrix.to/#/%21room%3Aexample.com?via=example.com
+ */
+export function matrixToPermalink(roomIdOrAlias: string, viaServer: string): string {
+  return `https://matrix.to/#/${encodeURIComponent(roomIdOrAlias)}?via=${encodeURIComponent(
+    viaServer
+  )}`;
+}
+
+/**
+ * Build a matrix.to permalink for a room id or alias using the bot's homeserver derived
+ * from the provided client MXID.
+ */
+export function matrixToPermalinkFromClientUser(
+  roomIdOrAlias: string,
+  clientUserID: StringUserID
+): string {
+  const via = userServerName(clientUserID);
+  return matrixToPermalink(roomIdOrAlias, via);
 }
 
 export function setToArray<T>(set: Set<T>): T[] {
