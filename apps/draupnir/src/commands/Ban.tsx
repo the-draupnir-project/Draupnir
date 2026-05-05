@@ -19,7 +19,11 @@ import {
   RoomResolver,
   WatchedPolicyRooms,
 } from "matrix-protection-suite";
-import { MatrixRoomReference, MatrixUserID, StringUserID } from "@the-draupnir-project/matrix-basic-types";
+import {
+  MatrixRoomReference,
+  MatrixUserID,
+  StringUserID,
+} from "@the-draupnir-project/matrix-basic-types";
 import {
   BasicInvocationInformation,
   MatrixRoomReferencePresentationSchema,
@@ -84,7 +88,10 @@ export const DraupnirBanCommand = describeCommand({
             .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
             .map((room) =>
               StringPresentationType.wrap(
-                matrixToPermalinkFromClientUser(room.toRoomIDOrAlias(), clientUserID)
+                matrixToPermalinkFromClientUser(
+                  room.toRoomIDOrAlias(),
+                  clientUserID
+                )
               )
             ),
         });

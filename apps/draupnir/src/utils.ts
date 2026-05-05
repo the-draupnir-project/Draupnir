@@ -17,7 +17,10 @@ import {
   setRequestFn,
   MatrixError,
 } from "@vector-im/matrix-bot-sdk";
-import { StringUserID, userServerName } from "@the-draupnir-project/matrix-basic-types";
+import {
+  StringUserID,
+  userServerName,
+} from "@the-draupnir-project/matrix-basic-types";
 import { ClientRequest, IncomingMessage } from "http";
 import * as Sentry from "@sentry/node";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
@@ -37,7 +40,10 @@ export function htmlEscape(input: string): string {
  * Build a matrix.to permalink for a room id or alias using a single via server.
  * Example: https://matrix.to/#/%21room%3Aexample.com?via=example.com
  */
-export function matrixToPermalink(roomIdOrAlias: string, viaServer: string): string {
+export function matrixToPermalink(
+  roomIdOrAlias: string,
+  viaServer: string
+): string {
   return `https://matrix.to/#/${encodeURIComponent(roomIdOrAlias)}?via=${encodeURIComponent(
     viaServer
   )}`;
