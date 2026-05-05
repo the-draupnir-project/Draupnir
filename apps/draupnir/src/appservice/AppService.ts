@@ -27,6 +27,7 @@ import { AppserviceCommandHandler } from "./bot/AppserviceCommandHandler";
 import { getStoragePath, SOFTWARE_VERSION } from "../config";
 import { Registry } from "prom-client";
 import {
+  BotSDKMatrixAccountData,
   ClientCapabilityFactory,
   RoomStateManagerFactory,
   joinedRoomsSafe,
@@ -44,9 +45,6 @@ import {
 } from "matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 import {
-  isStringRoomAlias,
-  isStringRoomID,
-  MatrixRoomReference,
   StringRoomID,
   StringUserID,
   userLocalpart,
@@ -55,6 +53,11 @@ import { SqliteRoomStateBackingStore } from "../backingstore/better-sqlite3/Sqli
 import { TopLevelStores } from "../backingstore/DraupnirStores";
 import { patchMatrixClient } from "../utils";
 import { Result } from "@gnuxie/typescript-result";
+import {
+  loadZeroTouchDeployRoomFromConfig,
+  ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+  ZeroTouchDeployRoomAccountDataSchema,
+} from "../managedRoomAccountData";
 
 const log = new Logger("AppService");
 /**
@@ -198,34 +201,36 @@ export class MjolnirAppService {
         joinedRoomsSafe(bridge.getBot().getClient())
       )
     ).expect("Unable to initialize client rooms for the appservice bot user");
-    const botRoomJoiner = clientCapabilityFactory
-      .makeClientPlatform(botUserID, bridge.getBot().getClient())
-      .toRoomJoiner();
-    const adminRoom = (() => {
-      if (isStringRoomID(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomID(config.adminRoom);
-      } else if (isStringRoomAlias(config.adminRoom)) {
-        return MatrixRoomReference.fromRoomIDOrAlias(config.adminRoom);
-      } else {
-        const parseResult = MatrixRoomReference.fromPermalink(config.adminRoom);
-        if (isError(parseResult)) {
-          throw new TypeError(
-            `${config.adminRoom} needs to be a room id, alias or permalink`
-          );
+    const clientPlatform = clientCapabilityFactory.makeClientPlatform(
+      botUserID,
+      bridge.getBot().getClient()
+    );
+    const adminRoom = (
+      await loadZeroTouchDeployRoomFromConfig(
+        config.adminRoom,
+        config.initialManager,
+        new BotSDKMatrixAccountData(
+          ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE,
+          ZeroTouchDeployRoomAccountDataSchema,
+          bridge.getBot().getClient()
+        ),
+        clientPlatform,
+        botUserID,
+        {
+          allowPermalinkForRoomConfig: true,
+          configuredRoomPropertyName: "config.adminRoom",
+          configuredInitialManagerPropertyName: "config.initialManager",
         }
-        return parseResult.ok;
-      }
-    })();
-    const accessControlRoom = (
-      await botRoomJoiner.resolveRoom(adminRoom)
-    ).expect("Unable to resolve the admin room");
+      )
+    ).expect("unable to load the appservice admin room");
+    const accessControlRoom = adminRoom;
     const appserviceBotPolicyRoomManager =
       await roomStateManagerFactory.getPolicyRoomManager(botUserID);
     const accessControl = (
       await AccessControl.setupAccessControlForRoom(
         accessControlRoom,
         appserviceBotPolicyRoomManager,
-        botRoomJoiner
+        clientPlatform.toRoomJoiner()
       )
     ).expect("Unable to setup access control for the appservice");
     // Activate /metrics endpoint for Prometheus

@@ -51,7 +51,7 @@ describe("Test: The redaction command", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
-      await moderator.joinRoom(this.config.managementRoom);
+      await moderator.joinRoom(draupnir.managementRoomID);
       const targetRoom = await moderator.createRoom({
         invite: [await badUser.getUserId(), mjolnirUserId],
       });
@@ -158,7 +158,7 @@ describe("Test: The redaction command", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
-      await moderator.joinRoom(this.config.managementRoom);
+      await moderator.joinRoom(draupnir.managementRoomID);
       const targetRooms: string[] = [];
       for (let i = 0; i < 5; i++) {
         const targetRoom = await moderator.createRoom({
@@ -260,7 +260,7 @@ describe("Test: The redaction command", function () {
       name: { contains: "moderator" },
     });
     this.moderator = moderator;
-    await moderator.joinRoom(this.config.managementRoom);
+    await moderator.joinRoom(draupnir.managementRoomID);
     const targetRoom = await moderator.createRoom({
       invite: [await badUser.getUserId(), draupnir.clientUserID],
     });

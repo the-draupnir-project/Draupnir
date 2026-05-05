@@ -36,7 +36,7 @@ describe("Test: The rooms commands", function () {
         name: { contains: "moderator" },
       });
       this.moderator = moderator;
-      await moderator.joinRoom(this.config.managementRoom);
+      await moderator.joinRoom(draupnir.managementRoomID);
       const targetRoom = await moderator.createRoom({
         invite: [draupnir.clientUserID],
       });

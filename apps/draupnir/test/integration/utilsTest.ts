@@ -21,7 +21,7 @@ describe("Test: utils", function () {
   it(
     "replaceRoomIdsWithPills correctly turns a room ID in to a pill",
     async function (this: DraupnirTestContext) {
-      const managementRoomAlias = this.config.managementRoom;
+      const managementRoomAlias = "#moderators:localhost:9999";
       const draupnir = this.draupnir;
       const draupnirMatrixClient = draupnirSafeEmitter();
       if (draupnir === undefined) {
