@@ -54,6 +54,7 @@ recordIgnoredInvites: false
 
 # The initial manager to invite if the management room has to be created.
 # Leave this commented out when using a pre-existing management room.
+# Available only in develop.
 # initialManager: "@admin:example.org"
 
 # The room ID (or room alias) of the management room, anyone in this room can issue commands to Draupnir.
