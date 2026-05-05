@@ -1,7 +1,7 @@
 // Copyright 2023 - 2024 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2024 Haydn Paterson (sinclair) <haydn.developer@gmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 import { FormatRegistry, Type } from "@sinclair/typebox";
 import {

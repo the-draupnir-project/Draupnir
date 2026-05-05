@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
 //
-// SPDX-License-Identifier: AFL-3.0
+// SPDX-License-Identifier: Apache-2.0
 
 // 1. We need to test glob on user, literal on user, and server on user all get
 // removed when using unban.
