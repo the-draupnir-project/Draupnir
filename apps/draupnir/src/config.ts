@@ -19,7 +19,6 @@ import Config from "config";
 import path from "path";
 import { SafeModeBootOption } from "./safemode/BootOption";
 import { Logger, setGlobalLoggerProvider } from "matrix-protection-suite";
-import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 LogService.setLogger(new RichConsoleLogger());
 setGlobalLoggerProvider(new RichConsoleLogger());
@@ -86,7 +85,7 @@ export interface IConfig {
   /** Draupnir will accept invites from members of this space if `autojoinOnlyIfManager` is false. */
   acceptInvitesFromSpace: string | undefined;
   recordIgnoredInvites: boolean;
-  initialManager: StringUserID | undefined;
+  initialManager: string | undefined;
   managementRoom: string | undefined;
   logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
   logMutedModules: string[];
