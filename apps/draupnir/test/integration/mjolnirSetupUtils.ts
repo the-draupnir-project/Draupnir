@@ -57,7 +57,6 @@ export type SafeMochaContext = Pick<
 export interface DraupnirTestContext extends SafeMochaContext {
   lifetime: OwnLifetime;
   draupnir?: Draupnir;
-  managementRoomAlias?: string;
   toggle?: DraupnirBotModeToggle;
   config: IConfig;
   stores?: TopLevelStores;
