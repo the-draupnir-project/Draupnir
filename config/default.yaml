@@ -101,15 +101,12 @@ automaticallyRedactForReasons:
   - "advertising"
 
 # Whether or not to add all joined rooms to the "protected rooms" list
-# (excluding the management room and watched policy list rooms, see below).
+# (excluding watched policy list rooms, see below).
 #
 # Note that this effectively makes the protectedRooms and associated commands useless
 # for regular rooms.
 #
-# Note: the management room is *excluded* from this condition.
-# Explicitly add it as a protected room to protect it.
-#
-# Note: Ban list rooms the bot is watching but didn't create will not be protected.
+# Note: Policy lists the bot is watching but didn't create will not be protected.
 # Explicitly add these rooms as a protected room list if you want them protected.
 protectAllJoinedRooms: false
 
@@ -144,7 +141,8 @@ commands:
 
   # Controls which symbol will prefix a secondary prefix that is described in additionalPrefixes.
   # For example the `!` in `!draupnir`.
-  # If you wish the bot to use "slash commands" with the "/" character instead of the exclamation mark "!" change the value to `"/"` and the bot will start responding to slash commands.
+  # If you wish the bot to use "slash commands" with the "/" character instead of the exclamation mark "!" change
+  # the value to `"/"` and the bot will start responding to slash commands.
 
   symbolPrefixes:
     - "!"
