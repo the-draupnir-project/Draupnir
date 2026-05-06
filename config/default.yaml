@@ -54,8 +54,7 @@ recordIgnoredInvites: false
 
 # The initial manager to invite if the management room has to be created.
 # Leave this commented out when using a pre-existing management room.
-# Available only in develop.
-# initialManager: "@admin:example.org"
+initialManager: "@admin:example.org"
 
 # The room ID (or room alias) of the management room, anyone in this room can issue commands to Draupnir.
 #
@@ -64,8 +63,7 @@ recordIgnoredInvites: false
 # This should be a room alias or room ID - not a matrix.to URL.
 #
 # Note: By default, Draupnir is fairly verbose - expect a lot of messages in this room.
-# (see verboseLogging to adjust this a bit.)
-managementRoom: "#moderators:example.org"
+#managementRoom: "#moderators:example.org"
 
 # The log level of terminal (or container) output,
 # can be one of DEBUG, INFO, WARN and ERROR, in increasing order of importance and severity.
