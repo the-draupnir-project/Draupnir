@@ -11,7 +11,7 @@
     "url": "git+https://github.com/the-draupnir-project/Draupnir.git"
   },
   "author": "Gnuxie",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/the-draupnir-project/Draupnir/issues"
   },
