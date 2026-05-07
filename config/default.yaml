@@ -42,16 +42,6 @@ experimentalRustCrypto: false
 # The path Draupnir will store its state/data in, leave default ("/data/storage") when using containers.
 dataPath: "/data/storage"
 
-# If true (the default), Draupnir will only accept invites from users present in managementRoom.
-autojoinOnlyIfManager: true
-
-# If `autojoinOnlyIfManager` is false, only the members in this space can invite
-# the bot to new rooms.
-acceptInvitesFromSpace: "!example:example.org"
-
-# Whether Draupnir should report ignored invites to the management room (if autojoinOnlyIfManager is true).
-recordIgnoredInvites: false
-
 # The initial manager to invite if the management room has to be created.
 # Leave this commented out when using a pre-existing management room.
 initialManager: "@admin:example.org"
@@ -64,6 +54,16 @@ initialManager: "@admin:example.org"
 #
 # Note: By default, Draupnir is fairly verbose - expect a lot of messages in this room.
 #managementRoom: "#moderators:example.org"
+
+# If true (the default), Draupnir will only accept invites from users present in managementRoom.
+autojoinOnlyIfManager: true
+
+# If `autojoinOnlyIfManager` is false, only the members in this space can invite
+# the bot to new rooms.
+acceptInvitesFromSpace: "!example:example.org"
+
+# Whether Draupnir should report ignored invites to the management room (if autojoinOnlyIfManager is true).
+recordIgnoredInvites: false
 
 # The log level of terminal (or container) output,
 # can be one of DEBUG, INFO, WARN and ERROR, in increasing order of importance and severity.
