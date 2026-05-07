@@ -2,4 +2,5 @@
 "draupnir": patch
 ---
 
-Make Zero Touch Deployment default workflow in configuration file.
+Make `initialManager` the uncommented option in the `default.yaml` config file
+instead of `managementRoom`.
