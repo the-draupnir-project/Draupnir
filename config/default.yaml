@@ -42,6 +42,24 @@ experimentalRustCrypto: false
 # The path Draupnir will store its state/data in, leave default ("/data/storage") when using containers.
 dataPath: "/data/storage"
 
+# The initial manager of Draupnir who will be invited to a management room if Draupnir did not create one yet.
+# Draupnir will create a management room where you will interact with and send commands to the bot.
+# This initial manager is probably you, and you should put your matrix user id here.
+#
+# Comment this out if you are migrating from mjolnir, were using a version of Draupnir below v3.1.0,
+# Or wish to create your own management room for the bot. See the `managementRoom` option.
+#
+# You must use either the `initialManager` option or the `managementRoom` option but not both.
+initialManager: "@admin:example.org"
+
+# The room ID (or room alias) of the management room, anyone in this room can issue commands to Draupnir.
+#
+# Draupnir has no more granular access controls other than this, be sure you trust everyone in this room - secure it!
+#
+# This should be a room alias or room ID - not a matrix.to URL.
+# Only configure this if you have a pre-existing management room you want to use for the bot.
+#managementRoom: "#moderators:example.org"
+
 # If true (the default), Draupnir will only accept invites from users present in managementRoom.
 autojoinOnlyIfManager: true
 
@@ -51,21 +69,6 @@ acceptInvitesFromSpace: "!example:example.org"
 
 # Whether Draupnir should report ignored invites to the management room (if autojoinOnlyIfManager is true).
 recordIgnoredInvites: false
-
-# The initial manager to invite if the management room has to be created.
-# Leave this commented out when using a pre-existing management room.
-# Available only in develop.
-# initialManager: "@admin:example.org"
-
-# The room ID (or room alias) of the management room, anyone in this room can issue commands to Draupnir.
-#
-# Draupnir has no more granular access controls other than this, be sure you trust everyone in this room - secure it!
-#
-# This should be a room alias or room ID - not a matrix.to URL.
-#
-# Note: By default, Draupnir is fairly verbose - expect a lot of messages in this room.
-# (see verboseLogging to adjust this a bit.)
-managementRoom: "#moderators:example.org"
 
 # The log level of terminal (or container) output,
 # can be one of DEBUG, INFO, WARN and ERROR, in increasing order of importance and severity.
