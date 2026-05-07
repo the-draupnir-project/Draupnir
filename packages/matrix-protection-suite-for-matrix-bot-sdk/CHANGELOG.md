@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 
-SPDX-License-Identifier: CC-BY-SA-4.0
+SPDX-License-Identifier: 0BSD
 -->
 
 # Changelog
@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [5.0.1] - 2026-05-07
+
+### Patch Changes
+
+- Updated dependencies [f3e29fb]
+  - @the-draupnir-project/matrix-basic-types@1.5.1
 
 ## [5.0.0] - 2026-04-02
 

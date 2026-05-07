@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 
-SPDX-License-Identifier: CC-BY-SA-4.0
+SPDX-License-Identifier: 0BSD
 -->
 
 # Changelog
@@ -10,6 +10,31 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [7.1.0] - 2026-05-07
+
+### Minor Changes
+
+- The `PowerLevelsMirror` has split in two into a `PowerLevelsEventMirror` and
+  accept the `m.room.create` event in the `PowerLevelsMirror`. This makes it
+  harder to forget privileged creators from v12 and above.
+
+- Projections now produce the next node in a single step, which simplifies their
+  implementation. Previously we thought that the two-step system had stronger
+  guarantees for correctness when persisting projection nodes, but we found in
+  implementation that the two approaches were almost identical, with two-step
+  being needlessly complicated
+  https://github.com/the-draupnir-project/planning/issues/120
+
+- Tightened `ActionException` to only accept `Error` instead of `unknown`,
+  leading to less mistakes. We now also offer and use a `ensureThrowableIsError`
+  to use when checking if third-party apis are throwing junk, such as the
+  matrix-bot-sdk.
+
+### Patch Changes
+
+- Updated dependencies [f3e29fb]
+  - @the-draupnir-project/matrix-basic-types@1.5.1
 
 ## [7.0.0] - 2026-04-02
 

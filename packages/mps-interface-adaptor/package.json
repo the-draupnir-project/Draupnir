@@ -23,13 +23,13 @@
   "private": false,
   "devDependencies": {
     "@types/node": "^24.12.0",
-    "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.0.0"
+    "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.1.0"
   },
   "peerDependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
     "@sinclair/typebox": "^0.34.13",
     "@the-draupnir-project/interface-manager": "^4.2.3",
-    "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.0.0"
+    "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.1.0"
   },
   "publishConfig": {
     "access": "public"

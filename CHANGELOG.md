@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 
-SPDX-License-Identifier: CC-BY-SA-4.0
+SPDX-License-Identifier: 0BSD
 -->
 
 # Changelog
@@ -10,6 +10,32 @@ All notable changes to Draupnir will be kept in this file.
 
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [3.1.0] - 2026-05-07
+
+### Minor Changes
+
+- Draupnir can now create the management room in bot mode, and also the admin
+  room for managing appservice deployments. This is achieved by configuring an
+  `initialManager` when setting up the bot, who will be invited to a newly
+  created management room. This work was contributed by @FSG-Cat as part of his
+  work to further streamline deployment
+  https://github.com/the-draupnir-project/Draupnir/issues/1077.
+
+### Patch Changes
+
+- Add Avatar customisation command for Draupnir (`!draupnir avatar`) and the
+  appservice admin bot, by @FSG-Cat.
+- Add a command to set the display name of the appservice admin bot, by
+  @FSG-Cat.
+- Cleanup Configuration file wording around `protectAllJoinedRooms` by @FSG-Cat.
+- Fix Policy Notification Room invites only being issued to users with join
+  membership, by @FSG-Cat.
+- Fix an issue where sometimes Draupnir would log cryptic errors such as
+  `undefined: undefined` by @Gnuxie.
+  https://github.com/the-draupnir-project/Draupnir/issues/759.
+- Fix an issue where the appservice would not configure profile information for
+  main bot and register it by @FSG-Cat.
 
 ## [v3.0.0] - 2026-04-02
 
