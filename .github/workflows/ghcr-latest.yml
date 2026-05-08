@@ -68,6 +68,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.licenses=Apache-2.0
+
+          # prettier-ignore
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Draupnir is a Matrix bot for moderation and user management.
           sbom: true
           tags: |
