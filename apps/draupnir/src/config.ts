@@ -503,6 +503,24 @@ export const CURRENT_BRANCH = (() => {
   return /^(.*)$/m.exec(branchFile)?.at(0) ?? defaultText;
 })();
 
+export const DISTRIBUTION = (() => {
+  let distributionFile;
+  const defaultText =
+    "A distribution name was either not provided when building Draupnir or could not be read.";
+  try {
+    distributionFile = fs.readFileSync(
+      path.join(__dirname, "../distribution.txt"),
+      "utf-8"
+    );
+  } catch (e) {
+    LogService.error("config", "Could not read Draupnir distribution", e);
+    distributionFile = defaultText;
+  }
+  // it's important to ignore the newline if the distribution is going to be put
+  // into <pre> or <code> where it will create an unnecessary newline.
+  return /^(.*)$/m.exec(distributionFile)?.at(0) ?? defaultText;
+})();
+
 export const DOCUMENTATION_URL =
   "https://the-draupnir-project.github.io/draupnir-documentation/";
 
