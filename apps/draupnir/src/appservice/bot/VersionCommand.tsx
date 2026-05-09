@@ -9,7 +9,7 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
-import { CURRENT_BRANCH, SOFTWARE_VERSION, DISTRIBUTION} from "../../config";
+import { CURRENT_BRANCH, SOFTWARE_VERSION, DISTRIBUTION } from "../../config";
 
 type AppserviceVersionInfo = {
   version: string;
