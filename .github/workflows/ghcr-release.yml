@@ -71,7 +71,7 @@ jobs:
             org.opencontainers.image.licenses=Apache-2.0
 
           # prettier-ignore
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Draupnir is a Matrix bot for moderation and user management.
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Drapunir is a community management platform for Matrix.
           sbom: true
           tags: |
             ghcr.io/${{ steps.image_owner.outputs.image_owner }}/draupnir:${{ steps.release_version.outputs.release_version }}
