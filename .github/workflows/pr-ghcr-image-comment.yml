@@ -1,0 +1,104 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+# Reusable workflow: comment on PRs with published GHCR image links
+
+name: "PR — GHCR Image Link"
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name for the published image"
+        required: true
+        type: string
+      image_tags:
+        description: "Newline-delimited list of image tags from metadata-action"
+        required: true
+        type: string
+      image_owner:
+        description: "Lowercased image owner for ghcr.io"
+        required: true
+        type: string
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  comment-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on matching pull requests
+        uses: actions/github-script@v8
+        env:
+          IMAGE_TAGS: ${{ inputs.image_tags }}
+          IMAGE_OWNER: ${{ inputs.image_owner }}
+          BRANCH: ${{ inputs.branch }}
+        with:
+          script: |
+            const branch = process.env.BRANCH;
+            const repo = context.repo.repo;
+            const owner = process.env.IMAGE_OWNER;
+            const tagLines = (process.env.IMAGE_TAGS || '').split('\n').map(l => l.trim()).filter(Boolean);
+
+            if (!branch) {
+              core.notice('No branch input; skipping PR comment.');
+              return;
+            }
+
+            const normalizedBranch = branch.replace(/\//g, '-');
+            const shaShort = context.sha.substring(0, 7);
+            const candidates = [
+              `ghcr.io/${owner}/${repo}:${branch}`,
+              `ghcr.io/${owner}/${repo}:${normalizedBranch}`,
+              `ghcr.io/${owner}/${repo}:sha-${shaShort}`,
+            ];
+
+            const imageRef = candidates.find(c => tagLines.includes(c)) || tagLines[0];
+            if (!imageRef) {
+              core.notice('No image tags found from metadata-action; skipping PR comment.');
+              return;
+            }
+
+            const marker = '<!-- ghcr-image-link -->';
+            const body = `Published GHCR image for branch \`${branch}\`:\n\n- Image: ${imageRef}\n- Pull: \`docker pull ${imageRef}\`\n\n` + marker;
+
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo,
+              state: 'open',
+              head: `${context.repo.owner}:${branch}`,
+              per_page: 100,
+            });
+
+            if (!prs.data.length) {
+              core.notice('No open PRs found for branch; skipping comment.');
+              return;
+            }
+
+            for (const pr of prs.data) {
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              });
+              const botComment = comments.data.find(c => c.user && c.user.type === 'Bot' && c.body && c.body.includes(marker));
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo,
+                  comment_id: botComment.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo,
+                  issue_number: pr.number,
+                  body,
+                });
+              }
+            }
