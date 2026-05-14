@@ -67,6 +67,9 @@ jobs:
             org.opencontainers.image.version=${{ github.ref_name }}-${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
             org.opencontainers.image.licenses=Apache-2.0
+
+          # prettier-ignore
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Drapunir is a community management platform for Matrix.
           sbom: true
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:develop
