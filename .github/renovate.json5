@@ -18,6 +18,7 @@
     {
       matchManagers: ["github-actions"],
       pinDigests: true,
+      minimumReleaseAge: "7 days",
       automerge: false,
       platformAutomerge: false,
       matchUpdateTypes: ["minor", "patch", "pin", "digest", "pinDigest"],
