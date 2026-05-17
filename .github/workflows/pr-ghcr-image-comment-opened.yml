@@ -15,66 +15,12 @@ jobs:
   comment-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
       - name: Comment on the pull request
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
-            const marker = '<!-- ghcr-pr-image-link -->';
-            const pullRequest = context.payload.pull_request;
-
-            if (!pullRequest) {
-              core.notice('No pull_request payload found; skipping.');
-              return;
-            }
-
-            const owner = pullRequest.head?.repo?.owner?.login || context.repo.owner;
-            const repo = context.repo.repo;
-            const branch = pullRequest.head?.ref || '';
-            const sha = pullRequest.head?.sha || context.sha;
-            const shortSha = sha.substring(0, 7);
-            const normalizedBranch = branch.replace(/\//g, '-');
-
-            const imageNamespace = `ghcr.io/${owner}/${repo}`;
-            const branchTag = normalizedBranch || shortSha;
-            const shaTag = `sha-${shortSha}`;
-
-            const body = [
-              `GHCR image refs for this PR:`,
-              '',
-              `- Namespace: \`${imageNamespace}\``,
-              `- Branch tag: \`${branchTag}\``,
-              `- SHA tag: \`${shaTag}\``,
-              `- Pull: \`docker pull ${imageNamespace}:${branchTag}\``,
-              '',
-              `This comment is generated from PR metadata only. It does not checkout or run PR code.`,
-              marker,
-            ].join('\n');
-
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo,
-              issue_number: pullRequest.number,
-              per_page: 100,
-            });
-
-            const existingComment = comments.data.find(comment =>
-              comment.user?.type === 'Bot' &&
-              typeof comment.body === 'string' &&
-              comment.body.includes(marker)
-            );
-
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo,
-                comment_id: existingComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo,
-                issue_number: pullRequest.number,
-                body,
-              });
-            }
+            const script = require('./.github/scripts/pr-ghcr-image-comment.js');
+            await script({ github, context, core });
