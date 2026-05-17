@@ -1,6 +1,27 @@
 // SPDX-FileCopyrightText: 2024 Aminda Suomalainen <suomalainen@aminda.eu>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 //
-// SPDX-License-Identifier: CC0-1.0
+// SPDX-License-Identifier: Apache-2.0
+//
+// Automerges are false because we need to wait until we have seen this actually attempt to run before we approve it.
+// Automerges would anyways only be enabled for minor updates to workflows.
+//
 {
   extends: ["github>the-draupnir-project/.github:renovate-shared"],
+  enabledManagers: ["github-actions"],
+  packageRules: [
+    {
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["major"],
+      automerge: false,
+    },
+    {
+      matchManagers: ["github-actions"],
+      pinDigests: true,
+      minimumReleaseAge: "7 days",
+      automerge: false,
+      platformAutomerge: false,
+      matchUpdateTypes: ["minor", "patch", "pin", "digest", "pinDigest"],
+    },
+  ],
 }
