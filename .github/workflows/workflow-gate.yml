@@ -31,7 +31,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
-            const sha = context.payload.workflow_run.head_commit.id;
+            const sha = context.payload.workflow_run.head_sha;
 
             // Get all check runs for this commit
             const checks = await github.rest.checks.listForRef({
@@ -45,7 +45,7 @@ jobs:
               'GHCR - Development Branches', 'Docker Hub - Release', 'Docker Hub - Latest', 'Docker Hub - Develop',
               'GHCR - Release', 'Tests', 'GHCR - Latest', 'Contribution requirements'
             ];
-            const relevantChecks = checks.data.filter(check => knownWorkflows.includes(check.name));
+            const relevantChecks = checks.data.check_runs.filter(check => knownWorkflows.includes(check.name));
 
             // Check if ANY workflow is still running or queued
             const incompleteChecks = relevantChecks.filter(check => check.status !== 'completed');
