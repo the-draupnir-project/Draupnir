@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @param {Object} args
  * @param {import('@actions/github').getOctokit} args.github
