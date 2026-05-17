@@ -90,4 +90,13 @@ jobs:
           # prettier-ignore
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Drapunir is a community management platform for Matrix.
           sbom: true
+          provenance: true
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Attest pushed image
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          # prettier-ignore
+          subject-name: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

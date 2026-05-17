@@ -72,6 +72,7 @@ jobs:
           # prettier-ignore
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Drapunir is a community management platform for Matrix.
           sbom: true
+          provenance: true
           tags: |
             ${{ env.DOCKER_NAMESPACE }}/draupnir:${{ steps.release_version.outputs.release_version }}
 
