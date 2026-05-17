@@ -31,7 +31,14 @@ module.exports = async ({ github, context, core }) => {
   const shortSha = sha.substring(0, 7);
   const normalizedBranch = branch.replace(/\//g, "-");
 
-  const imageNamespace = `ghcr.io/${prOwner}/${repo}`;
+  const lowerOwner = prOwner.toLowerCase();
+  const lowerRepo = repo.toLowerCase();
+
+  const imageNamespace = `ghcr.io/${lowerOwner}/${lowerRepo}`;
+  // The root package URL on GitHub. We can't link to the exact version ID without querying the GH API,
+  // so we link to the package landing page where the user can see the recent tags.
+  const packageUrl = `https://github.com/${prOwner}/${repo}/pkgs/container/${lowerRepo}`;
+
   const branchTag = normalizedBranch || shortSha;
   const shaTag = `sha-${shortSha}`;
 
@@ -41,9 +48,10 @@ module.exports = async ({ github, context, core }) => {
     `- Namespace: \`${imageNamespace}\``,
     `- Branch tag: \`${branchTag}\``,
     `- SHA tag: \`${shaTag}\``,
+    `- Package Page: [GHCR Link](${packageUrl})`,
     `- Pull: \`docker pull ${imageNamespace}:${branchTag}\``,
     "",
-    `This comment is generated from PR metadata only. It does not checkout or run PR code. It also does not reflect whether the image has actually been built yet.`,
+    `This comment is generated from PR metadata only. It does not checkout or run PR code and is generated in a static manner`,
     marker,
   ].join("\n");
 
