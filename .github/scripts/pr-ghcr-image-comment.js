@@ -40,14 +40,12 @@ module.exports = async ({ github, context, core }) => {
   const packageUrl = `https://github.com/${prOwner}/${repo}/pkgs/container/${lowerRepo}`;
 
   const branchTag = normalizedBranch || shortSha;
-  const shaTag = `sha-${shortSha}`;
 
   const body = [
     `GHCR image refs for this PR:`,
     "",
     `- Namespace: \`${imageNamespace}\``,
     `- Branch tag: \`${branchTag}\``,
-    `- SHA tag: \`${shaTag}\``,
     `- Package Page: [GHCR Link](${packageUrl})`,
     `- Pull: \`docker pull ${imageNamespace}:${branchTag}\``,
     "",
