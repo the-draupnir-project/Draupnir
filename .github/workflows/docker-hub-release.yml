@@ -20,6 +20,7 @@ env:
 jobs:
   docker-release:
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'the-draupnir-project/Draupnir' }}
     permissions:
       id-token: write
       contents: read
