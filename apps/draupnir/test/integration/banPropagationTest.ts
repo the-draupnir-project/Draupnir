@@ -42,7 +42,7 @@ describe("Ban propagation test", function () {
         banPropagationProtection
       )
     ).toBeTruthy();
-  } as unknown as Mocha.AsyncFunc);
+  });
   it(
     "Should prompt to add bans to a policy list, then add the ban",
     async function (this: DraupnirTestContext) {
@@ -174,6 +174,6 @@ describe("Ban propagation test", function () {
           membershipRevision.membershipForUser(spamUserID)?.membershipChangeType
         ).toBe(MembershipChangeType.Unbanned);
       }
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

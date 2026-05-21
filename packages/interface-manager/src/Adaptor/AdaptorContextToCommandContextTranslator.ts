@@ -48,12 +48,12 @@ export class StandardAdaptorContextToCommandContextTranslator<
   ): TCommandMeta["Context"] {
     const entry = this.translators.get(
       // i really don't care.
-      commandDescription as unknown as CommandDescription
+      commandDescription
     );
     if (entry === undefined) {
-      return adaptorContext as unknown as TCommandMeta["Context"];
+      return adaptorContext;
     } else {
-      return entry(adaptorContext) as TCommandMeta["Context"];
+      return entry(adaptorContext);
     }
   }
   registerTranslation<TCommandMeta extends CommandMeta>(
@@ -64,14 +64,14 @@ export class StandardAdaptorContextToCommandContextTranslator<
     >
   ): AdaptorContextToCommandContextTranslator<AdaptorContext> {
     if (
-      this.translators.has(commandDescription as unknown as CommandDescription)
+      this.translators.has(commandDescription)
     ) {
       throw new TypeError(
         `There is already a translation function registered for the command ${commandDescription.summary}`
       );
     }
     this.translators.set(
-      commandDescription as unknown as CommandDescription,
+      commandDescription,
       translationFunction
     );
     return this;

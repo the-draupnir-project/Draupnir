@@ -85,5 +85,5 @@ describe("Test: Report polling", function (this: Mocha.Suite) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     expect(reportsFound.size).toBe(20);
     expect(duplicateReports.size).toBe(0);
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

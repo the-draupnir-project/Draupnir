@@ -71,5 +71,5 @@ describe("Test for http antispam callbacks", function () {
       expect(matrixError.error).toBe("no.");
       expect(matrixError.errcode).toBe("M_FORBIDDEN");
     }
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

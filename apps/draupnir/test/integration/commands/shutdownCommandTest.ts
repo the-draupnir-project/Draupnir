@@ -58,5 +58,5 @@ describe("Test: shutdown command", function (this: Mocha.Suite) {
       assert.equal(e.body.error, "This room has been blocked on this server");
       return true;
     });
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

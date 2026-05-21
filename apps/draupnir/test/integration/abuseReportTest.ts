@@ -365,7 +365,7 @@ describe("Test: Reporting abuse", () => {
               throw new Error(`Didn't expect label ${matches[1]}`);
           }
         }
-      } as unknown as Mocha.AsyncFunc
+      }
     );
   }
   it("The redact action works", async function (this: DraupnirTestContext) {
@@ -544,5 +544,5 @@ describe("Test: Reporting abuse", () => {
       [],
       "Redaction should have removed the content of the offending event"
     );
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

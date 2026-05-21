@@ -487,7 +487,7 @@ export const DraupnirProtectionsConfigResetCommand = describeCommand({
     const newSettings =
       protectionDescription.protectionSettings.getDefaultConfig();
     return await draupnir.protectedRoomsSet.protections.changeProtectionSettings(
-      protectionDescription as unknown as ProtectionDescription,
+      protectionDescription,
       draupnir.protectedRoomsSet,
       draupnir,
       newSettings
@@ -517,7 +517,7 @@ export const DraupnirProtectionsCapabilityResetCommand = describeCommand({
       );
     }
     return await draupnir.protectedRoomsSet.protections.changeCapabilityProviderSet(
-      protectionDescription as unknown as ProtectionDescription,
+      protectionDescription,
       draupnir.protectedRoomsSet,
       draupnir,
       protectionDescription.defaultCapabilities

@@ -169,7 +169,7 @@ describe("RoomTakedownProtectionTest", function () {
           .joinRoom(takedownTargetRoomID)
       ).isOkay
     ).toBe(false);
-  } as unknown as Mocha.AsyncFunc);
+  });
   it(
     "Takedown a room through discovery and a revealed Literal policy change",
     async function (this: DraupnirTestContext) {
@@ -253,6 +253,6 @@ describe("RoomTakedownProtectionTest", function () {
             .joinRoom(takedownTargetRoomID)
         ).isOkay
       ).toBe(false);
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

@@ -105,5 +105,5 @@ describe("RoomTakedownProtectionTest", function () {
       );
       await moderator.inviteUser(draupnir.clientUserID, takedownTargetRoomID);
     }
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

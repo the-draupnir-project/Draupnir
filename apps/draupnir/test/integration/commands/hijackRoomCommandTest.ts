@@ -82,5 +82,5 @@ describe("Test: The make admin command", function () {
       undefined,
       "User A is not supposed to be a room admin."
     );
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

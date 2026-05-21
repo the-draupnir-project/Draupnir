@@ -142,7 +142,7 @@ export class KeywordParser<TKeywordsMeta extends KeywordsMeta = KeywordsMeta> {
       } else {
         const associatedPropertyResult = this.readKeywordAssociatedProperty(
           // idk why typescript is bottoming out here but whatever.
-          description as unknown as KeywordParametersDescription["keywordDescriptions"][string],
+          description,
           partialCommand
         );
         if (isError(associatedPropertyResult)) {
@@ -163,7 +163,7 @@ export class KeywordParser<TKeywordsMeta extends KeywordsMeta = KeywordsMeta> {
     if (restDescription !== undefined) {
       return restDescription.parseRest(
         partialCommand,
-        this as unknown as KeywordParser
+        this
       );
     } else {
       const result = this.parseKeywords(partialCommand);

@@ -62,6 +62,6 @@ describe("Test: utils", function () {
         message.content.formatted_body,
         `it&#39;s fun here in <a href="https://matrix.to/#/${encodeURIComponent(managementRoomAlias)}">${managementRoomAlias}</a>`
       );
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

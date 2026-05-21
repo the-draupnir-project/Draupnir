@@ -20,7 +20,7 @@ export class FakeProtectionsManager extends StandardProtectionsManager {
       new MjolnirProtectionSettingsConfig(function () {
         return Ok(new FakePersistentConfigBackend({}));
       }),
-      ProtectionHandleRegistryDescription as never
+      ProtectionHandleRegistryDescription
     );
   }
 }

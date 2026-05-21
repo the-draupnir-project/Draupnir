@@ -221,7 +221,7 @@ describe("unbanCommandTest", function () {
           membershipRevision.membershipForUser(falsePositiveUserID)?.membership
         ).toBe(Membership.Invite);
       }
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it("Unbans users even when there are no policies", async function (
     this: DraupnirTestContext
@@ -267,7 +267,7 @@ describe("unbanCommandTest", function () {
         membershipRevision.membershipForUser(falsePositiveUserID)?.membership
       ).toBe(Membership.Leave);
     }
-  } as unknown as Mocha.AsyncFunc);
+  });
   it(
     "Unbans and reinvites users when the invite option is provided",
     async function (this: DraupnirTestContext) {
@@ -341,7 +341,7 @@ describe("unbanCommandTest", function () {
           membershipRevision.membershipForUser(falsePositiveUserID)?.membership
         ).toBe(Membership.Invite);
       }
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it(
     "unbans users when there is no membership and only policies",
@@ -398,7 +398,7 @@ describe("unbanCommandTest", function () {
       const policyRevision =
         draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       expect(policyRevision.allRules().length).toBe(0);
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it(
     "Unbans all members targetted by a glob that is being removed indirectly by unbanning a single user in the command",
@@ -556,7 +556,7 @@ describe("unbanCommandTest", function () {
       const policyRevision =
         draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       expect(policyRevision.allRules().length).toBe(1);
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it(
     "removes glob rules when there are only glob rules and no banned members",
@@ -622,6 +622,6 @@ describe("unbanCommandTest", function () {
       const policyRevision =
         draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision;
       expect(policyRevision.allRules().length).toBe(0);
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

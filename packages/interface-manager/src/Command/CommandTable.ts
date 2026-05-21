@@ -238,7 +238,7 @@ export class StandardCommandTable implements CommandTable {
           new StandardPresentationArgumentStream(
             commandTableEntry.designator.map((d) =>
               StringPresentationType.wrap(d)
-            ) as Presentation[]
+            )
           )
         )
       ) {

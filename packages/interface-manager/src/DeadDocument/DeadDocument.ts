@@ -416,7 +416,7 @@ export class FringeWalker<Context> {
           }
           this.renderer.getLeafRenderer(annotatedNode.node.tag)(
             annotatedNode.node.tag,
-            annotatedNode.node as unknown as LeafNode,
+            annotatedNode.node,
             this.context
           );
           break;

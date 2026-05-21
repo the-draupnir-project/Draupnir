@@ -393,7 +393,7 @@ export class StandardProtectionsManager<
   ): Promise<Result<EDStatic<TConfigSchema>>> {
     return (await this.settingsConfig.getProtectionSettings(
       protectionDescription
-    )) as Result<EDStatic<TConfigSchema>>;
+    ));
   }
   isEnabledProtection(protectionDescription: ProtectionDescription): boolean {
     return this.enabledProtections.has(protectionDescription.name);

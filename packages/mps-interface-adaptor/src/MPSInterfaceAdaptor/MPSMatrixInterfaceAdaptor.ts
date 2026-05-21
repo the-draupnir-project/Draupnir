@@ -142,7 +142,7 @@ export const matrixEventsFromDeadDocument: MatrixInterfaceEventsFromDeadDocument
     { replyToEvent: event }
   );
   if (isError(sendResult)) {
-    return sendResult as Result<void>;
+    return sendResult;
   } else {
     return Ok(undefined);
   }

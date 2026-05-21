@@ -47,7 +47,7 @@ test("handlePermissionRequirementsMet is called when a new room is added with me
         content: {
           users_default: 100,
           ban: 0,
-        } as PowerLevelsEventContent,
+        },
         type: "m.room.power_levels",
         sender: userID,
       },

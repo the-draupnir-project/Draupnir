@@ -73,7 +73,7 @@ describe("JoinRoomsOnInvite", function () {
       ).toBe(true);
       // allow for messages to send to the mangement room.
       await new Promise((resolve) => setTimeout(resolve, 1000));
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it(
     "That rooms will automatically be unprotected when protectAllJoinedRooms is false",
@@ -133,6 +133,6 @@ describe("JoinRoomsOnInvite", function () {
       ).toBe(true);
       // allow for messages to send to the mangement room.
       await new Promise((resolve) => setTimeout(resolve, 1000));
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

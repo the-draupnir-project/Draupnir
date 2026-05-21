@@ -21,5 +21,5 @@ describe("We should be able to restart and recover draupnir when it has bad acco
       (await moderator.getUserId()) as StringUserID,
       draupnir()
     );
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

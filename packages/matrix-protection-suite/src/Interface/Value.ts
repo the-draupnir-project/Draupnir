@@ -48,7 +48,7 @@ export class Value {
       const compiledCheck = TypeCompiler.Compile(schema);
       this.compiledSchema.set(
         schema,
-        compiledCheck as unknown as TypeCheck<TSchema>
+        compiledCheck
       );
       return compiledCheck;
     }

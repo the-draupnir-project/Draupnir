@@ -241,9 +241,7 @@ export class MatrixReactionHandler
             return;
           }
           void Task(
-            redacter.redactEvent(roomID, event.event_id, reason) as Promise<
-              ActionResult<void>
-            >
+            redacter.redactEvent(roomID, event.event_id, reason)
           );
         },
       });

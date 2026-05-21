@@ -96,6 +96,6 @@ describe("Test: The rooms commands", function () {
         true,
         "Only the management room should be protected and the policy change notification room."
       );
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 });

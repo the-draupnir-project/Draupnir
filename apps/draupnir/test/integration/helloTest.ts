@@ -55,5 +55,5 @@ describe("Test: !help command", function (this: Mocha.Suite) {
       body: "!draupnir help",
     });
     await reply;
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

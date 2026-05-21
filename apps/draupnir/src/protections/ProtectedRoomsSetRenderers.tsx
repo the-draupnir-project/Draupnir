@@ -41,6 +41,6 @@ export async function renderProtectionFailedToStart(
         <span>{error.message}</span>
       </root>,
       {}
-    ) as Promise<Result<void>>
+    )
   );
 }

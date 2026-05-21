@@ -137,7 +137,7 @@ describe("Test: The redaction command", function () {
           });
         }
       );
-    } as unknown as Mocha.AsyncFunc
+    }
   );
 
   it(
@@ -242,7 +242,7 @@ describe("Test: The redaction command", function () {
           );
         })
       );
-    } as unknown as Mocha.AsyncFunc
+    }
   );
   it("Redacts a single event when instructed to.", async function (
     this: RedactionTestContext
@@ -295,5 +295,5 @@ describe("Test: The redaction command", function () {
       0,
       "This event should have been redacted"
     );
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

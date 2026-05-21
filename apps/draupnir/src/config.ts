@@ -592,7 +592,7 @@ export function getUnknownPropertiesHelper(
     } else {
       const unknownSubProperties = getUnknownPropertiesHelper(
         config[key],
-        defaultConfig[key] as Record<string, unknown>,
+        defaultConfig[key],
         [...currentPathProperties, key]
       );
       unknownProperties.push(...unknownSubProperties);
@@ -611,7 +611,7 @@ export function getUnknownConfigPropertyPaths(config: unknown): string[] {
   }
   return getUnknownPropertiesHelper(
     config,
-    defaultConfig as unknown as Record<string, unknown>,
+    defaultConfig,
     []
   );
 }

@@ -106,7 +106,7 @@ export function makeHandleMissingProtectionPermissions(
           {renderMissingProtectionsPermissions(roomID, protectionPermissions)}
         </root>,
         {}
-      ) as Promise<Result<undefined>>
+      )
     );
   };
 }
