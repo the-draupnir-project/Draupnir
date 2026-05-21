@@ -11,6 +11,7 @@ on:
       - "dependabot/**"
       - "renovate/**"
       - "github-actions/**"
+      - "gh-readonly-queue/**"
 
 concurrency:
   group: ghcr-dev-${{ github.ref }}
