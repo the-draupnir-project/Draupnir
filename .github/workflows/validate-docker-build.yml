@@ -1,20 +1,23 @@
 # SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-# This file is derived from the docker-hub-develop.yml workflow, but instead of pushing to Docker Hub, it pushes to GHCR. It also runs on all non excluded branches to allow easier access to development builds.
+# This file is derived from the ghcr-all-dev-branches.yml workflow, but instead of pushing its results, it only validates the Docker build. It also runs on all excluded branches to validate builds on excluded branches.
 
-name: "GHCR - Development Branches"
+name: "Validate Docker Build"
 
+# Main is not excluded due to that we want access to validate the build on main and to enable scout mode just like we have for breaking synapse changes.
 on:
   push:
     branches-ignore:
       - "dependabot/**"
-      - "renovate/**"
       - "github-actions/**"
-      - "gh-readonly-queue/**"
+  schedule:
+    - cron: "20 20 * * *"
+  merge_group:
+    branches: [main]
 
 concurrency:
-  group: ghcr-dev-${{ github.ref }}
+  group: docker-test-build-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -23,14 +26,10 @@ env:
   IMG_SOURCE: https://github.com/${{ github.repository }}
 
 jobs:
-  ghcr-publish:
+  validate-docker-build:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
-      packages: write
       contents: read
-      attestations: write
-      artifact-metadata: write
     steps:
       - name: Check out
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -52,13 +51,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
 
-      - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Derive image tags
         id: meta
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf
@@ -77,11 +69,10 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ env.PLATFORMS }}
-          push: true
+          push: false
           # Shared Buildx cache scope reused by all container image workflows.
           # Keep the scope name aligned across workflows to maximize cache hits.
           cache-from: type=gha,scope=draupnir-container-build
-          cache-to: type=gha,scope=draupnir-container-build,mode=max
           labels: |
             org.opencontainers.image.source=${{ env.IMG_SOURCE }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -94,11 +85,3 @@ jobs:
           sbom: true
           provenance: true
           tags: ${{ steps.meta.outputs.tags }}
-
-      - name: Attest pushed image
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
-        with:
-          # prettier-ignore
-          subject-name: ghcr.io/${{ steps.image_owner.outputs.image_owner }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
