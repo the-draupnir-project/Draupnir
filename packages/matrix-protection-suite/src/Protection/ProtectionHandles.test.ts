@@ -7,7 +7,6 @@ import { PowerLevelPermission } from "../Client/PowerLevelsMirror";
 import { StandardConfigDescription } from "../Config/ConfigDescription";
 import { Ok, isError } from "../Interface/Action";
 import { Logger } from "../Logging/Logger";
-import { PowerLevelsEventContent } from "../MatrixTypes/PowerLevels";
 import { Membership } from "../Membership/MembershipChange";
 import {
   describeProtectedRoomsSet,
