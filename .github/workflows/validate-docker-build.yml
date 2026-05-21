@@ -16,10 +16,6 @@ on:
   merge_group:
     branches: [main]
 
-concurrency:
-  group: docker-test-build-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   IMAGE_NAME: draupnir
   PLATFORMS: linux/amd64,linux/arm64
