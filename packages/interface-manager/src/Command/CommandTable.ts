@@ -16,7 +16,6 @@ import { StringPresentationType } from "../TextReader";
 import { CommandDescription } from "./CommandDescription";
 import { CommandMeta } from "./CommandMeta";
 import {
-  Presentation,
   PresentationType,
   PresentationTypeWithoutWrap,
 } from "./Presentation";
