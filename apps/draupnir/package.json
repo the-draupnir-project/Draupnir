@@ -31,7 +31,7 @@
     "@types/jsdom": "21.1.7",
     "@types/mocha": "^10.0.7",
     "@types/nedb": "^1.8.16",
-    "@types/node": "^24.12.0",
+    "@types/node": "^24.12.4",
     "@types/pg": "^8.6.5",
     "@types/request": "^2.48.12",
     "crypto-js": "^4.2.0",
@@ -43,7 +43,7 @@
   "dependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
     "@sentry/node": "^7.17.2",
-    "@sinclair/typebox": "0.34.13",
+    "@sinclair/typebox": "0.34.49",
     "@the-draupnir-project/interface-manager": "4.2.6",
     "@the-draupnir-project/matrix-basic-types": "1.5.1",
     "@the-draupnir-project/mps-interface-adaptor": "0.6.0",
