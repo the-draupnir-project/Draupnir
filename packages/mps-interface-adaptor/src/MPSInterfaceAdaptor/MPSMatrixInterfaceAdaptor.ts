@@ -39,7 +39,6 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { matrixCommandRenderer } from "./MatrixHelpRenderer";
 import { promptDefault, promptSuggestions } from "./MatrixPromptForAccept";
-import { Result } from "@gnuxie/typescript-result";
 import { matrixEventsFromConfirmationPrompt } from "./MatrixPromptForConfirmation";
 
 export interface MatrixEventContext {

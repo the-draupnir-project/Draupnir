@@ -17,7 +17,6 @@ import {
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
 
 // The callback that this is required for in MPS, is kinda silly and should
 // really be `void` and not `Promise<void>`. If it wanted to be `Promise<void>`,
