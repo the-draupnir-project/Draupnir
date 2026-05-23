@@ -49,6 +49,12 @@ export function getNonDefaultConfigProperties(
     nonDefault.pantalaimon.password = "REDACTED";
   }
   if (
+    "zeroTouchDeploymentSelfLogin" in nonDefault &&
+    isConfigRecord(nonDefault.zeroTouchDeploymentSelfLogin)
+  ) {
+    nonDefault.zeroTouchDeploymentSelfLogin.password = "REDACTED";
+  }
+  if (
     "web" in nonDefault &&
     isConfigRecord(nonDefault.web) &&
     "synapseHTTPAntispam" in nonDefault["web"] &&
@@ -73,6 +79,11 @@ export interface IConfig {
   accessToken: string;
   pantalaimon: {
     use: boolean;
+    username: string;
+    password: string;
+  };
+  zeroTouchDeploymentSelfLogin: {
+    enabled: boolean;
     username: string;
     password: string;
   };
@@ -188,7 +199,8 @@ export interface IConfig {
         isDraupnirConfigOptionUsed: boolean;
 
         isAccessTokenPathOptionUsed: boolean;
-        isPasswordPathOptionUsed: boolean;
+        isPantalaimonPasswordOptionUsed: boolean;
+        isZeroTouchDeploymentSelfLoginPasswordOptionUsed: boolean;
         isHttpAntispamAuthorizationPathOptionUsed: boolean;
       }
     | undefined;
@@ -200,6 +212,11 @@ const defaultConfig: IConfig = {
   accessToken: "NONE_PROVIDED",
   pantalaimon: {
     use: false,
+    username: "",
+    password: "",
+  },
+  zeroTouchDeploymentSelfLogin: {
+    enabled: false,
     username: "",
     password: "",
   },
@@ -318,10 +335,15 @@ function getConfigMeta(): NonNullable<IConfig["configMeta"]> {
       process.argv,
       "--access-token-path"
     ),
-    isPasswordPathOptionUsed: isCommandLineOptionPresent(
+    isPantalaimonPasswordOptionUsed: isCommandLineOptionPresent(
       process.argv,
       "--pantalaimon-password-path"
     ),
+    isZeroTouchDeploymentSelfLoginPasswordOptionUsed:
+      isCommandLineOptionPresent(
+        process.argv,
+        "--zero-touch-deployment-self-login-password-path"
+      ),
     isHttpAntispamAuthorizationPathOptionUsed: isCommandLineOptionPresent(
       process.argv,
       "--http-antispam-authorization-path"
@@ -392,6 +414,10 @@ export function configRead(): IConfig {
     process.argv,
     "--pantalaimon-password-path"
   );
+  const explicitZeroTouchDeploymentSelfLoginPasswordPath = getCommandLineOption(
+    process.argv,
+    "--zero-touch-deployment-self-login-password-path"
+  );
   const explicitHttpAntispamAuthorizationPath = getCommandLineOption(
     process.argv,
     "--http-antispam-authorization-path"
@@ -402,6 +428,11 @@ export function configRead(): IConfig {
   if (explicitPantalaimonPasswordPath) {
     config.pantalaimon.password = readSecretFromPath(
       explicitPantalaimonPasswordPath
+    );
+  }
+  if (explicitZeroTouchDeploymentSelfLoginPasswordPath) {
+    config.zeroTouchDeploymentSelfLogin.password = readSecretFromPath(
+      explicitZeroTouchDeploymentSelfLoginPasswordPath
     );
   }
   if (explicitHttpAntispamAuthorizationPath) {

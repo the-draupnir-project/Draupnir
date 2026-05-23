@@ -25,6 +25,7 @@ import { DraupnirBotModeToggle } from "./DraupnirBotMode";
 import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEventDecoder } from "matrix-protection-suite";
 import { makeTopLevelStores } from "./backingstore/DraupnirStores";
+import { getZeroTouchDeploymentAccessToken } from "./zeroTouchDeploymentSelfLogin";
 
 void (async function () {
   const config = configRead();
@@ -50,6 +51,13 @@ void (async function () {
     const storage = new SimpleFsStorageProvider(
       path.join(storagePath, "bot.json")
     );
+
+    if (config.zeroTouchDeploymentSelfLogin.enabled) {
+      config.accessToken = await getZeroTouchDeploymentAccessToken(
+        config,
+        storage
+      );
+    }
 
     if (config.pantalaimon.use && !config.experimentalRustCrypto) {
       const pantalaimon = new PantalaimonClient(config.homeserverUrl, storage);
