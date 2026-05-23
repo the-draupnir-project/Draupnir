@@ -32,6 +32,8 @@ version.txt.tmp
 version.txt
 # branch file generated from npm build
 branch.txt
+# distribution file generated from npm build
+distribution.txt
 
 # Logs
 logs

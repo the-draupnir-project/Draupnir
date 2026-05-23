@@ -9,9 +9,10 @@
   "private": true,
   "scripts": {
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
-    "build:assets": "npm run describe-version && npm run describe-branch",
+    "build:assets": "npm run describe-version && npm run describe-branch && npm run describe-distribution",
     "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
     "describe-branch": "(git rev-parse --abbrev-ref HEAD > branch.txt.tmp && mv branch.txt.tmp branch.txt) || true && rm -f branch.txt.tmp",
+    "describe-distribution": "echo \"${DRAUPNIR_DISTRIBUTION:-source}\" > distribution.txt.tmp && mv distribution.txt.tmp distribution.txt",
     "harness-registration": "node dist/appservice/cli.js -r -u \"http://host.docker.internal:9000\" --enable-source-maps",
     "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
     "test:unit:single": "mocha --require test/tsnode.cjs",
