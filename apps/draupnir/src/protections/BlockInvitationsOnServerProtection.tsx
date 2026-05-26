@@ -112,7 +112,7 @@ export class SynapseHTTPUserMayInvite {
   }
 
   unregisterListeners(): void {
-    this.synapseHTTPAntispam.userMayInviteHandles.unregisterHandle(
+    this.synapseHTTPAntispam.userMayInviteHandles.unregisterBlockingHandle(
       this.synapseHTTPCallback
     );
   }

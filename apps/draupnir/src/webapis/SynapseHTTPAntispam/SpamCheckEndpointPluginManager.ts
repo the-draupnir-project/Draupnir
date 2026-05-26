@@ -36,10 +36,13 @@ export class SpamCheckEndpointPluginManager<CBArguments extends unknown[]> {
     this.nonBlockingHandles.add(handle);
   }
 
-  public unregisterHandle(
-    handle: BlockingCallback<CBArguments> | NonBlockingCallback<CBArguments>
+  public unregisterBlockingHandle(handle: BlockingCallback<CBArguments>): void {
+    this.blockingHandles.delete(handle);
+  }
+
+  public unregisterNonBlockingHandle(
+    handle: NonBlockingCallback<CBArguments>
   ): void {
-    this.blockingHandles.delete(handle as BlockingCallback<CBArguments>);
     this.nonBlockingHandles.delete(handle);
   }
 
