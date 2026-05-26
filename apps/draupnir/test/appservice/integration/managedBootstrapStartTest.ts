@@ -17,8 +17,7 @@ describe("Managed room bootstrap startup integration", function (this: Mocha.Sui
       ...(config as unknown as Record<string, unknown>),
     };
     testConfigRecord.adminRoom = undefined;
-    testConfigRecord.initialManager =
-      (await initialManager.getUserId());
+    testConfigRecord.initialManager = await initialManager.getUserId();
     const testConfig = testConfigRecord as typeof config;
 
     let appservice: MjolnirAppService | undefined;

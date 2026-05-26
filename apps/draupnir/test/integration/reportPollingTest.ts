@@ -32,9 +32,7 @@ describe("Test: Report polling", function (this: Mocha.Suite) {
   this.afterEach(function (this: DraupnirTestContext) {
     reportPoller?.stop();
   } as unknown as Mocha.Func);
-  it("Draupnir correctly retrieves a report from synapse", async function (
-    this: DraupnirTestContext
-  ) {
+  it("Draupnir correctly retrieves a report from synapse", async function (this: DraupnirTestContext) {
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
       throw new TypeError(`Test didn't setup properly`);

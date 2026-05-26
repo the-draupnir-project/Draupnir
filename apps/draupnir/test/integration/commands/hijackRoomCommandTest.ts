@@ -16,9 +16,7 @@ import { PowerLevelsEventContent } from "matrix-protection-suite";
 
 // Breaks with this test.
 describe("Test: The make admin command", function () {
-  it("Draupnir make the bot self room administrator", async function (
-    this: DraupnirTestContext
-  ) {
+  it("Draupnir make the bot self room administrator", async function (this: DraupnirTestContext) {
     this.timeout(90000);
     if (!this.config.admin?.enableMakeRoomAdminCommand) {
       return;

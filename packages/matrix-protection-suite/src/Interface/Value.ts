@@ -46,10 +46,7 @@ export class Value {
     const entry = this.compiledSchema.get(schema);
     if (entry === undefined) {
       const compiledCheck = TypeCompiler.Compile(schema);
-      this.compiledSchema.set(
-        schema,
-        compiledCheck
-      );
+      this.compiledSchema.set(schema, compiledCheck);
       return compiledCheck;
     }
     return entry as unknown as TypeCheck<T>;

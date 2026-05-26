@@ -12,9 +12,7 @@ import {
 import { MatrixError } from "@vector-im/matrix-bot-sdk";
 
 describe("Test for http antispam callbacks", function () {
-  it("We can process check_event_for_spam", async function (
-    this: DraupnirTestContext
-  ) {
+  it("We can process check_event_for_spam", async function (this: DraupnirTestContext) {
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
       throw new TypeError(`setup code is wrong`);

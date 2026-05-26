@@ -123,9 +123,7 @@ function createRoomTakedownProtection(
 }
 
 describe("RoomTakedownProtectionTest", function () {
-  it("Will takedown a room that is added to the policy list", async function (
-    this: DraupnirTestContext
-  ) {
+  it("Will takedown a room that is added to the policy list", async function (this: DraupnirTestContext) {
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
       throw new TypeError(`setup didn't run properly`);
@@ -170,89 +168,86 @@ describe("RoomTakedownProtectionTest", function () {
       ).isOkay
     ).toBe(false);
   });
-  it(
-    "Takedown a room through discovery and a revealed Literal policy change",
-    async function (this: DraupnirTestContext) {
-      const draupnir = this.draupnir;
-      if (draupnir === undefined) {
-        throw new TypeError(`setup didn't run properly`);
-      }
-      const synapseHTTPAntispam = draupnir.synapseHTTPAntispam;
-      if (synapseHTTPAntispam === undefined) {
-        throw new TypeError("Setup code is wrong");
-      }
-      const moderator = await newTestUser(this.config.homeserverUrl, {
-        name: { contains: "moderator" },
-      });
-      const takedownTarget = await newTestUser(this.config.homeserverUrl, {
-        name: { contains: "takedown-target" },
-      });
-      const takedownTargetRoomID = StringRoomID(
-        await takedownTarget.createRoom({
-          preset: "public_chat",
-        })
-      );
-      await moderator.joinRoom(draupnir.managementRoomID);
-      const policyRoom = await createWatchedPolicyRoom(draupnir);
-
-      const roomDiscovery = createRoomDiscovery(draupnir);
-      const roomTakedownProtection = createRoomTakedownProtection(
-        this.lifetime,
-        draupnir,
-        roomDiscovery,
-        [createSynapseHTTPAntispamRoomExplorer(draupnir, roomDiscovery)]
-      );
-
-      const policyRoomEditor = (
-        await draupnir.policyRoomManager.getPolicyRoomEditor(
-          MatrixRoomReference.fromRoomID(policyRoom)
-        )
-      ).expect("Should be able to get the policy room editor");
-      const policyEventID = (
-        await policyRoomEditor.takedownEntity(
-          PolicyRuleType.Room,
-          takedownTargetRoomID,
-          { shouldHash: true }
-        )
-      ).expect("Should be able to takedown the room via a policy list editor");
-      const policyEvent = (
-        await draupnir.clientPlatform
-          .toRoomEventGetter()
-          .getEvent(policyRoom, policyEventID)
-      ).expect("Should be able to find the policy event");
-      const policy = parsePolicyRule(policyEvent as never).expect(
-        "Should be able to parse the policy rule"
-      );
-      (
-        await roomTakedownProtection.handlePolicyChange(
-          draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision,
-          [
-            {
-              changeType: PolicyRuleChangeType.Added,
-              rule: policy,
-              event: policyEvent as never,
-              sender: policyEvent.sender,
-            },
-          ]
-        )
-      ).expect("Should have been able to handle the policy change");
-      // give some time for the room to be takendown, synapse can be quite slow at this...
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const bystander = await newTestUser(this.config.homeserverUrl, {
-        name: { contains: "bystander" },
-      });
-      await bystander.joinRoom(takedownTargetRoomID);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      expect(
-        draupnir.stores.roomAuditLog?.isRoomTakendown(takedownTargetRoomID)
-      ).toBe(true);
-      expect(
-        (
-          await draupnir.clientPlatform
-            .toRoomJoiner()
-            .joinRoom(takedownTargetRoomID)
-        ).isOkay
-      ).toBe(false);
+  it("Takedown a room through discovery and a revealed Literal policy change", async function (this: DraupnirTestContext) {
+    const draupnir = this.draupnir;
+    if (draupnir === undefined) {
+      throw new TypeError(`setup didn't run properly`);
     }
-  );
+    const synapseHTTPAntispam = draupnir.synapseHTTPAntispam;
+    if (synapseHTTPAntispam === undefined) {
+      throw new TypeError("Setup code is wrong");
+    }
+    const moderator = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "moderator" },
+    });
+    const takedownTarget = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "takedown-target" },
+    });
+    const takedownTargetRoomID = StringRoomID(
+      await takedownTarget.createRoom({
+        preset: "public_chat",
+      })
+    );
+    await moderator.joinRoom(draupnir.managementRoomID);
+    const policyRoom = await createWatchedPolicyRoom(draupnir);
+
+    const roomDiscovery = createRoomDiscovery(draupnir);
+    const roomTakedownProtection = createRoomTakedownProtection(
+      this.lifetime,
+      draupnir,
+      roomDiscovery,
+      [createSynapseHTTPAntispamRoomExplorer(draupnir, roomDiscovery)]
+    );
+
+    const policyRoomEditor = (
+      await draupnir.policyRoomManager.getPolicyRoomEditor(
+        MatrixRoomReference.fromRoomID(policyRoom)
+      )
+    ).expect("Should be able to get the policy room editor");
+    const policyEventID = (
+      await policyRoomEditor.takedownEntity(
+        PolicyRuleType.Room,
+        takedownTargetRoomID,
+        { shouldHash: true }
+      )
+    ).expect("Should be able to takedown the room via a policy list editor");
+    const policyEvent = (
+      await draupnir.clientPlatform
+        .toRoomEventGetter()
+        .getEvent(policyRoom, policyEventID)
+    ).expect("Should be able to find the policy event");
+    const policy = parsePolicyRule(policyEvent as never).expect(
+      "Should be able to parse the policy rule"
+    );
+    (
+      await roomTakedownProtection.handlePolicyChange(
+        draupnir.protectedRoomsSet.watchedPolicyRooms.currentRevision,
+        [
+          {
+            changeType: PolicyRuleChangeType.Added,
+            rule: policy,
+            event: policyEvent as never,
+            sender: policyEvent.sender,
+          },
+        ]
+      )
+    ).expect("Should have been able to handle the policy change");
+    // give some time for the room to be takendown, synapse can be quite slow at this...
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const bystander = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "bystander" },
+    });
+    await bystander.joinRoom(takedownTargetRoomID);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(
+      draupnir.stores.roomAuditLog?.isRoomTakendown(takedownTargetRoomID)
+    ).toBe(true);
+    expect(
+      (
+        await draupnir.clientPlatform
+          .toRoomJoiner()
+          .joinRoom(takedownTargetRoomID)
+      ).isOkay
+    ).toBe(false);
+  });
 });

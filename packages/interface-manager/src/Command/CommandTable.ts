@@ -15,10 +15,7 @@
 import { StringPresentationType } from "../TextReader";
 import { CommandDescription } from "./CommandDescription";
 import { CommandMeta } from "./CommandMeta";
-import {
-  PresentationType,
-  PresentationTypeWithoutWrap,
-} from "./Presentation";
+import { PresentationType, PresentationTypeWithoutWrap } from "./Presentation";
 import {
   PresentationArgumentStream,
   StandardPresentationArgumentStream,

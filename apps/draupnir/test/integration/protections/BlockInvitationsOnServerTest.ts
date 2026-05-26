@@ -31,9 +31,7 @@ async function createWatchedPolicyRoom(
 }
 
 describe("RoomTakedownProtectionTest", function () {
-  it("Will takedown a room that is added to the policy list", async function (
-    this: DraupnirTestContext
-  ) {
+  it("Will takedown a room that is added to the policy list", async function (this: DraupnirTestContext) {
     const draupnir = this.draupnir;
     if (draupnir === undefined) {
       throw new TypeError(`setup didn't run properly`);

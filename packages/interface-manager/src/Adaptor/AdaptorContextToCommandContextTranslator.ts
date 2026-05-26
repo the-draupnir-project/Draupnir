@@ -63,17 +63,12 @@ export class StandardAdaptorContextToCommandContextTranslator<
       TCommandMeta["Context"]
     >
   ): AdaptorContextToCommandContextTranslator<AdaptorContext> {
-    if (
-      this.translators.has(commandDescription)
-    ) {
+    if (this.translators.has(commandDescription)) {
       throw new TypeError(
         `There is already a translation function registered for the command ${commandDescription.summary}`
       );
     }
-    this.translators.set(
-      commandDescription,
-      translationFunction
-    );
+    this.translators.set(commandDescription, translationFunction);
     return this;
   }
 }

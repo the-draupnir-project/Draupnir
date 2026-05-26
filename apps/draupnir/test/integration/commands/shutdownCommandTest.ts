@@ -30,9 +30,7 @@ describe("Test: shutdown command", function (this: Mocha.Suite) {
   this.afterEach(async function (this: DraupnirTestContext) {
     client.stop();
   } as unknown as Mocha.AsyncFunc);
-  it("Draupnir asks synapse to shut down a channel", async function (
-    this: DraupnirTestContext
-  ) {
+  it("Draupnir asks synapse to shut down a channel", async function (this: DraupnirTestContext) {
     this.timeout(20000);
     const badRoom = await client.createRoom();
     const draupnir = this.draupnir;

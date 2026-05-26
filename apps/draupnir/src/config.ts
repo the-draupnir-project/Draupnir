@@ -609,11 +609,7 @@ export function getUnknownConfigPropertyPaths(config: unknown): string[] {
   if (typeof config !== "object" || config === null) {
     return [];
   }
-  return getUnknownPropertiesHelper(
-    config,
-    defaultConfig,
-    []
-  );
+  return getUnknownPropertiesHelper(config, defaultConfig, []);
 }
 
 /**
