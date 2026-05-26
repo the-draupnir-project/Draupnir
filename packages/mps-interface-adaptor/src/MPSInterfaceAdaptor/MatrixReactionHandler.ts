@@ -240,11 +240,7 @@ export class MatrixReactionHandler
           if (key === "✅" || key === "❌") {
             return;
           }
-          void Task(
-            redacter.redactEvent(roomID, event.event_id, reason) as Promise<
-              ActionResult<void>
-            >
-          );
+          void Task(redacter.redactEvent(roomID, event.event_id, reason));
         },
       });
   }

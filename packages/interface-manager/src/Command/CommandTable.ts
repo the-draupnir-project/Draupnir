@@ -15,11 +15,7 @@
 import { StringPresentationType } from "../TextReader";
 import { CommandDescription } from "./CommandDescription";
 import { CommandMeta } from "./CommandMeta";
-import {
-  Presentation,
-  PresentationType,
-  PresentationTypeWithoutWrap,
-} from "./Presentation";
+import { PresentationType, PresentationTypeWithoutWrap } from "./Presentation";
 import {
   PresentationArgumentStream,
   StandardPresentationArgumentStream,
@@ -238,7 +234,7 @@ export class StandardCommandTable implements CommandTable {
           new StandardPresentationArgumentStream(
             commandTableEntry.designator.map((d) =>
               StringPresentationType.wrap(d)
-            ) as Presentation[]
+            )
           )
         )
       ) {

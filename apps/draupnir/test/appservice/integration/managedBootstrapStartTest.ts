@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AFL-3.0
 
-import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { readTestConfig, setupHarnessWithConfig } from "../utils/harness";
 import { newTestUser } from "../../integration/clientHelper";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
@@ -18,8 +17,7 @@ describe("Managed room bootstrap startup integration", function (this: Mocha.Sui
       ...(config as unknown as Record<string, unknown>),
     };
     testConfigRecord.adminRoom = undefined;
-    testConfigRecord.initialManager =
-      (await initialManager.getUserId()) as StringUserID;
+    testConfigRecord.initialManager = await initialManager.getUserId();
     const testConfig = testConfigRecord as typeof config;
 
     let appservice: MjolnirAppService | undefined;

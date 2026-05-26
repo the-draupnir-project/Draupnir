@@ -30,109 +30,103 @@ async function setupProtectedRooms(
 }
 
 describe("JoinRoomsOnInvite", function () {
-  it(
-    "Should automatically protect and unrpotect rooms when joining and leaving.\
+  it("Should automatically protect and unrpotect rooms when joining and leaving.\
     The principle is that we add a bunch of rooms, and then kick the bot.\
-    You can go to the management room in a client and see what the output looks like for this flow.",
-    async function (this: DraupnirTestContext) {
-      const draupnir = this.draupnir;
-      if (draupnir === undefined) {
-        throw new TypeError(`setup didn't run properly`);
-      }
-      const moderator = await newTestUser(this.config.homeserverUrl, {
-        name: { contains: "moderator" },
-      });
-      // Mutate the config which is a little naughty, but protections
-      // currently access it dynamically.
-      draupnir.config.protectAllJoinedRooms = true;
-      const protectedRooms = await setupProtectedRooms(draupnir, moderator, {
-        numberOfRooms: 5,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      expect(
-        protectedRooms.every((roomID: StringRoomID) =>
-          draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+    You can go to the management room in a client and see what the output looks like for this flow.", async function (this: DraupnirTestContext) {
+    const draupnir = this.draupnir;
+    if (draupnir === undefined) {
+      throw new TypeError(`setup didn't run properly`);
+    }
+    const moderator = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "moderator" },
+    });
+    // Mutate the config which is a little naughty, but protections
+    // currently access it dynamically.
+    draupnir.config.protectAllJoinedRooms = true;
+    const protectedRooms = await setupProtectedRooms(draupnir, moderator, {
+      numberOfRooms: 5,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    expect(
+      protectedRooms.every((roomID: StringRoomID) =>
+        draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    ).toBe(true);
+    // now test that kicking them works
+    await Promise.all(
+      protectedRooms.map((roomID, i) =>
+        moderator.kickUser(
+          draupnir.clientUserID,
+          roomID,
+          i === 0 ? "don't want this bot" : undefined
         )
-      ).toBe(true);
-      // now test that kicking them works
-      await Promise.all(
-        protectedRooms.map((roomID, i) =>
-          moderator.kickUser(
-            draupnir.clientUserID,
-            roomID,
-            i === 0 ? "don't want this bot" : undefined
-          )
+      )
+    );
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(
+      protectedRooms.every(
+        (roomID: StringRoomID) =>
+          !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    ).toBe(true);
+    // allow for messages to send to the mangement room.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  });
+  it("That rooms will automatically be unprotected when protectAllJoinedRooms is false", async function (this: DraupnirTestContext) {
+    const draupnir = this.draupnir;
+    if (draupnir === undefined) {
+      throw new TypeError(`setup didn't run properly`);
+    }
+    const moderator = await newTestUser(this.config.homeserverUrl, {
+      name: { contains: "moderator" },
+    });
+    // Mutate the config which is a little naughty, but protections
+    // currently access it dynamically.
+    draupnir.config.protectAllJoinedRooms = false;
+    const protectedRooms = await setupProtectedRooms(draupnir, moderator, {
+      numberOfRooms: 5,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // we shouldn't be protecting rooms automatically
+    expect(
+      protectedRooms.every(
+        (roomID: StringRoomID) =>
+          !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    ).toBe(true);
+    // protect the rooms manually
+    await Promise.all(
+      protectedRooms.map((roomID) =>
+        draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
+          MatrixRoomReference.fromRoomID(roomID)
         )
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      expect(
-        protectedRooms.every(
-          (roomID: StringRoomID) =>
-            !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    );
+    expect(
+      protectedRooms.every((roomID: StringRoomID) =>
+        draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    ).toBe(true);
+    // now test that banning them works
+    await Promise.all(
+      protectedRooms.map((roomID, i) =>
+        // I would have liked this to be ban, but for some reason bot-sdk
+        // doesn't allow informing of rooms you are banned from!!!
+        moderator.kickUser(
+          draupnir.clientUserID,
+          roomID,
+          i === 0 ? "don't want this bot" : undefined
         )
-      ).toBe(true);
-      // allow for messages to send to the mangement room.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } as unknown as Mocha.AsyncFunc
-  );
-  it(
-    "That rooms will automatically be unprotected when protectAllJoinedRooms is false",
-    async function (this: DraupnirTestContext) {
-      const draupnir = this.draupnir;
-      if (draupnir === undefined) {
-        throw new TypeError(`setup didn't run properly`);
-      }
-      const moderator = await newTestUser(this.config.homeserverUrl, {
-        name: { contains: "moderator" },
-      });
-      // Mutate the config which is a little naughty, but protections
-      // currently access it dynamically.
-      draupnir.config.protectAllJoinedRooms = false;
-      const protectedRooms = await setupProtectedRooms(draupnir, moderator, {
-        numberOfRooms: 5,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // we shouldn't be protecting rooms automatically
-      expect(
-        protectedRooms.every(
-          (roomID: StringRoomID) =>
-            !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
-        )
-      ).toBe(true);
-      // protect the rooms manually
-      await Promise.all(
-        protectedRooms.map((roomID) =>
-          draupnir.protectedRoomsSet.protectedRoomsManager.addRoom(
-            MatrixRoomReference.fromRoomID(roomID)
-          )
-        )
-      );
-      expect(
-        protectedRooms.every((roomID: StringRoomID) =>
-          draupnir.protectedRoomsSet.isProtectedRoom(roomID)
-        )
-      ).toBe(true);
-      // now test that banning them works
-      await Promise.all(
-        protectedRooms.map((roomID, i) =>
-          // I would have liked this to be ban, but for some reason bot-sdk
-          // doesn't allow informing of rooms you are banned from!!!
-          moderator.kickUser(
-            draupnir.clientUserID,
-            roomID,
-            i === 0 ? "don't want this bot" : undefined
-          )
-        )
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      expect(
-        protectedRooms.every(
-          (roomID: StringRoomID) =>
-            !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
-        )
-      ).toBe(true);
-      // allow for messages to send to the mangement room.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } as unknown as Mocha.AsyncFunc
-  );
+      )
+    );
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(
+      protectedRooms.every(
+        (roomID: StringRoomID) =>
+          !draupnir.protectedRoomsSet.isProtectedRoom(roomID)
+      )
+    ).toBe(true);
+    // allow for messages to send to the mangement room.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  });
 });

@@ -139,7 +139,7 @@ export async function sendConfirmationPrompt(
     }
   );
   if (isError(sendResult)) {
-    return sendResult as Result<void>;
+    return sendResult;
   }
   if (sendResult.ok[0] === undefined) {
     throw new TypeError(`We exepct to have sent at least one event`);

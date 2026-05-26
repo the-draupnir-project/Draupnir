@@ -88,13 +88,13 @@ export class SynapseHTTPAntispamRoomExplorer implements RoomExplorer {
   }.bind(this);
 
   unregisterListeners(): void {
-    this.synapseHTTPAntispam.checkEventForSpamHandles.unregisterHandle(
+    this.synapseHTTPAntispam.checkEventForSpamHandles.unregisterNonBlockingHandle(
       this.handleCheckEventForSpam
     );
-    this.synapseHTTPAntispam.userMayInviteHandles.unregisterHandle(
+    this.synapseHTTPAntispam.userMayInviteHandles.unregisterNonBlockingHandle(
       this.handleUserMayInvite
     );
-    this.synapseHTTPAntispam.userMayJoinRoomHandles.unregisterHandle(
+    this.synapseHTTPAntispam.userMayJoinRoomHandles.unregisterNonBlockingHandle(
       this.handleUserMayJoin
     );
     this.batcher.dispose();
