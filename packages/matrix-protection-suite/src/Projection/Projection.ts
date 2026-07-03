@@ -17,6 +17,8 @@ import {
   ProjectionNode,
 } from "./ProjectionNode";
 
+export const ProjectionOrchestrationKey = Symbol("ProjectionOrchestration");
+
 export type ProjectionNodeListener<
   TProjectionNode extends ProjectionNode = ProjectionNode,
 > = (
@@ -25,15 +27,21 @@ export type ProjectionNodeListener<
   previousNode: TProjectionNode
 ) => void;
 
-export interface Projection<
+export interface ProjectionOrchestration<
   TProjectionNode extends AnyProjectionNode = AnyProjectionNode,
 > {
-  readonly currentNode: TProjectionNode;
   addOutput(projection: Projection): this;
   removeOutput(projection: Projection): this;
   applyInput(input: ExtractProjectionInputs<TProjectionNode>): void;
   addNodeListener(listener: ProjectionNodeListener<TProjectionNode>): this;
   removeNodeListener(listener: ProjectionNodeListener<TProjectionNode>): this;
+}
+
+export interface Projection<
+  TProjectionNode extends AnyProjectionNode = AnyProjectionNode,
+> {
+  readonly currentNode: TProjectionNode;
+  readonly [ProjectionOrchestrationKey]: ProjectionOrchestration<TProjectionNode>;
 }
 
 export type ExtractProjectionNode<TProjection> =
@@ -57,7 +65,7 @@ export type ExtractProjectionNode<TProjection> =
 export class ProjectionOutputHelper<
   TProjectionNode extends ProjectionNode = ProjectionNode,
 > {
-  private readonly outputs = new Set<Projection<ProjectionNode>>();
+  private readonly outputs = new Set<ProjectionOrchestration<ProjectionNode>>();
   private readonly emitter = new EventEmitter();
   public constructor(public currentNode: TProjectionNode) {
     // nothing to do.
@@ -81,12 +89,12 @@ export class ProjectionOutputHelper<
   }
 
   addOutput(projection: Projection): this {
-    this.outputs.add(projection);
+    this.outputs.add(projection[ProjectionOrchestrationKey]);
     return this;
   }
 
   removeOutput(projection: Projection): this {
-    this.outputs.delete(projection);
+    this.outputs.delete(projection[ProjectionOrchestrationKey]);
     return this;
   }
 

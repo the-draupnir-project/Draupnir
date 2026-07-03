@@ -14,6 +14,7 @@ import {
 } from "../../../PolicyList/PolicyListRevisionIssuer";
 import {
   Projection,
+  ProjectionOrchestrationKey,
   ProjectionOutputHelper,
 } from "../../../Projection/Projection";
 import {
@@ -48,5 +49,9 @@ export class StandardServerBanIntentProjection
   [Symbol.dispose]() {
     this.policyListRevisionIssuer.off("revision", this.handleUpstreamRevision);
     super[Symbol.dispose]();
+  }
+
+  public get [ProjectionOrchestrationKey]() {
+    return this;
   }
 }
