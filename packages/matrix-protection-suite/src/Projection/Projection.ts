@@ -14,13 +14,12 @@ import {
   ExtractInputDeltaShapes,
   ExtractInputProjectionNodes,
   ExtractProjectionInputs,
-  ProjectionNode,
 } from "./ProjectionNode";
 
 export const ProjectionOrchestrationKey = Symbol("ProjectionOrchestration");
 
 export type ProjectionNodeListener<
-  TProjectionNode extends ProjectionNode = ProjectionNode,
+  TProjectionNode extends AnyProjectionNode = AnyProjectionNode,
 > = (
   currentNode: TProjectionNode,
   delta: ExtractDeltaShape<TProjectionNode>,
@@ -63,9 +62,9 @@ export type ExtractProjectionNode<TProjection> =
 // something unsafe about forks in the first place? there is.
 // Dependencies like this can only be viewed through other projections.
 export class ProjectionOutputHelper<
-  TProjectionNode extends ProjectionNode = ProjectionNode,
+  TProjectionNode extends AnyProjectionNode = AnyProjectionNode,
 > {
-  private readonly outputs = new Set<ProjectionOrchestration<ProjectionNode>>();
+  private readonly outputs = new Set<ProjectionOrchestration>();
   private readonly emitter = new EventEmitter();
   public constructor(public currentNode: TProjectionNode) {
     // nothing to do.

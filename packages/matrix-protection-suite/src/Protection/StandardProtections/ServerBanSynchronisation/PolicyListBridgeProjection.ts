@@ -9,10 +9,14 @@
 
 import { PolicyListRevision } from "../../../PolicyList/PolicyListRevision";
 import { PolicyRuleChange } from "../../../PolicyList/PolicyRuleChange";
+import { ProjectionDescription } from "../../../Projection/ProjectionDescription";
 import { ProjectionNode } from "../../../Projection/ProjectionNode";
 
-export type PolicyListBridgeProjectionNode = ProjectionNode<
+export type PolicyListBridgeProjectionDescription = ProjectionDescription<
   [],
   PolicyRuleChange[],
   PolicyListRevision
 >;
+
+export type PolicyListBridgeProjectionNode =
+  ProjectionNode<PolicyListBridgeProjectionDescription>;

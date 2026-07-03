@@ -8,6 +8,7 @@
 // </text>
 
 import { StringServerName } from "@the-draupnir-project/matrix-basic-types";
+import { ProjectionDescription } from "../../../Projection/ProjectionDescription";
 import { ProjectionNode } from "../../../Projection/ProjectionNode";
 import { PolicyListBridgeProjectionNode } from "./PolicyListBridgeProjection";
 import {
@@ -38,7 +39,7 @@ type ServerBanIntentMap = PersistentMap<
 // is there a way that we can adapt this so that it can possibly be swapped
 // to a lazy ban style protection if acls become exhausted.
 // not withiout addressing the issues in the member protection tbh.
-export type ServerBanIntentProjectionNode = ProjectionNode<
+export type ServerBanIntentProjectionDescription = ProjectionDescription<
   [PolicyListBridgeProjectionNode],
   ServerBanIntentProjectionDelta,
   {
@@ -46,6 +47,9 @@ export type ServerBanIntentProjectionNode = ProjectionNode<
     isServerDenied(serverName: StringServerName): boolean;
   }
 >;
+
+export type ServerBanIntentProjectionNode =
+  ProjectionNode<ServerBanIntentProjectionDescription>;
 
 export class StandardServerBanIntentProjectionNode implements ServerBanIntentProjectionNode {
   public readonly ulid: ULID;

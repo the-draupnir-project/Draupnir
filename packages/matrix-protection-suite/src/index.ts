@@ -118,6 +118,7 @@ export * from "./PolicyList/StandardPolicyRoomRevision";
 export * from "./PolicyList/StandardPolicyRoomRevisionIssuer";
 
 export * from "./Projection/Projection";
+export * from "./Projection/ProjectionDescription";
 export * from "./Projection/ProjectionNode";
 
 export * from "./Protection/Capability/StandardCapability/CapabilityMethodSchema";

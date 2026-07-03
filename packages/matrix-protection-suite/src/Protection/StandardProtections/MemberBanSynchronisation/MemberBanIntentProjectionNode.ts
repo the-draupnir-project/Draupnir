@@ -12,6 +12,7 @@ import {
   ExtractInputDeltaShapes,
   ProjectionNode,
 } from "../../../Projection/ProjectionNode";
+import { ProjectionDescription } from "../../../Projection/ProjectionDescription";
 import {
   MemberPolicyMatches,
   MembershipPolicyRevision,
@@ -30,11 +31,14 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
  * This is just a stand in while we wait to convert the upstream MembershipPolicyRevision
  * to a projection.
  */
-export type MemberBanInputProjectionNode = ProjectionNode<
+export type MemberBanInputProjectionDescription = ProjectionDescription<
   never[],
-  MembershipPolicyRevisionDelta
-> &
-  MembershipPolicyRevision;
+  MembershipPolicyRevisionDelta,
+  MembershipPolicyRevision
+>;
+
+export type MemberBanInputProjectionNode =
+  ProjectionNode<MemberBanInputProjectionDescription>;
 
 export interface MemberBanIntentProjectionDelta {
   ban: StringUserID[];
@@ -53,7 +57,7 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   );
 }
 
-export type MemberBanIntentProjectionNode = ProjectionNode<
+export type MemberBanIntentProjectionDescription = ProjectionDescription<
   [MemberBanInputProjectionNode],
   MemberBanIntentProjectionDelta,
   {
@@ -64,6 +68,9 @@ export type MemberBanIntentProjectionNode = ProjectionNode<
     ): (LiteralPolicyRule | GlobPolicyRule)[];
   }
 >;
+
+export type MemberBanIntentProjectionNode =
+  ProjectionNode<MemberBanIntentProjectionDescription>;
 
 // Upstream inputs are not yet converted to projections, so have to be never[]
 // for now.
