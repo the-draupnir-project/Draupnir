@@ -13,6 +13,10 @@ on:
       - "github-actions/**"
   schedule:
     - cron: "20 20 * * *"
+  pull_request:
+    branches-ignore:
+      - "dependabot/**"
+      - "github-actions/**"
   merge_group:
     branches: [main]
 
