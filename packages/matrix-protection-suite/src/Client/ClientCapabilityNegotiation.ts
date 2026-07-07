@@ -28,56 +28,42 @@ const RoomVersionsCapability = Type.Object(
 export type ClientCapabilities = Static<typeof ClientCapabilities>;
 export const ClientCapabilities = Type.Object(
   {
-    "m.change_password": Type.Object(
-      {
-        enabled: Type.Boolean(),
-      },
-      {
-        description:
-          "Capability to indicate if the user can change their password.",
-      }
+    "m.change_password": Type.Optional(
+      Type.Object(
+        {
+          enabled: Type.Boolean(),
+        },
+        {
+          description:
+            "Capability to indicate if the user can change their password.",
+        }
+      )
     ),
 
     "m.room_versions": RoomVersionsCapability,
 
-    "m.set_displayname": Type.Object(
-      {
-        enabled: Type.Boolean(),
-      },
-      {
-        description:
-          "Capability to indicate if the user can change their display name.",
-      }
+    "m.3pid_changes": Type.Optional(
+      Type.Object(
+        {
+          enabled: Type.Boolean(),
+        },
+        {
+          description:
+            "Capability to indicate if the user can change 3PID associations on their account.",
+        }
+      )
     ),
 
-    "m.set_avatar_url": Type.Object(
-      {
-        enabled: Type.Boolean(),
-      },
-      {
-        description:
-          "Capability to indicate if the user can change their avatar.",
-      }
-    ),
-
-    "m.3pid_changes": Type.Object(
-      {
-        enabled: Type.Boolean(),
-      },
-      {
-        description:
-          "Capability to indicate if the user can change 3PID associations on their account.",
-      }
-    ),
-
-    "m.get_login_token": Type.Object(
-      {
-        enabled: Type.Boolean(),
-      },
-      {
-        description:
-          "Capability to indicate if the user can generate tokens to log further clients into their account.",
-      }
+    "m.get_login_token": Type.Optional(
+      Type.Object(
+        {
+          enabled: Type.Boolean(),
+        },
+        {
+          description:
+            "Capability to indicate if the user can generate tokens to log further clients into their account.",
+        }
+      )
     ),
   },
   {
