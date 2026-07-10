@@ -12,7 +12,10 @@ import {
   ExtractInputDeltaShapes,
   ProjectionNode,
 } from "../../../Projection/ProjectionNode";
-import { ProjectionDescription } from "../../../Projection/ProjectionDescription";
+import {
+  describeProjection,
+  ProjectionDescription,
+} from "../../../Projection/ProjectionDescription";
 import {
   MemberPolicyMatches,
   MembershipPolicyRevision,
@@ -50,6 +53,14 @@ type MemberBanIntentMap = PersistentMap<
   List<LiteralPolicyRule | GlobPolicyRule>
 >;
 
+export type MemberBanIntentProjectionAccessMixin = {
+  allMembersWithRules(): MemberPolicyMatches[];
+  isMemberBanned(member: StringUserID): boolean;
+  allRulesMatchingMember(
+    member: StringUserID
+  ): (LiteralPolicyRule | GlobPolicyRule)[];
+};
+
 function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   return (
     policy.recommendation === Recommendation.Ban ||
@@ -57,17 +68,17 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   );
 }
 
-export type MemberBanIntentProjectionDescription = ProjectionDescription<
-  [MemberBanInputProjectionNode],
-  MemberBanIntentProjectionDelta,
-  {
-    allMembersWithRules(): MemberPolicyMatches[];
-    isMemberBanned(member: StringUserID): boolean;
-    allRulesMatchingMember(
-      member: StringUserID
-    ): (LiteralPolicyRule | GlobPolicyRule)[];
-  }
->;
+export const MemberBanIntentProjectionDescription = describeProjection({
+  name: "MemberBanIntentProjection",
+  partitionKeys: [],
+})
+  .withInputs<[MemberBanInputProjectionNode]>()
+  .withDownstreamDeltaShape<MemberBanIntentProjectionDelta>()
+  .withAccessMixin<MemberBanIntentProjectionAccessMixin>()
+  .build();
+
+export type MemberBanIntentProjectionDescription =
+  typeof MemberBanIntentProjectionDescription;
 
 export type MemberBanIntentProjectionNode =
   ProjectionNode<MemberBanIntentProjectionDescription>;
