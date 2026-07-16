@@ -70,7 +70,7 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
 
 export const MemberBanIntentProjectionDescription = describeProjection({
   name: "MemberBanIntentProjection",
-  partitionKeys: [],
+  partitionKeys: ["draupnirID"],
 })
   .withInputs<[MemberBanInputProjectionNode]>()
   .withDownstreamDeltaShape<MemberBanIntentProjectionDelta>()

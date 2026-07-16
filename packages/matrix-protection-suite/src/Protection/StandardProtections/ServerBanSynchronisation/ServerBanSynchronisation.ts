@@ -26,12 +26,11 @@ import { UnknownConfig } from "../../../Config/ConfigDescription";
 import "./ServerBanSynchronisationCapability";
 import "./ServerACLSynchronisationCapability";
 import { OwnLifetime } from "../../../Interface/Lifetime";
-import {
-  ServerBanIntentProjection,
-  StandardServerBanIntentProjection,
-} from "./ServerBanIntentProjection";
+import { ServerBanIntentProjection } from "./ServerBanIntentProjection";
+import { ServerBanIntentProjectionDescription } from "./ServerBanIntentProjectionNode";
 import { ServerBanSynchronisationCapability } from "./ServerBanSynchronisationCapability";
 import { Logger } from "../../../Logging/Logger";
+import { DisposableProjection } from "../../../Projection/ProjectionLocator";
 
 const log = new Logger("ServerBanSynchronisationProtection");
 
@@ -126,15 +125,18 @@ describeProtection<Capabilities>({
     _settings,
     capabilities
   ) => {
-    const intentProjection = lifetime.allocateDisposable(() =>
-      Ok(
-        new StandardServerBanIntentProjection(
-          protectedRoomsSet.watchedPolicyRooms.revisionIssuer
-        )
-      )
-    );
+    const intentProjection = protectedRoomsSet.projectionLocator.locate<
+      DisposableProjection<ServerBanIntentProjection>
+    >({
+      description: ServerBanIntentProjectionDescription,
+      partition: {
+        draupnirID: protectedRoomsSet.userID,
+      },
+    });
     if (isError(intentProjection)) {
-      return intentProjection.elaborate("Unable to allocate intent projection");
+      return intentProjection.elaborate(
+        "Unable to locate the intent projection"
+      );
     }
     return Ok(
       new ServerBanSynchronisationProtection(

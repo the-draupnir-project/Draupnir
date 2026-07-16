@@ -40,10 +40,9 @@ import {
   SetMembershipPolicyRevision,
 } from "../../../MembershipPolicies/MembershipPolicyRevision";
 import { OwnLifetime } from "../../../Interface/Lifetime";
-import {
-  MemberBanIntentProjection,
-  StandardMemberBanIntentProjection,
-} from "./MemberBanIntentProjection";
+import { MemberBanIntentProjection } from "./MemberBanIntentProjection";
+import { MemberBanIntentProjectionDescription } from "./MemberBanIntentProjectionNode";
+import { DisposableProjection } from "../../../Projection/ProjectionLocator";
 
 function isRecommendationWorthBanning(policyRule: PolicyRule) {
   return (
@@ -204,15 +203,16 @@ describeProtection<MemberBanSynchronisationProtectionCapabilities>({
     _settings,
     capabilitySet
   ) => {
-    const intentProjection = lifetime.allocateDisposable(() =>
-      Ok(
-        new StandardMemberBanIntentProjection(
-          protectedRoomsSet.setPoliciesMatchingMembership
-        )
-      )
-    );
+    const intentProjection = protectedRoomsSet.projectionLocator.locate<
+      DisposableProjection<MemberBanIntentProjection>
+    >({
+      description: MemberBanIntentProjectionDescription,
+      partition: {
+        draupnirID: protectedRoomsSet.userID,
+      },
+    });
     if (isError(intentProjection)) {
-      return intentProjection.elaborate("Unable to allocate intent projection");
+      return intentProjection.elaborate("Unable to locate intent projection");
     }
     return Ok(
       new MemberBanSynchronisationProtection(

@@ -46,7 +46,7 @@ export type ServerBanIntentProjectionAccessMixin = {
 // not withiout addressing the issues in the member protection tbh.
 export const ServerBanIntentProjectionDescription = describeProjection({
   name: "ServerBanIntentProjection",
-  partitionKeys: [],
+  partitionKeys: ["draupnirID"],
 })
   .withInputs<[PolicyListBridgeProjectionNode]>()
   .withDownstreamDeltaShape<ServerBanIntentProjectionDelta>()
