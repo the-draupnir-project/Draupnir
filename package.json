@@ -17,10 +17,10 @@
   },
   "homepage": "https://github.com/the-draupnir-project/Draupnir#readme",
   "scripts": {
-    "build": "tsc -b && npm run -ws build:assets --if-present",
-    "build:all": "tsc -b tsconfig.all.json && npm run -ws build:assets --if-present",
+    "build": "tsc -b && npm run --workspaces build:assets --if-present",
+    "build:all": "tsc -b tsconfig.all.json && npm run --workspaces build:assets --if-present",
     "build:clean": "tsc -b --clean",
-    "test": "npm run -ws test --if-present && npm run -w apps/draupnir test:unit",
+    "test": "npm run --workspaces test --if-present && npm run -w apps/draupnir test:unit",
     "lint": "eslint --cache 'packages/**/*.{ts,tsx}' 'apps/**/*.{ts,tsx}' && prettier --cache --ignore-unknown --check ."
   },
   "devDependencies": {
