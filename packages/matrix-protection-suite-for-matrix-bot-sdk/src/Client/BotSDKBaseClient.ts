@@ -40,6 +40,8 @@ import {
   RoomEventRelationsPaginator,
   RoomEventRelationsOptions,
   RoomEventRelationsResponse,
+  RoomEventGetter,
+  RoomReactionSender,
 } from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import {
@@ -53,8 +55,6 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import { resolveRoomReferenceSafe } from "../SafeMatrixClient";
 import { ResultError } from "@gnuxie/typescript-result";
-import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
-import { RoomEventGetter } from "matrix-protection-suite/dist/Client/RoomEventGetter";
 import { BotSDKJunkError, toMatrixJunkError } from "./BotSDKJunkErrors";
 
 const log = new Logger("BotSDKBaseClient");

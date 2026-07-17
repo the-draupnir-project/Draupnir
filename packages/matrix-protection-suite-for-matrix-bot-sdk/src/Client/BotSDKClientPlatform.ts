@@ -8,20 +8,20 @@ import {
   RoomBanner,
   RoomCreator,
   RoomEventRedacter,
+  RoomEventGetter,
   RoomEventRelations,
   RoomInviter,
   RoomJoiner,
   RoomKicker,
   RoomMessages,
   RoomMessageSender,
+  RoomReactionSender,
   RoomResolver,
   RoomStateEventSender,
   RoomStateGetter,
   RoomUnbanner,
 } from "@the-draupnir-project/matrix-protection-suite";
 import { BotSDKBaseClient } from "./BotSDKBaseClient";
-import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
-import { RoomEventGetter } from "matrix-protection-suite/dist/Client/RoomEventGetter";
 
 export class BotSDKClientPlatform implements ClientPlatform {
   constructor(private readonly allClient: BotSDKBaseClient) {

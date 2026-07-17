@@ -6,6 +6,8 @@ import {
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   MjolnirEnabledProtectionsEventType,
+  MjolnirPolicyRoomsEncodedShape,
+  MjolnirProtectedRoomsEncodedShape,
   MjolnirProtectedRoomsEvent,
 } from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../../../src/Draupnir";
@@ -18,8 +20,6 @@ import { isOk } from "@gnuxie/typescript-result";
 import { SafeModeDraupnir } from "../../../src/safemode/DraupnirSafeMode";
 import { DraupnirRestartError } from "../../../src/safemode/SafeModeToggle";
 import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
-import { MjolnirPolicyRoomsEncodedShape } from "matrix-protection-suite/dist/Protection/PolicyListConfig/MjolnirPolicyRoomsDescription";
-import { MjolnirProtectedRoomsEncodedShape } from "matrix-protection-suite/dist/Protection/ProtectedRoomsConfig/MjolnirProtectedRoomsDescription";
 
 async function clobberProtectedRooms(client: MatrixSendClient): Promise<void> {
   const existingAccountData =

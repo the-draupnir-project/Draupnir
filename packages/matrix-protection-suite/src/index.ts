@@ -17,6 +17,7 @@ export * from "./Client/PowerLevelsMirror";
 export * from "./Client/RoomBanner";
 export * from "./Client/RoomCreator";
 export * from "./Client/RoomEventFilter";
+export * from "./Client/RoomEventGetter";
 export * from "./Client/RoomEventRedacter";
 export * from "./Client/RoomEventRelations";
 export * from "./Client/RoomInviter";
@@ -24,6 +25,7 @@ export * from "./Client/RoomJoiner";
 export * from "./Client/RoomKicker";
 export * from "./Client/RoomMessages";
 export * from "./Client/RoomMessageSender";
+export * from "./Client/RoomReactionSender";
 export * from "./Client/RoomResolver";
 export * from "./Client/RoomStateGetter";
 
@@ -214,6 +216,7 @@ export * from "./SafeMatrixEvents/UnsafeEvent";
 
 export * from "./StateTracking/DeclareRoomState";
 export * from "./StateTracking/EventBatch";
+export * from "./StateTracking/FakeRoomStateRevisionIssuer";
 export * from "./StateTracking/RoomStateBackingStore";
 export * from "./StateTracking/SetRoomState";
 export * from "./StateTracking/StandardRoomStateRevision";

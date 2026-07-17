@@ -26,5 +26,7 @@ export * from "./Protection/MjolnirWatchedPolicyRoomsStore";
 export * from "./StateTracking/RoomMembershipManager";
 
 export * from "./SynapseAdmin/SynapseAdminClient";
+export * from "./SynapseAdmin/RoomListEndpoint";
+export * from "./SynapseAdmin/UserDetailsEndpoint";
 
 export * from "./SafeMatrixClient";

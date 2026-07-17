@@ -15,6 +15,7 @@ import {
   Ok,
   RoomEvent,
   RoomMessageSender,
+  RoomReactionSender,
   Task,
   isError,
   isOk,
@@ -27,6 +28,7 @@ import {
   DeadDocumentJSX,
   DocumentNode,
   ParameterDescription,
+  printPresentationSchema,
   RestDescription,
   TextPresentationRenderer,
   CommandTable,
@@ -41,8 +43,6 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "./MPSMatrixInterfaceAdaptor";
 import { Result } from "@gnuxie/typescript-result";
-import { printPresentationSchema } from "@the-draupnir-project/interface-manager/dist/Command/PresentationSchema";
-import { RoomReactionSender } from "@the-draupnir-project/matrix-protection-suite/dist/Client/RoomReactionSender";
 import { replyNoticeText } from "./replyNotice";
 import {
   renderDetailsNotice,

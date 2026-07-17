@@ -16,6 +16,7 @@ import {
   PolicyRoomRevisionIssuer,
   PolicyRuleType,
   ResultError,
+  Redaction,
   RoomCreateEvent,
   RoomEvent,
   RoomMembershipManager,
@@ -39,7 +40,6 @@ import {
 import { ClientForUserID } from "./ClientManagement";
 import { BotSDKRoomMembershipManager } from "../StateTracking/RoomMembershipManager";
 import { BotSDKPolicyRoomManager } from "../PolicyList/PolicyListManager";
-import { Redaction } from "matrix-protection-suite/dist/MatrixTypes/Redaction";
 import { BotSDKClientPlatform } from "../Client/BotSDKClientPlatform";
 import { BotSDKBaseClient } from "../Client/BotSDKBaseClient";
 import {

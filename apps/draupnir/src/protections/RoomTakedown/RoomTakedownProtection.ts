@@ -7,6 +7,7 @@ import {
   ActionResult,
   allocateProtection,
   describeProtection,
+  EDStatic,
   Logger,
   OwnLifetime,
   PolicyListRevision,
@@ -40,7 +41,6 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { Type } from "@sinclair/typebox";
-import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
 import { NotificationRoomCreator } from "../NotificationRoom/NotificationRoom";
 import { MatrixGlob } from "@vector-im/matrix-bot-sdk";

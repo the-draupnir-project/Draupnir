@@ -13,6 +13,7 @@ import {
   RoomEvent,
   RoomJoiner,
   RoomMessageSender,
+  RoomReactionSender,
   RoomStateManager,
   RoomStateRevision,
   RoomVersionMirror,
@@ -42,7 +43,6 @@ import {
   renderErrorDetails,
   ReactionListener,
 } from "@the-draupnir-project/mps-interface-adaptor";
-import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 
 const log = new Logger("WatchReplacementPolicyRooms");
 

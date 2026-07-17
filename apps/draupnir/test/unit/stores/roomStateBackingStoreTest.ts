@@ -9,6 +9,7 @@ import {
   DefaultEventDecoder,
   describeProtectedRoomsSet,
   describeRoomMember,
+  FakeRoomStateRevisionIssuer,
   Membership,
   PolicyRuleType,
   PowerLevelsEventContent,
@@ -16,7 +17,6 @@ import {
   Recommendation,
 } from "@the-draupnir-project/matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
-import { FakeRoomStateRevisionIssuer } from "matrix-protection-suite/dist/StateTracking/FakeRoomStateRevisionIssuer";
 import expect from "expect";
 
 function makeStore(): SqliteRoomStateBackingStore {
