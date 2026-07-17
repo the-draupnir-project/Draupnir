@@ -6,7 +6,7 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { ConfigRecoverableError } from "matrix-protection-suite";
+import { ConfigRecoverableError } from "@the-draupnir-project/matrix-protection-suite";
 import { SafeModeCause, SafeModeReason } from "./SafeModeCause";
 import { MatrixReactionHandler } from "@the-draupnir-project/mps-interface-adaptor";
 

@@ -7,7 +7,7 @@ import {
   Membership,
   MembershipEvent,
   RoomMembershipRevision,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export function isInvitationForUser(
   event: MembershipEvent,

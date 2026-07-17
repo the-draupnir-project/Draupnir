@@ -23,7 +23,7 @@ import {
   SetMembershipRevision,
   ServerBanSynchronisationProtection,
   ServerBanIntentProjectionDelta,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 function watchDeltaForMemberBanIntents(
   setMembershipPoliciesRevision: SetMembershipPolicyRevision,

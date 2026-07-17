@@ -35,7 +35,7 @@ import {
   StateEvent,
   isError,
   isOk,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { ClientForUserID } from "./ClientManagement";
 import { BotSDKRoomMembershipManager } from "../StateTracking/RoomMembershipManager";
 import { BotSDKPolicyRoomManager } from "../PolicyList/PolicyListManager";

@@ -10,8 +10,8 @@ import {
   CapabilityMethodSchema,
   describeCapabilityInterface,
   LiteralPolicyRule,
-} from "matrix-protection-suite";
-import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import { AccountRestriction } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface UserRestrictionCapability extends Capability {
   isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;

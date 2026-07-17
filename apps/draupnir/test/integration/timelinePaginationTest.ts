@@ -13,7 +13,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
 import { getMessagesByUserIn } from "../../src/utils";
-import { TextMessageContent } from "matrix-protection-suite";
+import { TextMessageContent } from "@the-draupnir-project/matrix-protection-suite";
 
 /**
  * Ensure that Draupnir paginates only the necessary segment of the room timeline when backfilling.

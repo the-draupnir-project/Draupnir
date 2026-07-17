@@ -5,7 +5,7 @@
 import expect from "expect";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
 import { setupHarness } from "../utils/harness";
-import { isError } from "matrix-protection-suite";
+import { isError } from "@the-draupnir-project/matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {

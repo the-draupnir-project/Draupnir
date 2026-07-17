@@ -22,7 +22,7 @@ import {
   LiteralPolicyRule,
   Logger,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 import { deactivateUser } from "../../protections/HomeserverUserPolicyApplication/deactivateUser";

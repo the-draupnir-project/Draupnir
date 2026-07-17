@@ -18,7 +18,7 @@ import {
   RoomStateEventSender,
   RoomStateGetter,
   RoomUnbanner,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { BotSDKBaseClient } from "./BotSDKBaseClient";
 import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 import { RoomEventGetter } from "matrix-protection-suite/dist/Client/RoomEventGetter";

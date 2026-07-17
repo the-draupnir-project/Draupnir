@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Database } from "better-sqlite3";
-import { Logger } from "matrix-protection-suite";
+import { Logger } from "@the-draupnir-project/matrix-protection-suite";
 
 export type SqliteSchemaOptions = {
   upgradeSteps: ((db: Database) => void)[];

@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { EventDecoder, SHA256HashStore } from "matrix-protection-suite";
+import {
+  EventDecoder,
+  SHA256HashStore,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomAuditLog } from "../protections/RoomTakedown/RoomAuditLog";
 import { SqliteRoomStateBackingStore } from "./better-sqlite3/SqliteRoomStateBackingStore";
 import { SqliteHashReversalStore } from "./better-sqlite3/HashStore";

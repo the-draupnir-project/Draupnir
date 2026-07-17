@@ -4,11 +4,14 @@
 
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule, Logger } from "matrix-protection-suite";
+import {
+  LiteralPolicyRule,
+  Logger,
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   AccountRestriction,
   SynapseAdminClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 
 const log = new Logger("deactivateUser");

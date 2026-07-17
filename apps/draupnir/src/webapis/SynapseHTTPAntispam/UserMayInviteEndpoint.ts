@@ -12,7 +12,7 @@ import {
   StringUserIDSchema,
   Task,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
 
 // for check_event_for_spam we will leave the event as unparsed

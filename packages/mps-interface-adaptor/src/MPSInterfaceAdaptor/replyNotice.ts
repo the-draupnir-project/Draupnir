@@ -7,7 +7,7 @@
 // https://github.com/the-draupnir-project/Draupnir
 // </text>
 
-import { RoomMessageSender } from "matrix-protection-suite";
+import { RoomMessageSender } from "@the-draupnir-project/matrix-protection-suite";
 import { Result } from "@gnuxie/typescript-result";
 import {
   StringEventID,

@@ -25,13 +25,13 @@ import {
   MatrixSendClient,
   SafeMatrixEmitter,
   SafeMatrixEmitterWrapper,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   DefaultEventDecoder,
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   OwnLifetime,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { SafeModeDraupnir } from "../../src/safemode/DraupnirSafeMode";
 import { TopLevelStores } from "../../src/backingstore/DraupnirStores";
 import {

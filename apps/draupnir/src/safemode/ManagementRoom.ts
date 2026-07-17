@@ -21,8 +21,8 @@ import {
   Task,
   TextMessageContent,
   Value,
-} from "matrix-protection-suite";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { MatrixEventContext } from "@the-draupnir-project/mps-interface-adaptor";
 
 const log = new Logger("ManagementRoom");

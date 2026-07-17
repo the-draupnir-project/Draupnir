@@ -5,7 +5,7 @@
 import {
   AccountRestriction,
   SynapseAdminClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
@@ -13,7 +13,7 @@ import {
   describeCapabilityProvider,
   LiteralPolicyRule,
   Logger,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { isError, Ok, Result, ResultError } from "@gnuxie/typescript-result";
 import { isUserAccountRestricted } from "./HomeserverUserPurgingDeactivate";
 import { Draupnir } from "../../Draupnir";

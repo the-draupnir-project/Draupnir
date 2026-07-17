@@ -17,7 +17,7 @@ import {
   SetRoomMembership,
   isError,
   Membership,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringUserID,
   StringRoomID,

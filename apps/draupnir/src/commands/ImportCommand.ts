@@ -19,8 +19,8 @@ import {
   StateEvent,
   Value,
   isError,
-} from "matrix-protection-suite";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import { resolveRoomReferenceSafe } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   MatrixRoomReferencePresentationSchema,
   describeCommand,

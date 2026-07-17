@@ -18,7 +18,7 @@ import {
   Task,
   isError,
   isOk,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixRoomReference } from "@the-draupnir-project/matrix-basic-types";
 import {
   ArgumentParseError,
@@ -42,7 +42,7 @@ import {
 } from "./MPSMatrixInterfaceAdaptor";
 import { Result } from "@gnuxie/typescript-result";
 import { printPresentationSchema } from "@the-draupnir-project/interface-manager/dist/Command/PresentationSchema";
-import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
+import { RoomReactionSender } from "@the-draupnir-project/matrix-protection-suite/dist/Client/RoomReactionSender";
 import { replyNoticeText } from "./replyNotice";
 import {
   renderDetailsNotice,

@@ -13,7 +13,7 @@ import {
   MjolnirWatchedPolicyRoomsEvent,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   assertThrowableIsError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 
 export class BotSDKMjolnirWatchedPolicyRoomsStore implements PersistentMatrixData<

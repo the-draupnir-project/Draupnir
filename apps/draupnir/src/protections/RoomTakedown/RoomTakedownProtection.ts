@@ -19,7 +19,7 @@ import {
   SHA256HashStore,
   StringRoomIDSchema,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapability";
 import { Draupnir } from "../../Draupnir";
 import { StandardRoomTakedown } from "./RoomTakedown";

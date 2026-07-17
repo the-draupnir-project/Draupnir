@@ -21,7 +21,7 @@ import {
   Recommendation,
   Task,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
 import { sendPromptDeactivation } from "../../commands/server-admin/DeactivateCommand";

@@ -18,7 +18,7 @@ import {
   PolicyRoomEditor,
   PolicyRuleType,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../../../src/Draupnir";
 import {
   MatrixRoomReference,

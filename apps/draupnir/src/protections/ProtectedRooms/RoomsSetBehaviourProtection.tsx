@@ -16,7 +16,7 @@ import {
   RoomStateRevision,
   StateChange,
   UnknownConfig,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { DraupnirProtection } from "../Protection";
 import { Draupnir } from "../../Draupnir";
 import { Ok, Result } from "@gnuxie/typescript-result";

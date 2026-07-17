@@ -28,7 +28,7 @@ import {
   Task,
   Value,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "./queues/UnlistedUserRedactionQueue";
 import { ThrottlingQueue } from "./queues/ThrottlingQueue";
 import ManagementRoomOutput from "./managementroom/ManagementRoomOutput";
@@ -37,7 +37,7 @@ import { StandardReportManager } from "./report/ReportManager";
 import {
   MatrixSendClient,
   SynapseAdminClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { RendererMessageCollector } from "./capabilities/RendererMessageCollector";

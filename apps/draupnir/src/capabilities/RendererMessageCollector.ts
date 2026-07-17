@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DocumentNode } from "@the-draupnir-project/interface-manager";
-import { Capability, DescriptionMeta } from "matrix-protection-suite";
+import {
+  Capability,
+  DescriptionMeta,
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export enum MessageType {
   Document = "Document",

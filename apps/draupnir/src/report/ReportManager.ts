@@ -11,7 +11,7 @@
 import { PowerLevelAction } from "@vector-im/matrix-bot-sdk";
 import { LogService, UserID } from "@vector-im/matrix-bot-sdk";
 import { htmlToText } from "html-to-text";
-import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { extractRawRoomEvent } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { htmlEscape } from "../utils";
 import { JSDOM } from "jsdom";
 import { Draupnir } from "../Draupnir";
@@ -24,7 +24,7 @@ import {
   TextMessageContent,
   Value,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringRoomID,
   StringUserID,

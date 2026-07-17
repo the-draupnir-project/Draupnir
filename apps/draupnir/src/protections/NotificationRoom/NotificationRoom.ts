@@ -18,7 +18,7 @@ import {
   RoomInviter,
   RoomMembershipManager,
   RoomStateEventSender,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../../Draupnir";
 
 export type SettingChangeAndProtectionEnableCB<

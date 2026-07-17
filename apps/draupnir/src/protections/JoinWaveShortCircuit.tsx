@@ -26,7 +26,7 @@ import {
   allocateProtection,
   describeProtection,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import { DraupnirProtection } from "./Protection";

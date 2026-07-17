@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Logger, Task } from "matrix-protection-suite";
+import { Logger, Task } from "@the-draupnir-project/matrix-protection-suite";
 
 type BlockingResponse =
   | "NOT_SPAM"

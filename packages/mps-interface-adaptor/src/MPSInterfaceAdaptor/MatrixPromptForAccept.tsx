@@ -7,7 +7,12 @@
 // https://github.com/the-draupnir-project/Draupnir
 // </text>
 
-import { Logger, Task, Value, isError } from "matrix-protection-suite";
+import {
+  Logger,
+  Task,
+  Value,
+  isError,
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   MatrixReactionHandler,
   ReactionListener,

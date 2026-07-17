@@ -33,7 +33,7 @@ import {
   joinedRoomsSafe,
   resultifyBotSDKRequestError,
   resultifyBotSDKRequestErrorWith404AsUndefined,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ClientsInRoomMap,
   DefaultEventDecoder,
@@ -42,7 +42,7 @@ import {
   StandardClientsInRoomMap,
   Task,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { AppServiceDraupnirManager } from "./AppServiceDraupnirManager";
 import {
   StringRoomID,

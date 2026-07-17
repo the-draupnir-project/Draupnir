@@ -20,7 +20,7 @@ import {
   SetMembershipRevisionIssuer,
   SetRoomMembership,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   MatrixRoomID,
   MatrixUserID,

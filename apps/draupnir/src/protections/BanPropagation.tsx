@@ -33,9 +33,9 @@ import {
   allocateProtection,
   OwnLifetime,
   Protection,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resolveRoomReferenceSafe } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { DraupnirProtection } from "./Protection";
 import {
   MatrixRoomID,

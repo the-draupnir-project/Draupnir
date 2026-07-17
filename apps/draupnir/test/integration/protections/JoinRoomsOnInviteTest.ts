@@ -9,7 +9,7 @@ import {
 import { newTestUser } from "../clientHelper";
 import { DraupnirTestContext } from "../mjolnirSetupUtils";
 import expect from "expect";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { Draupnir } from "../../../src/Draupnir";
 
 async function setupProtectedRooms(

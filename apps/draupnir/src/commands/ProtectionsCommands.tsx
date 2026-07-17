@@ -23,7 +23,7 @@ import {
   findProtection,
   getAllProtections,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   DeadDocumentJSX,

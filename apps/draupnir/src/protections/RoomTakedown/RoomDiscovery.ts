@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { PolicyRuleChange, RoomBasicDetails } from "matrix-protection-suite";
+import {
+  PolicyRuleChange,
+  RoomBasicDetails,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomToCheck } from "./DiscoveredRoomStore";
 import { Result } from "@gnuxie/typescript-result";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";

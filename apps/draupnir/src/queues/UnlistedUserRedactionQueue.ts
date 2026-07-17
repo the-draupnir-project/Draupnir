@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 import { LogLevel, LogService } from "@vector-im/matrix-bot-sdk";
-import { RoomEvent } from "matrix-protection-suite";
+import { RoomEvent } from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   StringUserID,

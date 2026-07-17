@@ -23,7 +23,7 @@ import {
   Value,
   WatchedPolicyRoom,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { renderPolicyList } from "../../commands/StatusCommand";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 import {

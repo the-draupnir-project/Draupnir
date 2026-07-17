@@ -8,7 +8,7 @@ import {
   Logger,
   PolicyRuleChange,
   StandardBatcher,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { CheckEventForSpamRequestBody } from "../../webapis/SynapseHTTPAntispam/CheckEventForSpamEndpoint";
 import { SynapseHttpAntispam } from "../../webapis/SynapseHTTPAntispam/SynapseHttpAntispam";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";

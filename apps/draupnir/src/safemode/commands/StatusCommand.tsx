@@ -8,7 +8,11 @@ import {
   DocumentNode,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
-import { ActionException, Ok, isError } from "matrix-protection-suite";
+import {
+  ActionException,
+  Ok,
+  isError,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { SafeModeDraupnir } from "../DraupnirSafeMode";
 import { SafeModeCause, SafeModeReason } from "../SafeModeCause";
 import {

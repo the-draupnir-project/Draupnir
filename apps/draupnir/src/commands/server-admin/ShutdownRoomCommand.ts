@@ -16,7 +16,7 @@ import {
   tuple,
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../../Draupnir";
-import { ActionError } from "matrix-protection-suite";
+import { ActionError } from "@the-draupnir-project/matrix-protection-suite";
 import { DraupnirInterfaceAdaptor } from "../DraupnirCommandPrerequisites";
 
 export const SynapseAdminShutdownRoomCommand = describeCommand({

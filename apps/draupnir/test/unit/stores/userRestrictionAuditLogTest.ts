@@ -12,9 +12,9 @@ import {
   randomRoomID,
   randomUserID,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import expect from "expect";
-import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { AccountRestriction } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { SqliteUserRestrictionAuditLog } from "../../../src/protections/HomeserverUserPolicyApplication/SqliteUserRestrictionAuditLog";
 
 describe("UserAuditLog test", function () {

@@ -10,7 +10,7 @@ import {
   CapabilityMethodSchema,
   describeCapabilityInterface,
   RoomBasicDetails,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export interface RoomDetailsProvider {
   getRoomDetails(roomID: StringRoomID): Promise<Result<RoomBasicDetails>>;

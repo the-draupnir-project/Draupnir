@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { LogService } from "@vector-im/matrix-bot-sdk";
-import { ILoggerProvider } from "matrix-protection-suite";
+import { ILoggerProvider } from "@the-draupnir-project/matrix-protection-suite";
 
 /**
  * A logger provider that uses the `LogService` from the bot-sdk to provide logging capability.

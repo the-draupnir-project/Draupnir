@@ -40,7 +40,7 @@ import {
   RoomEventRelationsPaginator,
   RoomEventRelationsOptions,
   RoomEventRelationsResponse,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import {
   MatrixRoomID,

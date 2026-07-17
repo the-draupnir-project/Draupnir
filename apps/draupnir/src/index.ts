@@ -22,8 +22,8 @@ import { StoreType } from "@matrix-org/matrix-sdk-crypto-nodejs";
 import { configRead as configRead, getStoragePath } from "./config";
 import { initializeSentry } from "./utils";
 import { DraupnirBotModeToggle } from "./DraupnirBotMode";
-import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { SafeMatrixEmitterWrapper } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder } from "@the-draupnir-project/matrix-protection-suite";
 import { makeTopLevelStores } from "./backingstore/DraupnirStores";
 
 void (async function () {

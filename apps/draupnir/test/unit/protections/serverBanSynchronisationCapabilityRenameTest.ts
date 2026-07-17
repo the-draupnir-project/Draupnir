@@ -11,7 +11,7 @@ import {
   SemanticType,
   ServerACLSynchronisationCapability,
   SimulatedServerBanSynchronisationCapability,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 const serverBanCapabilityName = "serverConsequences";
 

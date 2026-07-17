@@ -7,7 +7,7 @@ import {
   ActionResult,
   isError,
   Ok,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { UnstartedDraupnir } from "../../draupnirfactory/StandardDraupnirManager";
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
 import {

@@ -9,7 +9,7 @@ import {
   Ok,
   StandardLoggableConfigTracker,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   ClientCapabilityFactory,
@@ -18,7 +18,7 @@ import {
   RoomStateManagerFactory,
   joinedRoomsSafe,
   resultifyBotSDKRequestErrorWith404AsUndefined,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
 import { makeProtectedRoomsSet } from "./DraupnirProtectedRoomsSet";
 import {

@@ -17,7 +17,7 @@ import {
   describeCapabilityContextGlue,
   describeCapabilityRenderer,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import { Draupnir } from "../Draupnir";
 import {

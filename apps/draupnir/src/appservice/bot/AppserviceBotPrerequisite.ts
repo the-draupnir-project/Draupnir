@@ -9,7 +9,7 @@
 
 import { MatrixAdaptorContext } from "@the-draupnir-project/mps-interface-adaptor";
 import { MjolnirAppService } from "../AppService";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface AppserviceAdaptorContext extends MatrixAdaptorContext {
   appservice: MjolnirAppService;

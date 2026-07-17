@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Protection } from "matrix-protection-suite";
+import { Protection } from "@the-draupnir-project/matrix-protection-suite";
 
 export interface DraupnirProtection<
   TProtectionDescription,

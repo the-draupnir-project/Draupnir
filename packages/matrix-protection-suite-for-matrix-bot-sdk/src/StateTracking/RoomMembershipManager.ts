@@ -14,8 +14,8 @@ import {
   Value,
   assertThrowableIsError,
   isError,
-} from "matrix-protection-suite";
-import { MembershipEvent } from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
+import { MembershipEvent } from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { RoomStateManagerFactory } from "../ClientManagement/RoomStateManagerFactory";
 import {

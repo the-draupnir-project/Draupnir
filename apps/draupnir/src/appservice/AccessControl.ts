@@ -24,7 +24,7 @@ import {
   PolicyRuleType,
   Recommendation,
   RoomJoiner,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 /**
  * Utility to manage which users have access to the application service,

@@ -29,7 +29,7 @@ import {
   PolicyRuleType,
   PolicyRuleMatchType,
   PolicyListRevision,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { UnlistedUserRedactionQueue } from "../../queues/UnlistedUserRedactionQueue";
 import { ListMatches } from "../Rules";
 import { MemberRooms, UnbanMembersPreview, UnbanMembersResult } from "./Unban";

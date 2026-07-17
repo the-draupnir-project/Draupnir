@@ -11,7 +11,10 @@ import {
   TopPresentationSchema,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
-import { ActionResult, Ok } from "matrix-protection-suite";
+import {
+  ActionResult,
+  Ok,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { AppserviceBotCommands } from "./AppserviceBotCommandTable";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
 import {

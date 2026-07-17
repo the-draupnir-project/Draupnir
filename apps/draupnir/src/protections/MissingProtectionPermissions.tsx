@@ -7,7 +7,7 @@ import {
   ProtectionPermissionsChange,
   RoomMessageSender,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   renderRoomPill,
   sendMatrixEventsFromDeadDocument,

@@ -17,7 +17,7 @@ import {
   RoomResolver,
   describeProtectedRoomsSet,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { DraupnirKickCommand } from "../../../src/commands/KickCommand";
 import { ThrottlingQueue } from "../../../src/queues/ThrottlingQueue";
 import ManagementRoomOutput from "../../../src/managementroom/ManagementRoomOutput";

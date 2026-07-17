@@ -8,7 +8,10 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionResult, isError } from "matrix-protection-suite";
+import {
+  ActionResult,
+  isError,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {

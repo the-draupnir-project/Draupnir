@@ -8,7 +8,7 @@ import {
   ProtectionsConfig,
   ServerBanSynchronisationProtection,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { IConfig } from "../config";
 import { RoomTakedownProtection } from "./RoomTakedown/RoomTakedownProtection";
 import { BlockInvitationsOnServerProtection } from "./BlockInvitationsOnServerProtection";

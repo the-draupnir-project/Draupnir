@@ -8,7 +8,7 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Ok } from "matrix-protection-suite";
+import { Ok } from "@the-draupnir-project/matrix-protection-suite";
 import {
   CommandTable,
   DocumentNode,

@@ -7,12 +7,12 @@ import {
   describeCapabilityProvider,
   Logger,
   RoomBasicDetails,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   RoomDetailsProvider,
   RoomTakedownCapability,
 } from "../RoomTakedownCapability";
-import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { SynapseAdminClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { Draupnir } from "../../Draupnir";
 import "../RoomTakedownCapability"; // needed for the interface to load.

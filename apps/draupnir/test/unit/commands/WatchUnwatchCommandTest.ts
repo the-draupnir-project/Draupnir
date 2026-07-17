@@ -15,7 +15,7 @@ import {
   WatchedPolicyRooms,
   isError,
   isOk,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { createMock } from "ts-auto-mock";
 import {
   DraupnirUnwatchPolicyRoomCommand,

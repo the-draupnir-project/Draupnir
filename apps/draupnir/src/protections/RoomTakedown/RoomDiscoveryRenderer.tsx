@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DocumentNode } from "@the-draupnir-project/interface-manager";
-import { RoomBasicDetails } from "matrix-protection-suite";
+import { RoomBasicDetails } from "@the-draupnir-project/matrix-protection-suite";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 export function renderDiscoveredRoom(details: RoomBasicDetails): DocumentNode {

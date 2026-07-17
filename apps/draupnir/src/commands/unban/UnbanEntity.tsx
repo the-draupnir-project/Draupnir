@@ -17,7 +17,7 @@ import {
   Recommendation,
   RoomSetResultBuilder,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { ListMatches } from "../Rules";
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { UnbanEntityPreview, UnbanEntityResult } from "./Unban";

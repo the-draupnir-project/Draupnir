@@ -12,7 +12,7 @@ import {
   PolicyRuleMatchType,
   PolicyRuleType,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomAuditLog } from "./RoomAuditLog";
 import { isError, Ok, Result } from "@gnuxie/typescript-result";
 import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapability";

@@ -9,7 +9,7 @@ import {
   randomRoomID,
   randomUserID,
   RoomEvent,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { isContainingMentionsOverLimit } from "../../../src/protections/MentionLimitProtection";
 import expect from "expect";
 

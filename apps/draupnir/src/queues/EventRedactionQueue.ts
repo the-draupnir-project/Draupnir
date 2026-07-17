@@ -11,13 +11,13 @@
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import { redactUserMessagesIn } from "../utils";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   ActionExceptionKind,
   assertThrowableIsError,
   RoomUpdateError,
   RoomUpdateException,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringRoomID,
   StringUserID,

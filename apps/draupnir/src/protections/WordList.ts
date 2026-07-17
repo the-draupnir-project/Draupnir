@@ -30,14 +30,14 @@ import {
   UserConsequences,
   describeProtection,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   StringUserID,
   StringRoomID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 const log = new Logger("WordList");
 

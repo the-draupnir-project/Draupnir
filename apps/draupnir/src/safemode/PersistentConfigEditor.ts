@@ -15,11 +15,11 @@ import {
   MjolnirProtectedRoomsDescription,
   PersistentConfigData,
   StandardPersistentConfigData,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   BotSDKAccountDataConfigBackend,
   MatrixSendClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { SafeModeCause, SafeModeReason } from "./SafeModeCause";
 
 export type PersistentConfigStatus = {
