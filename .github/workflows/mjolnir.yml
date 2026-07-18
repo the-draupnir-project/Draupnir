@@ -44,7 +44,47 @@ jobs:
           node-version: "24"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - run: corepack npm install
+      - name: Install dependencies and show native postinstall output
+        run: corepack npm install --foreground-scripts
+      - name: Diagnose matrix-sdk-crypto native binding
+        run: |
+          node --version
+          corepack npm --version
+          node - <<'NODE'
+          const { existsSync } = require("node:fs");
+          const { dirname, join } = require("node:path");
+
+          const cryptoEntry = require.resolve("@matrix-org/matrix-sdk-crypto-nodejs");
+          const cryptoDirectory = dirname(cryptoEntry);
+          const nativeBinding = join(
+            cryptoDirectory,
+            "matrix-sdk-crypto.linux-x64-gnu.node"
+          );
+          let fallbackPackage;
+          try {
+            fallbackPackage = require.resolve(
+              "@matrix-org/matrix-sdk-crypto-nodejs-linux-x64-gnu"
+            );
+          } catch (error) {
+            fallbackPackage = error.code;
+          }
+
+          console.log({
+            platform: process.platform,
+            arch: process.arch,
+            glibc: process.report.getReport().header.glibcVersionRuntime,
+            cryptoEntry,
+            nativeBinding,
+            nativeBindingExists: existsSync(nativeBinding),
+            fallbackPackage,
+          });
+
+          if (!existsSync(nativeBinding) && fallbackPackage === "MODULE_NOT_FOUND") {
+            throw new Error(
+              "matrix-sdk-crypto postinstall neither downloaded its native binding nor installed its fallback package"
+            );
+          }
+          NODE
       - run: corepack npm run build:all
       - run: corepack npm run test
   integration:
