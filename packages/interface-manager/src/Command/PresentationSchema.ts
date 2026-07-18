@@ -180,5 +180,5 @@ export function union<
   return {
     schemaType: PresentationSchemaType.Union,
     variants: presentationTypes,
-  } as UnionPresentationSchema<UnionOfObjectTypes<TAcceptor>>;
+  };
 }

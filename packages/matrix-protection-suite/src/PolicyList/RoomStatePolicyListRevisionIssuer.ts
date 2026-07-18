@@ -97,7 +97,7 @@ export class RoomStatePolicyRoomRevisionIssuer
     );
     if (shortcodeChange !== undefined) {
       this.currentRevision = this.currentRevision.reviseFromShortcode(
-        shortcodeChange.state as unknown as MjolnirShortcodeEvent
+        shortcodeChange.state
       );
     }
     if (this.currentRevision.revisionID !== previousRevision.revisionID) {

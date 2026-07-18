@@ -61,312 +61,309 @@ describe("Test: Reporting abuse", () => {
   // Note that this version change only affects the actual URL at which reports
   // are sent.
   for (const endpoint of ["v3", "r0"]) {
-    it(
-      `Draupnir intercepts abuse reports with endpoint ${endpoint}`,
-      async function (this: DraupnirTestContext) {
-        this.timeout(90000);
-        if (this.draupnir === undefined) {
-          throw new TypeError("setup must have failed.");
+    it(`Draupnir intercepts abuse reports with endpoint ${endpoint}`, async function (this: DraupnirTestContext) {
+      this.timeout(90000);
+      if (this.draupnir === undefined) {
+        throw new TypeError("setup must have failed.");
+      }
+      const draupnir = this.draupnir;
+      const draupnirSyncClient = draupnirSafeEmitter();
+      // Listen for any notices that show up.
+      type NoticeEvent = Omit<RoomMessage, "content"> & {
+        content: NoticeMessageContent;
+      };
+      const notices: NoticeEvent[] = [];
+      draupnirSyncClient.on("room.event", (roomId, event) => {
+        if (
+          roomId === draupnir.managementRoomID &&
+          event.type === "m.room.message"
+        ) {
+          notices.push(event as NoticeEvent);
         }
-        const draupnir = this.draupnir;
-        const draupnirSyncClient = draupnirSafeEmitter();
-        // Listen for any notices that show up.
-        type NoticeEvent = Omit<RoomMessage, "content"> & {
-          content: NoticeMessageContent;
-        };
-        const notices: NoticeEvent[] = [];
-        draupnirSyncClient.on("room.event", (roomId, event) => {
-          if (
-            roomId === draupnir.managementRoomID &&
-            event.type === "m.room.message"
-          ) {
-            notices.push(event as NoticeEvent);
-          }
-        });
-        const reactions: UnredactedReaction[] = [];
-        draupnirSyncClient.on("room.event", (roomId, event) => {
-          if (
-            roomId === draupnir.managementRoomID &&
-            event.type === "m.reaction"
-          ) {
-            if (Value.Check(ReactionContent, event.content)) {
-              reactions.push(event as UnredactedReaction);
-            }
-          }
-        });
-
-        // Create a few users and a room.
-        const goodUser = await newTestUser(this.config.homeserverUrl, {
-          name: { contains: "reporting-abuse-good-user" },
-        });
-        const badUser = await newTestUser(this.config.homeserverUrl, {
-          name: { contains: "reporting-abuse-bad-user" },
-        });
-        const goodUserId = await goodUser.getUserId();
-        const badUserId = await badUser.getUserId();
-
-        const roomId = await goodUser.createRoom({
-          invite: [await badUser.getUserId()],
-        });
-        await goodUser.inviteUser(await badUser.getUserId(), roomId);
-        await badUser.joinRoom(roomId);
-
-        console.log("Test: Reporting abuse - send messages");
-        // Exchange a few messages.
-        const badText = `BAD: ${Math.random()}`; // Will be reported as abuse.
-        const badText2 = `BAD: ${Math.random()}`; // Will be reported as abuse.
-        const badText3 = `<b>BAD</b>: ${Math.random()}`; // Will be reported as abuse.
-        const badText4 = [...Array<unknown>(1024)]
-          .map((_) => `${Math.random()}`)
-          .join(""); // Text is too long.
-        const badText5 = [...Array<unknown>(1024)].map((_) => "ABC").join("\n"); // Text has too many lines.
-        const badEventId = await badUser.sendText(roomId, badText);
-        const badEventId2 = await badUser.sendText(roomId, badText2);
-        const badEventId3 = await badUser.sendText(roomId, badText3);
-        const badEventId4 = await badUser.sendText(roomId, badText4);
-        const badEventId5 = await badUser.sendText(roomId, badText5);
-        const badEvent2Comment = `COMMENT: ${Math.random()}`;
-
-        console.log("Test: Reporting abuse - send reports");
-        const reportsToFind: ReportTemplate[] = [];
-
-        // Time to report, first without a comment, then with one.
-        (
-          await goodUser
-            .doRequest(
-              "POST",
-              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
-            )
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
-        ).expect("Could not send first report");
-        reportsToFind.push({
-          reporter_id: goodUserId,
-          accused_id: badUserId,
-          event_id: badEventId,
-          text: badText,
-        });
-
-        (
-          await goodUser
-            .doRequest(
-              "POST",
-              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId2)}`,
-              "",
-              {
-                reason: badEvent2Comment,
-              }
-            )
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
-        ).expect("Could not send second report");
-        reportsToFind.push({
-          reporter_id: goodUserId,
-          accused_id: badUserId,
-          event_id: badEventId2,
-          text: badText2,
-          comment: badEvent2Comment,
-        });
-
-        (
-          await goodUser
-            .doRequest(
-              "POST",
-              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId3)}`,
-              ""
-            )
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
-        ).expect("Could not send third report");
-        reportsToFind.push({
-          reporter_id: goodUserId,
-          accused_id: badUserId,
-          event_id: badEventId3,
-          text: badText3,
-        });
-
-        (
-          await goodUser
-            .doRequest(
-              "POST",
-              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId4)}`,
-              ""
-            )
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
-        ).expect("Could not send fourth report");
-        reportsToFind.push({
-          reporter_id: goodUserId,
-          accused_id: badUserId,
-          event_id: badEventId4,
-          text_prefix: badText4.substring(0, 256),
-        });
-
-        (
-          await goodUser
-            .doRequest(
-              "POST",
-              `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId5)}`,
-              ""
-            )
-            .then((_) => Ok(undefined), resultifyBotSDKRequestError)
-        ).expect("Could not send fifth report");
-        reportsToFind.push({
-          reporter_id: goodUserId,
-          accused_id: badUserId,
-          event_id: badEventId5,
-          text_prefix: badText5.substring(0, 256).split("\n").join(" "),
-        });
-
-        console.log("Test: Reporting abuse - wait");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const found: ReportTemplate[] = [];
-        for (const toFind of reportsToFind) {
-          for (const event of notices) {
-            if (Value.Check(RoomMessage, event)) {
-              if (
-                !(ABUSE_REPORT_KEY in event.content) ||
-                typeof event.content[ABUSE_REPORT_KEY] !== "object" ||
-                event.content[ABUSE_REPORT_KEY] === null ||
-                !("event_id" in event.content[ABUSE_REPORT_KEY]) ||
-                typeof event.content[ABUSE_REPORT_KEY].event_id !== "string" ||
-                event.content[ABUSE_REPORT_KEY].event_id !== toFind.event_id
-              ) {
-                // Not a report or not our report.
-                continue;
-              }
-              const report = event.content[ABUSE_REPORT_KEY] as IReport;
-              const body = event.content.body;
-              let matches: Map<string, RegExpMatchArray> | null = new Map();
-              for (const key of Object.keys(
-                REPORT_NOTICE_REGEXPS
-              ) as (keyof typeof REPORT_NOTICE_REGEXPS)[]) {
-                const match = body.match(REPORT_NOTICE_REGEXPS[key]);
-                if (match) {
-                  console.debug(
-                    "We have a match",
-                    key,
-                    REPORT_NOTICE_REGEXPS[key],
-                    match.groups
-                  );
-                } else {
-                  console.debug("Not a match", key, REPORT_NOTICE_REGEXPS[key]);
-                  // Not a report, skipping.
-                  matches = null;
-                  break;
-                }
-                matches.set(key, match);
-              }
-              if (!matches) {
-                // Not a report, skipping.
-                continue;
-              }
-
-              assert(
-                body.length < 3000,
-                `The report shouldn't be too long ${body.length}`
-              );
-              assert(
-                body.split("\n").length < 200,
-                "The report shouldn't have too many newlines."
-              );
-
-              assert.equal(
-                matches.get("event")?.groups?.eventId,
-                toFind.event_id,
-                "The report should specify the correct event id"
-              );
-
-              assert.equal(
-                matches.get("reporter")?.groups?.reporterId,
-                toFind.reporter_id,
-                "The report should specify the correct reporter"
-              );
-              assert.equal(
-                report.reporter_id,
-                toFind.reporter_id,
-                "The embedded report should specify the correct reporter"
-              );
-              assert.ok(
-                ((reporter: string | undefined) =>
-                  reporter !== undefined &&
-                  toFind.reporter_id.includes(reporter))(
-                  matches.get("reporter")?.groups?.reporterDisplay
-                ),
-                "The report should display the correct reporter"
-              );
-
-              assert.equal(
-                matches.get("accused")?.groups?.accusedId,
-                toFind.accused_id,
-                "The report should specify the correct accused"
-              );
-              assert.equal(
-                report.accused_id,
-                toFind.accused_id,
-                "The embedded report should specify the correct accused"
-              );
-              assert.ok(
-                ((accused: string | undefined) =>
-                  accused !== undefined && toFind.accused_id.includes(accused))(
-                  matches.get("accused")?.groups?.accusedDisplay
-                ),
-                "The report should display the correct reporter"
-              );
-
-              if (toFind.text) {
-                assert.equal(
-                  matches.get("content")?.groups?.eventContent,
-                  toFind.text,
-                  "The report should contain the text we inserted in the event"
-                );
-              }
-              if (toFind.text_prefix) {
-                assert.ok(
-                  matches
-                    .get("content")
-                    ?.groups?.eventContent?.startsWith(toFind.text_prefix),
-                  `The report should contain a prefix of the long text we inserted in the event: ${toFind.text_prefix} in? ${matches.get("content")?.groups?.eventContent}`
-                );
-              }
-              if (toFind.comment) {
-                assert.equal(
-                  matches.get("comments")?.groups?.comments,
-                  toFind.comment,
-                  "The report should contain the comment we added"
-                );
-              }
-              assert.equal(
-                matches.get("room")?.groups?.roomAliasOrId,
-                roomId,
-                "The report should specify the correct room"
-              );
-              assert.equal(
-                report.room_id,
-                roomId,
-                "The embedded report should specify the correct room"
-              );
-              found.push(toFind);
-              break;
-            }
+      });
+      const reactions: UnredactedReaction[] = [];
+      draupnirSyncClient.on("room.event", (roomId, event) => {
+        if (
+          roomId === draupnir.managementRoomID &&
+          event.type === "m.reaction"
+        ) {
+          if (Value.Check(ReactionContent, event.content)) {
+            reactions.push(event as UnredactedReaction);
           }
         }
-        assert.deepEqual(found, reportsToFind);
+      });
 
-        // Since Draupnir is not a member of the room, the only buttons we should find
-        // are `help` and `ignore`.
-        for (const event of reactions) {
-          const regexp = /\/([[^]]*)\]/;
-          const matches = event.content["m.relates_to"]?.["key"]?.match(regexp);
-          if (!matches) {
-            continue;
-          }
-          switch (matches[1]) {
-            case "bad-report":
-            case "help":
+      // Create a few users and a room.
+      const goodUser = await newTestUser(this.config.homeserverUrl, {
+        name: { contains: "reporting-abuse-good-user" },
+      });
+      const badUser = await newTestUser(this.config.homeserverUrl, {
+        name: { contains: "reporting-abuse-bad-user" },
+      });
+      const goodUserId = await goodUser.getUserId();
+      const badUserId = await badUser.getUserId();
+
+      const roomId = await goodUser.createRoom({
+        invite: [await badUser.getUserId()],
+      });
+      await goodUser.inviteUser(await badUser.getUserId(), roomId);
+      await badUser.joinRoom(roomId);
+
+      console.log("Test: Reporting abuse - send messages");
+      // Exchange a few messages.
+      const badText = `BAD: ${Math.random()}`; // Will be reported as abuse.
+      const badText2 = `BAD: ${Math.random()}`; // Will be reported as abuse.
+      const badText3 = `<b>BAD</b>: ${Math.random()}`; // Will be reported as abuse.
+      const badText4 = [...Array<unknown>(1024)]
+        .map((_) => `${Math.random()}`)
+        .join(""); // Text is too long.
+      const badText5 = [...Array<unknown>(1024)].map((_) => "ABC").join("\n"); // Text has too many lines.
+      const badEventId = await badUser.sendText(roomId, badText);
+      const badEventId2 = await badUser.sendText(roomId, badText2);
+      const badEventId3 = await badUser.sendText(roomId, badText3);
+      const badEventId4 = await badUser.sendText(roomId, badText4);
+      const badEventId5 = await badUser.sendText(roomId, badText5);
+      const badEvent2Comment = `COMMENT: ${Math.random()}`;
+
+      console.log("Test: Reporting abuse - send reports");
+      const reportsToFind: ReportTemplate[] = [];
+
+      // Time to report, first without a comment, then with one.
+      (
+        await goodUser
+          .doRequest(
+            "POST",
+            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId)}`
+          )
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+      ).expect("Could not send first report");
+      reportsToFind.push({
+        reporter_id: goodUserId,
+        accused_id: badUserId,
+        event_id: badEventId,
+        text: badText,
+      });
+
+      (
+        await goodUser
+          .doRequest(
+            "POST",
+            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId2)}`,
+            "",
+            {
+              reason: badEvent2Comment,
+            }
+          )
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+      ).expect("Could not send second report");
+      reportsToFind.push({
+        reporter_id: goodUserId,
+        accused_id: badUserId,
+        event_id: badEventId2,
+        text: badText2,
+        comment: badEvent2Comment,
+      });
+
+      (
+        await goodUser
+          .doRequest(
+            "POST",
+            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId3)}`,
+            ""
+          )
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+      ).expect("Could not send third report");
+      reportsToFind.push({
+        reporter_id: goodUserId,
+        accused_id: badUserId,
+        event_id: badEventId3,
+        text: badText3,
+      });
+
+      (
+        await goodUser
+          .doRequest(
+            "POST",
+            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId4)}`,
+            ""
+          )
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+      ).expect("Could not send fourth report");
+      reportsToFind.push({
+        reporter_id: goodUserId,
+        accused_id: badUserId,
+        event_id: badEventId4,
+        text_prefix: badText4.substring(0, 256),
+      });
+
+      (
+        await goodUser
+          .doRequest(
+            "POST",
+            `/_matrix/client/${endpoint}/rooms/${encodeURIComponent(roomId)}/report/${encodeURIComponent(badEventId5)}`,
+            ""
+          )
+          .then((_) => Ok(undefined), resultifyBotSDKRequestError)
+      ).expect("Could not send fifth report");
+      reportsToFind.push({
+        reporter_id: goodUserId,
+        accused_id: badUserId,
+        event_id: badEventId5,
+        text_prefix: badText5.substring(0, 256).split("\n").join(" "),
+      });
+
+      console.log("Test: Reporting abuse - wait");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const found: ReportTemplate[] = [];
+      for (const toFind of reportsToFind) {
+        for (const event of notices) {
+          if (Value.Check(RoomMessage, event)) {
+            if (
+              !(ABUSE_REPORT_KEY in event.content) ||
+              typeof event.content[ABUSE_REPORT_KEY] !== "object" ||
+              event.content[ABUSE_REPORT_KEY] === null ||
+              !("event_id" in event.content[ABUSE_REPORT_KEY]) ||
+              typeof event.content[ABUSE_REPORT_KEY].event_id !== "string" ||
+              event.content[ABUSE_REPORT_KEY].event_id !== toFind.event_id
+            ) {
+              // Not a report or not our report.
               continue;
-            default:
-              throw new Error(`Didn't expect label ${matches[1]}`);
+            }
+            const report = event.content[ABUSE_REPORT_KEY] as IReport;
+            const body = event.content.body;
+            let matches: Map<string, RegExpMatchArray> | null = new Map();
+            for (const key of Object.keys(
+              REPORT_NOTICE_REGEXPS
+            ) as (keyof typeof REPORT_NOTICE_REGEXPS)[]) {
+              const match = body.match(REPORT_NOTICE_REGEXPS[key]);
+              if (match) {
+                console.debug(
+                  "We have a match",
+                  key,
+                  REPORT_NOTICE_REGEXPS[key],
+                  match.groups
+                );
+              } else {
+                console.debug("Not a match", key, REPORT_NOTICE_REGEXPS[key]);
+                // Not a report, skipping.
+                matches = null;
+                break;
+              }
+              matches.set(key, match);
+            }
+            if (!matches) {
+              // Not a report, skipping.
+              continue;
+            }
+
+            assert(
+              body.length < 3000,
+              `The report shouldn't be too long ${body.length}`
+            );
+            assert(
+              body.split("\n").length < 200,
+              "The report shouldn't have too many newlines."
+            );
+
+            assert.equal(
+              matches.get("event")?.groups?.eventId,
+              toFind.event_id,
+              "The report should specify the correct event id"
+            );
+
+            assert.equal(
+              matches.get("reporter")?.groups?.reporterId,
+              toFind.reporter_id,
+              "The report should specify the correct reporter"
+            );
+            assert.equal(
+              report.reporter_id,
+              toFind.reporter_id,
+              "The embedded report should specify the correct reporter"
+            );
+            assert.ok(
+              ((reporter: string | undefined) =>
+                reporter !== undefined &&
+                toFind.reporter_id.includes(reporter))(
+                matches.get("reporter")?.groups?.reporterDisplay
+              ),
+              "The report should display the correct reporter"
+            );
+
+            assert.equal(
+              matches.get("accused")?.groups?.accusedId,
+              toFind.accused_id,
+              "The report should specify the correct accused"
+            );
+            assert.equal(
+              report.accused_id,
+              toFind.accused_id,
+              "The embedded report should specify the correct accused"
+            );
+            assert.ok(
+              ((accused: string | undefined) =>
+                accused !== undefined && toFind.accused_id.includes(accused))(
+                matches.get("accused")?.groups?.accusedDisplay
+              ),
+              "The report should display the correct reporter"
+            );
+
+            if (toFind.text) {
+              assert.equal(
+                matches.get("content")?.groups?.eventContent,
+                toFind.text,
+                "The report should contain the text we inserted in the event"
+              );
+            }
+            if (toFind.text_prefix) {
+              assert.ok(
+                matches
+                  .get("content")
+                  ?.groups?.eventContent?.startsWith(toFind.text_prefix),
+                `The report should contain a prefix of the long text we inserted in the event: ${toFind.text_prefix} in? ${matches.get("content")?.groups?.eventContent}`
+              );
+            }
+            if (toFind.comment) {
+              assert.equal(
+                matches.get("comments")?.groups?.comments,
+                toFind.comment,
+                "The report should contain the comment we added"
+              );
+            }
+            assert.equal(
+              matches.get("room")?.groups?.roomAliasOrId,
+              roomId,
+              "The report should specify the correct room"
+            );
+            assert.equal(
+              report.room_id,
+              roomId,
+              "The embedded report should specify the correct room"
+            );
+            found.push(toFind);
+            break;
           }
         }
-      } as unknown as Mocha.AsyncFunc
-    );
+      }
+      assert.deepEqual(found, reportsToFind);
+
+      // Since Draupnir is not a member of the room, the only buttons we should find
+      // are `help` and `ignore`.
+      for (const event of reactions) {
+        const regexp = /\/([[^]]*)\]/;
+        const matches = event.content["m.relates_to"]?.["key"]?.match(regexp);
+        if (!matches) {
+          continue;
+        }
+        switch (matches[1]) {
+          case "bad-report":
+          case "help":
+            continue;
+          default:
+            throw new Error(`Didn't expect label ${matches[1]}`);
+        }
+      }
+    });
   }
   it("The redact action works", async function (this: DraupnirTestContext) {
     this.timeout(60000);
@@ -544,5 +541,5 @@ describe("Test: Reporting abuse", () => {
       [],
       "Redaction should have removed the content of the offending event"
     );
-  } as unknown as Mocha.AsyncFunc);
+  });
 });

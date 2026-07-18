@@ -7,7 +7,6 @@ import { PowerLevelPermission } from "../Client/PowerLevelsMirror";
 import { StandardConfigDescription } from "../Config/ConfigDescription";
 import { Ok, isError } from "../Interface/Action";
 import { Logger } from "../Logging/Logger";
-import { PowerLevelsEventContent } from "../MatrixTypes/PowerLevels";
 import { Membership } from "../Membership/MembershipChange";
 import {
   describeProtectedRoomsSet,
@@ -47,7 +46,7 @@ test("handlePermissionRequirementsMet is called when a new room is added with me
         content: {
           users_default: 100,
           ban: 0,
-        } as PowerLevelsEventContent,
+        },
         type: "m.room.power_levels",
         sender: userID,
       },

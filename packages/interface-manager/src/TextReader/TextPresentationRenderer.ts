@@ -42,13 +42,13 @@ export const TextPresentationRenderer: TextPresentationRenderer = Object.freeze(
       type: PresentationType<ObjectType>,
       renderFunction: TextPresentationRenderFunction<ObjectType>
     ) {
-      if (TEXT_PRESENTATION_RENDERERS.has(type as PresentationType)) {
+      if (TEXT_PRESENTATION_RENDERERS.has(type)) {
         throw new TypeError(
           `There is already a text renderer registered for the presentation type ${type.name}`
         );
       }
       TEXT_PRESENTATION_RENDERERS.set(
-        type as PresentationType,
+        type,
         renderFunction as TextPresentationRenderFunction
       );
       return this;

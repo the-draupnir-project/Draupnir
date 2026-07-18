@@ -20,7 +20,6 @@ import {
   DeadDocumentJSX,
   DocumentNode,
 } from "@the-draupnir-project/interface-manager";
-import { Result } from "@gnuxie/typescript-result";
 
 function renderPermissions(
   title: DocumentNode,
@@ -106,7 +105,7 @@ export function makeHandleMissingProtectionPermissions(
           {renderMissingProtectionsPermissions(roomID, protectionPermissions)}
         </root>,
         {}
-      ) as Promise<Result<undefined>>
+      )
     );
   };
 }

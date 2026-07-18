@@ -134,7 +134,7 @@ export class StandardPersistentConfigEditor implements PersistentConfigEditor {
     }
     relevantStatus.error = new ConfigParseError(
       "There was a problem when using a property in the configuration.",
-      relevantStatus.description as unknown as ConfigDescription,
+      relevantStatus.description,
       [cause.error],
       relevantStatus.data
     );

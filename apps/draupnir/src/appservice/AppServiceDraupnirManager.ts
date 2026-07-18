@@ -285,7 +285,7 @@ export class AppServiceDraupnirManager {
         local_part: mjolnirLocalPart,
         owner: requestingUserID,
         management_room: managementRoom.ok.toRoomIDOrAlias(),
-      } as MjolnirRecord;
+      };
       await this.dataStore.store(record);
       return Ok(record);
     } else {

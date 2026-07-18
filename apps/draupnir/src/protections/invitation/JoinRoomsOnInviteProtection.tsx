@@ -136,7 +136,7 @@ export class JoinRoomsOnInviteProtection
         this.draupnir.managementRoomID,
         renderUnknownInvite(),
         {}
-      ) as Promise<ActionResult<undefined>>
+      )
     );
   }
 

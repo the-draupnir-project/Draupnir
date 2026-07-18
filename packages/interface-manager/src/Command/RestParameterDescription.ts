@@ -93,7 +93,7 @@ export class StandardRestDescription<
       return PromptRequiredError.Result(
         `A prompt is required for the missing argument for the ${this.name} parameter`,
         {
-          promptParameter: this as ParameterDescription,
+          promptParameter: this,
           partialCommand,
         }
       );
@@ -114,7 +114,7 @@ export class StandardRestDescription<
           return ArgumentParseError.Result(
             `Was expecting a match for the presentation type: ${printPresentationSchema(this.acceptor)} but got ${TextPresentationRenderer.render(nextItem)}.`,
             {
-              parameter: this as ParameterDescription,
+              parameter: this,
               partialCommand,
             }
           );
