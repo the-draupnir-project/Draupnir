@@ -40,5 +40,10 @@
   },
   "engines": {
     "node": ">=24.0.0"
+  },
+  "allowScripts": {
+    "@matrix-org/matrix-sdk-crypto-nodejs": true,
+    "better-sqlite3": true,
+    "unrs-resolver": true
   }
 }
