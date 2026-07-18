@@ -35,8 +35,7 @@
     "typescript-eslint": "^8.56.1"
   },
   "overrides": {
-    "@matrix-org/matrix-sdk-crypto-nodejs": "0.6.1",
-    "@vector-im/matrix-bot-sdk": "0.8.0-element.3",
+    "@vector-im/matrix-bot-sdk": "0.9.0-element.1",
     "postgres": "3.4.7"
   },
   "engines": {

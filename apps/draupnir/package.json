@@ -47,7 +47,7 @@
     "@the-draupnir-project/interface-manager": "4.2.6",
     "@the-draupnir-project/matrix-basic-types": "1.5.1",
     "@the-draupnir-project/mps-interface-adaptor": "0.6.0",
-    "@vector-im/matrix-bot-sdk": "^0.8.0-element.3",
+    "@vector-im/matrix-bot-sdk": "0.9.0-element.1",
     "better-sqlite3": "^12.8.0",
     "body-parser": "^1.20.2",
     "config": "^3.3.9",
