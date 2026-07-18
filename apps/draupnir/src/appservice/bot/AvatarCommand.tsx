@@ -8,14 +8,14 @@ import {
   isError,
   Ok,
   ActionError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringPresentationType,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { isStringMediaURI } from "@the-draupnir-project/matrix-basic-types";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export const AppserviceAvatarCommand = describeCommand({
   summary: "Sets the avatar of the main appservice admin bot.",

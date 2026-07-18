@@ -8,9 +8,13 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionResult, Ok, isError } from "matrix-protection-suite";
+import {
+  ActionResult,
+  Ok,
+  isError,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { redactUserMessagesIn } from "../utils";
-import { resolveRoomReferenceSafe } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resolveRoomReferenceSafe } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { Draupnir } from "../Draupnir";
 import {
   MatrixEventReference,

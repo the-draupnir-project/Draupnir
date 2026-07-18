@@ -16,7 +16,7 @@ import {
   ConfigRecoverableError,
   ConfigRecoveryOption,
   RoomEvent,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { SafeModeInterfaceAdaptor } from "./SafeModeAdaptor";
 import {
   PersistentConfigStatus,

@@ -22,7 +22,7 @@ import {
   RoomUnbanner,
   describeProtectedRoomsSet,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
 import { DraupnirUnbanCommand } from "../../../src/commands/unban/Unban";

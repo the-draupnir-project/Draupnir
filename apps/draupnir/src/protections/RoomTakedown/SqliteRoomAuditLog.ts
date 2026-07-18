@@ -15,7 +15,7 @@ import {
   Logger,
   PolicyRuleType,
   RoomBasicDetails,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   BetterSqliteOptions,
   BetterSqliteStore,

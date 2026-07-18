@@ -9,7 +9,7 @@ import {
 } from "@the-draupnir-project/interface-manager";
 import { Draupnir } from "../Draupnir";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export const DraupnirDisplaynameCommand = describeCommand({
   summary:

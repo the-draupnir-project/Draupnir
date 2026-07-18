@@ -15,7 +15,7 @@ import {
   StateEvent,
   assertThrowableIsError,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   BetterSqliteOptions,
   BetterSqliteStore,

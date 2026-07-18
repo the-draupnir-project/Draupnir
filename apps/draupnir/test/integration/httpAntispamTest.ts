@@ -8,7 +8,7 @@ import {
   ActionException,
   isOk,
   MatrixException,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixError } from "@vector-im/matrix-bot-sdk";
 
 describe("Test for http antispam callbacks", function () {

@@ -22,7 +22,7 @@ import {
   Recommendation,
   StringTypeResult,
   StringTypeResultBuilder,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { isError, Result, ResultError } from "@gnuxie/typescript-result";
 import { findPolicyRoomEditorFromRoomReference } from "../Ban";
 import {

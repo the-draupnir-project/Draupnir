@@ -4,8 +4,8 @@
 
 import { Result } from "@gnuxie/typescript-result";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule } from "matrix-protection-suite";
-import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { LiteralPolicyRule } from "@the-draupnir-project/matrix-protection-suite";
+import { AccountRestriction } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export interface UserRestrictionAuditLog {
   isUserRestricted(userID: StringUserID): Promise<Result<boolean>>;

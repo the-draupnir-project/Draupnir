@@ -9,7 +9,7 @@
 // </text>
 
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
-import { RoomEvent } from "matrix-protection-suite";
+import { RoomEvent } from "@the-draupnir-project/matrix-protection-suite";
 
 /**
  * Used to keep track of protected rooms so they are always ordered for activity.

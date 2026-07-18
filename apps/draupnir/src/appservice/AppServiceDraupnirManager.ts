@@ -28,7 +28,7 @@ import {
   Task,
   assertThrowableIsError,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   BotSDKMatrixAccountData,
@@ -36,7 +36,7 @@ import {
   ClientForUserID,
   joinedRoomsSafe,
   RoomStateManagerFactory,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   DraupnirFailType,
   StandardDraupnirManager,

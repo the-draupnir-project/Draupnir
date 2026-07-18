@@ -9,7 +9,7 @@
 // </text>
 
 import BetterSqlite3, { Database } from "better-sqlite3";
-import { Logger } from "matrix-protection-suite";
+import { Logger } from "@the-draupnir-project/matrix-protection-suite";
 import { ensureSqliteSchema, SqliteSchemaOptions } from "./SqliteSchema";
 
 export interface BetterSqliteOptions extends BetterSqlite3.Options {

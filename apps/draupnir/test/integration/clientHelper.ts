@@ -21,7 +21,7 @@ import {
   NoticeMessageContent,
   RoomMessage,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RequestFunction } from "../../src/utils";
 
 const REGISTRATION_ATTEMPTS = 10;

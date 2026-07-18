@@ -8,16 +8,16 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { Ok } from "matrix-protection-suite";
+import { Ok } from "@the-draupnir-project/matrix-protection-suite";
 import {
   CommandTable,
   DocumentNode,
   DeadDocumentJSX,
+  TopPresentationSchema,
   describeCommand,
   describeRestParameters,
 } from "@the-draupnir-project/interface-manager";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
-import { TopPresentationSchema } from "@the-draupnir-project/interface-manager/dist/Command/PresentationSchema";
 import { renderTableHelp } from "@the-draupnir-project/mps-interface-adaptor";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
 import { DOCUMENTATION_URL } from "../config";

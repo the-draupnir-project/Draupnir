@@ -13,7 +13,7 @@ import {
   ProtectionDescription,
   RoomMessageSender,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { sendMatrixEventsFromDeadDocument } from "@the-draupnir-project/mps-interface-adaptor";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";

@@ -13,7 +13,7 @@ import {
   ProtectedRoomsSet,
   Protection,
   ProtectionDescription,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { Draupnir } from "../../Draupnir";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";

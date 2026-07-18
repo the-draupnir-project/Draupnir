@@ -12,7 +12,7 @@ import {
   MatrixSendClient,
   resultifyBotSDKRequestErrorWith404AsUndefined,
   SynapseAdminClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { ReportManager } from "./ReportManager";
 import { LogLevel } from "@vector-im/matrix-bot-sdk";
 import ManagementRoomOutput from "../managementroom/ManagementRoomOutput";
@@ -25,7 +25,7 @@ import {
   Task,
   assertThrowableIsError,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 /**
  * Synapse will tell us where we last got to on polling reports, so we need

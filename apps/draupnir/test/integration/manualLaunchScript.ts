@@ -14,7 +14,7 @@
 
 import { draupnirClient, makeBotModeToggle } from "./mjolnirSetupUtils";
 import { configRead, getStoragePath } from "../../src/config";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { DefaultEventDecoder } from "@the-draupnir-project/matrix-protection-suite";
 import { makeTopLevelStores } from "../../src/backingstore/DraupnirStores";
 
 void (async () => {

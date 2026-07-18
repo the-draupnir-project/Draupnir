@@ -46,6 +46,8 @@
     "@sinclair/typebox": "0.34.49",
     "@the-draupnir-project/interface-manager": "4.2.6",
     "@the-draupnir-project/matrix-basic-types": "1.5.1",
+    "@the-draupnir-project/matrix-protection-suite": "7.1.0",
+    "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk": "5.0.1",
     "@the-draupnir-project/mps-interface-adaptor": "0.6.0",
     "@vector-im/matrix-bot-sdk": "^0.8.0-element.3",
     "better-sqlite3": "^12.8.0",
@@ -56,15 +58,12 @@
     "js-yaml": "^4.1.0",
     "jsdom": "^24.0.0",
     "matrix-appservice-bridge": "^11.2.0",
-    "matrix-protection-suite": "npm:@the-draupnir-project/matrix-protection-suite@7.1.0",
-    "matrix-protection-suite-for-matrix-bot-sdk": "npm:@the-draupnir-project/matrix-protection-suite@5.0.1",
     "pg": "^8.8.0",
     "yaml": "^2.3.2"
   },
   "overrides": {
     "@the-draupnir-project/matrix-basic-types": "$the-draupnir-project/matrix-basic-types",
-    "@the-draupnir-project/interface-manager": "$the-draupnir-project/interface-manager",
-    "matrix-protection-suite": "$matrix-protection-suite"
+    "@the-draupnir-project/interface-manager": "$the-draupnir-project/interface-manager"
   },
   "engines": {
     "node": ">=24.0.0"

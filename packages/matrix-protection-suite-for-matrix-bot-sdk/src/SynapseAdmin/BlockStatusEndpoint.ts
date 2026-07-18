@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Type } from "@sinclair/typebox";
-import { EDStatic, StringUserIDSchema } from "matrix-protection-suite";
+import {
+  EDStatic,
+  StringUserIDSchema,
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export type BlockStatusResponse = EDStatic<typeof BlockStatusResponse>;
 export const BlockStatusResponse = Type.Object({

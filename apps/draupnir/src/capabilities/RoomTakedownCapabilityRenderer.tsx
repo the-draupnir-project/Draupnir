@@ -6,7 +6,7 @@ import {
   describeCapabilityRenderer,
   DescriptionMeta,
   RoomBasicDetails,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomTakedownCapability } from "./RoomTakedownCapability";
 import { RendererMessageCollector } from "./RendererMessageCollector";
 import {

@@ -22,7 +22,7 @@ import {
   RoomEvent,
   RoomMessageSender,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixReactionHandler } from "./MatrixReactionHandler";
 import {
   BasicInvocationInformation,

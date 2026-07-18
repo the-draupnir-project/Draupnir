@@ -21,7 +21,7 @@ import {
   RoomCreator,
   RoomIDPermalinkSchema,
   RoomVersionMirror,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export const ZERO_TOUCH_DEPLOY_ROOM_ACCOUNT_DATA_TYPE =
   "space.draupnir.zero_touch_deploy_room";

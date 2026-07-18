@@ -8,7 +8,11 @@
 // https://github.com/matrix-org/mjolnir
 // </text>
 
-import { ActionResult, isError, Ok } from "matrix-protection-suite";
+import {
+  ActionResult,
+  isError,
+  Ok,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Draupnir } from "../Draupnir";
 import {
   describeCommand,
@@ -17,7 +21,7 @@ import {
   MatrixRoomReferencePresentationSchema,
 } from "@the-draupnir-project/interface-manager";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export const DraupnirAliasAddCommand = describeCommand({
   summary: "Add a new alias to the room on Draupnir's homeserver",

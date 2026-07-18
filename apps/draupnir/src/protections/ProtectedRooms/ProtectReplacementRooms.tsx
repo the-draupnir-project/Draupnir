@@ -27,7 +27,7 @@ import {
   Task,
   TombstoneEvent,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 
 const log = new Logger("ProtectReplacementRooms");

@@ -13,7 +13,7 @@ import {
   SchemedDataManager,
   Value,
   findProtection,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RedactionSynchronisationProtection } from "../RedactionSynchronisation";
 import { PolicyChangeNotification } from "../PolicyChangeNotification";
 import { JoinRoomsOnInviteProtection } from "../invitation/JoinRoomsOnInviteProtection";

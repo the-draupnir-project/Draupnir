@@ -14,7 +14,7 @@ import {
   RoomMessage,
   Value,
   findProtection,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   MatrixRoomReference,
   StringRoomID,

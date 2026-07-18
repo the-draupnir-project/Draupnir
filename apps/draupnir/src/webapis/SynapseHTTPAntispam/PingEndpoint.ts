@@ -9,7 +9,11 @@
 
 import { Type } from "@sinclair/typebox";
 import { Request, Response } from "express";
-import { isError, Logger, Value } from "matrix-protection-suite";
+import {
+  isError,
+  Logger,
+  Value,
+} from "@the-draupnir-project/matrix-protection-suite";
 
 const log = new Logger("PingEndpoint");
 

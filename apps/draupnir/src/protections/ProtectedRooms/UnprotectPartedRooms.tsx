@@ -14,7 +14,7 @@ import {
   ProtectedRoomsManager,
   RoomMessageSender,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   renderMentionPill,
   renderRoomPill,

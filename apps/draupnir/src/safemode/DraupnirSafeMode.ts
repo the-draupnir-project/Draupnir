@@ -8,13 +8,13 @@ import {
   EventReport,
   RoomEvent,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringUserID,
   StringRoomID,
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "../config";
 import { SafeModeCause } from "./SafeModeCause";
 import {

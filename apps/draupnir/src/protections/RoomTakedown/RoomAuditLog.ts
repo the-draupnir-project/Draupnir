@@ -7,7 +7,10 @@ import {
   StringEventID,
   StringRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { LiteralPolicyRule, RoomBasicDetails } from "matrix-protection-suite";
+import {
+  LiteralPolicyRule,
+  RoomBasicDetails,
+} from "@the-draupnir-project/matrix-protection-suite";
 
 export type RoomTakedownDetails = Omit<RoomBasicDetails, "avatar"> & {
   policy_id: StringEventID;

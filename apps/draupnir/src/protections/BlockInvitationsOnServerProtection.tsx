@@ -15,7 +15,7 @@ import {
   Recommendation,
   UnknownConfig,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { BlockingCallback } from "../webapis/SynapseHTTPAntispam/SpamCheckEndpointPluginManager";
 import { UserMayInviteListenerArguments } from "../webapis/SynapseHTTPAntispam/UserMayInviteEndpoint";
 import { createHash } from "crypto";

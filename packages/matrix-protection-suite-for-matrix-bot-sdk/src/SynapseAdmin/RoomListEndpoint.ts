@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Type } from "@sinclair/typebox";
-import { EDStatic } from "matrix-protection-suite";
+import { EDStatic } from "@the-draupnir-project/matrix-protection-suite";
 import { RoomDetailsResponse } from "./RoomDetailsEndpoint";
 
 export interface RoomListQueryParams {

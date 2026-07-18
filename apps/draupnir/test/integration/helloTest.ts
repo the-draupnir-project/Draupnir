@@ -11,8 +11,8 @@
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { newTestUser, noticeListener } from "./clientHelper";
 import { DraupnirTestContext } from "./mjolnirSetupUtils";
-import { SafeMatrixEmitterWrapper } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { DefaultEventDecoder } from "matrix-protection-suite";
+import { SafeMatrixEmitterWrapper } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
+import { DefaultEventDecoder } from "@the-draupnir-project/matrix-protection-suite";
 
 describe("Test: !help command", function (this: Mocha.Suite) {
   let client: MatrixClient;

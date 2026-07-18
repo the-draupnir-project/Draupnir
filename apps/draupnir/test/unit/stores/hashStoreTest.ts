@@ -14,7 +14,7 @@ import {
   randomRoomID,
   randomUserID,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { SHA256, enc } from "crypto-js";
 import expect from "expect";
 import {

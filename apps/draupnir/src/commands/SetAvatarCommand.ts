@@ -10,8 +10,8 @@ import {
 import { isStringMediaURI } from "@the-draupnir-project/matrix-basic-types";
 import { Draupnir } from "../Draupnir";
 import { DraupnirInterfaceAdaptor } from "./DraupnirCommandPrerequisites";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { ActionError } from "matrix-protection-suite";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
+import { ActionError } from "@the-draupnir-project/matrix-protection-suite";
 
 export const DraupnirAvatarCommand = describeCommand({
   summary:

@@ -7,6 +7,7 @@ import {
   ActionResult,
   allocateProtection,
   describeProtection,
+  EDStatic,
   Logger,
   OwnLifetime,
   PolicyListRevision,
@@ -19,7 +20,7 @@ import {
   SHA256HashStore,
   StringRoomIDSchema,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomTakedownCapability } from "../../capabilities/RoomTakedownCapability";
 import { Draupnir } from "../../Draupnir";
 import { StandardRoomTakedown } from "./RoomTakedown";
@@ -40,7 +41,6 @@ import {
   sendMatrixEventsFromDeadDocument,
 } from "@the-draupnir-project/mps-interface-adaptor";
 import { Type } from "@sinclair/typebox";
-import { EDStatic } from "matrix-protection-suite/dist/Interface/Static";
 import { renderDiscoveredRoom } from "./RoomDiscoveryRenderer";
 import { NotificationRoomCreator } from "../NotificationRoom/NotificationRoom";
 import { MatrixGlob } from "@vector-im/matrix-bot-sdk";

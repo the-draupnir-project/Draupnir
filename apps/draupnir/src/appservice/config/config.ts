@@ -13,8 +13,8 @@ import { Type } from "@sinclair/typebox";
 import * as fs from "fs";
 import { load } from "js-yaml";
 import { Value } from "@sinclair/typebox/value";
-import { EDStatic } from "matrix-protection-suite";
-import { StringUserIDSchema } from "matrix-protection-suite";
+import { EDStatic } from "@the-draupnir-project/matrix-protection-suite";
+import { StringUserIDSchema } from "@the-draupnir-project/matrix-protection-suite";
 
 export function read(configPath: string): AppserviceConfig {
   const content = fs.readFileSync(configPath, "utf8");

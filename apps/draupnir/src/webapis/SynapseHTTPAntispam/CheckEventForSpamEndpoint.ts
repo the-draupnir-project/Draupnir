@@ -10,7 +10,7 @@ import {
   RoomEvent,
   Task,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { SpamCheckEndpointPluginManager } from "./SpamCheckEndpointPluginManager";
 import { Request, Response } from "express";
 

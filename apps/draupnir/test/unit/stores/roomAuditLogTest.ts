@@ -12,7 +12,7 @@ import {
   PolicyRuleType,
   randomRoomID,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import expect from "expect";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 

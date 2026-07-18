@@ -42,12 +42,12 @@ import {
   StandardSetRoomState,
   StandardWatchedPolicyRooms,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   BotSDKAccountDataConfigBackend,
   BotSDKRoomStateConfigBackend,
   MatrixSendClient,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { DefaultEnabledProtectionsMigration } from "../protections/ConfigMigration/DefaultEnabledProtectionsMigration";
 import "../protections/DraupnirProtectionsIndex";
 import { IConfig } from "../config";

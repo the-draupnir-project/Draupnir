@@ -19,8 +19,8 @@ import {
   DraupnirTestContext,
 } from "../mjolnirSetupUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
-import { RoomEvent } from "matrix-protection-suite";
-import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { RoomEvent } from "@the-draupnir-project/matrix-protection-suite";
+import { extractRawRoomEvent } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 interface RedactionTestContext extends DraupnirTestContext {
   moderator?: MatrixClient;

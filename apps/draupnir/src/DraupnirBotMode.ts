@@ -17,7 +17,7 @@ import {
   ActionException,
   ActionExceptionKind,
   ConfigRecoverableError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   BotSDKMatrixAccountData,
   ClientCapabilityFactory,
@@ -25,7 +25,7 @@ import {
   RoomStateManagerFactory,
   SafeMatrixEmitter,
   joinedRoomsSafe,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { IConfig } from "./config";
 import { Draupnir } from "./Draupnir";
 import { DraupnirFactory } from "./draupnirfactory/DraupnirFactory";

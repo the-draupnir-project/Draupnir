@@ -12,7 +12,7 @@ import {
   TopPresentationSchema,
   CommandTable,
 } from "@the-draupnir-project/interface-manager";
-import { Ok } from "matrix-protection-suite";
+import { Ok } from "@the-draupnir-project/matrix-protection-suite";
 import { renderTableHelp } from "@the-draupnir-project/mps-interface-adaptor";
 import { safeModeHeader } from "./StatusCommand";
 import { DOCUMENTATION_URL } from "../../config";

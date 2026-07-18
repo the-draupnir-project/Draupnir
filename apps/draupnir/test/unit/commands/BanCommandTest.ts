@@ -25,7 +25,7 @@ import {
   describeProtectedRoomsSet,
   isOk,
   randomEventID,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { createMock } from "ts-auto-mock";
 import expect from "expect";
 import { DraupnirBanCommand } from "../../../src/commands/Ban";

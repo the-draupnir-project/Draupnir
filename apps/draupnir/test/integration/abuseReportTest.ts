@@ -20,12 +20,12 @@ import {
   RoomEvent,
   RoomMessage,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { StringEventID } from "@the-draupnir-project/matrix-basic-types";
 import {
   extractRawRoomEvent,
   resultifyBotSDKRequestError,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 /**
  * Test the ability to turn abuse reports into room messages.

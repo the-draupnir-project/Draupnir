@@ -19,8 +19,12 @@ import {
   isStringRoomID,
   isStringEventID,
 } from "@the-draupnir-project/matrix-basic-types";
-import { Logger, RoomEvent, Task } from "matrix-protection-suite";
-import { extractRawRoomEvent } from "matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  Logger,
+  RoomEvent,
+  Task,
+} from "@the-draupnir-project/matrix-protection-suite";
+import { extractRawRoomEvent } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { SynapseHttpAntispam } from "./SynapseHTTPAntispam/SynapseHttpAntispam";
 import { jsonReviver } from "../utils";
 

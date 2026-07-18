@@ -11,7 +11,7 @@ import {
   DescriptionMeta,
   RoomMessageSender,
   Task,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";
 import {
   DeadDocumentJSX,

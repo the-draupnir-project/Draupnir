@@ -12,8 +12,12 @@ import { DraupnirTestContext } from "../mjolnirSetupUtils";
 import { newTestUser } from "../clientHelper";
 import { BlockInvitationsOnServerProtection } from "../../../src/protections/BlockInvitationsOnServerProtection";
 import expect from "expect";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
-import { isOk, MatrixException, Ok } from "matrix-protection-suite";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
+import {
+  isOk,
+  MatrixException,
+  Ok,
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixError } from "@vector-im/matrix-bot-sdk";
 
 async function createWatchedPolicyRoom(

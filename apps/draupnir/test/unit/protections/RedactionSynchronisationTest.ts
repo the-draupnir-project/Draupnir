@@ -10,7 +10,7 @@ import {
   randomRoomID,
   randomUserID,
   Recommendation,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   RedactionSynchronisationConsequences,
   StandardRedactionSynchronisation,

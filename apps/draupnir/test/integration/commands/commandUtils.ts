@@ -14,7 +14,7 @@ import * as crypto from "crypto";
 import {
   MatrixSendClient,
   SafeMatrixEmitter,
-} from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   NoticeMessageContent,
   ReactionEvent,
@@ -24,7 +24,7 @@ import {
   StringEventIDSchema,
   ReactionContent,
   hasOwn,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
 import { Draupnir } from "../../../src/Draupnir";
 import {

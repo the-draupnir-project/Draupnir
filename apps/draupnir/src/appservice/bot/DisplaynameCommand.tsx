@@ -3,13 +3,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
-import { ActionResult, isError, Ok } from "matrix-protection-suite";
+import {
+  ActionResult,
+  isError,
+  Ok,
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   StringPresentationType,
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
-import { resultifyBotSDKRequestError } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { resultifyBotSDKRequestError } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 
 export const AppserviceDisplaynameCommand = describeCommand({
   summary: "Sets the displayname of the main appservice admin bot.",

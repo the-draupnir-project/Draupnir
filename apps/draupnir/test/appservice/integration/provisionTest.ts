@@ -14,7 +14,7 @@ import { newTestUser } from "../../integration/clientHelper";
 import { getFirstReply } from "../../integration/commands/commandUtils";
 import { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { MjolnirAppService } from "../../../src/appservice/AppService";
-import { isOk } from "matrix-protection-suite";
+import { isOk } from "@the-draupnir-project/matrix-protection-suite";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 
 interface Context extends Mocha.Context {

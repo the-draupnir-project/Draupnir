@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
-import { ActionResult, Ok, isError } from "matrix-protection-suite";
+import {
+  ActionResult,
+  Ok,
+  isError,
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   DeadDocumentJSX,
   describeCommand,

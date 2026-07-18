@@ -6,12 +6,12 @@ import {
   describeCapabilityRenderer,
   DescriptionMeta,
   LiteralPolicyRule,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RendererMessageCollector } from "../../capabilities/RendererMessageCollector";
 import { UserRestrictionCapability } from "./UserRestrictionCapability";
 import { StringUserID } from "@the-draupnir-project/matrix-basic-types";
 import { isError, Result } from "@gnuxie/typescript-result";
-import { AccountRestriction } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { AccountRestriction } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { renderFailedSingularConsequence } from "@the-draupnir-project/mps-interface-adaptor";
 import {
   DeadDocumentJSX,

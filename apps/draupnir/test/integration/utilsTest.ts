@@ -15,7 +15,7 @@ import {
   NoticeMessageContent,
   RoomEvent,
   Value,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 describe("Test: utils", function () {
   it(

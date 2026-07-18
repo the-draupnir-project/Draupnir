@@ -26,7 +26,7 @@ import {
   RoomResolver,
   SHA256HashStore,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Result, ResultError } from "@gnuxie/typescript-result";
 import {
   MatrixRoomID,

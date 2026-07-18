@@ -17,7 +17,7 @@ import {
 } from "@vector-im/matrix-bot-sdk";
 import { IConfig } from "../config";
 import { htmlEscape } from "../utils";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   StringRoomID,
   StringUserID,
@@ -27,7 +27,7 @@ import {
   MatrixRoomID,
 } from "@the-draupnir-project/matrix-basic-types";
 import { ManagementRoomDetail } from "./ManagementRoomDetail";
-import { Task } from "matrix-protection-suite";
+import { Task } from "@the-draupnir-project/matrix-protection-suite";
 
 const levelToFn = {
   [LogLevel.DEBUG.toString()]: LogService.debug,

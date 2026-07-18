@@ -13,7 +13,7 @@ import {
   MJOLNIR_PROTECTED_ROOMS_EVENT_TYPE,
   MJOLNIR_WATCHED_POLICY_ROOMS_EVENT_TYPE,
   StandardLifetime,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { configRead, getStoragePath } from "../../src/config";
 import { patchMatrixClient } from "../../src/utils";
 import {

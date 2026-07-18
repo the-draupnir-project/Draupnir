@@ -11,7 +11,7 @@ import {
   Logger,
   RoomBasicDetails,
   SHA256HashStore,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomDetailsProvider } from "../../capabilities/RoomTakedownCapability";
 import { RoomDiscovery } from "./RoomDiscovery";
 import EventEmitter from "events";

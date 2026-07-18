@@ -12,7 +12,7 @@ import { strict as assert } from "assert";
 import { newTestUser } from "../clientHelper";
 import { getFirstReaction } from "./commandUtils";
 import { DraupnirTestContext, draupnirSafeEmitter } from "../mjolnirSetupUtils";
-import { PowerLevelsEventContent } from "matrix-protection-suite";
+import { PowerLevelsEventContent } from "@the-draupnir-project/matrix-protection-suite";
 
 // Breaks with this test.
 describe("Test: The make admin command", function () {

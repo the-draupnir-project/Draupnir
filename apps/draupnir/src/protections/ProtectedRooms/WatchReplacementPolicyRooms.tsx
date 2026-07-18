@@ -13,6 +13,7 @@ import {
   RoomEvent,
   RoomJoiner,
   RoomMessageSender,
+  RoomReactionSender,
   RoomStateManager,
   RoomStateRevision,
   RoomVersionMirror,
@@ -23,7 +24,7 @@ import {
   Value,
   WatchedPolicyRoom,
   WatchedPolicyRooms,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { renderPolicyList } from "../../commands/StatusCommand";
 import { DeadDocumentJSX } from "@the-draupnir-project/interface-manager";
 import {
@@ -42,7 +43,6 @@ import {
   renderErrorDetails,
   ReactionListener,
 } from "@the-draupnir-project/mps-interface-adaptor";
-import { RoomReactionSender } from "matrix-protection-suite/dist/Client/RoomReactionSender";
 
 const log = new Logger("WatchReplacementPolicyRooms");
 

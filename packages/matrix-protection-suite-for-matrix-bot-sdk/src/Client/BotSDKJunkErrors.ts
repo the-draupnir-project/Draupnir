@@ -4,7 +4,10 @@
 
 import { Type } from "@sinclair/typebox";
 import { MatrixError } from "@vector-im/matrix-bot-sdk";
-import { Value, assertThrowableIsError } from "matrix-protection-suite";
+import {
+  Value,
+  assertThrowableIsError,
+} from "@the-draupnir-project/matrix-protection-suite";
 
 const MatrixErrorBody = Type.Object({
   errcode: Type.String(),

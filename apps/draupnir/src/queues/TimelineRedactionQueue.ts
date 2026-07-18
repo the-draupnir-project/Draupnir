@@ -14,7 +14,7 @@ import {
   Logger,
   RoomEventRedacter,
   RoomMessages,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 const log = new Logger("TimelineRedactionQueue");
 

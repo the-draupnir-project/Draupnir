@@ -10,8 +10,8 @@ import {
   RoomMessage,
   Value,
   isError,
-} from "matrix-protection-suite";
-import { MatrixSendClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import { MatrixSendClient } from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import {
   StringUserID,
   StringRoomID,

@@ -6,7 +6,7 @@ import {
   ClientPlatform,
   ClientsInRoomMap,
   EventDecoder,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { MatrixSendClient } from "../MatrixEmitter";
 import { BotSDKClientPlatform } from "../Client/BotSDKClientPlatform";
 import { BotSDKAllClient } from "../Client/BotSDKAllClient";

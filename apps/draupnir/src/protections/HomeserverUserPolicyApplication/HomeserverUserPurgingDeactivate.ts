@@ -16,11 +16,13 @@ import {
   LiteralPolicyRule,
   Logger,
   StandardBatcher,
-} from "matrix-protection-suite";
-import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import {
+  SynapseAdminClient,
+  UserDetailsResponse,
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { deactivateUser } from "./deactivateUser";
 import { UserRestrictionAuditLog } from "./UserRestrictionAuditLog";
-import { UserDetailsResponse } from "matrix-protection-suite-for-matrix-bot-sdk/dist/SynapseAdmin/UserDetailsEndpoint";
 
 const log = new Logger("HomeserverUserPurgingDeactivate");
 

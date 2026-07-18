@@ -14,7 +14,7 @@ import {
   randomRoomID,
   Recommendation,
   StandardPolicyListRevision,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { RoomAuditLog } from "../../../src/protections/RoomTakedown/RoomAuditLog";
 import { RoomTakedownCapability } from "../../../src/capabilities/RoomTakedownCapability";
 import { StringRoomID } from "@the-draupnir-project/matrix-basic-types";

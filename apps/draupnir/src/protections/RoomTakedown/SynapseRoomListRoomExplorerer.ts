@@ -11,10 +11,12 @@ import {
   PolicyRuleChange,
   PolicyRuleChangeType,
   StandardTimedGate,
-} from "matrix-protection-suite";
-import { SynapseAdminClient } from "matrix-protection-suite-for-matrix-bot-sdk";
+} from "@the-draupnir-project/matrix-protection-suite";
+import {
+  RoomListResponse,
+  SynapseAdminClient,
+} from "@the-draupnir-project/matrix-protection-suite-for-matrix-bot-sdk";
 import { isError, Result } from "@gnuxie/typescript-result";
-import { RoomListResponse } from "matrix-protection-suite-for-matrix-bot-sdk/dist/SynapseAdmin/RoomListEndpoint";
 
 const log = new Logger("SynapseRoomListExplorer");
 

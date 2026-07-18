@@ -26,7 +26,7 @@ import {
   Logger,
   UserHashRecord,
   PolicyRuleType,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { BetterSqliteStore, makeBetterSqliteDB } from "./BetterSqliteStore";
 import { Database, Statement } from "better-sqlite3";
 import path from "path";

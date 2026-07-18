@@ -18,7 +18,7 @@ import {
   Value,
   isError,
   RoomIDPermalinkSchema,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import {
   renderActionResultToEvent,
   renderMentionPill,

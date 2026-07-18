@@ -21,7 +21,7 @@ import {
   Logger,
   RoomEvent,
   RoomMessage,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 const log = new Logger("MatrixEmitter");
 

@@ -32,7 +32,7 @@ import {
   UserConsequences,
   describeProtection,
   isError,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 import { Type } from "@sinclair/typebox";
 
 const log = new Logger("BasicFloodingProtection");

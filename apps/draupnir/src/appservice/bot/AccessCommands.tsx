@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { AppserviceAdaptorContext } from "./AppserviceBotPrerequisite";
-import { ActionResult } from "matrix-protection-suite";
+import { ActionResult } from "@the-draupnir-project/matrix-protection-suite";
 import {
   MatrixUserIDPresentationType,
   describeCommand,

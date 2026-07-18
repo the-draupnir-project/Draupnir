@@ -11,7 +11,7 @@ import {
   EDStatic,
   StringRoomAliasSchema,
   StringRoomIDSchema,
-} from "matrix-protection-suite";
+} from "@the-draupnir-project/matrix-protection-suite";
 
 // There is a bug in Synapse at the moment where the creator can be blank.
 // https://github.com/element-hq/synapse/issues/18563
