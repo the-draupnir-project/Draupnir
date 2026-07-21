@@ -27,8 +27,11 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 
 /** MSC3784 support. Please note that policy lists predate room types. So there will be lists in the wild without this type. */
-export const POLICY_ROOM_TYPE = "support.feline.policy.lists.msc.v1";
-export const POLICY_ROOM_TYPE_VARIANTS = [POLICY_ROOM_TYPE];
+export const POLICY_ROOM_TYPE = "m.policy";
+export const POLICY_ROOM_TYPE_VARIANTS = [
+  POLICY_ROOM_TYPE,
+  "support.feline.policy.lists.msc.v1",
+];
 export const MJOLNIR_SHORTCODE_EVENT_TYPE = "org.matrix.mjolnir.shortcode";
 
 export type MjolnirShortcodeEventContent = StaticDecode<
