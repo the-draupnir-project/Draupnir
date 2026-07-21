@@ -5,6 +5,10 @@
 
 # syntax=docker/dockerfile:1.7
 
+# Build-time distribution identifier (default for docker builds). Declared
+# before any FROM so it can be overridden with `--build-arg`.
+ARG DRAUPNIR_DISTRIBUTION=Docker
+
 FROM node:24-slim AS build-stage
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
@@ -27,6 +31,10 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 
 # build and install
+# make the build see the distribution value
+ARG DRAUPNIR_DISTRIBUTION
+ENV DRAUPNIR_DISTRIBUTION=${DRAUPNIR_DISTRIBUTION}
+
 RUN npm run build \
     && npm prune --production
 

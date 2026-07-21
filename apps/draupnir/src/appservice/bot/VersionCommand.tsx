@@ -13,11 +13,12 @@ import {
   describeCommand,
 } from "@the-draupnir-project/interface-manager";
 import { AppserviceBotInterfaceAdaptor } from "./AppserviceBotInterfaceAdaptor";
-import { CURRENT_BRANCH, SOFTWARE_VERSION } from "../../config";
+import { CURRENT_BRANCH, SOFTWARE_VERSION, DISTRIBUTION } from "../../config";
 
 type AppserviceVersionInfo = {
   version: string;
   branch: string;
+  distribution: string;
 };
 
 export const AppserviceVersionCommand = describeCommand({
@@ -30,6 +31,7 @@ export const AppserviceVersionCommand = describeCommand({
     return Ok({
       version: SOFTWARE_VERSION,
       branch: CURRENT_BRANCH,
+      distribution: DISTRIBUTION,
     });
   },
 });
@@ -46,6 +48,9 @@ AppserviceBotInterfaceAdaptor.describeRenderer(AppserviceVersionCommand, {
         <br />
         <b>Branch: </b>
         <code>{result.ok.branch}</code>
+        <br />
+        <b>Distribution: </b>
+        <code>{result.ok.distribution}</code>
       </root>
     );
   },

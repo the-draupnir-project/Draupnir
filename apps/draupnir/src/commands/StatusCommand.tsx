@@ -13,6 +13,7 @@ import {
   DOCUMENTATION_URL,
   PACKAGE_JSON,
   SOFTWARE_VERSION,
+  DISTRIBUTION,
 } from "../config";
 import {
   ActionResult,
@@ -59,6 +60,7 @@ export type StatusInfo = {
   branch: string;
   repository: string;
   documentationURL: string;
+  distribution: string;
 } & DraupnirNotificationRoomsInfo &
   WatchedPolicyRoomsInfo;
 
@@ -142,6 +144,7 @@ export function draupnirStatusInfo(draupnir: Draupnir): StatusInfo {
     documentationURL: DOCUMENTATION_URL,
     version: SOFTWARE_VERSION,
     branch: CURRENT_BRANCH,
+    distribution: DISTRIBUTION,
     repository: (PACKAGE_JSON["repository"] as string | undefined) ?? "Unknown",
     ...extractProtectionNotificationRooms(draupnir),
   };
@@ -234,6 +237,9 @@ export function renderStatusInfo(info: StatusInfo): DocumentNode {
       <br />
       <b>Branch: </b>
       <code>{info.branch}</code>
+      <br />
+      <b>Distribution: </b>
+      <code>{info.distribution}</code>
       <br />
       <b>Repository: </b>
       <code>{info.repository}</code>

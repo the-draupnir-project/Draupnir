@@ -39,5 +39,6 @@ describe("Test appservice version command", function () {
     }
     expect(result.ok).toHaveProperty("version");
     expect(result.ok).toHaveProperty("branch");
+    expect(result.ok).toHaveProperty("distribution");
   });
 });
