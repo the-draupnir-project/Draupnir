@@ -35,8 +35,8 @@
     "@types/pg": "^8.6.5",
     "@types/request": "^2.48.12",
     "crypto-js": "^4.2.0",
-    "expect": "^29.7.0",
-    "mocha": "^10.7.0",
+    "expect": "^30.0.0",
+    "mocha": "^11.0.0",
     "ts-auto-mock": "^3.7.4",
     "ts-node": "^10.9.2"
   },
