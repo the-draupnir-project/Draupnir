@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2024",
-    "module": "node16",
+    "module": "node20",
     "lib": ["es2024"],
     "declaration": true,
     "declarationMap": true,
@@ -19,6 +19,7 @@
     "noImplicitThis": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "types": ["node", "jest", "mocha"]
   }
 }
