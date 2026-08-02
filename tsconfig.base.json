@@ -20,6 +20,6 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noImplicitAny": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest", "mocha"]
   }
 }
