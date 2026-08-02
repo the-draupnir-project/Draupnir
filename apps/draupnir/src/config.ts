@@ -245,8 +245,8 @@ const defaultConfig: IConfig = {
         "Unfortunately we cannot accept new users from your homeserver at this time.",
     },
     firstMessageIsWordProtection: {
-      words: []
-    }
+      words: [],
+    },
   },
   safeMode: {
     bootOption: SafeModeBootOption.RecoveryOnly,
