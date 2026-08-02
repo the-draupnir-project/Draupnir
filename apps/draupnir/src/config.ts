@@ -131,6 +131,9 @@ export interface IConfig {
       serverNames: string[];
       banMessage: string;
     };
+    firstMessageIsWordProtection: {
+      words: string[];
+    };
   };
   safeMode?: {
     bootOption: SafeModeBootOption;
@@ -241,6 +244,9 @@ const defaultConfig: IConfig = {
       banMessage:
         "Unfortunately we cannot accept new users from your homeserver at this time.",
     },
+    firstMessageIsWordProtection: {
+      words: []
+    }
   },
   safeMode: {
     bootOption: SafeModeBootOption.RecoveryOnly,
