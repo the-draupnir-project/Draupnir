@@ -88,6 +88,11 @@ noop: false
 # DO NOT change this to `true` unless you are very confident that you know what you are doing.
 disableServerACL: false
 
+# Whether or not Draupnir should allow IP literals in `m.room.server_acl` events.
+# This is a security risk as it allows for much easier spam by just using a ton of throwaway IP addresses.
+# Dont enable this unless you know what you are doing and have a very good reason to do so.
+serverAclAllowIpLiterals: false
+
 # A case-insensitive list of ban reasons to have the bot also automatically redact the user's messages for.
 #
 # If the bot sees you ban a user with a reason that is an (exact case-insensitive) match to this list,
