@@ -42,7 +42,8 @@ class ServerACLQueue {
   public constructor(
     private readonly stateEventSender: RoomStateEventSender,
     private readonly serverName: StringServerName,
-    private readonly protectedRoomsSet: ProtectedRoomsSet
+    private readonly protectedRoomsSet: ProtectedRoomsSet,
+    private readonly allowIpLiterals: boolean
   ) {
     // nothing to do.
   }
@@ -51,7 +52,11 @@ class ServerACLQueue {
     roomID: StringRoomID,
     projection: ServerBanIntentProjection
   ): Promise<Result<boolean>> {
-    const ACL = compileServerACL(this.serverName, projection.currentNode);
+    const ACL = compileServerACL(
+      this.serverName,
+      projection.currentNode,
+      this.allowIpLiterals
+    );
     const stateRevision =
       this.protectedRoomsSet.setRoomState.getRevision(roomID);
     if (stateRevision === undefined) {
@@ -131,9 +136,12 @@ class ServerACLQueue {
 
 export function compileServerACL(
   ourServerName: StringServerName,
-  projectionNode: ServerBanIntentProjectionNode
+  projectionNode: ServerBanIntentProjectionNode,
+  allowIpLiterals = false
 ): ServerACLBuilder {
-  const builder = new ServerACLBuilder(ourServerName).denyIpAddresses();
+  const builder = allowIpLiterals
+    ? new ServerACLBuilder(ourServerName).allowIpAddresses()
+    : new ServerACLBuilder(ourServerName).denyIpAddresses();
   builder.allowServer("*");
   for (const serverName of projectionNode.deny) {
     builder.denyServer(serverName);
@@ -151,12 +159,14 @@ export class ServerACLSynchronisationCapability
 
   public constructor(
     stateEventSender: RoomStateEventSender,
-    private readonly protectedRoomsSet: ProtectedRoomsSet
+    private readonly protectedRoomsSet: ProtectedRoomsSet,
+    allowIpLiterals = false
   ) {
     this.queue = new ServerACLQueue(
       stateEventSender,
       userServerName(this.protectedRoomsSet.userID),
-      protectedRoomsSet
+      protectedRoomsSet,
+      allowIpLiterals
     );
   }
 
@@ -207,6 +217,7 @@ export class ServerACLSynchronisationCapability
 export type ServerACLSynchronisationCapabilityContext = {
   stateEventSender: RoomStateEventSender;
   protectedRoomsSet: ProtectedRoomsSet;
+  allowIpLiterals?: boolean;
 };
 
 describeCapabilityProvider({
@@ -220,7 +231,8 @@ describeCapabilityProvider({
   ) {
     return new ServerACLSynchronisationCapability(
       context.stateEventSender,
-      context.protectedRoomsSet
+      context.protectedRoomsSet,
+      context.allowIpLiterals ?? false
     );
   },
 });
