@@ -65,7 +65,7 @@
     "@the-draupnir-project/matrix-basic-types": "$the-draupnir-project/matrix-basic-types",
     "@the-draupnir-project/interface-manager": "$the-draupnir-project/interface-manager",
     "matrix-protection-suite": "$matrix-protection-suite",
-    "@matrix-org/matrix-sdk-crypto-nodejs": "0.6.0"
+    "@matrix-org/matrix-sdk-crypto-nodejs": "0.6.6"
   },
   "engines": {
     "node": ">=24.0.0"
