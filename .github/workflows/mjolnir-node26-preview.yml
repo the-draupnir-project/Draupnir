@@ -1,0 +1,100 @@
+# SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Tests (Node 26 Preview)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "20 20 * * *"
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build & Lint (Node 26 Preview)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Specifically use node 26 as a preview of the next LTS version.
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "26"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - run: corepack enable
+      - run: corepack npm install
+      - run: corepack npm run build:all
+      - run: corepack npm run lint
+  unit:
+    name: Unit tests (Node 26 Preview)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Specifically use node 26 as a preview of the next LTS version.
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "26"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - run: corepack npm install
+      - run: corepack npm run build:all
+      - run: corepack npm run test
+  integration:
+    name: Integration tests (Node 26 Preview)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "26"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: Fetch and build mx-tester (cached across runs)
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: mx-tester
+          version: "0.3.3"
+      - name: Setup dependencies
+        run: corepack npm install && corepack npm run build:all
+      - name: Setup image
+        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
+      - name: Run tests
+        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester run
+      - name: Cleanup
+        run: mx-tester down
+  appservice-integration:
+    name: Application Service Integration tests (Node 26 Preview)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "26"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: Fetch and build mx-tester (cached across runs)
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: mx-tester
+          version: "0.3.3"
+      - name: Setup dependencies
+        run: corepack npm install && corepack npm run build:all
+      - name: Setup image
+        run: RUST_LOG=debug,hyper=info,rusttls=info mx-tester build up
+      - name: Run tests
+        run: corepack npm run -w apps/draupnir test:appservice:integration
+      - name: Cleanup
+        run: mx-tester down
