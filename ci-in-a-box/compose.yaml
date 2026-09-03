@@ -32,7 +32,11 @@ services:
       - synapse-data:/data
       - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8008/_matrix/client/versions >/dev/null"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8008/_matrix/client/versions >/dev/null",
+        ]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -146,7 +150,8 @@ services:
       - draupnir-config:/workspace/config
       - ./scripts/appservice/draupnir-registration.yaml:/workspace/apps/draupnir/draupnir-registration.yaml:ro
       - ${DRAUPNIR_CONTEXT:-../Draupnir}/apps/draupnir/src/appservice/config/config.harness.yaml:/workspace/apps/draupnir/src/appservice/config/config.harness.yaml:ro
-    command: ["npm", "run", "-w", "apps/draupnir", "test:appservice:integration"]
+    command:
+      ["npm", "run", "-w", "apps/draupnir", "test:appservice:integration"]
     profiles: [appservice-integration]
 
   draupnir-config-init:
@@ -158,11 +163,10 @@ services:
       - sh
       - -lc
       - >-
-        cp -a /source-config/. /config/;
-        sed -i
-        -e "s|http://localhost:8081|http://nginx:8081|g"
-        -e "s|127.0.0.1:8081|nginx:8081|g"
-        /config/harness.yaml /config/default.yaml
+        cp -a /source-config/. /config/; sed -i -e
+        "s|http://localhost:8081|http://nginx:8081|g" -e
+        "s|127.0.0.1:8081|nginx:8081|g" /config/harness.yaml
+        /config/default.yaml
     restart: "no"
     profiles: [integration, appservice-integration, development]
 
