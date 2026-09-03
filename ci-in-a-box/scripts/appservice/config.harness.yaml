@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+homeserver:
+  domain: "localhost:9999"
+  url: http://nginx:8081
+
+db:
+  engine: "postgres"
+  connectionString: "postgres://mjolnir-tester:mjolnir-test@postgres:5432/mjolnir-test-db"
+
+adminRoom: "#draupnir-admin:localhost:9999"
+dataPath: "./test/harness/mjolnir-data/"
+roomStateBackingStore:
+  enabled: false
