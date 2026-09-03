@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+services:
+  draupnir-build-lint:
+    build:
+      args:
+        NODE_VERSION: "26"
+        NODE_VARIANT: alpine
+    image: draupnir/ci-box-draupnir:node26-alpine
+
+  draupnir-unit:
+    build:
+      args:
+        NODE_VERSION: "26"
+        NODE_VARIANT: alpine
+    image: draupnir/ci-box-draupnir:node26-alpine
+
+  draupnir-integration:
+    build:
+      args:
+        NODE_VERSION: "26"
+        NODE_VARIANT: alpine
+    image: draupnir/ci-box-draupnir:node26-alpine
+
+  draupnir-appservice-integration:
+    build:
+      args:
+        NODE_VERSION: "26"
+        NODE_VARIANT: alpine
+    image: draupnir/ci-box-draupnir:node26-alpine
+
+  draupnir-config-init:
+    image: draupnir/ci-box-draupnir:node26-alpine

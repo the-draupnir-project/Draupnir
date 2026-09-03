@@ -69,3 +69,9 @@ path = "package.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Gnuxie <Gnuxie@protonmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "scripts/postgres/init.sql"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Catalan Lover <catalanlover@protonmail.com>
+SPDX-License-Identifier = "0BSD"
