@@ -8,6 +8,8 @@ config/*
 
 # Draupnir test data
 draupnir-registration.yaml
+# Exception for ci-in-a-box appservice config as its static unlike mx-tester one.
+!ci-in-a-box/scripts/appservice/draupnir-registration.yaml
 
 # Monorepo
 **/node_modules/

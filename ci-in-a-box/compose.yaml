@@ -1,0 +1,185 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+name: ci-in-a-box
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18-alpine}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mjolnir-tester}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mjolnir-test}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./scripts/postgres/init.sql:/docker-entrypoint-initdb.d/10-synapse.sql:ro
+
+  synapse:
+    image: ${SYNAPSE_IMAGE:-ghcr.io/element-hq/synapse:latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      synapse-init:
+        condition: service_completed_successfully
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+      PYTHONPATH: /data
+    volumes:
+      - synapse-data:/data
+      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8008/_matrix/client/versions >/dev/null",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  synapse-init:
+    image: ${SYNAPSE_IMAGE:-ghcr.io/element-hq/synapse:latest}
+    entrypoint: ["/bin/sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SYNAPSE_SERVER_NAME: ${SYNAPSE_SERVER_NAME:-localhost:9999}
+      SYNAPSE_PUBLIC_BASEURL: ${SYNAPSE_PUBLIC_BASEURL:-http://localhost:8081}
+      SYNAPSE_POSTGRES_DB: ${SYNAPSE_POSTGRES_DB:-synapse-test-db}
+      SYNAPSE_ANTISPAM_BASE_URL: ${SYNAPSE_ANTISPAM_BASE_URL:-http://draupnir-integration:8082/api/1/spam_check}
+      PYTHONPATH: /data
+      SYNAPSE_REPORT_STATS: "no"
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+    volumes:
+      - synapse-data:/data
+      - ./scripts/synapse/homeserver.overrides.yaml:/etc/ci-box/homeserver.overrides.yaml:ro
+      - ./scripts/appservice/draupnir-registration.yaml:/etc/ci-box/draupnir-registration.yaml:ro
+      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
+    command:
+      - -c
+      - |
+        if [ ! -f /data/homeserver.yaml ]; then
+          /start.py generate;
+        fi;
+        sed \
+          -e "s|__CI_BOX_SYNAPSE_SERVER_NAME__|$${SYNAPSE_SERVER_NAME}|g" \
+          -e "s|__CI_BOX_SYNAPSE_PUBLIC_BASEURL__|$${SYNAPSE_PUBLIC_BASEURL}|g" \
+          -e "s|__CI_BOX_SYNAPSE_ANTISPAM_BASE_URL__|$${SYNAPSE_ANTISPAM_BASE_URL}|g" \
+          -e "s|__CI_BOX_SYNAPSE_DB__|$${SYNAPSE_POSTGRES_DB}|g" \
+          /etc/ci-box/homeserver.overrides.yaml > /data/homeserver.yaml;
+        cp /etc/ci-box/draupnir-registration.yaml /data/draupnir-registration.yaml
+    restart: "no"
+
+  draupnir-build-lint:
+    build:
+      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24}
+        NODE_VARIANT: ${NODE_VARIANT:-slim}
+    image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
+    environment:
+      CI: "1"
+      NODE_ENV: development
+    working_dir: /workspace
+    command: ["sh", "-lc", "npm run build:all && npm run lint"]
+    profiles: [build-lint]
+
+  draupnir-unit:
+    build:
+      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24}
+        NODE_VARIANT: ${NODE_VARIANT:-slim}
+    image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
+    environment:
+      CI: "1"
+      NODE_ENV: development
+    working_dir: /workspace
+    command: ["sh", "-lc", "npm run build:all && npm test"]
+    profiles: [unit]
+
+  draupnir-integration:
+    build:
+      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24}
+        NODE_VARIANT: ${NODE_VARIANT:-slim}
+    image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
+    depends_on:
+      synapse:
+        condition: service_healthy
+      draupnir-config-init:
+        condition: service_completed_successfully
+    environment:
+      CI: "1"
+      NODE_ENV: harness
+      SYNAPSE_BASE_URL: http://synapse:8008
+    working_dir: /workspace
+    volumes:
+      - draupnir-config:/workspace/config
+    command: ["npm", "run", "-w", "apps/draupnir", "test:integration"]
+    profiles: [integration]
+
+  draupnir-appservice-integration:
+    build:
+      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24}
+        NODE_VARIANT: ${NODE_VARIANT:-slim}
+    image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
+    depends_on:
+      synapse:
+        condition: service_healthy
+      draupnir-config-init:
+        condition: service_completed_successfully
+    environment:
+      CI: "1"
+      NODE_ENV: harness
+      SYNAPSE_BASE_URL: http://synapse:8008
+    working_dir: /workspace
+    volumes:
+      - draupnir-config:/workspace/config
+      - ./scripts/appservice/draupnir-registration.yaml:/workspace/apps/draupnir/draupnir-registration.yaml:ro
+      - ./scripts/appservice/config.harness.yaml:/workspace/apps/draupnir/src/appservice/config/config.harness.yaml:ro
+    command:
+      ["npm", "run", "-w", "apps/draupnir", "test:appservice:integration"]
+    profiles: [appservice-integration]
+
+  draupnir-config-init:
+    image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
+    volumes:
+      - draupnir-config:/config
+      - ${DRAUPNIR_CONFIG_SOURCE:-../Draupnir/config}:/source-config:ro
+    command:
+      - sh
+      - -lc
+      - >-
+        cp -a /source-config/. /config/; sed -i -e
+        "s|http://localhost:8081|http://nginx:8081|g" -e
+        "s|127.0.0.1:8081|nginx:8081|g" /config/harness.yaml
+        /config/default.yaml
+    restart: "no"
+    profiles: [integration, appservice-integration, development]
+
+  nginx:
+    image: ${NGINX_IMAGE:-nginx:stable-alpine}
+    depends_on:
+      synapse:
+        condition: service_healthy
+    volumes:
+      - ${REVERSE_PROXY_CONFIG_PATH:-./scripts/nginx/nginx.conf}:/etc/nginx/nginx.conf:ro
+      - ${REVERSE_PROXY_NEWS_PATH:-../Draupnir/apps/draupnir/test/draupnir_news.json}:/var/www/test/draupnir_news.json:ro
+
+volumes:
+  postgres-data:
+  synapse-data:
+  draupnir-config:
