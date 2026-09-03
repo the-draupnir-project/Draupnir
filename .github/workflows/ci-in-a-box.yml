@@ -7,11 +7,13 @@ name: Box
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches-ignore:
+      - "github-actions/**"
   schedule:
     - cron: "20 20 * * *"
+  pull_request:
+    branches-ignore:
+      - "github-actions/**"
   merge_group:
     branches: [main]
   workflow_dispatch:
