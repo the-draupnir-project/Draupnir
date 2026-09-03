@@ -149,7 +149,7 @@ services:
     volumes:
       - draupnir-config:/workspace/config
       - ./scripts/appservice/draupnir-registration.yaml:/workspace/apps/draupnir/draupnir-registration.yaml:ro
-      - ${DRAUPNIR_CONTEXT:-../Draupnir}/apps/draupnir/src/appservice/config/config.harness.yaml:/workspace/apps/draupnir/src/appservice/config/config.harness.yaml:ro
+      - ./scripts/appservice/config.harness.yaml:/workspace/apps/draupnir/src/appservice/config/config.harness.yaml:ro
     command:
       ["npm", "run", "-w", "apps/draupnir", "test:appservice:integration"]
     profiles: [appservice-integration]
