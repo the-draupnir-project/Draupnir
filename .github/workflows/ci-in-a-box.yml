@@ -63,7 +63,8 @@ jobs:
       - name: Build and lint
         run:
           docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
-          "$CI_BOX_VARIANT_FILE" --profile build-lint up --build
+          "$CI_BOX_VARIANT_FILE" --profile build-lint up
+          --abort-on-container-exit --exit-code-from draupnir-build-lint --build
           draupnir-build-lint
       - name: Collect diagnostics
         if: failure()
@@ -110,7 +111,8 @@ jobs:
       - name: Run unit tests
         run:
           docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
-          "$CI_BOX_VARIANT_FILE" --profile unit up --build draupnir-unit
+          "$CI_BOX_VARIANT_FILE" --profile unit up --abort-on-container-exit
+          --exit-code-from draupnir-unit --build draupnir-unit
       - name: Collect diagnostics
         if: failure()
         run:
@@ -166,8 +168,9 @@ jobs:
       - name: Run integration tests
         run:
           docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
-          "$CI_BOX_VARIANT_FILE" --profile integration up --build
-          draupnir-integration
+          "$CI_BOX_VARIANT_FILE" --profile integration up
+          --abort-on-container-exit --exit-code-from draupnir-integration
+          --build draupnir-integration
       - name: Collect diagnostics
         if: failure()
         run:
@@ -225,7 +228,9 @@ jobs:
       - name: Run appservice integration tests
         run:
           docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
-          "$CI_BOX_VARIANT_FILE" --profile appservice-integration up --build
+          "$CI_BOX_VARIANT_FILE" --profile appservice-integration up
+          --abort-on-container-exit --exit-code-from
+          draupnir-appservice-integration --build
           draupnir-appservice-integration
       - name: Collect diagnostics
         if: failure()
