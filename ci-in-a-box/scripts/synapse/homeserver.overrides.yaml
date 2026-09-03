@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+server_name: "__CI_BOX_SYNAPSE_SERVER_NAME__"
+pid_file: /data/homeserver.pid
+listeners:
+  - port: 8008
+    resources:
+    - compress: false
+      names:
+      - client
+      - federation
+    tls: false
+    type: http
+    x_forwarded: true
+database:
+  name: psycopg2
+  args:
+    user: "mjolnir-tester"
+    password: "mjolnir-test"
+    database: "__CI_BOX_SYNAPSE_DB__"
+    host: "postgres"
+    port: 5432
+log_config: "/data/__CI_BOX_SYNAPSE_SERVER_NAME__.log.config"
+media_store_path: /data/media_store
+registration_shared_secret: "REGISTRATION_SHARED_SECRET"
+report_stats: false
+macaroon_secret_key: "Cee:o8O=k7hOp4C3;eyoTH~&SL;tVa.j8zBXF1zbWGd.fcRc-m"
+form_secret: "_&Vo8k;b:bG9fTMGYSV0JFKUFKarjvhRif~:.dN^eiiI_pn:Y#"
+signing_key_path: "/data/__CI_BOX_SYNAPSE_SERVER_NAME__.signing.key"
+trusted_key_servers:
+  - server_name: "matrix.org"
+
+public_baseurl: "__CI_BOX_SYNAPSE_PUBLIC_BASEURL__"
+enable_registration: true
+enable_registration_without_verification: true
+
+app_service_config_files:
+  - "/data/draupnir-registration.yaml"
+
+modules:
+  - module: synapse_http_antispam.HTTPAntispam
+    config:
+      base_url: __CI_BOX_SYNAPSE_ANTISPAM_BASE_URL__
+      authorization: DEFAULT
+      do_ping: false
+      enabled_callbacks:
+        - user_may_invite
+        - user_may_join_room
+        - check_event_for_spam
+      fail_open:
+        user_may_invite: true
+        user_may_join_room: true
+        check_event_for_spam: true
+
+rc_registration:
+  per_second: 10000
+  burst_count: 10000
+
+rc_message:
+  per_second: 10000
+  burst_count: 10000
+
+rc_invites:
+  per_room:
+    per_second: 10000
+    burst_count: 10000
+  per_user:
+    per_second: 10000
+    burst_count: 10000
+  per_sender:
+    per_second: 10000
+    burst_count: 10000
+
+rc_login:
+  address:
+    per_second: 10000
+    burst_count: 10000
+  account:
+    per_second: 10000
+    burst_count: 10000
+  failed_attempts:
+    per_second: 10000
+    burst_count: 10000
+
+rc_admin_redaction:
+  per_second: 10000
+  burst_count: 10000
+
+rc_joins:
+  local:
+    per_second: 10000
+    burst_count: 10000
+  remote:
+    per_second: 10000
+    burst_count: 10000

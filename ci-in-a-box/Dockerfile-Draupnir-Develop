@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+# Copyright 2024 Gnuxie <Gnuxie@protonmail.com>
+# Copyright 2019 The Matrix.org Foundation C.I.C.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# syntax=docker/dockerfile:1.7
+
+ARG NODE_VERSION=24
+ARG NODE_VARIANT=slim
+
+FROM node:${NODE_VERSION}-${NODE_VARIANT} AS build-stage
+RUN if [ -f /etc/alpine-release ]; then \
+        apk add --no-cache git python3 make g++; \
+    else \
+        apt-get update \
+        && apt-get install -y --no-install-recommends git python3 make g++ \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+WORKDIR /tmp/src
+COPY package.json package-lock.json ./
+COPY packages/interface-manager/package.json ./packages/interface-manager/package.json
+COPY packages/matrix-basic-types/package.json ./packages/matrix-basic-types/package.json
+COPY packages/matrix-protection-suite/package.json ./packages/matrix-protection-suite/package.json
+COPY packages/matrix-protection-suite-for-matrix-bot-sdk/package.json ./packages/matrix-protection-suite-for-matrix-bot-sdk/package.json
+COPY packages/mps-interface-adaptor/package.json ./packages/mps-interface-adaptor/package.json
+COPY packages/tsconfig/package.json ./packages/tsconfig/package.json
+COPY apps/draupnir/package.json ./apps/draupnir/package.json
+
+# Install dependencies first so source edits don't invalidate this layer.
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY . .
+
+# Build the complete development workspace. The CI service needs build tools,
+# source, development dependencies, and generated output in the final image.
+RUN npm run build
+
+FROM node:${NODE_VERSION}-${NODE_VARIANT} AS final-stage
+RUN if [ -f /etc/alpine-release ]; then \
+        apk add --no-cache git; \
+    else \
+        apt-get update \
+        && apt-get install -y --no-install-recommends git \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+WORKDIR /workspace
+COPY --from=build-stage /tmp/src /workspace
+
+ENV CI=1
+ENV NODE_ENV=development
+ENV NODE_CONFIG_DIR=/workspace/config
+
+CMD ["npm", "test"]
