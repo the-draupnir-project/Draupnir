@@ -6,10 +6,10 @@ pid_file: /data/homeserver.pid
 listeners:
   - port: 8008
     resources:
-    - compress: false
-      names:
-      - client
-      - federation
+      - compress: false
+        names:
+          - client
+          - federation
     tls: false
     type: http
     x_forwarded: true
