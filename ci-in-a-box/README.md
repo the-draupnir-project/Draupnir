@@ -40,31 +40,32 @@ parent/
 └── ...
 ```
 
-`ci-in-a-box/` sits inside the Draupnir repo and should be invoked from there.
+`ci-in-a-box/` sits inside the Draupnir repo. All commands below are written to
+be run from the Draupnir repo root, so they point at the `ci-in-a-box/`
+subfolder explicitly.
 
 ## Quick start
 
 1. Copy the sample environment file if you want to use non-default settings:
 
 ```bash
-cp .env.example .env
+cp ci-in-a-box/.env.example ci-in-a-box/.env
 ```
 
-2. Review the contents of `.env` to see if your local checkouts are aligned
-   correctly or if you need to use non defaults.
+2. Review the contents of `ci-in-a-box/.env` to see if your local checkouts
+   are aligned correctly or if you need to use non defaults.
 
 3. Run the validation command you want to exercise, for example:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
 ```
 
 If you need to inspect the resolved Compose configuration while debugging, you
 can still run:
 
 ```bash
-docker compose config
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile '*' config --quiet
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile '*' config --quiet
 ```
 
 ## Variant selection
@@ -82,7 +83,7 @@ Use the base Compose file together with one of the variant files when running a
 check:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
 ```
 
 ## Common contributor commands
@@ -90,33 +91,33 @@ docker compose -f compose.yaml -f compose.node24-slim.yaml --profile build-lint 
 Build and lint:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile build-lint up --build draupnir-build-lint
 ```
 
 Run unit tests:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile unit up --build draupnir-unit
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile unit up --build draupnir-unit
 ```
 
 Run bot mode integration tests:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml up -d
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile integration up --build draupnir-integration
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml up -d
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile integration up --build draupnir-integration
 ```
 
 Run appservice mode integration tests:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml up -d
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile appservice-integration up --build draupnir-appservice-integration
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml up -d
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile appservice-integration up --build draupnir-appservice-integration
 ```
 
 Clean up after a run:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-slim.yaml --profile '*' down --volumes
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-slim.yaml --profile '*' down --volumes
 ```
 
 ## Debian and Alpine checks
@@ -124,7 +125,7 @@ docker compose -f compose.yaml -f compose.node24-slim.yaml --profile '*' down --
 Use the variant file to switch between the Debian and Alpine validation paths:
 
 ```bash
-docker compose -f compose.yaml -f compose.node24-alpine.yaml --profile unit up --build draupnir-unit
+docker compose -f ci-in-a-box/compose.yaml -f ci-in-a-box/compose.node24-alpine.yaml --profile unit up --build draupnir-unit
 ```
 
 This keeps the glibc and musl validation paths in the same matrix, so you can
