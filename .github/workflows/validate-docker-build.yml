@@ -11,6 +11,7 @@ on:
     branches-ignore:
       - "dependabot/**"
       - "github-actions/**"
+      - "gh-readonly-queue/**"
   schedule:
     - cron: "20 20 * * *"
   pull_request:
