@@ -1,0 +1,246 @@
+# SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Called Box here to have the name that shows up in github GUI not be the full Ci in a box
+name: Box
+
+on:
+  push:
+    branches-ignore:
+      - "github-actions/**"
+  schedule:
+    - cron: "20 20 * * *"
+  pull_request:
+    branches-ignore:
+      - "github-actions/**"
+  merge_group:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI_BOX_COMPOSE_FILE: ci-in-a-box/compose.yaml
+  DRAUPNIR_CONTEXT: ..
+  DRAUPNIR_DOCKERFILE: ci-in-a-box/Dockerfile-Draupnir-Develop
+  DRAUPNIR_CONFIG_SOURCE: ../config
+  REVERSE_PROXY_CONFIG_PATH: ./scripts/nginx/nginx.conf
+  REVERSE_PROXY_NEWS_PATH: ../apps/draupnir/test/draupnir_news.json
+  SYNAPSE_HTTP_ANTISPAM_SOURCE: ../synapse-http-antispam/synapse_http_antispam.py
+
+jobs:
+  build:
+    name:
+      Build & Lint / Node ${{ matrix.node }} / ${{ matrix.variant }} / ${{
+      matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.node == '26' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24", "26"]
+        variant: [slim, alpine]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      CI_BOX_PROJECT:
+        ci-in-a-box-node${{ matrix.node }}-${{ matrix.variant }}-${{ matrix.arch
+        }}
+      CI_BOX_VARIANT_FILE:
+        ci-in-a-box/compose.node${{ matrix.node }}-${{ matrix.variant }}.yaml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate Compose configuration
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' config --quiet
+      - name: Build and lint
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile build-lint up
+          --abort-on-container-exit --exit-code-from draupnir-build-lint --build
+          draupnir-build-lint
+      - name: Collect diagnostics
+        if: failure()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' ps && docker compose -p
+          "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f "$CI_BOX_VARIANT_FILE"
+          --profile '*' logs --no-color
+      - name: Cleanup
+        if: always()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' down --volumes --remove-orphans
+
+  unit:
+    name:
+      Unit tests / Node ${{ matrix.node }} / ${{ matrix.variant }} / ${{
+      matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.node == '26' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24", "26"]
+        variant: [slim, alpine]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      CI_BOX_PROJECT:
+        ci-in-a-box-node${{ matrix.node }}-${{ matrix.variant }}-${{ matrix.arch
+        }}
+      CI_BOX_VARIANT_FILE:
+        ci-in-a-box/compose.node${{ matrix.node }}-${{ matrix.variant }}.yaml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate Compose configuration
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' config --quiet
+      - name: Run unit tests
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile unit up --abort-on-container-exit
+          --exit-code-from draupnir-unit --build draupnir-unit
+      - name: Collect diagnostics
+        if: failure()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' ps && docker compose -p
+          "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f "$CI_BOX_VARIANT_FILE"
+          --profile '*' logs --no-color
+      - name: Cleanup
+        if: always()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' down --volumes --remove-orphans
+
+  integration:
+    name:
+      Ci Box Integration tests / Node ${{ matrix.node }} / ${{ matrix.variant }}
+      / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.node == '26' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24", "26"]
+        variant: [slim, alpine]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      CI_BOX_PROJECT:
+        ci-in-a-box-node${{ matrix.node }}-${{ matrix.variant }}-${{ matrix.arch
+        }}
+      CI_BOX_VARIANT_FILE:
+        ci-in-a-box/compose.node${{ matrix.node }}-${{ matrix.variant }}.yaml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Check out external antispam module
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: maunium/synapse-http-antispam
+          path: synapse-http-antispam
+          ref: main
+      - name: Validate Compose configuration
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' config --quiet
+      - name: Start support stack
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" up -d
+      - name: Run integration tests
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile integration up
+          --abort-on-container-exit --exit-code-from draupnir-integration
+          --build draupnir-integration
+      - name: Collect diagnostics
+        if: failure()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' ps && docker compose -p
+          "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f "$CI_BOX_VARIANT_FILE"
+          --profile '*' logs --no-color
+      - name: Cleanup
+        if: always()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' down --volumes --remove-orphans
+
+  appservice-integration:
+    name:
+      Application Service Integration tests / Node ${{ matrix.node }} / ${{
+      matrix.variant }} / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.node == '26' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24", "26"]
+        variant: [slim, alpine]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      CI_BOX_PROJECT:
+        ci-in-a-box-node${{ matrix.node }}-${{ matrix.variant }}-${{ matrix.arch
+        }}
+      CI_BOX_VARIANT_FILE:
+        ci-in-a-box/compose.node${{ matrix.node }}-${{ matrix.variant }}.yaml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Check out external antispam module
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: maunium/synapse-http-antispam
+          path: synapse-http-antispam
+          # Main is intentional so we know if compatibility breaks with the latest version of the antispam module.
+          # This is for the same reason why Ci is rerun periodically.
+          ref: main
+      - name: Validate Compose configuration
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' config --quiet
+      - name: Start support stack
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" up -d
+      - name: Run appservice integration tests
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile appservice-integration up
+          --abort-on-container-exit --exit-code-from
+          draupnir-appservice-integration --build
+          draupnir-appservice-integration
+      - name: Collect diagnostics
+        if: failure()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' ps && docker compose -p
+          "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f "$CI_BOX_VARIANT_FILE"
+          --profile '*' logs --no-color
+      - name: Cleanup
+        if: always()
+        run:
+          docker compose -p "$CI_BOX_PROJECT" -f "$CI_BOX_COMPOSE_FILE" -f
+          "$CI_BOX_VARIANT_FILE" --profile '*' down --volumes --remove-orphans
