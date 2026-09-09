@@ -15,6 +15,11 @@ all dependencies. As we create and pass `MatrixClient` through Draupnir,
 matrix-protection-suite-for-matrix-bot-sdk, the vector bot-sdk fork itself, and
 also matrix-appservice-bridge.
 
+### @matrix-org/matrix-crypto-sdk-nodejs
+
+This is pinned waiting for matrix-appservice-bridge to be updated so we have
+musl builds working again allowing Alpine Docker Image to become a reality.
+
 ### postgres
 
 https://github.com/porsager/postgres/issues/1143
