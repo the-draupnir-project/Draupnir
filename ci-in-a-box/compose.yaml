@@ -77,8 +77,8 @@ services:
 
   draupnir-build-lint:
     build:
-      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
-      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      context: ${DRAUPNIR_CONTEXT:-..}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-ci-in-a-box/Dockerfile-Draupnir-Develop}
       args:
         NODE_VERSION: ${NODE_VERSION:-24}
         NODE_VARIANT: ${NODE_VARIANT:-slim}
@@ -92,8 +92,8 @@ services:
 
   draupnir-unit:
     build:
-      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
-      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      context: ${DRAUPNIR_CONTEXT:-..}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-ci-in-a-box/Dockerfile-Draupnir-Develop}
       args:
         NODE_VERSION: ${NODE_VERSION:-24}
         NODE_VARIANT: ${NODE_VARIANT:-slim}
@@ -107,8 +107,8 @@ services:
 
   draupnir-integration:
     build:
-      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
-      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      context: ${DRAUPNIR_CONTEXT:-..}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-ci-in-a-box/Dockerfile-Draupnir-Develop}
       args:
         NODE_VERSION: ${NODE_VERSION:-24}
         NODE_VARIANT: ${NODE_VARIANT:-slim}
@@ -130,8 +130,8 @@ services:
 
   draupnir-appservice-integration:
     build:
-      context: ${DRAUPNIR_CONTEXT:-../Draupnir}
-      dockerfile: ${DRAUPNIR_DOCKERFILE:-../Draupnir-Ci-in-a-box/Dockerfile-Draupnir-Develop}
+      context: ${DRAUPNIR_CONTEXT:-..}
+      dockerfile: ${DRAUPNIR_DOCKERFILE:-ci-in-a-box/Dockerfile-Draupnir-Develop}
       args:
         NODE_VERSION: ${NODE_VERSION:-24}
         NODE_VARIANT: ${NODE_VARIANT:-slim}
@@ -158,7 +158,7 @@ services:
     image: ${DRAUPNIR_IMAGE:-draupnir/ci-box-draupnir:node${NODE_VERSION:-24}-${NODE_VARIANT:-slim}}
     volumes:
       - draupnir-config:/config
-      - ${DRAUPNIR_CONFIG_SOURCE:-../Draupnir/config}:/source-config:ro
+      - ${DRAUPNIR_CONFIG_SOURCE:-../config}:/source-config:ro
     command:
       - sh
       - -lc
@@ -177,7 +177,7 @@ services:
         condition: service_healthy
     volumes:
       - ${REVERSE_PROXY_CONFIG_PATH:-./scripts/nginx/nginx.conf}:/etc/nginx/nginx.conf:ro
-      - ${REVERSE_PROXY_NEWS_PATH:-../Draupnir/apps/draupnir/test/draupnir_news.json}:/var/www/test/draupnir_news.json:ro
+      - ${REVERSE_PROXY_NEWS_PATH:-../apps/draupnir/test/draupnir_news.json}:/var/www/test/draupnir_news.json:ro
 
 volumes:
   postgres-data:
