@@ -52,8 +52,8 @@ subfolder explicitly.
 cp ci-in-a-box/.env.example ci-in-a-box/.env
 ```
 
-2. Review the contents of `ci-in-a-box/.env` to see if your local checkouts
-   are aligned correctly or if you need to use non defaults.
+2. Review the contents of `ci-in-a-box/.env` to see if your local checkouts are
+   aligned correctly or if you need to use non defaults.
 
 3. Run the validation command you want to exercise, for example:
 
