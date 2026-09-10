@@ -35,7 +35,8 @@ export class SimulatedServerBanSynchronisationCapability
   public constructor(private readonly protectedRoomsSet: ProtectedRoomsSet) {
     this.simulatedCapability = new ServerACLSynchronisationCapability(
       FakeStateSender,
-      this.protectedRoomsSet
+      this.protectedRoomsSet,
+      false
     );
     this.outcomeFromIntentInRoom =
       this.simulatedCapability.outcomeFromIntentInRoom.bind(

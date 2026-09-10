@@ -94,6 +94,8 @@ export interface IConfig {
   logMutedModules: string[];
   verifyPermissionsOnStartup: boolean;
   disableServerACL: boolean;
+  /** Whether to allow ip literals in produced server ACLs (m.room.server_acl.allow_ip_literals) */
+  serverAclAllowIpLiterals: boolean;
   noop: boolean;
   automaticallyRedactForReasons: string[]; // case-insensitive globs
   protectAllJoinedRooms: boolean;
@@ -217,6 +219,7 @@ const defaultConfig: IConfig = {
   verifyPermissionsOnStartup: true,
   noop: false,
   disableServerACL: false,
+  serverAclAllowIpLiterals: false,
   automaticallyRedactForReasons: ["spam", "advertising"],
   protectAllJoinedRooms: false,
   backgroundDelayMS: 500,

@@ -145,6 +145,7 @@ describeCapabilityContextGlue<
     return capabilityProvider.factory(protectionDescription, {
       stateEventSender: draupnir.clientPlatform.toRoomStateEventSender(),
       protectedRoomsSet: draupnir.protectedRoomsSet,
+      allowIpLiterals: draupnir.config.serverAclAllowIpLiterals,
     });
   },
 });
@@ -161,6 +162,7 @@ describeCapabilityContextGlue<
   ): Capability {
     return capabilityProvider.factory(protectionDescription, {
       protectedRoomsSet: draupnir.protectedRoomsSet,
+      allowIpLiterals: draupnir.config.serverAclAllowIpLiterals,
     } as ServerACLSynchronisationCapabilityContext);
   },
 });
