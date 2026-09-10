@@ -10,6 +10,27 @@
   extends: ["github>the-draupnir-project/.github:renovate-shared"],
   packageRules: [
     {
+      groupName: "Production Dependencies",
+      matchPackagePatterns: ["*"],
+      matchDepTypes: [
+        "dependencies",
+        "devDependencies",
+        "peerDependencies",
+        "optionalDependencies",
+      ],
+    },
+    {
+      groupName: "Development Dependencies",
+      matchPackagePatterns: ["*"],
+      matchDepTypes: [
+        "pre-commit",
+        "devDependencies",
+        "peerDependencies",
+        "optionalDependencies",
+      ],
+      matchPackageNames: ["!/^@types.*/"],
+    },
+    {
       matchManagers: ["github-actions"],
       matchUpdateTypes: ["major"],
       automerge: false,
