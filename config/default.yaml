@@ -32,6 +32,24 @@ pantalaimon:
   # which would allow using secret management systems such as systemd's service credentials.
   password: your_password
 
+zeroTouchDeploymentSelfLogin:
+  # Whether or not Draupnir will use zero-touch deployment self-login.
+  # The purpose of this is to allow Draupnir to login to the homeserver using a username and password on first startup,
+  # without needing to pre-provision an access token.
+  # This is especially useful for zero-touch deployments where pre-provisioning an access token may not be practical.
+  # Its also straight up easier to use for users who don't want to faf around with curl to obtain an access token.
+  enabled: false
+
+  # The username to login with.
+  username: draupnir
+
+  # The password Draupnir will login with.
+  #
+  # After successfully logging in once, this will be ignored as long as the access token is stored.
+  # This option can be loaded from a file by passing "--zero-touch-password-path <path>" at the command line,
+  # which would allow using secret management systems such as systemd's service credentials.
+  password: your_password
+
 # Experimental usage of the matrix-bot-sdk rust crypto.
 # This can not be used with Pantalaimon.
 # Make sure to setup the bot as if you are not using pantalaimon for this.
