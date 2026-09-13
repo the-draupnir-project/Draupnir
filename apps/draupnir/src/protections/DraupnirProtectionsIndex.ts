@@ -16,6 +16,7 @@ import "./BanPropagation";
 import "./BasicFlooding";
 import "./DraupnirNews/DraupnirNews";
 import "./FirstMessageIsImage";
+import "./FirstMessageIsWordProtection";
 import "./HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
 import "./InvalidEventProtection";
 import "./JoinWaveShortCircuit";
