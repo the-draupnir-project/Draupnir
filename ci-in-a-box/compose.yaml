@@ -30,7 +30,7 @@ services:
       PYTHONPATH: /data
     volumes:
       - synapse-data:/data
-      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
+      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
     healthcheck:
       test:
         [
@@ -59,7 +59,7 @@ services:
       - synapse-data:/data
       - ./scripts/synapse/homeserver.overrides.yaml:/etc/ci-box/homeserver.overrides.yaml:ro
       - ./scripts/appservice/draupnir-registration.yaml:/etc/ci-box/draupnir-registration.yaml:ro
-      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
+      - ${SYNAPSE_HTTP_ANTISPAM_SOURCE:-../../synapse-http-antispam/synapse_http_antispam.py}:/data/synapse_http_antispam.py:ro
     command:
       - -c
       - |
