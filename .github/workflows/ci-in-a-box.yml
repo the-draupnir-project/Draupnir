@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Called Box here to have the name that shows up in github GUI not be the full Ci in a box
-name: Box
+name: Ci in a Box
 
 on:
   push:
@@ -44,6 +44,16 @@ jobs:
         node: ["24", "26"]
         variant: [slim, alpine]
         arch: [amd64, arm64]
+        exclude:
+          - node: "26"
+            variant: alpine
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: amd64
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -92,6 +102,16 @@ jobs:
         node: ["24", "26"]
         variant: [slim, alpine]
         arch: [amd64, arm64]
+        exclude:
+          - node: "26"
+            variant: alpine
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: amd64
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -129,8 +149,8 @@ jobs:
 
   integration:
     name:
-      Ci Box Integration tests / Node ${{ matrix.node }} / ${{ matrix.variant }}
-      / ${{ matrix.arch }}
+      Integration tests / Node ${{ matrix.node }} / ${{ matrix.variant }} / ${{
+      matrix.arch }}
     runs-on: ${{ matrix.runner }}
     continue-on-error: ${{ matrix.node == '26' }}
     strategy:
@@ -139,6 +159,16 @@ jobs:
         node: ["24", "26"]
         variant: [slim, alpine]
         arch: [amd64, arm64]
+        exclude:
+          - node: "26"
+            variant: alpine
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: amd64
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -197,6 +227,16 @@ jobs:
         node: ["24", "26"]
         variant: [slim, alpine]
         arch: [amd64, arm64]
+        exclude:
+          - node: "26"
+            variant: alpine
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: arm64
+          - node: "26"
+            variant: slim
+            arch: amd64
         include:
           - arch: amd64
             runner: ubuntu-24.04
