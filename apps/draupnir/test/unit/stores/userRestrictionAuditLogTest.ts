@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Database from "better-sqlite3";
+import { describe } from "@jest/globals";
 import { BetterSqliteOptions } from "../../../src/backingstore/better-sqlite3/BetterSqliteStore";
 import {
   describePolicyRule,
