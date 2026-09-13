@@ -1,4 +1,5 @@
 // Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -25,7 +26,6 @@ import {
 } from "@the-draupnir-project/matrix-basic-types";
 import {
   BasicInvocationInformation,
-  MatrixRoomIDPresentationType,
   MatrixRoomReferencePresentationSchema,
   MatrixUserIDPresentationType,
   StringPresentationType,
@@ -37,6 +37,7 @@ import {
   DraupnirContextToCommandContextTranslator,
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
+import { matrixToPermalinkFromClientUser } from "../utils";
 import { ResultError } from "@gnuxie/typescript-result";
 
 export async function findPolicyRoomEditorFromRoomReference(
@@ -85,7 +86,14 @@ export const DraupnirBanCommand = describeCommand({
         return Ok({
           suggestions: policyRoomManager
             .getEditablePolicyRoomIDs(clientUserID, PolicyRuleType.User)
-            .map((room) => MatrixRoomIDPresentationType.wrap(room)),
+            .map((room) =>
+              StringPresentationType.wrap(
+                matrixToPermalinkFromClientUser(
+                  room.toRoomIDOrAlias(),
+                  clientUserID
+                )
+              )
+            ),
         });
       },
     }
