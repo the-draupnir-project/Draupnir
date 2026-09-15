@@ -30,7 +30,7 @@ import { ServerBanIntentProjection } from "./ServerBanIntentProjection";
 import { ServerBanIntentProjectionDescription } from "./ServerBanIntentProjectionNode";
 import { ServerBanSynchronisationCapability } from "./ServerBanSynchronisationCapability";
 import { Logger } from "../../../Logging/Logger";
-import { DisposableProjection } from "../../../Projection/ProjectionLocator";
+import { DisposableProjection } from "../../../Projection/ProjectionAllocator";
 
 const log = new Logger("ServerBanSynchronisationProtection");
 
@@ -125,18 +125,13 @@ describeProtection<Capabilities>({
     _settings,
     capabilities
   ) => {
-    const intentProjection = protectedRoomsSet.projectionLocator.locate<
+    const intentProjection = protectedRoomsSet.projectionAllocator.allocate<
       DisposableProjection<ServerBanIntentProjection>
-    >({
-      description: ServerBanIntentProjectionDescription,
-      partition: {
-        draupnirID: protectedRoomsSet.userID,
-      },
+    >(lifetime, protectedRoomsSet, ServerBanIntentProjectionDescription, {
+      draupnirID: protectedRoomsSet.userID,
     });
     if (isError(intentProjection)) {
-      return intentProjection.elaborate(
-        "Unable to locate the intent projection"
-      );
+      return intentProjection.elaborate("Unable to allocate intent projection");
     }
     return Ok(
       new ServerBanSynchronisationProtection(

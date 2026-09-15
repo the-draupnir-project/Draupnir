@@ -5,9 +5,9 @@
 import { Ok } from "@gnuxie/typescript-result";
 import {
   DisposableProjection,
-  ProjectionLocator,
-  StandardProjectionLocator,
-} from "../Projection/ProjectionLocator";
+  ProjectionAllocator,
+  StandardProjectionAllocator,
+} from "../Projection/ProjectionAllocator";
 import {
   MemberBanIntentProjection,
   StandardMemberBanIntentProjection,
@@ -20,28 +20,33 @@ import {
 import { ServerBanIntentProjectionDescription } from "./StandardProtections/ServerBanSynchronisation/ServerBanIntentProjectionNode";
 import type { ProtectedRoomsSet } from "./ProtectedRoomsSet";
 
-export function makeProtectedRoomsSetProjectionLocator(
-  protectedRoomsSet: ProtectedRoomsSet
-): ProjectionLocator<ProtectedRoomsSet> {
-  return new StandardProjectionLocator<ProtectedRoomsSet>(protectedRoomsSet)
-    .registerProjection<DisposableProjection<MemberBanIntentProjection>>({
-      projectionDescription: MemberBanIntentProjectionDescription,
-      factory(context) {
+/**
+ * This is used at the top level of the appservice and Draupnir to provide instances
+ * of projections that depend on context from a protected rooms set to construct.
+ * The projections are still owned by the protected rooms set that wants them.
+ * This is just something that we have to deal with until we port the entire
+ * data pipeline over unfortunately.
+ */
+export function makeProtectedRoomsSetProjectionAllocator(): ProjectionAllocator<ProtectedRoomsSet> {
+  return new StandardProjectionAllocator<ProtectedRoomsSet>()
+    .registerProjection<DisposableProjection<MemberBanIntentProjection>>(
+      MemberBanIntentProjectionDescription,
+      (context) => {
         return Ok(
           new StandardMemberBanIntentProjection(
             context.setPoliciesMatchingMembership
           )
         );
-      },
-    })
-    .registerProjection<DisposableProjection<ServerBanIntentProjection>>({
-      projectionDescription: ServerBanIntentProjectionDescription,
-      factory(context) {
+      }
+    )
+    .registerProjection<DisposableProjection<ServerBanIntentProjection>>(
+      ServerBanIntentProjectionDescription,
+      (context) => {
         return Ok(
           new StandardServerBanIntentProjection(
             context.watchedPolicyRooms.revisionIssuer
           )
         );
-      },
-    });
+      }
+    );
 }

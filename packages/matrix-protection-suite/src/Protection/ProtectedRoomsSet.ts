@@ -58,14 +58,13 @@ import {
 import { WatchedPolicyRooms } from "./WatchedPolicyRooms/WatchedPolicyRooms";
 import { MixinExtractor } from "../SafeMatrixEvents/EventMixinExtraction/EventMixinExtraction";
 import { RoomCreateEvent, RoomVersionMirror } from "../MatrixTypes/CreateRoom";
-import { ProjectionLocator } from "../Projection/ProjectionLocator";
-import { makeProtectedRoomsSetProjectionLocator } from "./ProtectedRoomsSetProjectionLocator";
+import { ProjectionAllocator } from "../Projection/ProjectionAllocator";
 
 export interface ProtectedRoomsSet {
   readonly watchedPolicyRooms: WatchedPolicyRooms;
   readonly protectedRoomsManager: ProtectedRoomsManager;
   readonly protections: ProtectionsManager;
-  readonly projectionLocator: ProjectionLocator<ProtectedRoomsSet>;
+  readonly projectionAllocator: ProjectionAllocator<ProtectedRoomsSet>;
   readonly setRoomMembership: SetRoomMembership;
   readonly setMembership: SetMembershipRevisionIssuer;
   readonly setRoomState: SetRoomState;
@@ -103,7 +102,6 @@ export class StandardProtectedRoomsSet implements ProtectedRoomsSet {
   private readonly setMembershipPolicyRevisionListener =
     this.setMembershipPolicyRevision.bind(this);
   public readonly setPoliciesMatchingMembership: SetMembershipPolicyRevisionIssuer;
-  public readonly projectionLocator: ProjectionLocator<ProtectedRoomsSet>;
 
   constructor(
     public readonly watchedPolicyRooms: WatchedPolicyRooms,
@@ -111,6 +109,7 @@ export class StandardProtectedRoomsSet implements ProtectedRoomsSet {
     public readonly protections: ProtectionsManager,
     public readonly userID: StringUserID,
     public readonly eventMixinExtractor: MixinExtractor,
+    public readonly projectionAllocator: ProjectionAllocator<ProtectedRoomsSet>,
     private readonly handleMissingProtectionPermissions?: HandleMissingProtectionPermissions
   ) {
     this.setRoomMembership.on("membership", this.membershipChangeListener);
@@ -127,7 +126,6 @@ export class StandardProtectedRoomsSet implements ProtectedRoomsSet {
       "revision",
       this.setMembershipPolicyRevisionListener
     );
-    this.projectionLocator = makeProtectedRoomsSetProjectionLocator(this);
   }
   public get setRoomState() {
     return this.protectedRoomsManager.setRoomState;

@@ -119,7 +119,7 @@ export * from "./PolicyList/StandardPolicyRoomRevisionIssuer";
 
 export * from "./Projection/Projection";
 export * from "./Projection/ProjectionDescription";
-export * from "./Projection/ProjectionLocator";
+export * from "./Projection/ProjectionAllocator";
 export * from "./Projection/ProjectionNode";
 
 export * from "./Protection/Capability/StandardCapability/CapabilityMethodSchema";
@@ -192,6 +192,7 @@ export * from "./Protection/DescriptionMeta";
 
 export * from "./Protection/DirectPropagationPolicyListRevisionIssuer";
 export * from "./Protection/ProtectedRoomsSet";
+export * from "./Protection/ProtectedRoomsSetProjectionAllocator";
 export * from "./Protection/Protection";
 export * from "./Protection/ProtectionHandles";
 

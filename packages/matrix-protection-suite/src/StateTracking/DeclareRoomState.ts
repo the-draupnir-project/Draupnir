@@ -43,6 +43,8 @@ import { StandardWatchedPolicyRooms } from "../Protection/WatchedPolicyRooms/Sta
 import { DefaultEventDecoder } from "../MatrixTypes/DefaultEventDecoder";
 import { DefaultMixinExtractor } from "../SafeMatrixEvents/MatrixEventMixinDescriptions/DefaultMixinExtractor";
 import { RoomCreateEvent } from "../MatrixTypes/CreateRoom";
+import { ProjectionAllocator } from "../Projection/ProjectionAllocator";
+import { makeProtectedRoomsSetProjectionAllocator } from "../Protection/ProtectedRoomsSetProjectionAllocator";
 
 const log = new Logger("DeclareRoomState");
 
@@ -56,6 +58,7 @@ export type DescribeProtectedRoomsSet = {
   rooms?: DescribeRoomOptions[];
   lists?: DescribeRoomOptions[];
   clientUserID?: StringUserID;
+  projectionAllocator?: ProjectionAllocator<ProtectedRoomsSet>;
 };
 
 export type ProtectedRoomsSetDescription = {
@@ -69,6 +72,7 @@ export async function describeProtectedRoomsSet({
   rooms = [],
   lists = [],
   clientUserID = randomUserID(),
+  projectionAllocator = makeProtectedRoomsSetProjectionAllocator(),
 }: DescribeProtectedRoomsSet): Promise<ProtectedRoomsSetDescription> {
   const listDescriptions = lists.map(describeRoom);
   const roomDescriptions = [...listDescriptions, ...rooms.map(describeRoom)];
@@ -139,7 +143,8 @@ export async function describeProtectedRoomsSet({
     protectedRoomsManager.ok,
     new FakeProtectionsManager(),
     clientUserID,
-    DefaultMixinExtractor
+    DefaultMixinExtractor,
+    projectionAllocator
   );
   return {
     protectedRoomsSet,
