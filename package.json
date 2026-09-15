@@ -36,7 +36,7 @@
   },
   "overrides": {
     "@vector-im/matrix-bot-sdk": "0.8.0-element.3",
-    "postgres": "3.4.7"
+    "postgres": "3.4.9"
   },
   "engines": {
     "node": ">=24.0.0"
