@@ -12,6 +12,7 @@ import { ProtectedRoomsSet } from "./ProtectedRoomsSet";
 import { Protection, ProtectionDescription } from "./Protection";
 import { AnyProjectionNode } from "../Projection/ProjectionNode";
 import { StandardHandleRegistryDescription } from "./HandleRegistry/StandardHandleRegistryDescription";
+import { ProjectionOrchestrationKey } from "../Projection/Projection";
 
 export const ProtectionIntentProjectionNodeHandle: HandleDescription<
   "handleIntentProjectionNode",
@@ -38,11 +39,15 @@ export const ProtectionIntentProjectionNodeHandle: HandleDescription<
       protection.handleIntentProjectionNode?.(node, delta);
     return lifetime.allocateResource(
       () => {
-        protection.intentProjection?.addNodeListener(listener);
+        protection.intentProjection?.[
+          ProjectionOrchestrationKey
+        ].addNodeListener(listener);
         return Ok(listener);
       },
       () => () => {
-        protection.intentProjection?.removeNodeListener(listener);
+        protection.intentProjection?.[
+          ProjectionOrchestrationKey
+        ].removeNodeListener(listener);
       }
     ) as Result<void>;
   },

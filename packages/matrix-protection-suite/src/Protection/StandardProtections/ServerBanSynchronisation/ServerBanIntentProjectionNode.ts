@@ -8,6 +8,7 @@
 // </text>
 
 import { StringServerName } from "@the-draupnir-project/matrix-basic-types";
+import { describeProjection } from "../../../Projection/ProjectionDescription";
 import { ProjectionNode } from "../../../Projection/ProjectionNode";
 import { PolicyListBridgeProjectionNode } from "./PolicyListBridgeProjection";
 import {
@@ -35,17 +36,28 @@ type ServerBanIntentMap = PersistentMap<
   List<LiteralPolicyRule | GlobPolicyRule>
 >;
 
+export type ServerBanIntentProjectionAccessMixin = {
+  deny: StringServerName[];
+  isServerDenied(serverName: StringServerName): boolean;
+};
+
 // is there a way that we can adapt this so that it can possibly be swapped
 // to a lazy ban style protection if acls become exhausted.
 // not withiout addressing the issues in the member protection tbh.
-export type ServerBanIntentProjectionNode = ProjectionNode<
-  [PolicyListBridgeProjectionNode],
-  ServerBanIntentProjectionDelta,
-  {
-    deny: StringServerName[];
-    isServerDenied(serverName: StringServerName): boolean;
-  }
->;
+export const ServerBanIntentProjectionDescription = describeProjection({
+  name: "ServerBanIntentProjection",
+  partitionKeys: ["draupnirID"],
+})
+  .withInputs<[PolicyListBridgeProjectionNode]>()
+  .withDownstreamDeltaShape<ServerBanIntentProjectionDelta>()
+  .withAccessMixin<ServerBanIntentProjectionAccessMixin>()
+  .build();
+
+export type ServerBanIntentProjectionDescription =
+  typeof ServerBanIntentProjectionDescription;
+
+export type ServerBanIntentProjectionNode =
+  ProjectionNode<ServerBanIntentProjectionDescription>;
 
 export class StandardServerBanIntentProjectionNode implements ServerBanIntentProjectionNode {
   public readonly ulid: ULID;

@@ -13,6 +13,10 @@ import {
   ProjectionNode,
 } from "../../../Projection/ProjectionNode";
 import {
+  describeProjection,
+  ProjectionDescription,
+} from "../../../Projection/ProjectionDescription";
+import {
   MemberPolicyMatches,
   MembershipPolicyRevision,
   MembershipPolicyRevisionDelta,
@@ -30,11 +34,14 @@ import { ListMultiMap } from "../../../Projection/ListMultiMap";
  * This is just a stand in while we wait to convert the upstream MembershipPolicyRevision
  * to a projection.
  */
-export type MemberBanInputProjectionNode = ProjectionNode<
+export type MemberBanInputProjectionDescription = ProjectionDescription<
   never[],
-  MembershipPolicyRevisionDelta
-> &
-  MembershipPolicyRevision;
+  MembershipPolicyRevisionDelta,
+  MembershipPolicyRevision
+>;
+
+export type MemberBanInputProjectionNode =
+  ProjectionNode<MemberBanInputProjectionDescription>;
 
 export interface MemberBanIntentProjectionDelta {
   ban: StringUserID[];
@@ -46,6 +53,14 @@ type MemberBanIntentMap = PersistentMap<
   List<LiteralPolicyRule | GlobPolicyRule>
 >;
 
+export type MemberBanIntentProjectionAccessMixin = {
+  allMembersWithRules(): MemberPolicyMatches[];
+  isMemberBanned(member: StringUserID): boolean;
+  allRulesMatchingMember(
+    member: StringUserID
+  ): (LiteralPolicyRule | GlobPolicyRule)[];
+};
+
 function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   return (
     policy.recommendation === Recommendation.Ban ||
@@ -53,17 +68,20 @@ function isPolicyRelevant(policy: LiteralPolicyRule | GlobPolicyRule): boolean {
   );
 }
 
-export type MemberBanIntentProjectionNode = ProjectionNode<
-  [MemberBanInputProjectionNode],
-  MemberBanIntentProjectionDelta,
-  {
-    allMembersWithRules(): MemberPolicyMatches[];
-    isMemberBanned(member: StringUserID): boolean;
-    allRulesMatchingMember(
-      member: StringUserID
-    ): (LiteralPolicyRule | GlobPolicyRule)[];
-  }
->;
+export const MemberBanIntentProjectionDescription = describeProjection({
+  name: "MemberBanIntentProjection",
+  partitionKeys: ["draupnirID"],
+})
+  .withInputs<[MemberBanInputProjectionNode]>()
+  .withDownstreamDeltaShape<MemberBanIntentProjectionDelta>()
+  .withAccessMixin<MemberBanIntentProjectionAccessMixin>()
+  .build();
+
+export type MemberBanIntentProjectionDescription =
+  typeof MemberBanIntentProjectionDescription;
+
+export type MemberBanIntentProjectionNode =
+  ProjectionNode<MemberBanIntentProjectionDescription>;
 
 // Upstream inputs are not yet converted to projections, so have to be never[]
 // for now.

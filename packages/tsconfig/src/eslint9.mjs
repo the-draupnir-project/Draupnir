@@ -52,7 +52,12 @@ export default tseslint.config({
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
-      { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      {
+        argsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        destructuredArrayIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+      },
     ],
     // we implement a lot of interfaces that return promises with synchronous functions.
     "require-await": "off",

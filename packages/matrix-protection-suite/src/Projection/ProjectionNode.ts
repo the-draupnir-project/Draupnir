@@ -8,27 +8,32 @@
 // </text>
 
 import { ULID } from "ulidx";
+import type {
+  AnyProjectionDescription,
+  ExtractProjectionDescriptionAccessMixin,
+  ExtractProjectionDescriptionDeltaShape,
+  ExtractProjectionDescriptionInputs,
+} from "./ProjectionDescription";
 
 export type ExtractDeltaShape<TProjectionNode extends ProjectionNode> =
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  TProjectionNode extends ProjectionNode<infer _, infer TDeltaShape>
-    ? TDeltaShape
+  TProjectionNode extends ProjectionNode<infer TDescription>
+    ? ExtractProjectionDescriptionDeltaShape<TDescription>
     : never;
 
-export type ExtractInputDeltaShapes<
-  TInputs extends ProjectionNode[] | unknown[],
-> = TInputs extends ProjectionNode[]
-  ? ExtractDeltaShape<TInputs[number]>
-  : unknown;
+export type ExtractInputDeltaShapes<TInputs extends readonly unknown[]> =
+  TInputs extends readonly ProjectionNode[]
+    ? ExtractDeltaShape<TInputs[number]>
+    : unknown;
 
 export type ExtractInputProjectionNodes<
   TProjectionNode extends ProjectionNode,
-> = TProjectionNode extends ProjectionNode<infer TInputs> ? TInputs : never;
+> =
+  TProjectionNode extends ProjectionNode<infer TDescription>
+    ? ExtractProjectionDescriptionInputs<TDescription>
+    : never;
 
 export type ProjectionNode<
-  TInputs extends ProjectionNode[] | unknown[] = unknown[],
-  TDownstreamDeltaShape = unknown,
-  TAccessMixin = Record<never, never>,
+  TDescription extends AnyProjectionDescription = AnyProjectionDescription,
 > = {
   readonly ulid: ULID;
   // Whether the projection has no state at all.
@@ -40,21 +45,23 @@ export type ProjectionNode<
    * from deltas you have to use the input deltas.
    */
   diff(
-    nextNode: ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>
-  ): TDownstreamDeltaShape;
+    nextNode: ProjectionNode<TDescription>
+  ): ExtractProjectionDescriptionDeltaShape<TDescription>;
   /**
    * Reduces an input delta into the next projection node.
    */
   reduceInput(
-    input: ExtractInputDeltaShapes<TInputs>
-  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
+    input: ExtractInputDeltaShapes<
+      ExtractProjectionDescriptionInputs<TDescription>
+    >
+  ): ProjectionNode<TDescription>;
   /**
    * Produces the initial node from the current input projection nodes. This can
    * only be used when the node is empty. Otherwise use reduceRebuild.
    */
   reduceInitialInputs(
-    input: TInputs
-  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
+    input: ExtractProjectionDescriptionInputs<TDescription>
+  ): ProjectionNode<TDescription>;
   /**
    * Reconciles this node against the current input projection nodes. This is
    * intended for persistence/rebuild flows after reducer bugs are fixed.
@@ -63,15 +70,15 @@ export type ProjectionNode<
    * corrective downstream delta by diffing this node against the corrected node.
    */
   reduceRebuild?(
-    inputs: TInputs
-  ): ProjectionNode<TInputs, TDownstreamDeltaShape, TAccessMixin>;
-} & TAccessMixin;
+    inputs: ExtractProjectionDescriptionInputs<TDescription>
+  ): ProjectionNode<TDescription>;
+} & ExtractProjectionDescriptionAccessMixin<TDescription>;
 
-export type AnyProjectionNode = ProjectionNode<never>;
+export type AnyProjectionNode = ProjectionNode;
 
 export type ExtractProjectionInputs<
   TProjectionNode extends AnyProjectionNode = AnyProjectionNode,
 > =
-  TProjectionNode extends ProjectionNode<infer TInputs>
-    ? ExtractInputDeltaShapes<TInputs>
+  TProjectionNode extends ProjectionNode<infer TDescription>
+    ? ExtractInputDeltaShapes<ExtractProjectionDescriptionInputs<TDescription>>
     : never;

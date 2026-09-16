@@ -14,6 +14,7 @@ import {
 } from "../../../MembershipPolicies/SetMembershipPolicyRevisionIssuer";
 import {
   Projection,
+  ProjectionOrchestrationKey,
   ProjectionOutputHelper,
 } from "../../../Projection/Projection";
 import {
@@ -42,6 +43,10 @@ export class StandardMemberBanIntentProjection
       "revision",
       this.handleUpstreamRevision
     );
+  }
+
+  public get [ProjectionOrchestrationKey]() {
+    return this;
   }
 
   private handleUpstreamRevision = ((_revision, delta) => {
