@@ -7,8 +7,6 @@ import {
   ClientsInRoomMap,
   Logger,
   Ok,
-  ProjectionAllocator,
-  ProtectedRoomsSet,
   StandardLoggableConfigTracker,
   isError,
 } from "@the-draupnir-project/matrix-protection-suite";
@@ -66,8 +64,7 @@ export class DraupnirFactory {
     private readonly clientCapabilityFactory: ClientCapabilityFactory,
     private readonly clientProvider: ClientForUserID,
     private readonly roomStateManagerFactory: RoomStateManagerFactory,
-    private readonly stores: TopLevelStores,
-    private readonly projectionAllocator: ProjectionAllocator<ProtectedRoomsSet>
+    private readonly stores: TopLevelStores
   ) {
     // nothing to do.
   }
@@ -105,7 +102,6 @@ export class DraupnirFactory {
       client,
       clientPlatform,
       clientUserID,
-      this.projectionAllocator,
       config,
       configLogTracker
     );

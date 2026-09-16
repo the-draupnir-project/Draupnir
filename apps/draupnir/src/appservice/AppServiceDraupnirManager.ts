@@ -24,7 +24,6 @@ import {
   ActionExceptionKind,
   ActionResult,
   ClientsInRoomMap,
-  makeProtectedRoomsSetProjectionAllocator,
   Ok,
   Task,
   assertThrowableIsError,
@@ -86,8 +85,7 @@ export class AppServiceDraupnirManager {
       this.clientCapabilityFactory,
       clientProvider,
       this.roomStateManagerFactory,
-      stores,
-      makeProtectedRoomsSetProjectionAllocator()
+      stores
     );
     this.baseManager = new StandardDraupnirManager(draupnirFactory);
   }

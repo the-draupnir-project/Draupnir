@@ -26,7 +26,6 @@ import {
   Ok,
   PolicyListConfig,
   PolicyRoomManager,
-  ProjectionAllocator,
   ProtectedRoomsConfig,
   ProtectedRoomsSet,
   ProtectionHandleRegistryDescription,
@@ -174,7 +173,6 @@ export async function makeProtectedRoomsSet(
   client: MatrixSendClient,
   clientPlatform: ClientPlatform,
   userID: StringUserID,
-  projectionAllocator: ProjectionAllocator<ProtectedRoomsSet>,
   config: IConfig,
   loggableConfigTracker: LoggableConfigTracker
 ): Promise<ActionResult<ProtectedRoomsSet>> {
@@ -228,7 +226,6 @@ export async function makeProtectedRoomsSet(
     protectionsConfig.ok,
     userID,
     DefaultMixinExtractor,
-    projectionAllocator,
     makeHandleMissingProtectionPermissions(
       clientPlatform.toRoomMessageSender(),
       managementRoom.toRoomIDOrAlias()

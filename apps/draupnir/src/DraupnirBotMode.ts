@@ -14,7 +14,6 @@ import {
   ClientsInRoomMap,
   Task,
   Logger,
-  makeProtectedRoomsSetProjectionAllocator,
   ActionException,
   ActionExceptionKind,
   ConfigRecoverableError,
@@ -172,8 +171,7 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientCapabilityFactory,
       clientProvider,
       roomStateManagerFactory,
-      stores,
-      makeProtectedRoomsSetProjectionAllocator()
+      stores
     );
     return new DraupnirBotModeToggle(
       clientUserID,

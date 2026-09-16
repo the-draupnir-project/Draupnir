@@ -40,9 +40,10 @@ import {
   SetMembershipPolicyRevision,
 } from "../../../MembershipPolicies/MembershipPolicyRevision";
 import { OwnLifetime } from "../../../Interface/Lifetime";
-import { MemberBanIntentProjection } from "./MemberBanIntentProjection";
-import { MemberBanIntentProjectionDescription } from "./MemberBanIntentProjectionNode";
-import { DisposableProjection } from "../../../Projection/ProjectionAllocator";
+import {
+  MemberBanIntentProjection,
+  StandardMemberBanIntentProjection,
+} from "./MemberBanIntentProjection";
 
 function isRecommendationWorthBanning(policyRule: PolicyRule) {
   return (
@@ -203,11 +204,13 @@ describeProtection<MemberBanSynchronisationProtectionCapabilities>({
     _settings,
     capabilitySet
   ) => {
-    const intentProjection = protectedRoomsSet.projectionAllocator.allocate<
-      DisposableProjection<MemberBanIntentProjection>
-    >(lifetime, protectedRoomsSet, MemberBanIntentProjectionDescription, {
-      draupnirID: protectedRoomsSet.userID,
-    });
+    const intentProjection = lifetime.allocateDisposable(() =>
+      Ok(
+        new StandardMemberBanIntentProjection(
+          protectedRoomsSet.setPoliciesMatchingMembership
+        )
+      )
+    );
     if (isError(intentProjection)) {
       return intentProjection.elaborate("Unable to allocate intent projection");
     }
