@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 - 2023 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 The Matrix.org Foundation C.I.C.
 //
@@ -73,6 +74,26 @@ export function normaliseRecommendation(
   }
 }
 
+/**
+ * MSC3908: reads the expiry timestamp from policy content, preferring the
+ * stable `expiry` key over the unstable prefix. `0` and non-numbers mean
+ * permanent (i.e. no expiry).
+ */
+function parseExpiry(content: UnredactedPolicyContent): number | undefined {
+  const value =
+    ("expiry" in content && content.expiry) || // Follows precedent from hashed rules by Gnuxie.
+    ("support.feline.policy.expiry.rev.2" in content &&
+      content["support.feline.policy.expiry.rev.2"]);
+  return typeof value === "number" && value !== 0 ? value : undefined;
+}
+
+/**
+ * MSC3908: whether a policy rule's recommendation has expired as of `now`.
+ */
+export function isExpired(rule: PolicyRule, now = Date.now()): boolean {
+  return rule.expiry !== undefined && rule.expiry <= now;
+}
+
 export function makeReversedHashedPolicy(
   entity: string,
   hashedPolicy: HashedLiteralPolicyRule
@@ -88,6 +109,7 @@ export function makeReversedHashedPolicy(
       return this.entity === entity;
     },
     isReversedFromHashedPolicy: true,
+    expiry: hashedPolicy.expiry,
   } satisfies LiteralPolicyRule);
 }
 
@@ -104,6 +126,7 @@ export function parsePolicyRule(
     if (!hashes) {
       return ResultError.Result("There is a missing entity in the policy rule");
     }
+    const expiry = parseExpiry(event.content);
     return Ok(
       Object.freeze({
         recommendation: normaliseRecommendation(event.content.recommendation),
@@ -112,6 +135,7 @@ export function parsePolicyRule(
         sourceEvent: event,
         matchType: PolicyRuleMatchType.HashedLiteral,
         ...(event.content.reason ? { reason: event.content.reason } : {}),
+        expiry,
       }) satisfies HashedLiteralPolicyRule
     );
   }
@@ -125,6 +149,7 @@ export function parsePolicyRule(
         sourceEvent: event,
         matchType: PolicyRuleMatchType.Glob,
         reason: event.content.reason ?? "<no reason supplied>",
+        expiry: parseExpiry(event.content),
         isMatch(this: GlobPolicyRule, entity: string) {
           return this.glob.test(entity);
         },
@@ -139,6 +164,7 @@ export function parsePolicyRule(
         sourceEvent: event,
         matchType: PolicyRuleMatchType.Literal,
         reason: event.content.reason ?? "<no reason supplied>",
+        expiry: parseExpiry(event.content),
         isMatch(this: LiteralPolicyRule, entity: string) {
           return this.entity === entity;
         },
@@ -160,6 +186,8 @@ type PolicyRuleBase = {
   readonly sourceEvent: PolicyRuleEvent;
   readonly matchType: PolicyRuleMatchType;
   readonly isReversedFromHashedPolicy?: boolean;
+  /** MSC3908: timestamp (ms since epoch) this rule expires at, undefined means permanent. */
+  readonly expiry?: number | undefined;
 };
 
 export type LiteralPolicyRule = PolicyRuleBase & {

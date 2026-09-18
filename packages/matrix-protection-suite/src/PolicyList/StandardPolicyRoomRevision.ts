@@ -26,6 +26,7 @@ import {
   PolicyRule,
   PolicyRuleMatchType,
   Recommendation,
+  isExpired,
   parsePolicyRule,
 } from "./PolicyRule";
 import { PolicyRuleChange, PolicyRuleChangeType } from "./PolicyRuleChange";
@@ -130,7 +131,9 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
   }
 
   allRules(): PolicyRule[] {
-    return [...this.policyRuleByEventId.values()];
+    return [...this.policyRuleByEventId.values()].filter(
+      (rule) => !isExpired(rule)
+    );
   }
 
   allRulesMatchingEntity(
@@ -183,6 +186,7 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
           .get(hash, PersistentList<HashedLiteralPolicyRule>())
           .filter(
             (rule) =>
+              !isExpired(rule) &&
               type === rule.kind &&
               (recommendation === undefined ||
                 recommendation === rule.recommendation)
@@ -223,6 +227,9 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
     const stateKeyMap = this.policyRules.get(type);
     if (stateKeyMap) {
       for (const rule of stateKeyMap.values()) {
+        if (isExpired(rule)) {
+          continue;
+        }
         if (rule.kind === type) {
           if (recommendation === undefined) {
             rules.push(rule);
@@ -506,6 +513,35 @@ export class StandardPolicyRoomRevision implements PolicyRoomRevision {
   public reviseFromState(policyState: PolicyRuleEvent[]): PolicyRoomRevision {
     const changes = this.changesFromState(policyState);
     return this.reviseFromChanges(changes);
+  }
+
+  public changesFromExpiry(now: number): PolicyRuleChange[] {
+    const changes: PolicyRuleChange[] = [];
+    for (const rule of this.policyRuleByEventId.values()) {
+      if (isExpired(rule, now)) {
+        changes.push({
+          changeType: PolicyRuleChangeType.Removed,
+          event: rule.sourceEvent,
+          sender: rule.sourceEvent.sender,
+          rule,
+          previousRule: rule,
+        });
+      }
+    }
+    return changes;
+  }
+
+  public nextExpiringTimestamp(): number | undefined {
+    let soonest: number | undefined;
+    for (const rule of this.policyRuleByEventId.values()) {
+      if (rule.expiry === undefined) {
+        continue;
+      }
+      if (soonest === undefined || rule.expiry < soonest) {
+        soonest = rule.expiry;
+      }
+    }
+    return soonest;
   }
 
   public isAbleToEdit(who: StringUserID, policy: PolicyRuleType): boolean {

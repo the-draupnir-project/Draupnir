@@ -164,7 +164,8 @@ export class DraupnirBotModeToggle implements BotModeTogle {
       clientProvider,
       DefaultEventDecoder,
       stores.roomStateBackingStore,
-      stores.hashStore
+      stores.hashStore,
+      config.protections.policyListExpiry.debounceMS
     );
     const draupnirFactory = new DraupnirFactory(
       clientsInRoomMap,

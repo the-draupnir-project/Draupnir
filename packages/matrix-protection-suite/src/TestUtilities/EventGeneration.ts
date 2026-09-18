@@ -40,6 +40,7 @@ export function makePolicyRuleUserEvent({
   reason = "<no reason supplied>",
   entity = randomUserID(),
   recommendation = Recommendation.Ban,
+  expiry,
   state_key,
   copyFrom,
   remove,
@@ -49,6 +50,7 @@ export function makePolicyRuleUserEvent({
   reason?: string;
   entity?: string;
   recommendation?: Recommendation;
+  expiry?: number;
   state_key?: string;
   copyFrom?: PolicyRuleEvent;
   remove?: PolicyRuleEvent;
@@ -60,6 +62,7 @@ export function makePolicyRuleUserEvent({
       entity,
       recommendation,
       reason,
+      ...(expiry !== undefined ? { expiry } : {}),
     },
     copyFrom,
     remove,

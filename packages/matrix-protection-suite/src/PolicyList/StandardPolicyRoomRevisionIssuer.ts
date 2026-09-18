@@ -18,6 +18,7 @@ import { PolicyRuleEvent } from "../MatrixTypes/PolicyEvents";
 import { Redaction } from "../MatrixTypes/Redaction";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule } from "./PolicyRule";
+import { ExpiryScheduler } from "./ExpiryScheduler";
 
 const log = new Logger("StandardPolicyRoomRevisionIssuer");
 
@@ -29,6 +30,7 @@ export class StandardPolicyRoomRevisionIssuer
   implements PolicyRoomRevisionIssuer
 {
   private readonly batcher: RevisionBatcher;
+  readonly expiryScheduler: ExpiryScheduler;
   /**
    * Creates a new StandardPolicyRoomRevisionIssuer, you shouldn't have to use this,
    * instead use the `PolicyRoomManager`.
@@ -36,14 +38,18 @@ export class StandardPolicyRoomRevisionIssuer
    * @param room The matrix room to issue revisions for.
    * @param currentRevision The current revision for the room, can be blank.
    * @param policyListManager The policy list manager to use to fetch room state with.
+   * @param expiryDebounceMS MSC3908: how long to wait after a rule's expiry to allow other near-simultaneous expiries to coalesce into the same revision, see {@link ExpiryScheduler}.
    */
   constructor(
     public readonly room: MatrixRoomID,
     public currentRevision: PolicyRoomRevision,
-    policyListManager: PolicyRoomManager
+    policyListManager: PolicyRoomManager,
+    expiryDebounceMS?: number
   ) {
     super();
     this.batcher = new RevisionBatcher(this, policyListManager);
+    this.expiryScheduler = new ExpiryScheduler(this, expiryDebounceMS);
+    this.expiryScheduler.scheduleNext();
   }
 
   updateForStateEvent(event: PolicyRuleEvent): void {
@@ -68,10 +74,11 @@ export class StandardPolicyRoomRevisionIssuer
     const previousRevision = this.currentRevision;
     this.currentRevision = previousRevision.reviseFromChanges(changes);
     this.emit("revision", this.currentRevision, changes, previousRevision);
+    this.expiryScheduler.scheduleNext();
   }
 
   public unregisterListeners(): void {
-    // nothing to do.
+    this.expiryScheduler.unregister();
   }
 }
 
@@ -172,5 +179,6 @@ class RevisionBatcher {
       changes,
       previousRevision
     );
+    this.policyListRevisionIssuer.expiryScheduler.scheduleNext();
   }
 }

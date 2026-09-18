@@ -147,6 +147,14 @@ export interface PolicyRoomRevision extends PolicyListRevision {
     policies: LiteralPolicyRule[]
   ): PolicyRuleChange[];
   /**
+   * MSC3908: calculate the removal changes for rules whose `expiry` has passed as of `now`.
+   */
+  changesFromExpiry(now: number): PolicyRuleChange[];
+  /**
+   * MSC3908: the soonest `expiry` timestamp among the rules in this revision, if any.
+   */
+  nextExpiringTimestamp(): number | undefined;
+  /**
    * Check whether the list has a rule associated with this event.
    * @param eventId The id of a policy rule event.
    * @returns true if the revision contains a rule associated with the event.

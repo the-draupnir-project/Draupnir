@@ -20,9 +20,10 @@ export class FakePolicyRoomRevisionIssuer
   public constructor(
     room: MatrixRoomID,
     currentRevision: PolicyRoomRevision,
-    roomStateRevisionIssuer: RoomStateRevisionIssuer
+    roomStateRevisionIssuer: RoomStateRevisionIssuer,
+    expiryDebounceMS?: number
   ) {
-    super(room, currentRevision, roomStateRevisionIssuer);
+    super(room, currentRevision, roomStateRevisionIssuer, expiryDebounceMS);
   }
 
   public emit(

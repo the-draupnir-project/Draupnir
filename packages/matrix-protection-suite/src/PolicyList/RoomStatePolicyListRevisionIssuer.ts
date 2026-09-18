@@ -21,6 +21,7 @@ import { StateEvent } from "../MatrixTypes/Events";
 import { Redaction } from "../MatrixTypes/Redaction";
 import { MatrixRoomID } from "@the-draupnir-project/matrix-basic-types";
 import { LiteralPolicyRule } from "./PolicyRule";
+import { ExpiryScheduler } from "./ExpiryScheduler";
 
 /**
  * An implementation of the {@link RoomMembershipRevisionIssuer} that
@@ -31,10 +32,12 @@ export class RoomStatePolicyRoomRevisionIssuer
   implements PolicyRoomRevisionIssuer
 {
   private readonly stateRevisionListener: StateRevisionListener<RoomStateRevision>;
+  private readonly expiryScheduler: ExpiryScheduler;
   constructor(
     public readonly room: MatrixRoomID,
     public currentRevision: PolicyRoomRevision,
-    private readonly roomStateRevisionIssuer: RoomStateRevisionIssuer
+    private readonly roomStateRevisionIssuer: RoomStateRevisionIssuer,
+    expiryDebounceMS?: number
   ) {
     super();
     const stateRevision = roomStateRevisionIssuer.currentRevision;
@@ -59,6 +62,8 @@ export class RoomStatePolicyRoomRevisionIssuer
     );
     this.stateRevisionListener = this.listener.bind(this);
     this.roomStateRevisionIssuer.on("revision", this.stateRevisionListener);
+    this.expiryScheduler = new ExpiryScheduler(this, expiryDebounceMS);
+    this.expiryScheduler.scheduleNext();
   }
 
   updateForStateEvent(event: StateEvent): void {
@@ -108,6 +113,7 @@ export class RoomStatePolicyRoomRevisionIssuer
         previousRevision
       );
     }
+    this.expiryScheduler.scheduleNext();
   }
 
   updateForRevealedPolicies(policies: LiteralPolicyRule[]): void {
@@ -118,9 +124,11 @@ export class RoomStatePolicyRoomRevisionIssuer
     const previousRevision = this.currentRevision;
     this.currentRevision = previousRevision.reviseFromChanges(changes);
     this.emit("revision", this.currentRevision, changes, previousRevision);
+    this.expiryScheduler.scheduleNext();
   }
 
   public unregisterListeners(): void {
     this.roomStateRevisionIssuer.off("revision", this.stateRevisionListener);
+    this.expiryScheduler.unregister();
   }
 }

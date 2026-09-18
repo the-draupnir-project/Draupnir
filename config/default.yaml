@@ -188,6 +188,16 @@ protections:
     # (users will always be banned if they say a bad word)
     minutesBeforeTrusting: 20
 
+  # MSC3908: settings for how Draupnir reverts policy rules that carry an expiry.
+  policyListExpiry:
+    # How long (in milliseconds) to wait after a policy rule's expiry before reverting
+    # its effects (e.g. unbanning), to allow other rules expiring around the same time
+    # to be reverted together instead of one at a time.
+    #
+    # Set to 0 if you want every rule reverted immediately at its own precise expiry,
+    # with no coalescing.
+    debounceMS: 2000
+
 # The room state backing store writes a copy of the room state for all protected
 # rooms to the data directory.
 # It is recommended to enable this option unless you deploy Draupnir close to the

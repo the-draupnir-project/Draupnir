@@ -104,6 +104,7 @@ export * from "./MembershipPolicies/MembershipPolicyRevision";
 export * from "./MembershipPolicies/SetMembershipPolicyRevisionIssuer";
 export * from "./MembershipPolicies/StandardSetMembershipPolicyRevision";
 
+export * from "./PolicyList/ExpiryScheduler";
 export * from "./PolicyList/PolicyListRevision";
 export * from "./PolicyList/PolicyListRevisionIssuer";
 export * from "./PolicyList/PolicyRoomEditor";

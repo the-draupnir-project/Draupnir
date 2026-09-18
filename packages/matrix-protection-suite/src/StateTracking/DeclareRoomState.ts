@@ -305,6 +305,7 @@ export type DescribePolicyRule = {
   hashes?: Record<string, string>;
   reason?: string;
   recommendation?: Recommendation;
+  expiry?: number;
   copyFrom?: PolicyRuleEvent;
   remove?: PolicyRuleEvent;
 };
@@ -316,6 +317,7 @@ export function describePolicyRule({
   entity,
   reason = "<no reason supplied>",
   recommendation = Recommendation.Ban,
+  expiry,
   copyFrom,
   remove,
   hashes,
@@ -330,12 +332,14 @@ export function describePolicyRule({
         entity,
         reason,
         recommendation,
+        ...(expiry !== undefined ? { expiry } : {}),
       };
     } else if (hashes !== undefined) {
       return {
         hashes,
         reason,
         recommendation,
+        ...(expiry !== undefined ? { expiry } : {}),
       };
     } else {
       throw new TypeError(

@@ -132,7 +132,8 @@ export class RoomStateManagerFactory {
     const issuer = new RoomStatePolicyRoomRevisionIssuer(
       room,
       StandardPolicyRoomRevision.blankRevision(room, createEvent),
-      roomStateIssuer.ok
+      roomStateIssuer.ok,
+      this.expiryDebounceMS
     );
     this.sha256Reverser?.addPolicyRoomRevisionIssuer(issuer);
     return Ok(issuer);
@@ -167,7 +168,9 @@ export class RoomStateManagerFactory {
     private readonly clientProvider: ClientForUserID,
     private readonly eventDecoder: EventDecoder,
     private readonly roomStateBackingStore: RoomStateBackingStore | undefined,
-    private readonly hashStore: SHA256HashStore | undefined
+    private readonly hashStore: SHA256HashStore | undefined,
+    /** MSC3908: see {@link ExpiryScheduler}, applied to every policy room issuer this factory produces. */
+    private readonly expiryDebounceMS?: number
   ) {
     this.sha256Reverser = this.hashStore
       ? new StandardSHA256HashReverser(this.hashStore)

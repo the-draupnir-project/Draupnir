@@ -131,6 +131,17 @@ export interface IConfig {
       serverNames: string[];
       banMessage: string;
     };
+    policyListExpiry: {
+      /**
+       * MSC3908: how long (in milliseconds) to wait after a policy rule's
+       * expiry before reverting its effects, to allow other rules expiring
+       * around the same time to be coalesced into the same revert. Set to
+       * `0` to revert each rule immediately at its own expiry with no
+       * coalescing.
+       * This also has a debounce effect by blocking expiry from firing too frequently.
+       */
+      debounceMS: number;
+    };
   };
   safeMode?: {
     bootOption: SafeModeBootOption;
@@ -240,6 +251,9 @@ const defaultConfig: IConfig = {
       serverNames: [],
       banMessage:
         "Unfortunately we cannot accept new users from your homeserver at this time.",
+    },
+    policyListExpiry: {
+      debounceMS: 2000,
     },
   },
   safeMode: {

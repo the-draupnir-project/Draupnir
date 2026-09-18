@@ -118,6 +118,9 @@ export const PlainTextPolicyContent = Type.Object({
       description: "The human-readable description for the `recommendation`.",
     })
   ),
+  // MSC3908: timestamp (ms since epoch) the recommendation expires at, 0 or absent means permanent.
+  expiry: Type.Optional(Type.Number()),
+  "support.feline.policy.expiry.rev.2": Type.Optional(Type.Number()),
 });
 
 export type HashedPolicyContent = EDStatic<typeof HashedPolicyContent>;
