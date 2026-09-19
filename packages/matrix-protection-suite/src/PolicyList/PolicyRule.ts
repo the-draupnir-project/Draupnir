@@ -11,6 +11,8 @@
 
 import { MatrixGlob } from "@the-draupnir-project/matrix-basic-types";
 import {
+  MSC3908_STABLE_EXPIRY_KEY,
+  MSC3908_UNSTABLE_EXPIRY_KEY,
   PolicyRuleEvent,
   PolicyRuleType,
   UnredactedPolicyContent,
@@ -81,9 +83,10 @@ export function normaliseRecommendation(
  */
 function parseExpiry(content: UnredactedPolicyContent): number | undefined {
   const value =
-    ("expiry" in content && content.expiry) || // Follows precedent from hashed rules by Gnuxie.
-    ("support.feline.policy.expiry.rev.2" in content &&
-      content["support.feline.policy.expiry.rev.2"]);
+    (MSC3908_STABLE_EXPIRY_KEY in content &&
+      content[MSC3908_STABLE_EXPIRY_KEY]) ||
+    (MSC3908_UNSTABLE_EXPIRY_KEY in content &&
+      content[MSC3908_UNSTABLE_EXPIRY_KEY]);
   return typeof value === "number" && value !== 0 ? value : undefined;
 }
 

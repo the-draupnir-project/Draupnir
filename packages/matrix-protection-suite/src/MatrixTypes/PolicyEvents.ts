@@ -104,6 +104,37 @@ export function isPolicyTypeObsolete(
   }
 }
 
+/**
+ * MSC3908's stable key. Not actually interoperable yet (the MSC is
+ * unmerged), kept so the write path can be flipped to it the moment that
+ * changes without hunting down every call site. And this follows a similar
+ * pattern to how hashes already have stable key support implemented even though
+ * we are not there yet.
+ */
+export const MSC3908_STABLE_EXPIRY_KEY = "expiry";
+/**
+ * MSC3908's unstable prefix for the expiry field. Will be used until the MSC
+ * is considered stable for writing and after that exclusively for backward compatibility
+ * with older policies.
+ */
+export const MSC3908_UNSTABLE_EXPIRY_KEY = "support.feline.policy.expiry.rev.2";
+
+/**
+ * Which single key new policies are written with. Unstable for now since MSC3908
+ * is unmerged this is set to MSC3908_UNSTABLE_EXPIRY_KEY; flip this to
+ * `MSC3908_STABLE_EXPIRY_KEY` once the MSC is merged and we are allowed to use the stable namespace.
+ * This exists to allow us to easily swap writing over to the stable key without any knockon effects to parsing.
+ * As parsing will be supporting both keys for the forseeable future if not indefinitely.
+ */
+export const MSC3908_WRITE_EXPIRY_KEY = MSC3908_UNSTABLE_EXPIRY_KEY;
+
+/** Builds the content properties for writing an MSC3908 `expiry`, or `{}` when `expiry` is `undefined`. */
+export function expiryContentProperties(
+  expiry: number | undefined
+): Record<string, number> {
+  return expiry === undefined ? {} : { [MSC3908_WRITE_EXPIRY_KEY]: expiry };
+}
+
 export const PlainTextPolicyContent = Type.Object({
   entity: Type.String({
     description:
@@ -119,8 +150,8 @@ export const PlainTextPolicyContent = Type.Object({
     })
   ),
   // MSC3908: timestamp (ms since epoch) the recommendation expires at, 0 or absent means permanent.
-  expiry: Type.Optional(Type.Number()),
-  "support.feline.policy.expiry.rev.2": Type.Optional(Type.Number()),
+  [MSC3908_STABLE_EXPIRY_KEY]: Type.Optional(Type.Number()),
+  [MSC3908_UNSTABLE_EXPIRY_KEY]: Type.Optional(Type.Number()),
 });
 
 export type HashedPolicyContent = EDStatic<typeof HashedPolicyContent>;

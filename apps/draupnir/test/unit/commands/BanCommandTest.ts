@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // SPDX-FileCopyrightText: 2024 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -23,6 +24,7 @@ import {
   Recommendation,
   RoomResolver,
   describeProtectedRoomsSet,
+  isError,
   isOk,
   randomEventID,
 } from "@the-draupnir-project/matrix-protection-suite";
@@ -176,5 +178,87 @@ describe("Test the DraupnirBanCommand", function () {
       policyRoom
     );
     expect(banResult.isOkay).toBe(true);
+  });
+  it("Will pass the parsed --expires option through to banEntity", async function () {
+    const { protectedRoomsSet } = await createProtectedRooms();
+    const policyRoom = protectedRoomsSet.allProtectedRooms[0];
+    if (policyRoom === undefined) {
+      throw new TypeError(
+        `There should be a policy room available from the setup`
+      );
+    }
+    const beforeCall = Date.now();
+    let capturedExpiry: number | undefined;
+    const policyRoomManager = createMock<PolicyRoomManager>({
+      async getPolicyRoomEditor(room) {
+        expect(room).toBe(policyRoom);
+        return Ok(
+          createMock<PolicyRoomEditor>({
+            async banEntity(entityType, entity, reason, options) {
+              expect(entityType).toBe(PolicyRuleType.User);
+              expect(entity).toBe("@spam:spam.example.com");
+              expect(reason).toBe("spam");
+              capturedExpiry = options?.expiry;
+              return Ok(randomEventID());
+            },
+          })
+        );
+      },
+    });
+    const banResult = await CommandExecutorHelper.execute(
+      DraupnirBanCommand,
+      {
+        policyRoomManager,
+        roomResolver,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
+        defaultReasons: ["spam"],
+        clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
+      },
+      {
+        rest: ["spam"],
+        keywords: { expires: "5m" },
+      },
+      MatrixUserID.fromUserID("@spam:spam.example.com" as StringUserID),
+      policyRoom
+    );
+    expect(banResult.isOkay).toBe(true);
+    if (capturedExpiry === undefined) {
+      throw new TypeError("Expected an expiry to have been captured");
+    }
+    expect(capturedExpiry).toBeGreaterThan(beforeCall + 4 * 60 * 1000);
+    expect(capturedExpiry).toBeLessThan(beforeCall + 6 * 60 * 1000);
+  });
+  it("Will return an error and not ban when --expires is invalid", async function () {
+    const { protectedRoomsSet } = await createProtectedRooms();
+    const policyRoom = protectedRoomsSet.allProtectedRooms[0];
+    if (policyRoom === undefined) {
+      throw new TypeError(
+        `There should be a policy room available from the setup`
+      );
+    }
+    const policyRoomManager = createMock<PolicyRoomManager>({
+      async getPolicyRoomEditor() {
+        throw new TypeError(
+          "We shouldn't be getting this far with an invalid --expires"
+        );
+      },
+    });
+    const banResult = await CommandExecutorHelper.execute(
+      DraupnirBanCommand,
+      {
+        policyRoomManager,
+        roomResolver,
+        watchedPolicyRooms: protectedRoomsSet.watchedPolicyRooms,
+        defaultReasons: ["spam"],
+        clientUserID: `@draupnir:ourserver.example.com` as StringUserID,
+      },
+      {
+        rest: ["spam"],
+        keywords: { expires: "not-a-valid-expiry" },
+      },
+      MatrixUserID.fromUserID("@spam:spam.example.com" as StringUserID),
+      policyRoom
+    );
+    expect(isError(banResult)).toBe(true);
   });
 });

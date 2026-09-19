@@ -13,8 +13,13 @@ import Base64 from "crypto-js/enc-base64";
 import { RoomStateRevisionIssuer } from "../StateTracking/StateRevisionIssuer";
 import { RoomStateEventSender } from "../Client/RoomStateEventSender";
 import { PolicyListRevisionIssuer } from "./PolicyListRevisionIssuer";
-import { PolicyRoomEditor, TakedownPolicyOption } from "./PolicyRoomEditor";
 import {
+  BanPolicyOptions,
+  PolicyRoomEditor,
+  TakedownPolicyOption,
+} from "./PolicyRoomEditor";
+import {
+  expiryContentProperties,
   PolicyRuleType,
   variantsForPolicyRuleType,
 } from "../MatrixTypes/PolicyEvents";
@@ -174,14 +179,15 @@ export class StandardPolicyRoomEditor implements PolicyRoomEditor {
   public async banEntity(
     ruleType: PolicyRuleType,
     entity: string,
-    reason?: string
+    reason?: string,
+    options?: BanPolicyOptions
   ): Promise<ActionResult<string>> {
     return await this.createPolicy(
       ruleType,
       Recommendation.Ban,
       entity,
       reason ?? "<no reason supplied>",
-      {}
+      expiryContentProperties(options?.expiry)
     );
   }
   public async takedownEntity(
@@ -204,6 +210,7 @@ export class StandardPolicyRoomEditor implements PolicyRoomEditor {
               },
             }
           : { entity }),
+        ...expiryContentProperties(options.expiry),
       }
     );
     if (isError(sendResult)) {

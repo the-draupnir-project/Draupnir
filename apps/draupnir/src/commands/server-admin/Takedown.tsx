@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // SPDX-FileCopyrightText: 2025 Gnuxie <Gnuxie@protonmail.com>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -46,6 +47,7 @@ import { SynapseAdminRoomDetailsProvider } from "../../capabilities/SynapseAdmin
 import { RoomTakedownProtection } from "../../protections/RoomTakedown/RoomTakedownProtection";
 import { BlockInvitationsOnServerProtection } from "../../protections/BlockInvitationsOnServerProtection";
 import { HomeserverUserPolicyProtection } from "../../protections/HomeserverUserPolicyApplication/HomeserverUserPolicyProtection";
+import { parseExpiryInput } from "../ParseExpiryInput";
 
 const log = new Logger("DraupnirTakedownCommand");
 
@@ -110,6 +112,7 @@ export type TakedownPolicyPreview = {
     name: string;
     isEnabled: boolean;
   }[];
+  expiry?: number | undefined;
 };
 
 export const DraupnirTakedownCommand = describeCommand({
@@ -157,6 +160,12 @@ export const DraupnirTakedownCommand = describeCommand({
         description:
           "Creates a plain-text version of the policy rather than masking the entity with SHA256. There are not many reason to do this other than compatibility with other tools.",
       },
+      expires: {
+        acceptor: StringPresentationType,
+        isFlag: false,
+        description:
+          'When the policy should expire (MSC3908). Accepts a relative duration (e.g. "5m", "2h", "3d", "1w", "1M", "2y"), an absolute ISO 8601 date/date-time (e.g. "2026-12-24" or "2026-12-24T10:00:00Z"), or a raw millisecond timestamp prefixed with "ts:".',
+      },
     },
   },
   async executor(
@@ -185,6 +194,15 @@ export const DraupnirTakedownCommand = describeCommand({
         ),
       })
     );
+    const expiresInput = keywords.getKeywordValue<string>("expires");
+    const expiryResult =
+      expiresInput === undefined
+        ? Ok(undefined)
+        : parseExpiryInput(expiresInput);
+    if (isError(expiryResult)) {
+      return expiryResult;
+    }
+    const expiry = expiryResult.ok;
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
         ? Ok(
@@ -216,6 +234,7 @@ export const DraupnirTakedownCommand = describeCommand({
           entity: entity.toString(),
           policyRoom: policyRoomEditor.room,
           takedownProtections: takedownProtections,
+          expiry,
         });
       } else if (typeof entity === "string") {
         return Ok({
@@ -223,6 +242,7 @@ export const DraupnirTakedownCommand = describeCommand({
           entity,
           policyRoom: policyRoomEditor.room,
           takedownProtections: takedownProtections,
+          expiry,
         });
       } else {
         const resolvedRoomReference = await roomResolver.resolveRoom(entity);
@@ -234,6 +254,7 @@ export const DraupnirTakedownCommand = describeCommand({
           entity: resolvedRoomReference.ok.toRoomIDOrAlias(),
           policyRoom: policyRoomEditor.room,
           takedownProtections: takedownProtections,
+          expiry,
         });
       }
     })();
@@ -248,7 +269,7 @@ export const DraupnirTakedownCommand = describeCommand({
     const takedownResult = await policyRoomEditor.takedownEntity(
       preview.ok.ruleType,
       preview.ok.entity,
-      { shouldHash: !plainText }
+      { shouldHash: !plainText, expiry }
     );
     if (
       isError(takedownResult) ||
@@ -282,6 +303,13 @@ function renderTakedownPreview(preview: TakedownPolicyPreview): DocumentNode {
           policy type: <code>{preview.ruleType}</code>
         </li>
         <li>policy room: {renderRoomPill(preview.policyRoom)}</li>
+        {preview.expiry !== undefined ? (
+          <li>
+            expires: <code>{new Date(preview.expiry).toISOString()}</code>
+          </li>
+        ) : (
+          <fragment></fragment>
+        )}
       </ul>
       <h5>Please consider that doing so may have irreversable effects.</h5>
       <p>

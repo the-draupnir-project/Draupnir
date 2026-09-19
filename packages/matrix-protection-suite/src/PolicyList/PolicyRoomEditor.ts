@@ -19,6 +19,13 @@ import { PolicyRule, Recommendation } from "./PolicyRule";
 export type TakedownPolicyOption = {
   /** Whether the policy should be hashed, default to true */
   shouldHash?: boolean | undefined;
+  /** MSC3908: timestamp (ms since epoch) the policy should expire at. */
+  expiry?: number | undefined;
+};
+
+export type BanPolicyOptions = {
+  /** MSC3908: timestamp (ms since epoch) the policy should expire at. */
+  expiry?: number | undefined;
 };
 
 /**
@@ -82,7 +89,8 @@ export interface PolicyRoomEditor {
   banEntity(
     ruleType: PolicyRuleType,
     entity: string,
-    reason?: string
+    reason?: string,
+    options?: BanPolicyOptions
   ): Promise<ActionResult<string>>;
   takedownEntity(
     ruleType: PolicyRuleType,

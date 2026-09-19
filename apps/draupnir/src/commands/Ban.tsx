@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Catalan Lover <catalanlover@protonmail.com>
 // Copyright 2022 - 2025 Gnuxie <Gnuxie@protonmail.com>
 // Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
 //
@@ -38,6 +39,7 @@ import {
   DraupnirInterfaceAdaptor,
 } from "./DraupnirCommandPrerequisites";
 import { ResultError } from "@gnuxie/typescript-result";
+import { parseExpiryInput } from "./ParseExpiryInput";
 
 export async function findPolicyRoomEditorFromRoomReference(
   roomResolver: RoomResolver,
@@ -102,6 +104,16 @@ export const DraupnirBanCommand = describeCommand({
       });
     },
   },
+  keywords: {
+    keywordDescriptions: {
+      expires: {
+        acceptor: StringPresentationType,
+        isFlag: false,
+        description:
+          'When the policy should expire (MSC3908). Accepts a relative duration (e.g. "5m", "2h", "3d", "1w", "1M", "2y"), an absolute ISO 8601 date/date-time (e.g. "2026-12-24" or "2026-12-24T10:00:00Z"), or a raw millisecond timestamp prefixed with "ts:".',
+      },
+    },
+  },
   async executor(
     {
       watchedPolicyRooms,
@@ -109,11 +121,20 @@ export const DraupnirBanCommand = describeCommand({
       roomResolver,
     }: DraupnirBanCommandContext,
     _info: BasicInvocationInformation,
-    _keywords,
+    keywords,
     reasonParts,
     entity,
     policyRoomDesignator
   ): Promise<ActionResult<string>> {
+    const expiresInput = keywords.getKeywordValue<string>("expires");
+    const expiryResult =
+      expiresInput === undefined
+        ? Ok(undefined)
+        : parseExpiryInput(expiresInput);
+    if (isError(expiryResult)) {
+      return expiryResult;
+    }
+    const banOptions = { expiry: expiryResult.ok };
     const policyRoomReference =
       typeof policyRoomDesignator === "string"
         ? Ok(
@@ -143,13 +164,15 @@ export const DraupnirBanCommand = describeCommand({
       return await policyListEditor.banEntity(
         PolicyRuleType.User,
         entity.toString(),
-        reason
+        reason,
+        banOptions
       );
     } else if (typeof entity === "string") {
       return await policyListEditor.banEntity(
         PolicyRuleType.Server,
         entity,
-        reason
+        reason,
+        banOptions
       );
     } else {
       const resolvedRoomReference = await roomResolver.resolveRoom(entity);
@@ -159,7 +182,8 @@ export const DraupnirBanCommand = describeCommand({
       return await policyListEditor.banEntity(
         PolicyRuleType.Room,
         resolvedRoomReference.ok.toRoomIDOrAlias(),
-        reason
+        reason,
+        banOptions
       );
     }
   },
