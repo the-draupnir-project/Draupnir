@@ -1,6 +1,6 @@
 {
   "name": "@the-draupnir-project/matrix-protection-suite",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

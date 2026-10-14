@@ -11,6 +11,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.2.0] - 2026-10-14
+
+### Minor Changes
+
+- 1c9ba49: Add stable identifier from MSC3784 as m.policy has been accepted into
+  the spec.
+
 ## [7.1.0] - 2026-05-07
 
 ### Minor Changes
@@ -306,12 +313,14 @@ This project adheres to
 
 - Introduced `matchType` enum onto `PolicyRule` splitting the `PolicyRule` type
   into three variants:
+
   - `Literal`
   - `Glob`
   - `HashedLiteral`
 
 - The `PolicyRuleChangeType`enum to replace `SimpleChangeType` on
   `PolicyRuleChange`.
+
   - This brings a new variant `RevealedLiteral` for when a `HashedLiteral`
     policy rule has been reversed by the `SHA256HashReverser`.
 

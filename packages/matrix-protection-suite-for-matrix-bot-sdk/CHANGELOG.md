@@ -11,6 +11,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.2] - 2026-10-14
+
+### Patch Changes
+
+- Updated dependencies [1c9ba49]
+  - @the-draupnir-project/matrix-protection-suite@7.2.0
+
 ## [5.0.1] - 2026-05-07
 
 ### Patch Changes

@@ -11,6 +11,31 @@ All notable changes to Draupnir will be kept in this file.
 This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-10-14
+
+### Minor Changes
+
+- Draupnir now supports systems using libmusl in addition to glibc.
+- The docker image is now based on Alpine instead of Debian slim.
+- Developer Experience: New CI workflows implementing the
+  ["CI in a box"](https://github.com/the-draupnir-project/Draupnir/tree/main/ci-in-a-box)
+  concept. The purpose of CI in a box is to reproduce the development
+  environment on all platforms.
+
+### Patch Changes
+
+- a0ddfc0: Fix overly strict client capabilities check. Reported and fixed by
+  @bones-was-here in
+  https://github.com/the-draupnir-project/Draupnir/issues/1102. This makes
+  Draupnir bot mode deployable again on Conduit and Dendrite based homeserver
+  deployments.
+- 4e949dd: Fix an issue where Draupnir would sometimes not redact events left by
+  a user who left the room. Reported by @ll-SKY-ll in
+  https://github.com/the-draupnir-project/Draupnir/issues/1184.
+- 2a39b21: Make `initialManager` the uncommented option in the `default.yaml`
+  config file instead of `managementRoom`. This means that Draupnir will create
+  the management room for new deployments.
+
 ## [3.1.0] - 2026-05-07
 
 ### Minor Changes
