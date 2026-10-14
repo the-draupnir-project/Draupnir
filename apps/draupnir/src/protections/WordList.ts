@@ -96,7 +96,7 @@ export class WordListProtection
   implements Protection<WordListDescription>
 {
   private justJoined: JustJoinedByRoom = new Map();
-  private badWords: RegExp;
+  private badWords: RegExp | undefined;
 
   private readonly userConsequences: UserConsequences;
   private readonly eventConsequences: EventConsequences;
@@ -118,7 +118,9 @@ export class WordListProtection
     const words = this.draupnir.config.protections.wordlist.words
       .filter((word) => word.length !== 0)
       .map(escapeRegExp);
-    this.badWords = new RegExp(words.join("|"), "i");
+    // An empty pattern would match every message.
+    this.badWords =
+      words.length === 0 ? undefined : new RegExp(words.join("|"), "i");
   }
   public async handleMembershipChange(
     revision: RoomMembershipRevision,
@@ -158,6 +160,10 @@ export class WordListProtection
     room: MatrixRoomID,
     event: EventWithMixins
   ): void {
+    const badWords = this.badWords;
+    if (badWords === undefined) {
+      return;
+    }
     // If the sender is draupnir, ignore the message
     if (event.sourceEvent["sender"] === this.draupnir.clientUserID) {
       log.debug(`Ignoring message from self: ${event.sourceEvent.event_id}`);
@@ -208,7 +214,9 @@ export class WordListProtection
         return;
       }
     }
-    const match = bodies.find((body) => this.badWords.exec(body));
+    const match = bodies
+      .map((body) => badWords.exec(body))
+      .find((match) => match !== null);
     if (!match) {
       return;
     }
