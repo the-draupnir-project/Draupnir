@@ -55,6 +55,7 @@ import {
 } from "./WatchUnwatchCommand";
 import { DraupnirTopLevelCommands } from "./DraupnirCommandTable";
 import { DraupnirSafeModeCommand } from "./SafeModeCommand";
+import { DraupnirMeowCommand } from "./MeowCommand";
 import { DraupnirProtectionsShowCommand } from "./ProtectionsShowCommand";
 import { DraupnirProtectionsCapabilityCommand } from "./ProtectionsCapabilitiesCommand";
 import { JoinWaveCommandTable } from "../protections/JoinWaveShortCircuit";
@@ -128,6 +129,7 @@ const DraupnirCommands = new StandardCommandTable("draupnir")
     "members",
   ])
   .internCommand(DraupnirSafeModeCommand, ["safe", "mode"])
+  .internCommand(DraupnirMeowCommand, ["meow"])
   .internCommand(DraupnirDisplaynameCommand, ["displayname"])
   .internCommand(DraupnirAvatarCommand, ["avatar"])
   .internCommand(DraupnirSetPowerLevelCommand, ["powerlevel"])
