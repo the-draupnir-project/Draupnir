@@ -23,7 +23,7 @@
   "private": false,
   "devDependencies": {
     "@the-draupnir-project/matrix-protection-suite": "7.2.0",
-    "@types/node": "^24.12.4"
+    "@types/node": "^26.0.0"
   },
   "peerDependencies": {
     "@gnuxie/typescript-result": "^1.0.0",
