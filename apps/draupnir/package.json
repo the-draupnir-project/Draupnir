@@ -10,10 +10,10 @@
   "scripts": {
     "build": "tsc --project test/tsconfig.json && npm run build:assets",
     "build:assets": "npm run describe-version && npm run describe-branch",
-    "describe-version": "(git describe > version.txt.tmp && mv version.txt.tmp version.txt) || true && rm -f version.txt.tmp",
-    "describe-branch": "(git rev-parse --abbrev-ref HEAD > branch.txt.tmp && mv branch.txt.tmp branch.txt) || true && rm -f branch.txt.tmp",
+    "describe-version": "node scripts/write-build-info.cjs version",
+    "describe-branch": "node scripts/write-build-info.cjs branch",
     "harness-registration": "node dist/appservice/cli.js -r -u \"http://host.docker.internal:9000\" --enable-source-maps",
-    "test:unit": "mocha --require './test/tsnode.cjs' --forbid-only 'test/unit/**/*.{ts,tsx}'",
+    "test:unit": "mocha --require \"./test/tsnode.cjs\" --forbid-only \"test/unit/**/*.{ts,tsx}\"",
     "test:unit:single": "mocha --require test/tsnode.cjs",
     "test:integration": "NODE_ENV=harness mocha --require test/tsnode.cjs --async-stack-traces --forbid-only --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json \"test/integration/**/*Test.ts\" -- --draupnir-config ../../config/harness.yaml",
     "test:integration:single": "NODE_ENV=harness mocha --require test/tsnode.cjs --require test/integration/fixtures.ts --timeout 300000 --project ./tsconfig.json -- --draupnir-config ../../config/harness.yaml",
