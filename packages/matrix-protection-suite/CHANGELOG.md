@@ -313,14 +313,12 @@ This project adheres to
 
 - Introduced `matchType` enum onto `PolicyRule` splitting the `PolicyRule` type
   into three variants:
-
   - `Literal`
   - `Glob`
   - `HashedLiteral`
 
 - The `PolicyRuleChangeType`enum to replace `SimpleChangeType` on
   `PolicyRuleChange`.
-
   - This brings a new variant `RevealedLiteral` for when a `HashedLiteral`
     policy rule has been reversed by the `SHA256HashReverser`.
 
