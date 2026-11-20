@@ -5,7 +5,7 @@
 
 # syntax=docker/dockerfile:1.7
 
-FROM node:24-alpine AS build-stage
+FROM node:26-alpine AS build-stage
 RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     apk add --no-cache git \
     && apk cache clean
@@ -29,7 +29,7 @@ COPY . .
 RUN npm run build \
     && npm prune --production
 
-FROM node:24-alpine AS final-stage
+FROM node:26-alpine AS final-stage
 COPY --from=build-stage /tmp/src/apps/draupnir /apps/draupnir
 COPY --from=build-stage /tmp/src/packages /packages
 COPY --from=build-stage /tmp/src/node_modules /node_modules
